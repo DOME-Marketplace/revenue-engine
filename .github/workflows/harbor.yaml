@@ -6,7 +6,7 @@ on:
 
 env:
   REPOSITORY: ${{ vars.HARBOR_REPO }} # URL Harbor -> set in github variables
-  IMAGE_NAME: billing-engine	
+  IMAGE_NAME: revenue-engine	
 
 jobs:
   build:
