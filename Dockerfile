@@ -12,10 +12,10 @@ RUN apk update && apk add --no-cache curl
 WORKDIR /usr/app
 
 # Copy JAR in the working directory
-COPY target/billing-engine.jar billing-engine.jar
+COPY target/revenue-engine.jar revenue-engine.jar
 
 # Espose port 8080
 EXPOSE 8080
 
 # Comand to run the Spring Boot application
-ENTRYPOINT ["java","-jar","billing-engine.jar"]
+ENTRYPOINT ["java","-jar","revenue-engine.jar"]
