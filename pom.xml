@@ -46,24 +46,34 @@
 			<version>[2.1.0, 2.2.0)</version>
 		</dependency>
 		
+		<!-- TMF629 Customer Management -->
+		<dependency>
+			<groupId>it.eng.dome.tmforum-sdk</groupId>
+			<artifactId>tmf629-v4</artifactId>
+			<version>[2.1.0, 2.2.0)</version>
+		</dependency>
 		<!-- TMF632 Party Management -->
 		<dependency>
 			<groupId>it.eng.dome.tmforum-sdk</groupId>
 			<artifactId>tmf632-v4</artifactId>
 			<version>[2.1.0, 2.2.0)</version>
 		</dependency>
-		
-		<!-- TMF678 Customer Bill -->
-		<dependency>
-			<groupId>it.eng.dome.tmforum-sdk</groupId>
-			<artifactId>tmf678-v4</artifactId>
-			<version>[2.1.0, 2.2.0)</version>
-		</dependency>
-
 		<!--  TMF637 Product Inventory Management  -->
 		<dependency>
 			<groupId>it.eng.dome.tmforum-sdk</groupId>
 			<artifactId>tmf637-v4</artifactId>
+			<version>[2.1.0, 2.2.0)</version>
+		</dependency>
+		<!--  TMF651 Agreement Management  -->
+		<dependency>
+			<groupId>it.eng.dome.tmforum-sdk</groupId>
+			<artifactId>tmf651-v4</artifactId>
+			<version>[2.1.0, 2.2.0)</version>
+		</dependency>		
+		<!-- TMF678 Customer Bill -->
+		<dependency>
+			<groupId>it.eng.dome.tmforum-sdk</groupId>
+			<artifactId>tmf678-v4</artifactId>
 			<version>[2.1.0, 2.2.0)</version>
 		</dependency>
 		
