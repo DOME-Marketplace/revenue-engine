@@ -10,7 +10,7 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RestController;
 
 import io.swagger.v3.oas.annotations.tags.Tag;
-import it.eng.dome.brokerage.billing.dto.BillingRequestDTO;
+
 
 @RestController
 @RequestMapping("/revenue")
@@ -20,7 +20,7 @@ public class RevenueController {
 	protected final Logger logger = LoggerFactory.getLogger(RevenueController.class);
     
     @RequestMapping(value = "/xxx", method = RequestMethod.POST, produces = "application/json", consumes = "application/json")
-    public ResponseEntity<String> calculateBill(@RequestBody BillingRequestDTO billRequestDTO) throws Throwable {
+    public ResponseEntity<String> calculateBill(@RequestBody String payload) throws Throwable {
 		logger.info("Received request for xxx");
 
 		//TODO implemented 
