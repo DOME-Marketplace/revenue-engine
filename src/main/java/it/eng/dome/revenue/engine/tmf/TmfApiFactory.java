@@ -82,7 +82,7 @@ public final class TmfApiFactory implements InitializingBean {
 			}
 			
 			apiClientTmf632.setBasePath(basePath + "/" + tmf629CustomerManagementPath);
-			log.debug("Invoke Catalog API at endpoint: " + apiClientTmf632.getBasePath());
+			log.debug("Invoke Customer API at endpoint: " + apiClientTmf632.getBasePath());
 		}
 		
 		return apiClientTmf632;
@@ -98,7 +98,7 @@ public final class TmfApiFactory implements InitializingBean {
 			}
 			
 			apiClientTmf637.setBasePath(basePath + "/" + tmf637ProductInventoryPath);
-			log.debug("Invoke Catalog API at endpoint: " + apiClientTmf637.getBasePath());
+			log.debug("Invoke Product Inventory API at endpoint: " + apiClientTmf637.getBasePath());
 		}
 		
 		return apiClientTmf637;
@@ -114,7 +114,7 @@ public final class TmfApiFactory implements InitializingBean {
 			}
 			
 			apiClientTmf651.setBasePath(basePath + "/" + tmf651AgreementManagementPath);
-			log.debug("Invoke Catalog API at endpoint: " + apiClientTmf651.getBasePath());
+			log.debug("Invoke Agreement API at endpoint: " + apiClientTmf651.getBasePath());
 		}
 		
 		return apiClientTmf651;

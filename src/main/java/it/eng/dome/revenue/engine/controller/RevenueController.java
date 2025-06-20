@@ -15,7 +15,6 @@ import org.springframework.web.bind.annotation.RestController;
 
 import io.swagger.v3.oas.annotations.tags.Tag;
 import it.eng.dome.revenue.engine.service.RevenueService;
-import it.eng.dome.tmforum.tmf622.v4.JSON;
 
 
 @RestController
@@ -39,10 +38,8 @@ public class RevenueController {
 		revenueService.getAgreements();
 
 		//TODO implemented
-		Map<String, String> map = new HashMap<String, String>();
-        map.put("msg", "Get customer + agreement");
         
-		return new ResponseEntity<String>(JSON.getGson().toJson(map), HttpStatus.OK);	 
+		return new ResponseEntity<String>("text", HttpStatus.OK);	 
 	}
     
  

@@ -1,7 +1,7 @@
 
 # Spring Configuration
 server: 
-  port: 8086
+  port: 8680
   servlet:
     context-path:  ${BILLING_PREFIX:/}
 
