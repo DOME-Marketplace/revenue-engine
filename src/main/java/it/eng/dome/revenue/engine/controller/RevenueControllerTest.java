@@ -19,7 +19,7 @@ public class RevenueControllerTest {
 
     @GetMapping("/api/plan")
     public ResponseEntity<SubscriptionPlan> getPlan() throws Exception {
-        SubscriptionPlan plan = loader.loadFromClasspath("sample_data/BasicPlan.json");
+        SubscriptionPlan plan = loader.loadFromClasspath("sample_data/ProPlan.json");
         return ResponseEntity.ok(plan);
     }
 
