@@ -2,6 +2,10 @@ package it.eng.dome.revenue.engine.model;
 
 import java.util.List;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonInclude.Include;
+
+@JsonInclude(Include.NON_NULL)
 public class Price {
 
     // informative
@@ -26,7 +30,7 @@ public class Price {
     // Which period to consider for the computation
     private ReferencePeriod referencePeriod;
 
-    // to which range the price applies
+    // to which range of the computation base the price applies
     private Range applicableBaseRange;
 
     // the actual price (if not a bundle). If Bundled, ignore them.
@@ -34,7 +38,7 @@ public class Price {
     private Double percent;     // ... or a percent of the computationBase
     private String currency;
 
-    // boundary for the price
+    // boundary for the output computed price.
     private Range priceRange;
 
     
