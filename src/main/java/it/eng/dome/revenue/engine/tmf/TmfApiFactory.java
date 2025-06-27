@@ -82,8 +82,8 @@ public final class TmfApiFactory implements InitializingBean {
 				basePath += TMF_ENDPOINT_CONCAT_PATH + "party-catalog" + "." + tmfNamespace + "." + tmfPostfix + ":" + tmfPort;
 			}
 			
-			apiClientTmf632.setBasePath(basePath + "/" + tmf629CustomerManagementPath);
-			log.debug("Invoke Customer API at endpoint: " + apiClientTmf632.getBasePath());
+			apiClientTmf632.setBasePath(basePath + "/" + tmf632PartyManagementPath);
+			log.debug("Invoke Party API at endpoint: " + apiClientTmf632.getBasePath());
 		}
 		
 		return apiClientTmf632;
