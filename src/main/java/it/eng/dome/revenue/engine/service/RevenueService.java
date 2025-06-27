@@ -24,7 +24,7 @@ public class RevenueService implements InitializingBean {
 	private final Logger logger = LoggerFactory.getLogger(RevenueService.class);
 	
 	@Autowired
-	private TmfApiFactory tmfApiFactory;
+	private TmfApiFactory tmfApiFactory; 
 	
 	private CustomerManagementApis customer;
 	private AgreementManagementApis agreement;
