@@ -59,8 +59,7 @@ public class RevenueControllerTest {
 	 @PostMapping(value = "/plan", consumes = MediaType.APPLICATION_JSON_VALUE)
 	    public ResponseEntity<?> savePlan(@RequestBody @Valid SubscriptionPlan plan) {
 	        try {
-	            String timestamp = String.valueOf(System.currentTimeMillis());
-	            String filename = "plan_" + timestamp + ".json";
+	            String filename = "TestPlan.json";
 
 	            String json = mapper.writeValueAsString(plan);
 	            loader.saveRawJson(json, filename);
