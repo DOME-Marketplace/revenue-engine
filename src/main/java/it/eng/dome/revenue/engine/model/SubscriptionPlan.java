@@ -2,6 +2,9 @@ package it.eng.dome.revenue.engine.model;
 
 import java.util.List;
 
+import jakarta.validation.Valid;
+
+
 public class SubscriptionPlan {
 
     // informative
@@ -15,6 +18,7 @@ public class SubscriptionPlan {
     private String lifecycleStatus;
 
     // a list of prices for this subscription plan
+    @Valid
     private List<Price> price;
 
     // terms

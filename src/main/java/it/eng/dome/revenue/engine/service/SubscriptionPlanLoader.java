@@ -6,6 +6,7 @@ import org.springframework.stereotype.Service;
 
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 
 import it.eng.dome.revenue.engine.model.SubscriptionPlan;
@@ -22,11 +23,13 @@ import java.util.stream.Collectors;
 public class SubscriptionPlanLoader {
  
     private final ObjectMapper mapper;
- 
+
+
     public SubscriptionPlanLoader() {
         this.mapper = new ObjectMapper()
                 .registerModule(new JavaTimeModule())        // LocalDate
-                .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+                .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
+                .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
     }
  
     public SubscriptionPlan loadFromClasspath(String path) throws Exception {
