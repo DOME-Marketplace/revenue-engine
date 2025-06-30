@@ -5,10 +5,10 @@ import jakarta.validation.constraints.AssertTrue;
 
 public class Range {
 
-    @PositiveOrZero(message = "Il valore minimo deve essere >= 0")
+    @PositiveOrZero(message = "Min value must be >= 0")
     private Double min;
 
-    @PositiveOrZero(message = "Il valore massimo deve essere >= 0")
+    @PositiveOrZero(message = "Max value must be >= 0")
     private Double max;
 
     public Range() {}
@@ -34,7 +34,7 @@ public class Range {
         this.max = max;
     }
 
-    @AssertTrue(message = "Il valore massimo deve essere maggiore o uguale al minimo")
+    @AssertTrue(message = "The maximum value must be greater than or equal to the minimum.")
     public boolean isMaxGreaterOrEqualMin() {
         if (min == null || max == null) {
             return true; // lascio passare la validazione NotNull o PositiveOrZero

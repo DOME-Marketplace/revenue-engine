@@ -40,7 +40,7 @@ public class TimePeriod {
 		this.toDate = toDate;
 	}
 	
-	@AssertTrue(message = "fromDate deve essere precedente o uguale a toDate")
+	@AssertTrue(message = "Invalid range date")
     public boolean isDateRangeValid() {
         // Se uno dei due è null, la validazione singola @NotNull si occuperà di dare errore
         if (fromDate != null && toDate != null) {
