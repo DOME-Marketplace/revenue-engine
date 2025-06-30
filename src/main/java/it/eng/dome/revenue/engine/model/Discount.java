@@ -1,11 +1,13 @@
 package it.eng.dome.revenue.engine.model;
 
+import java.util.List;
+
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-import jakarta.validation.constraints.*;
-
-import java.util.List;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.PositiveOrZero;
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class Discount {
@@ -14,92 +16,94 @@ public class Discount {
     private Boolean isBundle;
     
     @JsonProperty("bundleOp")
-    private String bundleOp;
+    private BundleOperator bundleOp;
     
     @JsonProperty("discounts")
+    @Valid
     private List<Discount> discounts;
     
     @JsonProperty("computationBase")
     private String computationBase;
     
     @JsonProperty("referencePeriod")
-    private String referencePeriod;
+    private ReferencePeriod referencePeriod;
     
     @JsonProperty("applicableBaseRange")
+    @Valid
     private Range applicableBaseRange;
-    
-    @PositiveOrZero
+      
     @JsonProperty("percent")
+    @PositiveOrZero
+    @Max(100)
     private Double percent;
     
-    @PositiveOrZero
     @JsonProperty("amount")
+    @PositiveOrZero
     private Double amount;
 
     public Discount() {}
 
-    // Getter e Setter completi
-    public Boolean getIsBundle() {
-        return isBundle;
-    }
+	public Boolean getIsBundle() {
+		return isBundle;
+	}
 
-    public void setIsBundle(Boolean isBundle) {
-        this.isBundle = isBundle;
-    }
+	public void setIsBundle(Boolean isBundle) {
+		this.isBundle = isBundle;
+	}
 
-    public String getBundleOp() {
-        return bundleOp;
-    }
+	public BundleOperator getBundleOp() {
+		return bundleOp;
+	}
 
-    public void setBundleOp(String bundleOp) {
-        this.bundleOp = bundleOp;
-    }
+	public void setBundleOp(BundleOperator bundleOp) {
+		this.bundleOp = bundleOp;
+	}
 
-    public List<Discount> getDiscounts() {
-        return discounts;
-    }
+	public List<Discount> getDiscounts() {
+		return discounts;
+	}
 
-    public void setDiscounts(List<Discount> discounts) {
-        this.discounts = discounts;
-    }
+	public void setDiscounts(List<Discount> discounts) {
+		this.discounts = discounts;
+	}
 
-    public String getComputationBase() {
-        return computationBase;
-    }
+	public String getComputationBase() {
+		return computationBase;
+	}
 
-    public void setComputationBase(String computationBase) {
-        this.computationBase = computationBase;
-    }
+	public void setComputationBase(String computationBase) {
+		this.computationBase = computationBase;
+	}
 
-    public String getReferencePeriod() {
-        return referencePeriod;
-    }
+	public ReferencePeriod getReferencePeriod() {
+		return referencePeriod;
+	}
 
-    public void setReferencePeriod(String referencePeriod) {
-        this.referencePeriod = referencePeriod;
-    }
+	public void setReferencePeriod(ReferencePeriod referencePeriod) {
+		this.referencePeriod = referencePeriod;
+	}
 
-    public Range getApplicableBaseRange() {
-        return applicableBaseRange;
-    }
+	public Range getApplicableBaseRange() {
+		return applicableBaseRange;
+	}
 
-    public void setApplicableBaseRange(Range applicableBaseRange) {
-        this.applicableBaseRange = applicableBaseRange;
-    }
+	public void setApplicableBaseRange(Range applicableBaseRange) {
+		this.applicableBaseRange = applicableBaseRange;
+	}
 
-    public Double getPercent() {
-        return percent;
-    }
+	public Double getPercent() {
+		return percent;
+	}
 
-    public void setPercent(Double percent) {
-        this.percent = percent;
-    }
+	public void setPercent(Double percent) {
+		this.percent = percent;
+	}
 
-    public Double getAmount() {
-        return amount;
-    }
+	public Double getAmount() {
+		return amount;
+	}
 
-    public void setAmount(Double amount) {
-        this.amount = amount;
-    }
+	public void setAmount(Double amount) {
+		this.amount = amount;
+	}
 }

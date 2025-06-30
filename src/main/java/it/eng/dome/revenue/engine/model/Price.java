@@ -1,11 +1,14 @@
 package it.eng.dome.revenue.engine.model;
 
+import java.util.List;
+
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-import jakarta.validation.constraints.*;
-
-import java.util.List;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Positive;
+import jakarta.validation.constraints.PositiveOrZero;
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class Price {
@@ -13,47 +16,53 @@ public class Price {
     private String name;
     
     @JsonProperty("type")
-    private String type; // Usato String invece di PriceType per maggiore flessibilità
+    private PriceType type; // Usato String invece di PriceType per maggiore flessibilità
     
     @JsonProperty("isBundle")
     private Boolean isBundle;
     
     @JsonProperty("bundleOp")
-    private String bundleOp; // "CUMULATIVE", "ALTERNATIVE_HIGHER", ecc.
+    private BundleOperator bundleOp; // "CUMULATIVE", "ALTERNATIVE_HIGHER", ecc.
     
     // Per elementi bundle
     @JsonProperty("prices")
+    @Valid
     private List<Price> prices;
     
     // Per elementi non bundle
-    @PositiveOrZero
+    
     @JsonProperty("amount")
+    @PositiveOrZero
     private Double amount;
     
     @JsonProperty("currency")
     private String currency;
     
-    @PositiveOrZero
     @JsonProperty("percent")
+    @PositiveOrZero
+    @Max(100)
     private Double percent;
     
     // Per prezzi ricorrenti
     @JsonProperty("recurringChargePeriodLength")
+    @Positive
     private Integer recurringChargePeriodLength;
     
     @JsonProperty("recurringChargePeriodType")
-    private String recurringChargePeriodType; // "DAY", "MONTH", "YEAR", ecc.
+    private RecurringPeriod recurringChargePeriodType; // "DAY", "MONTH", "YEAR", ecc.
     
     @JsonProperty("discounts")
+    @Valid
     private List<Discount> discounts;
     
     @JsonProperty("computationBase")
     private String computationBase;
     
     @JsonProperty("referencePeriod")
-    private String referencePeriod;
+    private ReferencePeriod referencePeriod;
     
     @JsonProperty("applicableBaseRange")
+    @Valid
     private Range applicableBaseRange;
 
     public Price() {}
@@ -66,11 +75,11 @@ public class Price {
 		this.name = name;
 	}
 
-	public String getType() {
+	public PriceType getType() {
 		return type;
 	}
 
-	public void setType(String type) {
+	public void setType(PriceType type) {
 		this.type = type;
 	}
 
@@ -82,11 +91,11 @@ public class Price {
 		this.isBundle = isBundle;
 	}
 
-	public String getBundleOp() {
+	public BundleOperator getBundleOp() {
 		return bundleOp;
 	}
 
-	public void setBundleOp(String bundleOp) {
+	public void setBundleOp(BundleOperator bundleOp) {
 		this.bundleOp = bundleOp;
 	}
 
@@ -130,11 +139,11 @@ public class Price {
 		this.recurringChargePeriodLength = recurringChargePeriodLength;
 	}
 
-	public String getRecurringChargePeriodType() {
+	public RecurringPeriod getRecurringChargePeriodType() {
 		return recurringChargePeriodType;
 	}
 
-	public void setRecurringChargePeriodType(String recurringChargePeriodType) {
+	public void setRecurringChargePeriodType(RecurringPeriod recurringChargePeriodType) {
 		this.recurringChargePeriodType = recurringChargePeriodType;
 	}
 
@@ -154,11 +163,11 @@ public class Price {
 		this.computationBase = computationBase;
 	}
 
-	public String getReferencePeriod() {
+	public ReferencePeriod getReferencePeriod() {
 		return referencePeriod;
 	}
 
-	public void setReferencePeriod(String referencePeriod) {
+	public void setReferencePeriod(ReferencePeriod referencePeriod) {
 		this.referencePeriod = referencePeriod;
 	}
 
@@ -168,9 +177,5 @@ public class Price {
 
 	public void setApplicableBaseRange(Range applicableBaseRange) {
 		this.applicableBaseRange = applicableBaseRange;
-	}
-    
-    
-
-    
+	}   
 }

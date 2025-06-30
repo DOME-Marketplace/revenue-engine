@@ -3,6 +3,7 @@ package it.eng.dome.revenue.engine.model;
 import java.util.List;
 
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotNull;
 
 
 public class SubscriptionPlan {
@@ -12,6 +13,8 @@ public class SubscriptionPlan {
     private String description;
 
     // when the plan can be purchased
+    @Valid
+    @NotNull
     private TimePeriod validFor;
 
     // the status of the plan (active, retired, launched, ...)
@@ -19,6 +22,7 @@ public class SubscriptionPlan {
 
     // a list of prices for this subscription plan
     @Valid
+    @NotNull
     private List<Price> price;
 
     // terms
@@ -32,13 +36,7 @@ public class SubscriptionPlan {
 
     private List<String> agreements;                          
 
-    
-
     public SubscriptionPlan() {}
-
-
-
-    // getter e setter
 
     public SubscriptionPlan(String name, String description, TimePeriod validFor, String lifecycleStatus,
 			List<Price> price, Integer contractDurationLength, RecurringPeriod contractDurationPeriodType,
@@ -58,8 +56,7 @@ public class SubscriptionPlan {
 		this.agreements = agreements;
 	}
 
-
-
+    // getter e setter
 	public String getName() {
         return name;
     }
@@ -147,6 +144,4 @@ public class SubscriptionPlan {
     public void setAgreements(List<String> agreements) {
         this.agreements = agreements;
     }
-
-
 }
