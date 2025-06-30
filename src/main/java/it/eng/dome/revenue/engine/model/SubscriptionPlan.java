@@ -24,32 +24,39 @@ public class SubscriptionPlan {
     private Integer renewalTermLength;                       // es. 1
     private RecurringPeriod renewalTermPeriodType;           // es. YEAR
 
-    private RecurringPeriod billingPeriod;                   // periodo di fatturazione, es MONTH, YEAR
+    private RecurringPeriod billingPeriod;                   
 
-    private List<String> agreements;                          // lista di termini/accordi (contrattuali ecc.)
+    private List<String> agreements;                          
+
+    
 
     public SubscriptionPlan() {}
 
-    public SubscriptionPlan(String name, String description, TimePeriod validFor, String lifecycleStatus, List<Price> price,
-                            Integer contractDurationLength, RecurringPeriod contractDurationPeriodType,
-                            Integer renewalTermLength, RecurringPeriod renewalTermPeriodType,
-                            RecurringPeriod billingPeriod, List<String> agreements) {
-        this.name = name;
-        this.description = description;
-        this.validFor = validFor;
-        this.lifecycleStatus = lifecycleStatus;
-        this.price = price;
-        this.contractDurationLength = contractDurationLength;
-        this.contractDurationPeriodType = contractDurationPeriodType;
-        this.renewalTermLength = renewalTermLength;
-        this.renewalTermPeriodType = renewalTermPeriodType;
-        this.billingPeriod = billingPeriod;
-        this.agreements = agreements;
-    }
+
 
     // getter e setter
 
-    public String getName() {
+    public SubscriptionPlan(String name, String description, TimePeriod validFor, String lifecycleStatus,
+			List<Price> price, Integer contractDurationLength, RecurringPeriod contractDurationPeriodType,
+			Integer renewalTermLength, RecurringPeriod renewalTermPeriodType, RecurringPeriod billingPeriod,
+			List<String> agreements) {
+		super();
+		this.name = name;
+		this.description = description;
+		this.validFor = validFor;
+		this.lifecycleStatus = lifecycleStatus;
+		this.price = price;
+		this.contractDurationLength = contractDurationLength;
+		this.contractDurationPeriodType = contractDurationPeriodType;
+		this.renewalTermLength = renewalTermLength;
+		this.renewalTermPeriodType = renewalTermPeriodType;
+		this.billingPeriod = billingPeriod;
+		this.agreements = agreements;
+	}
+
+
+
+	public String getName() {
         return name;
     }
 
@@ -136,4 +143,6 @@ public class SubscriptionPlan {
     public void setAgreements(List<String> agreements) {
         this.agreements = agreements;
     }
+
+
 }

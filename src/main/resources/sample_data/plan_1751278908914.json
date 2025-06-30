@@ -1,6 +1,6 @@
 {
-  "name": "PRO",
-  "description": "Standard access and features, Dome Foundation Membership, Advanced Reporting & Analytics, Advanced Marketing Promotion",
+  "name": "BASIC",
+  "description": "Standard access and features, Dome Foundation Membership, Basic Reporting & Analytics, Basic Marketing Promotion",
   "validFor": {
     "fromDate": "2025-01-01T00:00:00Z",
     "toDate": "2025-12-31T23:59:59Z"
@@ -10,7 +10,7 @@
     {
       "name": "Annual Fee",
       "type": "ONE_TIME_PREPAID",
-      "amount": 8000,
+      "amount": -5000,
       "currency": "EUR"
     },
     {
@@ -21,7 +21,7 @@
         {
           "name": "Recurring Yearly Fee",
           "type": "RECURRING_PREPAID",
-          "amount": 8000,
+          "amount": 5000,
           "currency": "EUR",
           "recurringChargePeriodLength": 1,
           "recurringChargePeriodType": "YEAR",
@@ -98,25 +98,25 @@
               "computationBase": "bills-no-taxes",
               "referencePeriod": "CURRENT_SUBSCRIPTION_PERIOD",
               "applicableBaseRange": {"min": 100001, "max": 250000},
-              "percent": 3
+              "percent": 4
             },
             {
               "computationBase": "bills-no-taxes",
               "referencePeriod": "CURRENT_SUBSCRIPTION_PERIOD",
               "applicableBaseRange": {"min": 250001, "max": 750000},
-              "percent": 2.5
+              "percent": 3.5
             },
             {
               "computationBase": "bills-no-taxes",
               "referencePeriod": "CURRENT_SUBSCRIPTION_PERIOD",
               "applicableBaseRange": {"min": 750001, "max": 1000000},
-              "percent": 2
+              "percent": 3
             },
             {
               "computationBase": "bills-no-taxes",
               "referencePeriod": "CURRENT_SUBSCRIPTION_PERIOD",
               "applicableBaseRange": {"min": 1000001},
-              "percent": 1.5
+              "percent": 2.5
             }
           ]
         }
