@@ -4,6 +4,7 @@ import java.util.List;
 
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Positive;
 
 
 public class SubscriptionPlan {
@@ -26,9 +27,11 @@ public class SubscriptionPlan {
     private List<Price> price;
 
     // terms
+    @Positive
     private Integer contractDurationLength;                 // es. 12
     private RecurringPeriod contractDurationPeriodType;     // es. MONTH
-
+    
+    @Positive
     private Integer renewalTermLength;                       // es. 1
     private RecurringPeriod renewalTermPeriodType;           // es. YEAR
 
