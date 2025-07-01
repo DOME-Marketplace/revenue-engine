@@ -63,13 +63,13 @@ public class SubscriptionActiveService {
     
     // === GET BY PARTY ID ===
 
-    public List<SubscriptionActive> getByRelatedPartyId(String partyId) throws IOException {
+    public List<SubscriptionActive> getByRelatedPartyId(String id) throws IOException {
         return loadAllFromStorage().stream()
             .filter(subscription -> subscription.getRelatedParties() != null)
             .filter(subscription -> subscription.getRelatedParties().stream()
                 .anyMatch(party -> party != null 
                     && party.getId() != null
-                    && party.getId().equals(partyId)))
+                    && party.getId().equals(id)))
             .collect(Collectors.toList());
     }
     

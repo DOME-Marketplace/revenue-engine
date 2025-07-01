@@ -158,10 +158,10 @@ public class RevenueControllerTest {
 
     @GetMapping("/subscriptions/users/{id}")
     public ResponseEntity<List<SubscriptionActive>> getSubscriptionsByPartyId(
-            @PathVariable String partyId) {
+            @PathVariable String id) {
         try {
             List<SubscriptionActive> subscriptions = 
-                subscriptionActiveService.getByRelatedPartyId(partyId);
+                subscriptionActiveService.getByRelatedPartyId(id);
             
             return subscriptions.isEmpty() 
                 ? ResponseEntity.noContent().build()
