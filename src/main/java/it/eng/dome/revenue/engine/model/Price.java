@@ -3,67 +3,69 @@ package it.eng.dome.revenue.engine.model;
 import java.util.List;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonProperty;
+
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Positive;
+import jakarta.validation.constraints.PositiveOrZero;
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class Price {
-
-    // informative
+    @JsonProperty("name")
     private String name;
-    private String description;
-
-    // when the price is applied (pre, post, recurring, once, ...)
-    private PriceType type;
-
-    // if a bundle, include a list of prices
+    
+    @JsonProperty("type")
+    private PriceType type; // Usato String invece di PriceType per maggiore flessibilità
+    
+    @JsonProperty("isBundle")
     private Boolean isBundle;
-    private BundleOperator bundleOp;
+    
+    @JsonProperty("bundleOp")
+    private BundleOperator bundleOp; // "CUMULATIVE", "ALTERNATIVE_HIGHER", ecc.
+    
+    // Per elementi bundle
+    @JsonProperty("prices")
+    @Valid
     private List<Price> prices;
-
-    // recurring info (ignore if type is not recurring)
+    
+    // Per elementi non bundle
+    
+    @JsonProperty("amount")
+    @PositiveOrZero
+    private Double amount;
+    
+    @JsonProperty("currency")
+    private String currency;
+    
+    @JsonProperty("percent")
+    @PositiveOrZero
+    @Max(100)
+    private Double percent;
+    
+    // Per prezzi ricorrenti
+    @JsonProperty("recurringChargePeriodLength")
+    @Positive
     private Integer recurringChargePeriodLength;
-    private RecurringPeriod recurringChargePeriodType;
-
-    // On which basis the price is computed. The semantics of values is left to the implementation.
+    
+    @JsonProperty("recurringChargePeriodType")
+    private RecurringPeriod recurringChargePeriodType; // "DAY", "MONTH", "YEAR", ecc.
+    
+    @JsonProperty("discounts")
+    @Valid
+    private List<Discount> discounts;
+    
+    @JsonProperty("computationBase")
     private String computationBase;
-
-    // Which period to consider for the computation
+    
+    @JsonProperty("referencePeriod")
     private ReferencePeriod referencePeriod;
-
-    // to which range of the computation base the price applies
+    
+    @JsonProperty("applicableBaseRange")
+    @Valid
     private Range applicableBaseRange;
 
-    // the actual price (if not a bundle). If Bundled, ignore them.
-    private Double amount;      // either a fixed amount
-    private Double percent;     // ... or a percent of the computationBase
-    private String currency;
-
-    // boundary for the output computed price.
-    private Range priceRange;
-
-    
     public Price() {}
-    
-	public Price(String name, String description, PriceType type, Boolean isBundle, BundleOperator bundleOp,
-			List<Price> prices, Integer recurringChargePeriodLength, RecurringPeriod recurringChargePeriodType,
-			String computationBase, ReferencePeriod referencePeriod, Range applicableBaseRange, Double amount,
-			Double percent, String currency, Range priceRange) {
-		super();
-		this.name = name;
-		this.description = description;
-		this.type = type;
-		this.isBundle = isBundle;
-		this.bundleOp = bundleOp;
-		this.prices = prices;
-		this.recurringChargePeriodLength = recurringChargePeriodLength;
-		this.recurringChargePeriodType = recurringChargePeriodType;
-		this.computationBase = computationBase;
-		this.referencePeriod = referencePeriod;
-		this.applicableBaseRange = applicableBaseRange;
-		this.amount = amount;
-		this.percent = percent;
-		this.currency = currency;
-		this.priceRange = priceRange;
-	}
 
 	public String getName() {
 		return name;
@@ -71,14 +73,6 @@ public class Price {
 
 	public void setName(String name) {
 		this.name = name;
-	}
-
-	public String getDescription() {
-		return description;
-	}
-
-	public void setDescription(String description) {
-		this.description = description;
 	}
 
 	public PriceType getType() {
@@ -113,6 +107,30 @@ public class Price {
 		this.prices = prices;
 	}
 
+	public Double getAmount() {
+		return amount;
+	}
+
+	public void setAmount(Double amount) {
+		this.amount = amount;
+	}
+
+	public String getCurrency() {
+		return currency;
+	}
+
+	public void setCurrency(String currency) {
+		this.currency = currency;
+	}
+
+	public Double getPercent() {
+		return percent;
+	}
+
+	public void setPercent(Double percent) {
+		this.percent = percent;
+	}
+
 	public Integer getRecurringChargePeriodLength() {
 		return recurringChargePeriodLength;
 	}
@@ -127,6 +145,14 @@ public class Price {
 
 	public void setRecurringChargePeriodType(RecurringPeriod recurringChargePeriodType) {
 		this.recurringChargePeriodType = recurringChargePeriodType;
+	}
+
+	public List<Discount> getDiscounts() {
+		return discounts;
+	}
+
+	public void setDiscounts(List<Discount> discounts) {
+		this.discounts = discounts;
 	}
 
 	public String getComputationBase() {
@@ -151,38 +177,5 @@ public class Price {
 
 	public void setApplicableBaseRange(Range applicableBaseRange) {
 		this.applicableBaseRange = applicableBaseRange;
-	}
-
-	public Double getAmount() {
-		return amount;
-	}
-
-	public void setAmount(Double amount) {
-		this.amount = amount;
-	}
-
-	public Double getPercent() {
-		return percent;
-	}
-
-	public void setPercent(Double percent) {
-		this.percent = percent;
-	}
-
-	public String getCurrency() {
-		return currency;
-	}
-
-	public void setCurrency(String currency) {
-		this.currency = currency;
-	}
-
-	public Range getPriceRange() {
-		return priceRange;
-	}
-
-	public void setPriceRange(Range priceRange) {
-		this.priceRange = priceRange;
-	}
-
+	}   
 }

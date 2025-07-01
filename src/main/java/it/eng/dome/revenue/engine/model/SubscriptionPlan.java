@@ -2,6 +2,11 @@ package it.eng.dome.revenue.engine.model;
 
 import java.util.List;
 
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Positive;
+
+
 public class SubscriptionPlan {
 
     // informative
@@ -9,47 +14,53 @@ public class SubscriptionPlan {
     private String description;
 
     // when the plan can be purchased
+    @Valid
+    @NotNull
     private TimePeriod validFor;
 
     // the status of the plan (active, retired, launched, ...)
     private String lifecycleStatus;
 
     // a list of prices for this subscription plan
+    @Valid
+    @NotNull
     private List<Price> price;
 
     // terms
+    @Positive
     private Integer contractDurationLength;                 // es. 12
     private RecurringPeriod contractDurationPeriodType;     // es. MONTH
-
+    
+    @Positive
     private Integer renewalTermLength;                       // es. 1
     private RecurringPeriod renewalTermPeriodType;           // es. YEAR
 
-    private RecurringPeriod billingPeriod;                   // periodo di fatturazione, es MONTH, YEAR
+    private RecurringPeriod billingPeriod;                   
 
-    private List<String> agreements;                          // lista di termini/accordi (contrattuali ecc.)
+    private List<String> agreements;                          
 
     public SubscriptionPlan() {}
 
-    public SubscriptionPlan(String name, String description, TimePeriod validFor, String lifecycleStatus, List<Price> price,
-                            Integer contractDurationLength, RecurringPeriod contractDurationPeriodType,
-                            Integer renewalTermLength, RecurringPeriod renewalTermPeriodType,
-                            RecurringPeriod billingPeriod, List<String> agreements) {
-        this.name = name;
-        this.description = description;
-        this.validFor = validFor;
-        this.lifecycleStatus = lifecycleStatus;
-        this.price = price;
-        this.contractDurationLength = contractDurationLength;
-        this.contractDurationPeriodType = contractDurationPeriodType;
-        this.renewalTermLength = renewalTermLength;
-        this.renewalTermPeriodType = renewalTermPeriodType;
-        this.billingPeriod = billingPeriod;
-        this.agreements = agreements;
-    }
+    public SubscriptionPlan(String name, String description, TimePeriod validFor, String lifecycleStatus,
+			List<Price> price, Integer contractDurationLength, RecurringPeriod contractDurationPeriodType,
+			Integer renewalTermLength, RecurringPeriod renewalTermPeriodType, RecurringPeriod billingPeriod,
+			List<String> agreements) {
+		super();
+		this.name = name;
+		this.description = description;
+		this.validFor = validFor;
+		this.lifecycleStatus = lifecycleStatus;
+		this.price = price;
+		this.contractDurationLength = contractDurationLength;
+		this.contractDurationPeriodType = contractDurationPeriodType;
+		this.renewalTermLength = renewalTermLength;
+		this.renewalTermPeriodType = renewalTermPeriodType;
+		this.billingPeriod = billingPeriod;
+		this.agreements = agreements;
+	}
 
     // getter e setter
-
-    public String getName() {
+	public String getName() {
         return name;
     }
 
