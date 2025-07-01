@@ -25,9 +25,7 @@ public class DevController {
     TmfDataRetriever tmfDataRetriever;
 
     @Autowired
-    public DevController(SubscriptionPlanService subscriptionPlanService,
-                              SubscriptionActiveService subscriptionActiveService,
-                              ObjectMapper mapper) {
+    public DevController() {
     }
 
     @GetMapping("/dev/bills/")
