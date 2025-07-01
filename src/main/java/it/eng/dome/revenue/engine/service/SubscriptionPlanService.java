@@ -35,12 +35,12 @@ public class SubscriptionPlanService {
  
     // === GET BY FILENAME===
 
-    public SubscriptionPlan loadFromClasspath(String path) throws Exception {
-        try (var in = new ClassPathResource(path).getInputStream()) {
-            String json = new String(in.readAllBytes());
-            return mapper.readValue(json, SubscriptionPlan.class);
-        }
-    }
+//    public SubscriptionPlan loadFromClasspath(String path) throws Exception {
+//        try (var in = new ClassPathResource(path).getInputStream()) {
+//            String json = new String(in.readAllBytes());
+//            return mapper.readValue(json, SubscriptionPlan.class);
+//        }
+//    }
 
     // === GET ALL ===
 

@@ -33,11 +33,11 @@ public class SubscriptionActiveService {
 
     // === GET BY FILENAME===
 
-    public SubscriptionActive loadFromClasspath(String path) throws IOException {
-        try (var in = new ClassPathResource(path).getInputStream()) {
-            return mapper.readValue(in, SubscriptionActive.class);
-        }
-    }
+//    public SubscriptionActive loadFromClasspath(String path) throws IOException {
+//        try (var in = new ClassPathResource(path).getInputStream()) {
+//            return mapper.readValue(in, SubscriptionActive.class);
+//        }
+//    }
 
     // === GET ALL  ===
 

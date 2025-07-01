@@ -43,18 +43,18 @@ public class RevenueControllerTest {
     }
 
     // ===== SubscriptionPlan Endpoints =====
-    @GetMapping("/plan/filename/{filename}")
-    public ResponseEntity<SubscriptionPlan> getPlanByFileName(@PathVariable String filename) {
-        try {
-            String fileName = "sample_data/" + filename + ".json";
-            SubscriptionPlan plan = subscriptionPlanService.loadFromClasspath(fileName);
-            return ResponseEntity.ok(plan);
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
-        }
-    }
+//    @GetMapping("/plan/filename/{filename}")
+//    public ResponseEntity<SubscriptionPlan> getPlanByFileName(@PathVariable String filename) {
+//        try {
+//            String fileName = "sample_data/" + filename + ".json";
+//            SubscriptionPlan plan = subscriptionPlanService.loadFromClasspath(fileName);
+//            return ResponseEntity.ok(plan);
+//        } catch (Exception e) {
+//            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+//        }
+//    }
 
-    @GetMapping("/plan/id/{id}")
+    @GetMapping("/plans/{id}")
     public ResponseEntity<SubscriptionPlan> getPlanById(@PathVariable String id) {
         try {
             SubscriptionPlan plan = subscriptionPlanService.findPlanById(id);
@@ -114,18 +114,18 @@ public class RevenueControllerTest {
     
     
     // ===== SubscriptionActive Endpoints =====
-    @GetMapping("/subscription/filename/{filename}")
-    public ResponseEntity<SubscriptionActive> getSubscriptionByFileName(@PathVariable String filename) {
-        try {
-            String fileName = "sample_data/sub/" + filename + ".json";
-            SubscriptionActive subscription = subscriptionActiveService.loadFromClasspath(fileName);
-            return ResponseEntity.ok(subscription);
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
-        }
-    }
+//    @GetMapping("/subscription/filename/{filename}")
+//    public ResponseEntity<SubscriptionActive> getSubscriptionByFileName(@PathVariable String filename) {
+//        try {
+//            String fileName = "sample_data/sub/" + filename + ".json";
+//            SubscriptionActive subscription = subscriptionActiveService.loadFromClasspath(fileName);
+//            return ResponseEntity.ok(subscription);
+//        } catch (Exception e) {
+//            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+//        }
+//    }
 
-    @GetMapping("/subscriptions")
+    @GetMapping("/subscriptions/users")
     public ResponseEntity<List<SubscriptionActive>> getAllSubscriptions() {
         try {
             List<SubscriptionActive> subscriptions = subscriptionActiveService.loadAllFromStorage();
@@ -156,7 +156,7 @@ public class RevenueControllerTest {
 //        }
 //    }
 
-    @GetMapping("/subscription/party-id/{partyId}")
+    @GetMapping("/subscriptions/users/{id}")
     public ResponseEntity<List<SubscriptionActive>> getSubscriptionsByPartyId(
             @PathVariable String partyId) {
         try {
