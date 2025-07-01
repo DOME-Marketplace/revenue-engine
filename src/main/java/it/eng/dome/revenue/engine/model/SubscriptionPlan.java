@@ -1,15 +1,20 @@
 package it.eng.dome.revenue.engine.model;
 
 import java.util.List;
+import java.util.UUID;
+
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonInclude;
 
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
 
-
+@JsonInclude(JsonInclude.Include.NON_NULL)
 public class SubscriptionPlan {
-
-    // informative
+	
+	
+	private String id;
     private String name;
     private String description;
 
@@ -41,11 +46,14 @@ public class SubscriptionPlan {
 
     public SubscriptionPlan() {}
 
-    public SubscriptionPlan(String name, String description, TimePeriod validFor, String lifecycleStatus,
-			List<Price> price, Integer contractDurationLength, RecurringPeriod contractDurationPeriodType,
-			Integer renewalTermLength, RecurringPeriod renewalTermPeriodType, RecurringPeriod billingPeriod,
-			List<String> agreements) {
+    
+    
+	public SubscriptionPlan(String id, String name, String description, @Valid @NotNull TimePeriod validFor,
+			String lifecycleStatus, @Valid @NotNull List<Price> price, @Positive Integer contractDurationLength,
+			RecurringPeriod contractDurationPeriodType, @Positive Integer renewalTermLength,
+			RecurringPeriod renewalTermPeriodType, RecurringPeriod billingPeriod, List<String> agreements) {
 		super();
+        this.id = UUID.randomUUID().toString(); 
 		this.name = name;
 		this.description = description;
 		this.validFor = validFor;
@@ -59,92 +67,103 @@ public class SubscriptionPlan {
 		this.agreements = agreements;
 	}
 
-    // getter e setter
+
+
+	public String getId() {
+		return id;
+	}
+
+	public void setId(String id) {
+		this.id = id;
+	}
+
 	public String getName() {
-        return name;
-    }
+		return name;
+	}
 
-    public void setName(String name) {
-        this.name = name;
-    }
+	public void setName(String name) {
+		this.name = name;
+	}
 
-    public String getDescription() {
-        return description;
-    }
+	public String getDescription() {
+		return description;
+	}
 
-    public void setDescription(String description) {
-        this.description = description;
-    }
+	public void setDescription(String description) {
+		this.description = description;
+	}
 
-    public TimePeriod getValidFor() {
-        return validFor;
-    }
+	public TimePeriod getValidFor() {
+		return validFor;
+	}
 
-    public void setValidFor(TimePeriod validFor) {
-        this.validFor = validFor;
-    }
+	public void setValidFor(TimePeriod validFor) {
+		this.validFor = validFor;
+	}
 
-    public String getLifecycleStatus() {
-        return lifecycleStatus;
-    }
+	public String getLifecycleStatus() {
+		return lifecycleStatus;
+	}
 
-    public void setLifecycleStatus(String lifecycleStatus) {
-        this.lifecycleStatus = lifecycleStatus;
-    }
+	public void setLifecycleStatus(String lifecycleStatus) {
+		this.lifecycleStatus = lifecycleStatus;
+	}
 
-    public List<Price> getPrice() {
-        return price;
-    }
+	public List<Price> getPrice() {
+		return price;
+	}
 
-    public void setPrice(List<Price> price) {
-        this.price = price;
-    }
+	public void setPrice(List<Price> price) {
+		this.price = price;
+	}
 
-    public Integer getContractDurationLength() {
-        return contractDurationLength;
-    }
+	public Integer getContractDurationLength() {
+		return contractDurationLength;
+	}
 
-    public void setContractDurationLength(Integer contractDurationLength) {
-        this.contractDurationLength = contractDurationLength;
-    }
+	public void setContractDurationLength(Integer contractDurationLength) {
+		this.contractDurationLength = contractDurationLength;
+	}
 
-    public RecurringPeriod getContractDurationPeriodType() {
-        return contractDurationPeriodType;
-    }
+	public RecurringPeriod getContractDurationPeriodType() {
+		return contractDurationPeriodType;
+	}
 
-    public void setContractDurationPeriodType(RecurringPeriod contractDurationPeriodType) {
-        this.contractDurationPeriodType = contractDurationPeriodType;
-    }
+	public void setContractDurationPeriodType(RecurringPeriod contractDurationPeriodType) {
+		this.contractDurationPeriodType = contractDurationPeriodType;
+	}
 
-    public Integer getRenewalTermLength() {
-        return renewalTermLength;
-    }
+	public Integer getRenewalTermLength() {
+		return renewalTermLength;
+	}
 
-    public void setRenewalTermLength(Integer renewalTermLength) {
-        this.renewalTermLength = renewalTermLength;
-    }
+	public void setRenewalTermLength(Integer renewalTermLength) {
+		this.renewalTermLength = renewalTermLength;
+	}
 
-    public RecurringPeriod getRenewalTermPeriodType() {
-        return renewalTermPeriodType;
-    }
+	public RecurringPeriod getRenewalTermPeriodType() {
+		return renewalTermPeriodType;
+	}
 
-    public void setRenewalTermPeriodType(RecurringPeriod renewalTermPeriodType) {
-        this.renewalTermPeriodType = renewalTermPeriodType;
-    }
+	public void setRenewalTermPeriodType(RecurringPeriod renewalTermPeriodType) {
+		this.renewalTermPeriodType = renewalTermPeriodType;
+	}
 
-    public RecurringPeriod getBillingPeriod() {
-        return billingPeriod;
-    }
+	public RecurringPeriod getBillingPeriod() {
+		return billingPeriod;
+	}
 
-    public void setBillingPeriod(RecurringPeriod billingPeriod) {
-        this.billingPeriod = billingPeriod;
-    }
+	public void setBillingPeriod(RecurringPeriod billingPeriod) {
+		this.billingPeriod = billingPeriod;
+	}
 
-    public List<String> getAgreements() {
-        return agreements;
-    }
+	public List<String> getAgreements() {
+		return agreements;
+	}
 
-    public void setAgreements(List<String> agreements) {
-        this.agreements = agreements;
-    }
+	public void setAgreements(List<String> agreements) {
+		this.agreements = agreements;
+	}
+
+    
 }
