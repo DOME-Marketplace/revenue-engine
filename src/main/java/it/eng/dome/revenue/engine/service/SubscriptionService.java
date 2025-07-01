@@ -1,14 +1,5 @@
 package it.eng.dome.revenue.engine.service;
 
-import org.springframework.core.io.ClassPathResource;
-import org.springframework.stereotype.Service;
-import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationFeature;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
-
-import it.eng.dome.revenue.engine.model.SubscriptionActive;
-
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -17,14 +8,25 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import org.springframework.core.io.ClassPathResource;
+import org.springframework.stereotype.Service;
+
+import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+
+import it.eng.dome.revenue.engine.model.Subscription;
+
+
 @Service
-public class SubscriptionActiveService {
+public class SubscriptionService {
 
     private final Path storageDir = Paths.get("src/main/resources/sample_data/sub/");
 
     private final ObjectMapper mapper;
 
-    public SubscriptionActiveService() {
+    public SubscriptionService() {
         this.mapper = new ObjectMapper()
                 .registerModule(new JavaTimeModule())
                 .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
@@ -33,17 +35,17 @@ public class SubscriptionActiveService {
 
     // === GET BY FILENAME===
 
-    public SubscriptionActive loadFromClasspath(String path) throws IOException {
+    public Subscription loadFromClasspath(String path) throws IOException {
         try (var in = new ClassPathResource(path).getInputStream()) {
-            return mapper.readValue(in, SubscriptionActive.class);
+            return mapper.readValue(in, Subscription.class);
         }
     }
 
     // === GET ALL  ===
 
-    public List<SubscriptionActive> loadAllFromStorage() throws IOException {
+    public List<Subscription> loadAllFromStorage() throws IOException {
         
-        List<SubscriptionActive> subscriptions = new ArrayList<>();
+        List<Subscription> subscriptions = new ArrayList<>();
 
         if (Files.exists(storageDir)) {
             return Files.walk(storageDir)
@@ -51,7 +53,7 @@ public class SubscriptionActiveService {
                 .filter(p -> p.toString().endsWith(".json"))
                 .map(p -> {
                     try {
-                        return mapper.readValue(p.toFile(), SubscriptionActive.class);
+                        return mapper.readValue(p.toFile(), Subscription.class);
                     } catch (IOException e) {
                         throw new RuntimeException("Failed to read subscription file: " + p, e);
                     }
@@ -63,7 +65,7 @@ public class SubscriptionActiveService {
     
     // === GET BY PARTY ID ===
 
-    public List<SubscriptionActive> getByRelatedPartyId(String partyId) throws IOException {
+    public List<Subscription> getByRelatedPartyId(String partyId) throws IOException {
         return loadAllFromStorage().stream()
             .filter(subscription -> subscription.getRelatedParties() != null)
             .filter(subscription -> subscription.getRelatedParties().stream()
@@ -74,7 +76,7 @@ public class SubscriptionActiveService {
     }
     
     // === CREATE ===
-
+    
    /* public String saveToStorage(SubscriptionActive subscription, String filename) throws IOException {
         
         Files.createDirectories(storageDir);

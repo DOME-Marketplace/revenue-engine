@@ -19,9 +19,9 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import it.eng.dome.revenue.engine.model.SubscriptionActive;
+import it.eng.dome.revenue.engine.model.Subscription;
 import it.eng.dome.revenue.engine.model.SubscriptionPlan;
-import it.eng.dome.revenue.engine.service.SubscriptionActiveService;
+import it.eng.dome.revenue.engine.service.SubscriptionService;
 import it.eng.dome.revenue.engine.service.SubscriptionPlanService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -32,12 +32,12 @@ import lombok.RequiredArgsConstructor;
 public class RevenueControllerTest {
     
     private final SubscriptionPlanService subscriptionPlanService;
-    private final SubscriptionActiveService subscriptionActiveService;
+    private final SubscriptionService subscriptionActiveService;
     private final ObjectMapper mapper;
 
     @Autowired
     public RevenueControllerTest(SubscriptionPlanService subscriptionPlanService,
-                              SubscriptionActiveService subscriptionActiveService,
+                              SubscriptionService subscriptionActiveService,
                               ObjectMapper mapper) {
         this.subscriptionPlanService = subscriptionPlanService;
         this.subscriptionActiveService = subscriptionActiveService;
@@ -117,10 +117,10 @@ public class RevenueControllerTest {
     
     // ===== SubscriptionActive Endpoints =====
     @GetMapping("/subscription/filename/{filename}")
-    public ResponseEntity<SubscriptionActive> getSubscriptionByFileName(@PathVariable String filename) {
+    public ResponseEntity<Subscription> getSubscriptionByFileName(@PathVariable String filename) {
         try {
             String fileName = "sample_data/sub/" + filename + ".json";
-            SubscriptionActive subscription = subscriptionActiveService.loadFromClasspath(fileName);
+            Subscription subscription = subscriptionActiveService.loadFromClasspath(fileName);
             return ResponseEntity.ok(subscription);
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
@@ -128,9 +128,9 @@ public class RevenueControllerTest {
     }
 
     @GetMapping("/subscriptions")
-    public ResponseEntity<List<SubscriptionActive>> getAllSubscriptions() {
+    public ResponseEntity<List<Subscription>> getAllSubscriptions() {
         try {
-            List<SubscriptionActive> subscriptions = subscriptionActiveService.loadAllFromStorage();
+            List<Subscription> subscriptions = subscriptionActiveService.loadAllFromStorage();
             return ResponseEntity.ok(subscriptions);
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
@@ -159,10 +159,10 @@ public class RevenueControllerTest {
 //    }
 
     @GetMapping("/subscription/party-id/{partyId}")
-    public ResponseEntity<List<SubscriptionActive>> getSubscriptionsByPartyId(
+    public ResponseEntity<List<Subscription>> getSubscriptionsByPartyId(
             @PathVariable String partyId) {
         try {
-            List<SubscriptionActive> subscriptions = 
+            List<Subscription> subscriptions = 
                 subscriptionActiveService.getByRelatedPartyId(partyId);
             
             return subscriptions.isEmpty() 
@@ -191,4 +191,5 @@ public class RevenueControllerTest {
 //
 //        return subscriptionActiveService.updateSubscription(subName, subscription);
 //    }
+    
 }

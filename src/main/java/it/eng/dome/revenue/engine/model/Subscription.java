@@ -9,7 +9,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.validation.Valid;
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public class SubscriptionActive {
+public class Subscription {
     
     private String name;
     
@@ -22,9 +22,9 @@ public class SubscriptionActive {
     @JsonProperty("relatedParty") 
     private List<RelatedParty> relatedParties; 
 
-    public SubscriptionActive() {}
+    public Subscription() {}
 
-    public SubscriptionActive(String name, SubscriptionPlan plan, List<RelatedParty> relatedParties, 
+    public Subscription(String name, SubscriptionPlan plan, List<RelatedParty> relatedParties, 
                              String status, OffsetDateTime startDate) {
         this.name = name;
         this.plan = plan;
