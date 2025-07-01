@@ -126,6 +126,11 @@ public class TmfDataRetriever implements InitializingBean {
 
     }
 
+    public List<Organization> listReferredProviders(String referralProviderId) {
+        // TODO: implement this method to retrieve all referred providers by a given referral provider
+        return new ArrayList<Organization>();
+    }
+
     public List<Organization> retrieveActiveSellersInLastMonth() throws Exception {
         OffsetDateTime to = OffsetDateTime.now();
         OffsetDateTime from = to.plusMonths(-1);
