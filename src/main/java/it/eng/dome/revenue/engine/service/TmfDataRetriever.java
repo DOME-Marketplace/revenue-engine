@@ -48,6 +48,34 @@ public class TmfDataRetriever implements InitializingBean {
     public TmfDataRetriever() {
     }
 
+    // retrieve all bills in the specified period, optionally filtered by sellerId
+    // if sellerId is null, all bills in the period are retrieved
+    public List<AppliedCustomerBillingRate> retrieveBills(String sellerId, OffsetDateTime from, OffsetDateTime to) throws Exception {
+
+        logger.debug("Retrieving bills from TMF API between " + from + " and " + to);
+
+        // prepare the filter: only billed bills and in the given period
+        Map<String, String> filter = new HashMap<>();
+        filter.put("isBilled", "true");
+        if(from!=null)
+            filter.put("date.gt", from.toString());
+        if(to!=null)
+            filter.put("date.lt", to.toString());
+        if(sellerId!=null) {
+            filter.put("relatedParty", sellerId);
+            filter.put("relatedParty.role", "Seller");
+            logger.debug("Retrieving bills for seller with id: " + sellerId);
+        } else {
+            logger.debug("Retrieving all bills in the specified period");
+        }
+
+        // retrieve bills
+        List<AppliedCustomerBillingRate> out = billApi.listAppliedCustomerBillingRate(null, null, 1000, filter);
+
+        logger.debug("found " + out.size() + " bills in the specified period");
+        return out;
+    }
+
     // retrieve all providers with at least one bill in the specified period
     public List<Organization> retrieveActiveSellers(OffsetDateTime from, OffsetDateTime to) throws Exception {
 
@@ -68,8 +96,8 @@ public class TmfDataRetriever implements InitializingBean {
             filter.put("date.lt", to.toString());
 
         // retrieve bills and extract seller ids
-        List<AppliedCustomerBillingRate> out = billApi.listAppliedCustomerBillingRate(null, null, 1000, filter);
-        for(AppliedCustomerBillingRate acbr: out) {
+        List<AppliedCustomerBillingRate> bills = this.retrieveBills(null, from, to);
+        for(AppliedCustomerBillingRate acbr: bills) {
             if(acbr==null || acbr.getRelatedParty()==null)
                 continue;
             for(RelatedParty rp: acbr.getRelatedParty()) {
@@ -102,6 +130,18 @@ public class TmfDataRetriever implements InitializingBean {
         OffsetDateTime to = OffsetDateTime.now();
         OffsetDateTime from = to.plusMonths(-1);
         return this.retrieveActiveSellers(from, to);
+    }
+
+    public List<AppliedCustomerBillingRate> retrieveBillsForSellerInLastMonth(String sellerId) throws Exception {
+        OffsetDateTime to = OffsetDateTime.now();
+        OffsetDateTime from = to.plusMonths(-1);
+        return this.retrieveBills(sellerId, from, to);
+    }
+
+    public List<AppliedCustomerBillingRate> retrieveBillsInLastMonth() throws Exception {
+        OffsetDateTime to = OffsetDateTime.now();
+        OffsetDateTime from = to.plusMonths(-1);
+        return this.retrieveBills(null, from, to);
     }
 
 
