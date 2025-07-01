@@ -1,8 +1,12 @@
 package it.eng.dome.revenue.engine.model;
 
 import jakarta.validation.constraints.PositiveOrZero;
+
+import com.fasterxml.jackson.annotation.JsonInclude;
+
 import jakarta.validation.constraints.AssertTrue;
 
+@JsonInclude(JsonInclude.Include.NON_NULL)
 public class Range {
 
     @PositiveOrZero(message = "Min value must be >= 0")
