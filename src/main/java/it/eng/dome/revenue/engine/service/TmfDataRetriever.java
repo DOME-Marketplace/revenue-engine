@@ -118,7 +118,7 @@ public class TmfDataRetriever implements InitializingBean {
                 }
             } catch(Exception e) {
                 logger.error("unable to retrieve organisation with id " + s + " appearing as seller");
-                e.printStackTrace();
+                logger.error("", e);
             }
         }
 
