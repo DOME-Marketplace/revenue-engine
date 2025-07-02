@@ -30,6 +30,7 @@ public class SubscriptionPlan {
     @Valid
     @NotNull
     private List<Price> price;
+    // FIXME: plan.price should be a single item, not a list
 
     // terms
     @Positive
@@ -46,8 +47,6 @@ public class SubscriptionPlan {
 
     public SubscriptionPlan() {}
 
-    
-    
 	public SubscriptionPlan(String id, String name, String description, @Valid @NotNull TimePeriod validFor,
 			String lifecycleStatus, @Valid @NotNull List<Price> price, @Positive Integer contractDurationLength,
 			RecurringPeriod contractDurationPeriodType, @Positive Integer renewalTermLength,
@@ -165,5 +164,4 @@ public class SubscriptionPlan {
 		this.agreements = agreements;
 	}
 
-    
 }

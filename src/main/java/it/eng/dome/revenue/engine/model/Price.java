@@ -54,6 +54,7 @@ public class Price {
     @JsonProperty("discounts")
     @Valid
     private List<Discount> discounts;
+    // FIXME: discount should be a single item, not a list
     
     @JsonProperty("computationBase")
     private String computationBase;

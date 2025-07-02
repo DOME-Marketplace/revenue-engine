@@ -1,9 +1,9 @@
 package it.eng.dome.revenue.engine.service.compute;
 
+import java.time.OffsetDateTime;
 import java.util.List;
 
 import it.eng.dome.revenue.engine.model.Discount;
-import it.eng.dome.revenue.engine.model.Price;
 import it.eng.dome.revenue.engine.model.SubscriptionActive;
 
 public class DiscountCalculator {
@@ -14,24 +14,26 @@ public class DiscountCalculator {
         this.subscription = subscription;
     }
 
-    public Double compute(Discount discount) {
+    // this is the main method to be called by some extenal service
+    // the caller will pick a discount in the subscription plan and ask this to compute the discount
+    public Double compute(Discount discount, OffsetDateTime time) {
 
         // first compute the price
         Double discoutValue = 0.0;
         if(discount.getIsBundle()) {
             switch(discount.getBundleOp()) {
                 case CUMULATIVE:
-                    discoutValue = this.getCumulativeDiscount(discount.getDiscounts());
+                    discoutValue = this.getCumulativeDiscount(discount.getDiscounts(), time);
                 case ALTERNATIVE_HIGHER:
-                    discoutValue = this.getHigherDiscount(discount.getDiscounts());
+                    discoutValue = this.getHigherDiscount(discount.getDiscounts(), time);
                 case ALTERNATIVE_LOWER:
-                    discoutValue = this.getLowerDiscount(discount.getDiscounts());
+                    discoutValue = this.getLowerDiscount(discount.getDiscounts(), time);
                 default:
                     throw new IllegalArgumentException("Unknown bundle operation: " + discount.getBundleOp());
             }
 
         } else {
-            discoutValue = this.getAtomicDiscount(discount);
+            discoutValue = this.getAtomicDiscount(discount, time);
         }
 
         // TODO: apply constraints
@@ -41,7 +43,7 @@ public class DiscountCalculator {
     }
 
         // assuming that the discount is atomic, compute the discount value
-        private Double getAtomicDiscount(Discount discount) {
+        private Double getAtomicDiscount(Discount discount, OffsetDateTime time) {
             // compute the period
             // retrive applicable base range
             // check applicableBase is in range (if any)
@@ -50,17 +52,17 @@ public class DiscountCalculator {
             return 0.0;
         }
 
-        private Double getCumulativeDiscount(List<Discount> discounts) {
+        private Double getCumulativeDiscount(List<Discount> discounts, OffsetDateTime time) {
             // TODO: same as for prices
             return 0.0;
         }
 
-        private Double getHigherDiscount(List<Discount> discounts) {
+        private Double getHigherDiscount(List<Discount> discounts, OffsetDateTime time) {
             // TODO: same as for prices
             return 0.0;
         }
 
-        private Double getLowerDiscount(List<Discount> discounts) {
+        private Double getLowerDiscount(List<Discount> discounts, OffsetDateTime time) {
             // TODO: same as for prices
             return 0.0;
         }
