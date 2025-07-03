@@ -1,7 +1,6 @@
 package it.eng.dome.revenue.engine.model;
 
 import java.time.OffsetDateTime;
-import java.time.temporal.TemporalAmount;
 
 public class SubscriptionTimeHelper {
 
@@ -28,22 +27,38 @@ public class SubscriptionTimeHelper {
         OffsetDateTime start = this.subscription.getStartDate();
         OffsetDateTime now = OffsetDateTime.now();
         while(start.isBefore(now)) {
-            OffsetDateTime end = start;
-            // check if time is within the period
-            if(time.isBefore(end) && time.isAfter(start)) {
-                // return the period
+            OffsetDateTime end = this.rollSubscriptionPeriod(start, 1);
+            if(time.isAfter(start) && time.isBefore(end)) {
                 return new TimePeriod(start, end);
             }
         }
-
-        // FIXME: remove the following. Just to avoid PMD complaining about unused variables
-        this.price.getRecurringChargePeriodLength();
-
         return null;
+    }
+
+    private OffsetDateTime rollSubscriptionPeriod(OffsetDateTime time, int howManyPeriods) {
+        // retrive subscriptino length unit
+        RecurringPeriod pType = this.subscription.getPlan().getContractDurationPeriodType();
+        // retrieve subscription length
+        Integer pLength = this.subscription.getPlan().getContractDurationLength();
+        // increase according to pType and pLength and howManyPeriods
+        switch(pType) {
+            case DAY:
+                return time.plusDays(pLength * howManyPeriods);
+            case WEEK:
+                return time.plusWeeks(pLength * howManyPeriods);
+            case MONTH:
+                return time.plusMonths(pLength * howManyPeriods);
+            case YEAR:
+                return time.plusYears(pLength * howManyPeriods);
+        }
+        throw new IllegalArgumentException("Unknown RecurringPeriod type: " + pType);
     }
 
     // compute the current subscription period
     public TimePeriod getCurrentSubscriptionPeriod() {
+        // FIXME: remove the following. Just to avoid PMD complaining about unused variables
+        this.price.getRecurringChargePeriodLength();
+
         return this.getSubscriptionPeriodAt(OffsetDateTime.now());
     }
 
@@ -80,6 +95,20 @@ public class SubscriptionTimeHelper {
         return this.getPreviousChargePeriod(OffsetDateTime.now());
     }
 
+    public static void main(String[] args) {
 
+        SubscriptionPlan plan = new SubscriptionPlan();
+        plan.setContractDurationPeriodType(RecurringPeriod.YEAR);
+        plan.setContractDurationLength(10);
+
+        SubscriptionActive subscription = new SubscriptionActive();
+        subscription.setPlan(plan);
+
+        SubscriptionTimeHelper helper = new SubscriptionTimeHelper(subscription);
+
+        OffsetDateTime now = OffsetDateTime.now();
+        OffsetDateTime end = helper.rollSubscriptionPeriod(now, 1);
+        System.out.println(end);
+    }
 
 }
