@@ -4,11 +4,11 @@ import java.time.OffsetDateTime;
 import java.util.List;
 
 import it.eng.dome.revenue.engine.model.Price;
-import it.eng.dome.revenue.engine.model.SubscriptionActive;
+import it.eng.dome.revenue.engine.model.Subscription;
 
 public class PriceCalculator {
 
-        private SubscriptionActive subscription;
+        private Subscription subscription;
 
 
         public Double compute(OffsetDateTime time) {

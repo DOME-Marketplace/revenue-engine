@@ -1,7 +1,7 @@
 {
-  "name": "Provider X subscription for plan BASIC - year 2025",
-  "status": "active",
-  "startDate": "2025-06-26T09:37:29.961Z",
+  "name": "Provider X subscription for plan BASIC - year 2024",
+  "status": "inactive",
+  "startDate": "2024-01-26T09:37:29.961Z",
   "subscriptionPlan": {
     "id": "01",
     "name": "BASIC"

@@ -163,5 +163,24 @@ public class SubscriptionPlan {
 	public void setAgreements(List<String> agreements) {
 		this.agreements = agreements;
 	}
-
+		
+	@Override
+	public String toString() {
+	    StringBuilder sb = new StringBuilder();
+	    sb.append("SubscriptionPlan {")
+	      .append("\n  id='").append(id).append('\'')
+	      .append(",\n  name='").append(name).append('\'')
+	      .append(",\n  description='").append(description).append('\'')
+	      .append(",\n  lifecycleStatus='").append(lifecycleStatus).append('\'')
+	      .append(",\n  billingPeriod='").append(billingPeriod).append('\'')
+	      .append(",\n  contractDurationLength=").append(contractDurationLength)
+	      .append(",\n  contractDurationPeriodType='").append(contractDurationPeriodType).append('\'')
+	      .append(",\n  renewalTermLength=").append(renewalTermLength)
+	      .append(",\n  renewalTermPeriodType='").append(renewalTermPeriodType).append('\'')
+	      .append(",\n  validFor=").append(validFor)
+	      .append(",\n  agreements=").append(agreements)
+	      .append(",\n  price=").append(price)
+	      .append("\n}");
+	    return sb.toString();
+	}
 }
