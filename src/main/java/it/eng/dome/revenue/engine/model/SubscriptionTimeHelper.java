@@ -1,6 +1,7 @@
 package it.eng.dome.revenue.engine.model;
 
 import java.time.OffsetDateTime;
+import java.time.temporal.TemporalAmount;
 
 public class SubscriptionTimeHelper {
 
@@ -16,15 +17,26 @@ public class SubscriptionTimeHelper {
         this(subscription, null);
     }
 
-    // compute the subscription period at a given time
-    // if the time is before the start of the subscription, return null
-    // if the time is after the end of the subscription, return null
-    // TODO: in any case, clip to the start of the subscription
+    // Compute the subscription period at a given time
     public TimePeriod getSubscriptionPeriodAt(OffsetDateTime time) {
-        // TODO: impement me
+
+        // if the time is before the start of the subscription, return null
+        if(time.isBefore(this.subscription.getStartDate()))
+            return null;
+
+        // iterate over the subscription periods, untile found one that contains the time
+        OffsetDateTime start = this.subscription.getStartDate();
+        OffsetDateTime now = OffsetDateTime.now();
+        while(start.isBefore(now)) {
+            OffsetDateTime end = start;
+            // check if time is within the period
+            if(time.isBefore(end) && time.isAfter(start)) {
+                // return the period
+                return new TimePeriod(start, end);
+            }
+        }
 
         // FIXME: remove the following. Just to avoid PMD complaining about unused variables
-        this.subscription.getStartDate();
         this.price.getRecurringChargePeriodLength();
 
         return null;
