@@ -240,8 +240,7 @@ public class SubscriptionService {
 	    }
 	    return null;
 	}  
-	 
-
+	
 	// === CREATE ===
 
 	/*
