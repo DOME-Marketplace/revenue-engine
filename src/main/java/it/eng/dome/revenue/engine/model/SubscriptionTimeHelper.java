@@ -101,7 +101,7 @@ public class SubscriptionTimeHelper {
         plan.setContractDurationPeriodType(RecurringPeriod.YEAR);
         plan.setContractDurationLength(10);
 
-        SubscriptionActive subscription = new SubscriptionActive();
+        Subscription subscription = new Subscription();
         subscription.setPlan(plan);
 
         SubscriptionTimeHelper helper = new SubscriptionTimeHelper(subscription);

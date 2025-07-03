@@ -12,47 +12,46 @@ import jakarta.validation.constraints.Positive;
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class SubscriptionPlan {
-	
-	
+
 	private String id;
-    private String name;
-    private String description;
+	private String name;
+	private String description;
 
-    // when the plan can be purchased
-    @Valid
-    @NotNull
-    private TimePeriod validFor;
+	// when the plan can be purchased
+	@Valid
+	@NotNull
+	private TimePeriod validFor;
 
-    // the status of the plan (active, retired, launched, ...)
-    private String lifecycleStatus;
+	// the status of the plan (active, retired, launched, ...)
+	private String lifecycleStatus;
 
-    // a list of prices for this subscription plan
-    @Valid
-    @NotNull
-    private List<Price> price;
-    // FIXME: plan.price should be a single item, not a list
+	// a list of prices for this subscription plan
+	@Valid
+	@NotNull
+	private Price price;
+	// FIXME: plan.price should be a single item, not a list
 
-    // terms
-    @Positive
-    private Integer contractDurationLength;                 // es. 12
-    private RecurringPeriod contractDurationPeriodType;     // es. MONTH
-    
-    @Positive
-    private Integer renewalTermLength;                       // es. 1
-    private RecurringPeriod renewalTermPeriodType;           // es. YEAR
+	// terms
+	@Positive
+	private Integer contractDurationLength; // es. 12
+	private RecurringPeriod contractDurationPeriodType; // es. MONTH
 
-    private RecurringPeriod billingPeriod;                   
+	@Positive
+	private Integer renewalTermLength; // es. 1
+	private RecurringPeriod renewalTermPeriodType; // es. YEAR
 
-    private List<String> agreements;                          
+	private RecurringPeriod billingPeriod;
 
-    public SubscriptionPlan() {}
+	private List<String> agreements;
+
+	public SubscriptionPlan() {
+	}
 
 	public SubscriptionPlan(String id, String name, String description, @Valid @NotNull TimePeriod validFor,
-			String lifecycleStatus, @Valid @NotNull List<Price> price, @Positive Integer contractDurationLength,
+			String lifecycleStatus, @Valid @NotNull Price price, @Positive Integer contractDurationLength,
 			RecurringPeriod contractDurationPeriodType, @Positive Integer renewalTermLength,
 			RecurringPeriod renewalTermPeriodType, RecurringPeriod billingPeriod, List<String> agreements) {
-		super();
-        this.id = id; 
+		this.id = id;
 		this.name = name;
 		this.description = description;
 		this.validFor = validFor;
@@ -65,8 +64,6 @@ public class SubscriptionPlan {
 		this.billingPeriod = billingPeriod;
 		this.agreements = agreements;
 	}
-
-
 
 	public String getId() {
 		return id;
@@ -108,11 +105,11 @@ public class SubscriptionPlan {
 		this.lifecycleStatus = lifecycleStatus;
 	}
 
-	public List<Price> getPrice() {
+	public Price getPrice() {
 		return price;
 	}
 
-	public void setPrice(List<Price> price) {
+	public void setPrice(Price price) {
 		this.price = price;
 	}
 
@@ -162,25 +159,5 @@ public class SubscriptionPlan {
 
 	public void setAgreements(List<String> agreements) {
 		this.agreements = agreements;
-	}
-		
-	@Override
-	public String toString() {
-	    StringBuilder sb = new StringBuilder();
-	    sb.append("SubscriptionPlan {")
-	      .append("\n  id='").append(id).append('\'')
-	      .append(",\n  name='").append(name).append('\'')
-	      .append(",\n  description='").append(description).append('\'')
-	      .append(",\n  lifecycleStatus='").append(lifecycleStatus).append('\'')
-	      .append(",\n  billingPeriod='").append(billingPeriod).append('\'')
-	      .append(",\n  contractDurationLength=").append(contractDurationLength)
-	      .append(",\n  contractDurationPeriodType='").append(contractDurationPeriodType).append('\'')
-	      .append(",\n  renewalTermLength=").append(renewalTermLength)
-	      .append(",\n  renewalTermPeriodType='").append(renewalTermPeriodType).append('\'')
-	      .append(",\n  validFor=").append(validFor)
-	      .append(",\n  agreements=").append(agreements)
-	      .append(",\n  price=").append(price)
-	      .append("\n}");
-	    return sb.toString();
 	}
 }

@@ -7,123 +7,162 @@
     "toDate": "2025-12-31T23:59:59Z"
   },
   "lifecycleStatus": "launched",
-  "price": [
-    {
-      "name": "Annual Fee",
-      "type": "ONE_TIME_PREPAID",
-      "amount": 5000,
-      "currency": "EUR"
-    },
-    {
-      "name": "Recurring Components",
-      "isBundle": true,
-      "bundleOp": "CUMULATIVE",
-      "prices": [
-        {
-          "name": "Recurring Yearly Fee",
-          "type": "RECURRING_PREPAID",
-          "amount": 5000,
-          "currency": "EUR",
-          "recurringChargePeriodLength": 1,
-          "recurringChargePeriodType": "YEAR",
-          "discounts": [
-            {
-              "isBundle": true,
-              "bundleOp": "ALTERNATIVE_HIGHER",
-              "discounts": [
-                {
-                  "computationBase": "bills-no-taxes",
-                  "referencePeriod": "PREVIOUS_SUBSCRIPTION_PERIOD",
-                  "applicableBaseRange": {"min": 0, "max": 100000},
-                  "percent": 0
+  "price": {
+    "name": "Recurring Components",
+    "isBundle": true,
+    "bundleOp": "CUMULATIVE",
+    "prices": [
+      {
+        "name": "Annual Fee",
+        "type": "ONE_TIME_PREPAID",
+        "amount": 5000,
+        "currency": "EUR"
+      },
+      {
+        "name": "Recurring Yearly Fee",
+        "type": "RECURRING_PREPAID",
+        "amount": 5000,
+        "currency": "EUR",
+        "recurringChargePeriodLength": 1,
+        "recurringChargePeriodType": "YEAR",
+        "discounts": [
+          {
+            "isBundle": true,
+            "bundleOp": "ALTERNATIVE_HIGHER",
+            "discounts": [
+              {
+                "computationBase": "bills-no-taxes",
+                "referencePeriod": "PREVIOUS_SUBSCRIPTION_PERIOD",
+                "applicableBaseRange": {
+                  "min": 0,
+                  "max": 100000,
+                  "maxGreaterOrEqualMin": true
                 },
-                {
-                  "computationBase": "bills-no-taxes",
-                  "referencePeriod": "PREVIOUS_SUBSCRIPTION_PERIOD",
-                  "applicableBaseRange": {"min": 100001, "max": 250000},
-                  "percent": 15
+                "percent": 0
+              },
+              {
+                "computationBase": "bills-no-taxes",
+                "referencePeriod": "PREVIOUS_SUBSCRIPTION_PERIOD",
+                "applicableBaseRange": {
+                  "min": 100001,
+                  "max": 250000,
+                  "maxGreaterOrEqualMin": true
                 },
-                {
-                  "computationBase": "bills-no-taxes",
-                  "referencePeriod": "PREVIOUS_SUBSCRIPTION_PERIOD",
-                  "applicableBaseRange": {"min": 250001, "max": 750000},
-                  "percent": 30
+                "percent": 15
+              },
+              {
+                "computationBase": "bills-no-taxes",
+                "referencePeriod": "PREVIOUS_SUBSCRIPTION_PERIOD",
+                "applicableBaseRange": {
+                  "min": 250001,
+                  "max": 750000,
+                  "maxGreaterOrEqualMin": true
                 },
-                {
-                  "computationBase": "bills-no-taxes",
-                  "referencePeriod": "PREVIOUS_SUBSCRIPTION_PERIOD",
-                  "applicableBaseRange": {"min": 750001, "max": 1000000},
-                  "percent": 50
+                "percent": 30
+              },
+              {
+                "computationBase": "bills-no-taxes",
+                "referencePeriod": "PREVIOUS_SUBSCRIPTION_PERIOD",
+                "applicableBaseRange": {
+                  "min": 750001,
+                  "max": 1000000,
+                  "maxGreaterOrEqualMin": true
                 },
-                {
-                  "computationBase": "bills-no-taxes",
-                  "referencePeriod": "PREVIOUS_SUBSCRIPTION_PERIOD",
-                  "applicableBaseRange": {"min": 1000001},
-                  "percent": 80
-                }
-              ]
-            },
-            {
-              "isBundle": true,
-              "bundleOp": "ALTERNATIVE_HIGHER",
-              "discounts": [
-                {
-                  "computationBase": "referred-providers-number",
-                  "referencePeriod": "PREVIOUS_SUBSCRIPTION_PERIOD",
-                  "percent": 10
+                "percent": 50
+              },
+              {
+                "computationBase": "bills-no-taxes",
+                "referencePeriod": "PREVIOUS_SUBSCRIPTION_PERIOD",
+                "applicableBaseRange": {
+                  "min": 1000001,
+                  "maxGreaterOrEqualMin": true
                 },
-                {
-                  "computationBase": "referred-providers-transaction-volume",
-                  "referencePeriod": "PREVIOUS_SUBSCRIPTION_PERIOD",
-                  "applicableBaseRange": {"min": 100000},
-                  "percent": 10
-                }
-              ]
-            }
-          ]
-        },
-        {
-          "name": "Transaction-based Fee",
-          "type": "RECURRING_POSTPAID",
-          "recurringChargePeriodLength": 1,
-          "recurringChargePeriodType": "MONTH",
-          "prices": [
-            {
-              "computationBase": "bills-no-taxes",
-              "referencePeriod": "CURRENT_SUBSCRIPTION_PERIOD",
-              "applicableBaseRange": {"min": 0, "max": 100000},
-              "amount": 0,
-              "currency": "EUR"
+                "percent": 80
+              }
+            ]
+          },
+          {
+            "isBundle": true,
+            "bundleOp": "ALTERNATIVE_HIGHER",
+            "discounts": [
+              {
+                "computationBase": "referred-providers-number",
+                "referencePeriod": "PREVIOUS_SUBSCRIPTION_PERIOD",
+                "percent": 10
+              },
+              {
+                "computationBase": "referred-providers-transaction-volume",
+                "referencePeriod": "PREVIOUS_SUBSCRIPTION_PERIOD",
+                "applicableBaseRange": {
+                  "min": 100000,
+                  "maxGreaterOrEqualMin": true
+                },
+                "percent": 10
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "Transaction-based Fee",
+        "type": "RECURRING_POSTPAID",
+        "recurringChargePeriodLength": 1,
+        "recurringChargePeriodType": "MONTH",
+        "prices": [
+          {
+            "computationBase": "bills-no-taxes",
+            "referencePeriod": "CURRENT_SUBSCRIPTION_PERIOD",
+            "applicableBaseRange": {
+              "min": 0,
+              "max": 100000,
+              "maxGreaterOrEqualMin": true
             },
-            {
-              "computationBase": "bills-no-taxes",
-              "referencePeriod": "CURRENT_SUBSCRIPTION_PERIOD",
-              "applicableBaseRange": {"min": 100001, "max": 250000},
-              "percent": 3
+            "amount": 0,
+            "currency": "EUR"
+          },
+          {
+            "computationBase": "bills-no-taxes",
+            "referencePeriod": "CURRENT_SUBSCRIPTION_PERIOD",
+            "applicableBaseRange": {
+              "min": 100001,
+              "max": 250000,
+              "maxGreaterOrEqualMin": true
             },
-            {
-              "computationBase": "bills-no-taxes",
-              "referencePeriod": "CURRENT_SUBSCRIPTION_PERIOD",
-              "applicableBaseRange": {"min": 250001, "max": 750000},
-              "percent": 2.5
+            "percent": 3
+          },
+          {
+            "computationBase": "bills-no-taxes",
+            "referencePeriod": "CURRENT_SUBSCRIPTION_PERIOD",
+            "applicableBaseRange": {
+              "min": 250001,
+              "max": 750000,
+              "maxGreaterOrEqualMin": true
             },
-            {
-              "computationBase": "bills-no-taxes",
-              "referencePeriod": "CURRENT_SUBSCRIPTION_PERIOD",
-              "applicableBaseRange": {"min": 750001, "max": 1000000},
-              "percent": 2
+            "percent": 2.5
+          },
+          {
+            "computationBase": "bills-no-taxes",
+            "referencePeriod": "CURRENT_SUBSCRIPTION_PERIOD",
+            "applicableBaseRange": {
+              "min": 750001,
+              "max": 1000000,
+              "maxGreaterOrEqualMin": true
             },
-            {
-              "computationBase": "bills-no-taxes",
-              "referencePeriod": "CURRENT_SUBSCRIPTION_PERIOD",
-              "applicableBaseRange": {"min": 1000001},
-              "percent": 1.5
-            }
-          ]
-        }
-      ]
-    }
-  ],
+            "percent": 2
+          },
+          {
+            "computationBase": "bills-no-taxes",
+            "referencePeriod": "CURRENT_SUBSCRIPTION_PERIOD",
+            "applicableBaseRange": {
+              "min": 1000001,
+              "maxGreaterOrEqualMin": true
+            },
+            "percent": 1.5
+          }
+        ]
+      }
+    ]
+  },
   "contractDurationLength": 1,
   "contractDurationPeriodType": "YEAR",
   "renewalTermLength": 1,

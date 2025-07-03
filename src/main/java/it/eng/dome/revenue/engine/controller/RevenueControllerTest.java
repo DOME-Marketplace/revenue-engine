@@ -48,7 +48,7 @@ public class RevenueControllerTest {
             Double fee = subscriptionService.getFeeByRelatedPartyId(id);
             return ResponseEntity.ok(fee);
         } catch (Exception e) {
-        	System.err.println("Errore nel calcolo della fee: " + e.getMessage());
+        	// System.err.println("Errore nel calcolo della fee: " + e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
