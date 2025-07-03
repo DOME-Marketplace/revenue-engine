@@ -1,7 +1,6 @@
 package it.eng.dome.revenue.engine.model;
 
 import java.time.OffsetDateTime;
-//import java.util.Calendar;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;

@@ -2,7 +2,12 @@ package it.eng.dome.revenue.engine.model;
 
 import java.time.OffsetDateTime;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 public class SubscriptionTimeHelper {
+
+    private final Logger logger = LoggerFactory.getLogger(SubscriptionTimeHelper.class);
 
     private Subscription subscription;
 
@@ -55,7 +60,7 @@ public class SubscriptionTimeHelper {
         OffsetDateTime start = this.subscription.getStartDate();
         while(!start.isAfter(time)) {
             OffsetDateTime end = this.rollChargePeriod(start, price, 1);
-            System.out.println("Checking period: " + start + " - " + end);
+            logger.debug("Checking period: " + start + " - " + end);
             if(!time.isBefore(start) && time.isBefore(end)) {
                 return new TimePeriod(start, end);
             }
@@ -66,7 +71,7 @@ public class SubscriptionTimeHelper {
 
     public TimePeriod getChargePeriodByOffset(OffsetDateTime time, Price price, Integer howManyPeriods) {
         OffsetDateTime shiftedTime = this.rollChargePeriod(time, price, howManyPeriods);
-        System.out.println("Shifted time: " + shiftedTime);
+        logger.debug("Shifted time: " + shiftedTime);
         return this.getChargePeriodAt(shiftedTime, price);
     }
 
@@ -97,8 +102,9 @@ public class SubscriptionTimeHelper {
                 return time.plusMonths(pLength * howManyPeriods);
             case YEAR:
                 return time.plusYears(pLength * howManyPeriods);
+            default:
+                throw new IllegalArgumentException("Unknown RecurringPeriod type: " + pType);
         }
-        throw new IllegalArgumentException("Unknown RecurringPeriod type: " + pType);
     }
     private OffsetDateTime rollChargePeriod(OffsetDateTime time, Price price, int howManyPeriods) {
         // retrive subscriptino length unit
@@ -119,11 +125,14 @@ public class SubscriptionTimeHelper {
                 return time.plusMonths(pLength * howManyPeriods);
             case YEAR:
                 return time.plusYears(pLength * howManyPeriods);
+            default:
+                throw new IllegalArgumentException("Unknown RecurringPeriod type: " + pType);
         }
-        throw new IllegalArgumentException("Unknown RecurringPeriod type: " + pType);
     }
 
     public static void main(String[] args) throws Exception{
+
+        final Logger logger = LoggerFactory.getLogger(SubscriptionTimeHelper.class);
 
         // create a fake subscription plan
         SubscriptionPlan plan = new SubscriptionPlan();
@@ -133,14 +142,14 @@ public class SubscriptionTimeHelper {
         Subscription subscription = new Subscription();
         subscription.setPlan(plan);
         subscription.setStartDate(OffsetDateTime.now().minusMonths(8)); // start 8 months ago
-        System.out.println("Subscription start date: " + subscription.getStartDate());
+        logger.debug("Subscription start date: " + subscription.getStartDate());
         // create an helper
         SubscriptionTimeHelper helper = new SubscriptionTimeHelper(subscription);
 
         // go ahead one subscription period from now
         OffsetDateTime now = OffsetDateTime.now();
         OffsetDateTime rolledTime = helper.rollSubscriptionPeriod(now, 2);
-        System.out.println(rolledTime);
+        logger.debug(rolledTime.toString());
 
         // now create a price with a charge period
         Price price = new Price();
@@ -151,8 +160,8 @@ public class SubscriptionTimeHelper {
         now = OffsetDateTime.now();
 
         TimePeriod chargePeriod = helper.getChargePeriodByOffset(now, price, 18);
-        System.out.println(chargePeriod.getFromDate());
-        System.out.println(chargePeriod.getToDate());
+        logger.debug(chargePeriod.getFromDate().toString());
+        logger.debug(chargePeriod.getToDate().toString());
     }
 
 }
