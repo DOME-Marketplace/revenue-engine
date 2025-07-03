@@ -52,7 +52,7 @@ public class SubscriptionPlan {
 			RecurringPeriod contractDurationPeriodType, @Positive Integer renewalTermLength,
 			RecurringPeriod renewalTermPeriodType, RecurringPeriod billingPeriod, List<String> agreements) {
 		super();
-        this.id = UUID.randomUUID().toString(); 
+        this.id = id; 
 		this.name = name;
 		this.description = description;
 		this.validFor = validFor;
