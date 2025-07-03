@@ -130,8 +130,7 @@ public class SubscriptionTimeHelper {
         plan.setContractDurationPeriodType(RecurringPeriod.YEAR);
         plan.setContractDurationLength(1);
 
-        // subscribe to the plan
-        Subscription subscription = new Subscription();
+        SubscriptionActive subscription = new SubscriptionActive();
         subscription.setPlan(plan);
         subscription.setStartDate(OffsetDateTime.now().minusMonths(8)); // start 8 months ago
         System.out.println("Subscription start date: " + subscription.getStartDate());

@@ -13,7 +13,7 @@ public class PriceCalculator {
 
         public Double compute(OffsetDateTime time) {
             // TODO: plan.price should be a single item, not a list
-            return this.compute(subscription.getPlan().getPrice().get(0), time);
+            return this.compute(subscription.getPlan().getPrice(), time);
         }
  
         // this is the main method to be called by some extenal service

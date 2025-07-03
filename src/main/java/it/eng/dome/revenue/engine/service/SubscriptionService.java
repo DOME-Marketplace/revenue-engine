@@ -91,7 +91,7 @@ public class SubscriptionService {
 		List<Subscription> subscription = getByRelatedPartyId(partyId);
 		logger.debug("Size list subOfRLId: {} ", subscription.size());
 
-		//TODO check which status insert in filter
+		// TODO: check which status insert in filter
 		// Filter only sub with status "active"
 		List<Subscription> activeSubs = subscription.stream()
 				.filter(sub -> "active".equalsIgnoreCase(sub.getStatus())).collect(Collectors.toList());
@@ -110,17 +110,15 @@ public class SubscriptionService {
 		// retrieve all info of plan
 		plan = subscriptionPlanService.findPlanById(plan.getId());
 
-		List<Price> prices = plan.getPrice();
-
-		//TODO check if needs activation fee
+		// TODO check if needs activation fee
 		// get fixed fee
-		Double fixedFee = findFixedFee(prices);
+		Double fixedFee = findFixedFee(plan.getPrice());
 		
 		// retrieve sales amount
 		// get bills for seller RP in last month
 		List<AppliedCustomerBillingRate> bills = new ArrayList<>();
 		try {
-			//TODO create a new function for bills retrieve in a range of time period
+			// TODO: create a new function for bills retrieve in a range of time period
 			bills = tmfDataRetriever.retrieveBillsForSellerInLastMonth(partyId);
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -133,7 +131,7 @@ public class SubscriptionService {
 				.mapToDouble(b -> b.getTaxIncludedAmount().getValue()).sum();
 
 		// get commissions of sales volume
-		Double percentCommission = findTransactionFeePercent(prices, sales);
+		Double percentCommission = findTransactionFeePercent(plan.getPrice(), sales);
 
 		// TODO calculate discount
 		//Double percentDiscount = findDiscountPercent(prices, sales);
@@ -149,38 +147,40 @@ public class SubscriptionService {
 		return fixedFee;
 	}
 	
-	private Double findFixedFee(List<Price> prices) {
+	private Double findFixedFee(Price price) {
+		List<Price> prices = price.getPrices();	
 	    if (prices == null)
 	        return null;
-	    for (Price price : prices) {
+	    for (Price p : prices) {
 	        // Se è bundle, scendi ricorsivamente
-	        if (Boolean.TRUE.equals(price.getIsBundle()) && price.getPrices() != null) {
-	            Double result = findFixedFee(price.getPrices());
+	        if (Boolean.TRUE.equals(p.getIsBundle()) && p.getPrices() != null) {
+	            Double result = findFixedFee(p);
 	            if (result != null)
 	                return result;
 	        }
 	        // Se è "Recurring Yearly Fee", restituisci l'importo
-	        if ("recurring yearly fee".equalsIgnoreCase(price.getName())) {
-	            return price.getAmount();
+	        if ("recurring yearly fee".equalsIgnoreCase(p.getName())) {
+	            return p.getAmount();
 	        }
 	    }
 	    return null;
 	}
 
-	private Double findTransactionFeePercent(List<Price> prices, Double sales) {
+	private Double findTransactionFeePercent(Price price, Double sales) {
+		List<Price> prices = price.getPrices();	
 		if (prices == null)
 			return null;
 
-		for (Price price : prices) {
+		for (Price p : prices) {
 			// if is bundle, scendi ricorsivamente
-			if (Boolean.TRUE.equals(price.getIsBundle()) && price.getPrices() != null) {
-				Double result = findTransactionFeePercent(price.getPrices(), sales);
+			if (Boolean.TRUE.equals(p.getIsBundle()) && p.getPrices() != null) {
+				Double result = findTransactionFeePercent(p, sales);
 				if (result != null)
 					return result;
 			}
 			// Altrimenti, check if is Transaction-based Fee
-			if ("Transaction-based Fee".equalsIgnoreCase(price.getName()) && price.getPrices() != null) {
-				for (Price innerPrice : price.getPrices()) {
+			if ("Transaction-based Fee".equalsIgnoreCase(p.getName()) && p.getPrices() != null) {
+				for (Price innerPrice : p.getPrices()) {
 					Range range = innerPrice.getApplicableBaseRange();
 					double min = (range != null && range.getMin() != null) ? range.getMin() : Double.NEGATIVE_INFINITY;
 					double max = (range != null && range.getMax() != null) ? range.getMax() : Double.POSITIVE_INFINITY;
@@ -190,56 +190,9 @@ public class SubscriptionService {
 				}
 			}
 		}
-
 		return null;
 	}
-	
-	private Double findDiscountPercent(List<Price> prices, Double salesThresholds) {
-	    if (prices == null) return null;
 
-	    for (Price price : prices) {
-	        // Se il price è un bundle, ricorsivamente cerca negli elementi interni
-	        if (Boolean.TRUE.equals(price.getIsBundle()) && price.getPrices() != null) {
-	            Double result = findDiscountPercent(price.getPrices(), salesThresholds);
-	            if (result != null)
-	                return result;
-	        }
-
-	        // Scorri i discount di questo price
-	        List<Discount> discounts = price.getDiscounts();
-	        if (discounts != null) {
-	            for (Discount discount : discounts) {
-	                Double result = findDiscountPercentFromDiscount(discount, salesThresholds);
-	                if (result != null)
-	                    return result;
-	            }
-	        }
-	    }
-	    return null;
-	}
-
-	private Double findDiscountPercentFromDiscount(Discount discount, Double salesThresholds) {
-	    if (Boolean.TRUE.equals(discount.getIsBundle()) && discount.getDiscounts() != null) {
-	        // Se il discount è un bundle, ricorsivamente cerca negli sconti interni
-	        for (Discount nested : discount.getDiscounts()) {
-	            Double result = findDiscountPercentFromDiscount(nested, salesThresholds);
-	            if (result != null)
-	                return result;
-	        }
-	    } else {
-	        Range range = discount.getApplicableBaseRange();
-	        if (range != null) {
-	            Double min = range.getMin() != null ? range.getMin() : Double.NEGATIVE_INFINITY;
-	            Double max = range.getMax() != null ? range.getMax() : Double.POSITIVE_INFINITY;
-
-	            // Verifica se salesThresholds è nel range applicabile
-	            if (salesThresholds >= min && salesThresholds <= max) {
-	                return discount.getPercent();
-	            }
-	        }
-	    }
-	    return null;
-	}  
 	
 	// === CREATE ===
 
