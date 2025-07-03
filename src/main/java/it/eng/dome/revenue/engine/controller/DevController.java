@@ -11,7 +11,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import it.eng.dome.revenue.engine.service.SubscriptionActiveService;
+import it.eng.dome.revenue.engine.service.SubscriptionService;
 import it.eng.dome.revenue.engine.service.SubscriptionPlanService;
 import it.eng.dome.revenue.engine.service.TmfDataRetriever;
 import it.eng.dome.tmforum.tmf678.v4.model.AppliedCustomerBillingRate;

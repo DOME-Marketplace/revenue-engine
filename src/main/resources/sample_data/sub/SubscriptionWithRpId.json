@@ -8,14 +8,9 @@
   },
   "relatedParty": [
     {
-      "id": "provider_x_123",
-      "name": "Provider X",
-      "role": "Buyer"
-    },
-    {
-      "id": "dome_operator_456",
-      "name": "The DOME Operator",
-      "role": "Seller"
+      "id": "urn:ngsi-ld:organization:f2ad85a5-9edf-497c-b343-f08899084ebb",
+      "name": "Engineering Ingegneria Informatica S.p.A.",
+      "role": "SellerOperator"
     }
   ]
 }

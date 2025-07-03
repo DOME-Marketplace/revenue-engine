@@ -3,18 +3,13 @@
   "status": "active",
   "startDate": "2025-06-26T09:37:29.961Z",
   "subscriptionPlan": {
-    "id": "01",
-    "name": "BASIC"
+    "id": "03",
+    "name": "PRO"
   },
   "relatedParty": [
     {
-      "id": "provider_x_123",
-      "name": "Provider X",
-      "role": "Buyer"
-    },
-    {
-      "id": "dome_operator_456",
-      "name": "The DOME Operator",
+      "id": "urn:ngsi-ld:organization:38817de3-8c3e-4141-a344-86ffd915cc3b",
+      "name": "",
       "role": "Seller"
     }
   ]
