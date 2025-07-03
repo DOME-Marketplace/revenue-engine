@@ -29,7 +29,6 @@ public class SubscriptionPlan {
 	@Valid
 	@NotNull
 	private Price price;
-	// FIXME: plan.price should be a single item, not a list
 
 	// terms
 	@Positive

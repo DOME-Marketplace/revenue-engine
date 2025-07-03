@@ -16,7 +16,7 @@ public class Price {
     private String name;
     
     @JsonProperty("type")
-    private PriceType type; // Usato String invece di PriceType per maggiore flessibilità
+    private PriceType type;
     
     @JsonProperty("isBundle")
     private Boolean isBundle;
@@ -24,13 +24,12 @@ public class Price {
     @JsonProperty("bundleOp")
     private BundleOperator bundleOp; // "CUMULATIVE", "ALTERNATIVE_HIGHER", ecc.
     
-    // Per elementi bundle
+    // For bundle elements
     @JsonProperty("prices")
     @Valid
     private List<Price> prices;
     
-    // Per elementi non bundle
-    
+    // For not bundle elements
     @JsonProperty("amount")
     @PositiveOrZero
     private Double amount;
@@ -43,7 +42,7 @@ public class Price {
     @Max(100)
     private Double percent;
     
-    // Per prezzi ricorrenti
+    // For recurring price
     @JsonProperty("recurringChargePeriodLength")
     @Positive
     private Integer recurringChargePeriodLength;
@@ -51,10 +50,9 @@ public class Price {
     @JsonProperty("recurringChargePeriodType")
     private RecurringPeriod recurringChargePeriodType; // "DAY", "MONTH", "YEAR", ecc.
     
-    @JsonProperty("discounts")
+    @JsonProperty("discount")
     @Valid
-    private List<Discount> discounts;
-    // FIXME: discount should be a single item, not a list
+    private Discount discount;
     
     @JsonProperty("computationBase")
     private String computationBase;
@@ -148,12 +146,12 @@ public class Price {
 		this.recurringChargePeriodType = recurringChargePeriodType;
 	}
 
-	public List<Discount> getDiscounts() {
-		return discounts;
+	public Discount getDiscount() {
+		return discount;
 	}
 
-	public void setDiscounts(List<Discount> discounts) {
-		this.discounts = discounts;
+	public void setDiscount(Discount discount) {
+		this.discount = discount;
 	}
 
 	public String getComputationBase() {

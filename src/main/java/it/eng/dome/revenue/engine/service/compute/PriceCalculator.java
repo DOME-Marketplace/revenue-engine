@@ -42,10 +42,11 @@ public class PriceCalculator {
             }
 
             // then apply the discount
-            if(price.getDiscounts()!=null && !price.getDiscounts().isEmpty()) {
+            // TODO: check if condition
+            if(price.getDiscount()!=null && !price.getDiscount().getDiscounts().isEmpty()) {
                 DiscountCalculator discountCalculator = new DiscountCalculator(subscription);
                 // TODO: compute the discount
-                discountCalculator.compute(price.getDiscounts().get(0), time);
+                discountCalculator.compute(price.getDiscount(), time);
                 // TODO: reduce the price by the discount (it can be absolute or percentage)
             }
 
