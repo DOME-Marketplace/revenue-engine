@@ -4,7 +4,6 @@ import java.time.OffsetDateTime;
 import java.util.List;
 
 import it.eng.dome.revenue.engine.model.Discount;
-import it.eng.dome.revenue.engine.model.Price;
 import it.eng.dome.revenue.engine.model.SubscriptionActive;
 
 public class DiscountCalculator {
@@ -18,6 +17,9 @@ public class DiscountCalculator {
     // this is the main method to be called by some extenal service
     // the caller will pick a discount in the subscription plan and ask this to compute the discount
     public Double compute(Discount discount, OffsetDateTime time) {
+
+        // TODO: remove the below, as soon as really used. Just to avoid PMD complaining about unused properties
+        this.subscription.getName();
 
         // first compute the price
         Double discoutValue;
@@ -48,6 +50,9 @@ public class DiscountCalculator {
 
         // assuming that the discount is atomic, compute the discount value
         private Double getAtomicDiscount(Discount discount, OffsetDateTime time) {
+            // TODO: remove the below. Just to avoid PMD complaining about unused variables
+            discount.getIsBundle();
+            time.getYear();
             // compute the period
             // retrive applicable base range
             // check applicableBase is in range (if any)

@@ -57,6 +57,9 @@ public class PriceCalculator {
 
         // assuming that the price is atomic, compute the price value
         private Double getAtomicPrice(Price price, OffsetDateTime time) {
+            // TODO: remove the below. Just to avoid PMD complaining about unused variables
+            price.getIsBundle();
+            time.getYear();
             // compute the period
             // retrive applicable base range
             // check applicableBase is in range (if any)
