@@ -4,13 +4,13 @@ import java.time.OffsetDateTime;
 import java.util.List;
 
 import it.eng.dome.revenue.engine.model.Discount;
-import it.eng.dome.revenue.engine.model.SubscriptionActive;
+import it.eng.dome.revenue.engine.model.Subscription;
 
 public class DiscountCalculator {
 
-    private SubscriptionActive subscription;
+    private Subscription subscription;
 
-    public DiscountCalculator(SubscriptionActive subscription) {
+    public DiscountCalculator(Subscription subscription) {
         this.subscription = subscription;
     }
 

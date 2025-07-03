@@ -5,15 +5,15 @@ import java.time.temporal.TemporalAmount;
 
 public class SubscriptionTimeHelper {
 
-    private SubscriptionActive subscription;
+    private Subscription subscription;
     private Price price;
 
-    public SubscriptionTimeHelper(SubscriptionActive subscription, Price price) {
+    public SubscriptionTimeHelper(Subscription subscription, Price price) {
         this.subscription = subscription;
         this.price = price;
     }
 
-    public SubscriptionTimeHelper(SubscriptionActive subscription) {
+    public SubscriptionTimeHelper(Subscription subscription) {
         this(subscription, null);
     }
 
