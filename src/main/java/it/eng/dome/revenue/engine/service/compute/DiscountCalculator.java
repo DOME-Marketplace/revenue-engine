@@ -4,6 +4,7 @@ import java.time.OffsetDateTime;
 import java.util.List;
 
 import it.eng.dome.revenue.engine.model.Discount;
+import it.eng.dome.revenue.engine.model.Price;
 import it.eng.dome.revenue.engine.model.SubscriptionActive;
 
 public class DiscountCalculator {
@@ -19,7 +20,7 @@ public class DiscountCalculator {
     public Double compute(Discount discount, OffsetDateTime time) {
 
         // first compute the price
-        Double discoutValue = 0.0;
+        Double discoutValue;
         if(discount.getIsBundle()) {
             switch(discount.getBundleOp()) {
                 case CUMULATIVE:
@@ -53,18 +54,29 @@ public class DiscountCalculator {
         }
 
         private Double getCumulativeDiscount(List<Discount> discounts, OffsetDateTime time) {
-            // TODO: same as for prices
-            return 0.0;
+            Double cumulativePrice = 0.0;
+            for (Discount d : discounts) {
+                cumulativePrice += this.compute(d, time);
+            }
+            return cumulativePrice;
         }
 
         private Double getHigherDiscount(List<Discount> discounts, OffsetDateTime time) {
-            // TODO: same as for prices
-            return 0.0;
+            Double higher = 0.0;
+            for (Discount d : discounts) {
+                Double pValue = this.compute(d, time);
+                higher = Math.max(higher, pValue);
+            }
+            return higher;
         }
 
         private Double getLowerDiscount(List<Discount> discounts, OffsetDateTime time) {
-            // TODO: same as for prices
-            return 0.0;
+            Double higher = 0.0;
+            for (Discount d : discounts) {
+                Double pValue = this.compute(d, time);
+                higher = Math.min(higher, pValue);
+            }
+            return higher;
         }
 
 

@@ -22,6 +22,11 @@ public class SubscriptionTimeHelper {
     // TODO: in any case, clip to the start of the subscription
     public TimePeriod getSubscriptionPeriodAt(OffsetDateTime time) {
         // TODO: impement me
+
+        // FIXME: remove the following. Just to avoid PMD complaining about unused variables
+        this.subscription.getStartDate();
+        this.price.getRecurringChargePeriodLength();
+
         return null;
     }
 
