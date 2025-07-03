@@ -25,10 +25,13 @@ public class DiscountCalculator {
             switch(discount.getBundleOp()) {
                 case CUMULATIVE:
                     discoutValue = this.getCumulativeDiscount(discount.getDiscounts(), time);
+                    break;
                 case ALTERNATIVE_HIGHER:
                     discoutValue = this.getHigherDiscount(discount.getDiscounts(), time);
+                    break;
                 case ALTERNATIVE_LOWER:
                     discoutValue = this.getLowerDiscount(discount.getDiscounts(), time);
+                    break;
                 default:
                     throw new IllegalArgumentException("Unknown bundle operation: " + discount.getBundleOp());
             }

@@ -26,10 +26,13 @@ public class PriceCalculator {
                 switch(price.getBundleOp()) {
                     case CUMULATIVE:
                         priceValue = this.getCumulativePrice(price.getPrices(), time);
+                        break;
                     case ALTERNATIVE_HIGHER:
                         priceValue = this.getHigherPrice(price.getPrices(), time);
+                        break;
                     case ALTERNATIVE_LOWER:
                         priceValue = this.getLowerPrice(price.getPrices(), time);
+                        break;
                     default:
                         throw new IllegalArgumentException("Unknown bundle operation: " + price.getBundleOp());
                 }
@@ -42,6 +45,7 @@ public class PriceCalculator {
             if(price.getDiscounts()!=null && !price.getDiscounts().isEmpty()) {
                 DiscountCalculator discountCalculator = new DiscountCalculator(subscription);
                 // TODO: compute the discount
+                discountCalculator.compute(price.getDiscounts().get(0), time);
                 // TODO: reduce the price by the discount (it can be absolute or percentage)
             }
 
