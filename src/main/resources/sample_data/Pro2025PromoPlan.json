@@ -47,13 +47,13 @@
                   "computationBase": "bills-no-taxes",
                   "referencePeriod": "PREVIOUS_SUBSCRIPTION_PERIOD",
                   "applicableBaseRange": {"min": 250001, "max": 750000},
-                  "percent": 50
+                  "percent": 30
                 },
                 {
                   "computationBase": "bills-no-taxes",
                   "referencePeriod": "PREVIOUS_SUBSCRIPTION_PERIOD",
                   "applicableBaseRange": {"min": 750001, "max": 1000000},
-                  "percent": 70
+                  "percent": 50
                 },
                 {
                   "computationBase": "bills-no-taxes",

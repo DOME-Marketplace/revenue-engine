@@ -16,7 +16,7 @@ public class RelatedParty {
 	
 	public RelatedParty(String id, String name, String role, String href) {
 		
-        this.id = UUID.randomUUID().toString(); 
+        this.id = id; 
 		this.name = name;
 		this.role = role;
 		this.href = href;

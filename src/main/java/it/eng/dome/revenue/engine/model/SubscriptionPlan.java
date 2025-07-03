@@ -30,6 +30,7 @@ public class SubscriptionPlan {
     @Valid
     @NotNull
     private List<Price> price;
+    // FIXME: plan.price should be a single item, not a list
 
     // terms
     @Positive
@@ -46,14 +47,12 @@ public class SubscriptionPlan {
 
     public SubscriptionPlan() {}
 
-    
-    
 	public SubscriptionPlan(String id, String name, String description, @Valid @NotNull TimePeriod validFor,
 			String lifecycleStatus, @Valid @NotNull List<Price> price, @Positive Integer contractDurationLength,
 			RecurringPeriod contractDurationPeriodType, @Positive Integer renewalTermLength,
 			RecurringPeriod renewalTermPeriodType, RecurringPeriod billingPeriod, List<String> agreements) {
 		super();
-        this.id = UUID.randomUUID().toString(); 
+        this.id = id; 
 		this.name = name;
 		this.description = description;
 		this.validFor = validFor;
@@ -164,7 +163,7 @@ public class SubscriptionPlan {
 	public void setAgreements(List<String> agreements) {
 		this.agreements = agreements;
 	}
-	
+		
 	@Override
 	public String toString() {
 	    StringBuilder sb = new StringBuilder();
@@ -184,5 +183,4 @@ public class SubscriptionPlan {
 	      .append("\n}");
 	    return sb.toString();
 	}
-    
 }
