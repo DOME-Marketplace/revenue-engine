@@ -1,51 +1,46 @@
 package it.eng.dome.revenue.engine.model;
 
-import java.util.ArrayList;
-import java.util.List;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
-import com.fasterxml.jackson.annotation.JsonInclude;
-
-@JsonInclude(JsonInclude.Include.NON_NULL)
 public class RevenueStatement {
 
-    private String name;
-    private Double value;
-    private String currency;
+    private Subscription subscription;
+    private TimePeriod period;
+    private RevenueItem revenueItem;
 
-    private List<RevenueStatement> items;
-
-    public RevenueStatement(String name, Double value, String currency) {
-        this.name = name;
-        this.value = value;
-        this.currency = currency;
-        this.items = new ArrayList<>();
+    public RevenueStatement(Subscription subscription, TimePeriod period) {
+        this.subscription = subscription;
+        this.period = period;
     }
 
-    public void addRevenueItem(String name, Double value, String currency) {
-        if(currency!=null && !currency.equals(this.currency)) {
-            throw new IllegalArgumentException("Currency mismatch: " + this.currency + " vs " + currency);
-        }
-        this.items.add(new RevenueStatement(name, value, currency));
-    }
-
-    public String getName() {
+    @JsonProperty("description")
+    public String getDescription() {
+        String name = "Revenue Statement for " + subscription.getRelatedParties().get(0).getName() + "; plan " + subscription.getPlan().getName() + " from " + period.getFromDate() + " to " + period.getToDate();
         return name;
     }
 
-    public Double getValue() {
-        return value;
+    public Subscription getSubscription() {
+        return subscription;
     }
 
-    public Double getOverallValue() {
-        Double total = this.value;
-        for (RevenueStatement item : items) {
-            total += item.getOverallValue();
-        }
-        return total;
+    public void setSubscription(Subscription subscription) {
+        this.subscription = subscription;
     }
 
-    public String getCurrency() {
-        return currency;
+    public TimePeriod getPeriod() {
+        return period;
+    }
+
+    public void setPeriod(TimePeriod period) {
+        this.period = period;
+    }
+
+    public RevenueItem getRevenueItem() {
+        return revenueItem;
+    }
+
+    public void setRevenueItem(RevenueItem revenueItem) {
+        this.revenueItem = revenueItem;
     }
 
 }
