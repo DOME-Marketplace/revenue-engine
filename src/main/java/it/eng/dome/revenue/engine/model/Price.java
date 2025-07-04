@@ -36,9 +36,8 @@ public class Price {
     private Double amount;
 
 	// reference to the parent price, if any
-    @JsonIgnore
-    @PositiveOrZero
-	Price parentPrice;
+	@JsonIgnore
+	private Price parentPrice;
     
 	@JsonProperty("currency")
     private String currency;

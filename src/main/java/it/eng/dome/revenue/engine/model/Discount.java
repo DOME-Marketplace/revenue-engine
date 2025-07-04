@@ -42,9 +42,9 @@ public class Discount {
     @PositiveOrZero
     private Double amount;
 
-    @JsonIgnore
-    @PositiveOrZero
-	Price parentPrice;
+	// reference to the parent price, if any
+	@JsonIgnore
+	private Price parentPrice;
 
 	public Discount() {}
 
