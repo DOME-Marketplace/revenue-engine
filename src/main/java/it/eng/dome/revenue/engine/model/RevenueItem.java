@@ -16,7 +16,7 @@ public class RevenueItem {
 
     public RevenueItem(String name, Double value, String currency) {
         this.name = name;
-        this.value = value = 0.0;
+        this.value = value;
         this.currency = currency;
         this.items = new ArrayList<>();
     }

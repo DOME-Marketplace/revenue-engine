@@ -1,7 +1,14 @@
 package it.eng.dome.revenue.engine.service;
 
 
-import org.springframework.core.io.ClassPathResource;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.stream.Collectors;
+
 import org.springframework.stereotype.Service;
 
 import com.fasterxml.jackson.databind.DeserializationFeature;
@@ -11,19 +18,11 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 
 import it.eng.dome.revenue.engine.model.SubscriptionPlan;
 
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.stream.Collectors;
-
 @Service
 public class SubscriptionPlanService {
  
     private final ObjectMapper mapper;
-    private final Path storageDir = Paths.get("src/main/resources/sample_data/");
+//    private final Path storageDir = Paths.get("src/main/resources/sample_data/");
 
 
     public SubscriptionPlanService() {

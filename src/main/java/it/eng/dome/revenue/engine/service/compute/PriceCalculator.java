@@ -5,8 +5,6 @@ import java.util.List;
 
 import it.eng.dome.revenue.engine.model.Price;
 import it.eng.dome.revenue.engine.model.Subscription;
-import it.eng.dome.revenue.engine.model.SubscriptionTimeHelper;
-import it.eng.dome.revenue.engine.model.TimePeriod;
 
 public class PriceCalculator {
 
@@ -62,8 +60,11 @@ public class PriceCalculator {
             price.getIsBundle();
             time.getYear();
             // compute the period
-            SubscriptionTimeHelper sth = new SubscriptionTimeHelper(this.subscription);
-            TimePeriod tp = sth.getSubscriptionPeriodAt(time);
+
+            // FIXME - Just commented
+            //            SubscriptionTimeHelper sth = new SubscriptionTimeHelper(this.subscription);
+            //            TimePeriod tp = sth.getSubscriptionPeriodAt(time);
+            
             // compute the metric
             
             // retrive applicable base range

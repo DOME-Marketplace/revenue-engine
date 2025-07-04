@@ -37,6 +37,8 @@ public class MetricsRetriever implements InitializingBean {
     // implement retriever for key 'bills-no-taxes'
     public Double computeBillsNoTaxes(String sellerId, OffsetDateTime from, OffsetDateTime to) throws Exception {
 
+    	logger.info("Compute bills-no-taxes");
+    	
     	// retrieve all seller invoices in the period
         List<AppliedCustomerBillingRate> bills = tmfDataRetriever.retrieveBills(sellerId, from, to);
 

@@ -6,7 +6,6 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
@@ -19,7 +18,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 
-import it.eng.dome.revenue.engine.model.Discount;
 import it.eng.dome.revenue.engine.model.Price;
 import it.eng.dome.revenue.engine.model.Range;
 import it.eng.dome.revenue.engine.model.Subscription;
@@ -95,7 +93,7 @@ public class SubscriptionService {
 		// Filter only sub with status "active"
 		List<Subscription> activeSubs = subscription.stream()
 				.filter(sub -> "active".equalsIgnoreCase(sub.getStatus())).collect(Collectors.toList());
-		if (activeSubs.size() == 0) {
+		if (activeSubs.isEmpty()) {
 			logger.warn("No active subscription found for Related Party with ID {}", partyId);
 			return null;
 		}
@@ -121,8 +119,9 @@ public class SubscriptionService {
 			// TODO: create a new function for bills retrieve in a range of time period
 			bills = tmfDataRetriever.retrieveBillsForSellerInLastMonth(partyId);
 		} catch (Exception e) {
-			e.printStackTrace();
-			logger.error("Errore nel recupero dei bills per sellerId " + partyId, e);
+			// e.printStackTrace();
+			// logger.error("Errore nel recupero dei bills per sellerId " + partyId, e);
+			logger.error("Error: cannot retrieve bills for partId {} - {}", partyId, e.getMessage());
 		}
 
 		// Sum of taxIncludedAmount.value only if bills non empty

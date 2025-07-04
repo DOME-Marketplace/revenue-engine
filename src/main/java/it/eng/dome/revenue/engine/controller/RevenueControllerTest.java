@@ -2,28 +2,20 @@ package it.eng.dome.revenue.engine.controller;
 
 import java.io.IOException;
 import java.util.List;
-import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import it.eng.dome.revenue.engine.model.Subscription;
 import it.eng.dome.revenue.engine.model.SubscriptionPlan;
-import it.eng.dome.revenue.engine.service.SubscriptionService;
 import it.eng.dome.revenue.engine.service.SubscriptionPlanService;
-import jakarta.validation.Valid;
-import lombok.RequiredArgsConstructor;
+import it.eng.dome.revenue.engine.service.SubscriptionService;
 
 @RestController
 //@RequiredArgsConstructor
@@ -31,7 +23,7 @@ public class RevenueControllerTest {
     
     private final SubscriptionPlanService subscriptionPlanService;
     private final SubscriptionService subscriptionService;
-    private final ObjectMapper mapper;
+//    private final ObjectMapper mapper;
 
     @Autowired
     public RevenueControllerTest(SubscriptionPlanService subscriptionPlanService,
@@ -39,7 +31,7 @@ public class RevenueControllerTest {
                               ObjectMapper mapper) {
         this.subscriptionPlanService = subscriptionPlanService;
         this.subscriptionService = subscriptionService;
-        this.mapper = mapper;
+//        this.mapper = mapper;
     }
     
     @GetMapping("/subscription/fee/{id}")
