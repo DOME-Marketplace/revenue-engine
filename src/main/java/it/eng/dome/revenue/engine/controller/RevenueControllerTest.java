@@ -10,8 +10,6 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-
 import it.eng.dome.revenue.engine.model.Subscription;
 import it.eng.dome.revenue.engine.model.SubscriptionPlan;
 import it.eng.dome.revenue.engine.service.SubscriptionPlanService;
@@ -27,8 +25,7 @@ public class RevenueControllerTest {
 
     @Autowired
     public RevenueControllerTest(SubscriptionPlanService subscriptionPlanService,
-                              SubscriptionService subscriptionService,
-                              ObjectMapper mapper) {
+                              SubscriptionService subscriptionService /*, ObjectMapper mapper*/) {
         this.subscriptionPlanService = subscriptionPlanService;
         this.subscriptionService = subscriptionService;
 //        this.mapper = mapper;
