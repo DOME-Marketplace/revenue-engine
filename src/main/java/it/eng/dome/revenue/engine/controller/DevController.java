@@ -40,6 +40,7 @@ public class DevController {
             List<AppliedCustomerBillingRate> bills = tmfDataRetriever.retrieveBillsInLastMonth();
             return ResponseEntity.ok(bills);
         } catch (Exception e) {
+           logger.error(e.getMessage(), e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
@@ -50,7 +51,8 @@ public class DevController {
             List<AppliedCustomerBillingRate> bills = tmfDataRetriever.retrieveBillsForSellerInLastMonth(sellerId);
             return ResponseEntity.ok(bills);
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+           logger.error(e.getMessage(), e);
+             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
 
