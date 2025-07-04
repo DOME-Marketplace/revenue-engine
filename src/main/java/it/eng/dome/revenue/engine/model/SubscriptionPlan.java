@@ -159,4 +159,5 @@ public class SubscriptionPlan {
 	public void setAgreements(List<String> agreements) {
 		this.agreements = agreements;
 	}
+
 }

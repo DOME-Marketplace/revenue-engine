@@ -33,8 +33,11 @@ public class Price {
     @JsonProperty("amount")
     @PositiveOrZero
     private Double amount;
+
+	// reference to the parent price, if any
+	Price parentPrice;
     
-    @JsonProperty("currency")
+	@JsonProperty("currency")
     private String currency;
     
     @JsonProperty("percent")
@@ -104,6 +107,11 @@ public class Price {
 
 	public void setPrices(List<Price> prices) {
 		this.prices = prices;
+		if (prices != null) {
+			for (Price price : prices) {
+				price.setParentPrice(this);
+			}
+		}	
 	}
 
 	public Double getAmount() {
@@ -130,16 +138,36 @@ public class Price {
 		this.percent = percent;
 	}
 
+	/* Return the inherited length, if any. Otherwise the local value. */
 	public Integer getRecurringChargePeriodLength() {
-		return recurringChargePeriodLength;
+		Integer inheritedLength;
+		if(this.getParentPrice() != null) {
+			inheritedLength = this.getParentPrice().getRecurringChargePeriodLength();
+		} else {
+			inheritedLength = null;
+		}
+		if(inheritedLength != null) {
+			return inheritedLength;
+		} else {}
+			return this.recurringChargePeriodLength;
 	}
 
 	public void setRecurringChargePeriodLength(Integer recurringChargePeriodLength) {
 		this.recurringChargePeriodLength = recurringChargePeriodLength;
 	}
 
+	/* Return the inherited period type, if any. Otherwise the local value. */
 	public RecurringPeriod getRecurringChargePeriodType() {
-		return recurringChargePeriodType;
+		RecurringPeriod inheritedPeriod;
+		if(this.getParentPrice() != null) {
+			inheritedPeriod = this.getParentPrice().getRecurringChargePeriodType();
+		} else {
+			inheritedPeriod = null;
+		}
+		if(inheritedPeriod != null) {
+			return inheritedPeriod;
+		} else {}
+			return this.recurringChargePeriodType;
 	}
 
 	public void setRecurringChargePeriodType(RecurringPeriod recurringChargePeriodType) {
@@ -152,6 +180,9 @@ public class Price {
 
 	public void setDiscount(Discount discount) {
 		this.discount = discount;
+		if (discount != null) {
+			discount.setParentPrice(this);
+		}
 	}
 
 	public String getComputationBase() {
@@ -177,4 +208,13 @@ public class Price {
 	public void setApplicableBaseRange(Range applicableBaseRange) {
 		this.applicableBaseRange = applicableBaseRange;
 	}   
+
+    public void setParentPrice(Price parentPrice) {
+		this.parentPrice = parentPrice;
+	}
+
+	public Price getParentPrice() {
+		return parentPrice;
+	}
+
 }

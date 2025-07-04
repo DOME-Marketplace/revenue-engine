@@ -41,7 +41,9 @@ public class Discount {
     @PositiveOrZero
     private Double amount;
 
-    public Discount() {}
+	Price parentPrice;
+
+	public Discount() {}
 
 	public Boolean getIsBundle() {
 		return isBundle;
@@ -106,4 +108,14 @@ public class Discount {
 	public void setAmount(Double amount) {
 		this.amount = amount;
 	}
+
+   	public void setParentPrice(Price parentPrice) {
+		this.parentPrice = parentPrice;
+	}
+
+	public Price getParentPrice() {
+		return parentPrice;
+	}
+
+
 }
