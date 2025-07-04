@@ -10,9 +10,7 @@ public class PriceCalculator {
 
         private Subscription subscription;
 
-
         public Double compute(OffsetDateTime time) {
-            // TODO: plan.price should be a single item, not a list
             return this.compute(subscription.getPlan().getPrice(), time);
         }
  
