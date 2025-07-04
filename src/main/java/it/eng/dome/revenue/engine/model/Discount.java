@@ -2,6 +2,7 @@ package it.eng.dome.revenue.engine.model;
 
 import java.util.List;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
@@ -41,7 +42,9 @@ public class Discount {
     @PositiveOrZero
     private Double amount;
 
-	Price parentPrice;
+	// reference to the parent price, if any
+	@JsonIgnore
+	private Price parentPrice;
 
 	public Discount() {}
 

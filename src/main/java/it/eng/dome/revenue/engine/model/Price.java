@@ -2,6 +2,7 @@ package it.eng.dome.revenue.engine.model;
 
 import java.util.List;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
@@ -35,7 +36,8 @@ public class Price {
     private Double amount;
 
 	// reference to the parent price, if any
-	Price parentPrice;
+	@JsonIgnore
+	private Price parentPrice;
     
 	@JsonProperty("currency")
     private String currency;
