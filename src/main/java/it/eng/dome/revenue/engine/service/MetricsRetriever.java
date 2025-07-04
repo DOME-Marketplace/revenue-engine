@@ -1,6 +1,7 @@
 package it.eng.dome.revenue.engine.service;
 
 import java.time.OffsetDateTime;
+import java.util.List;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -9,6 +10,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.config.ConfigurableBeanFactory;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
+
+import it.eng.dome.tmforum.tmf678.v4.model.AppliedCustomerBillingRate;
+import it.eng.dome.tmforum.tmf632.v4.model.Organization;
 
 @Component(value = "metricsRetriever")
 @Scope(value = ConfigurableBeanFactory.SCOPE_PROTOTYPE)
@@ -32,20 +36,58 @@ public class MetricsRetriever implements InitializingBean {
     
     // implement retriever for key 'bills-no-taxes'
     public Double computeBillsNoTaxes(String sellerId, OffsetDateTime from, OffsetDateTime to) throws Exception {
-        // TODO: implement me
-        return 0.0;
+
+    	// retrieve all seller invoices in the period
+        List<AppliedCustomerBillingRate> bills = tmfDataRetriever.retrieveBills(sellerId, from, to);
+
+        // sum taxExcludedAmount.value
+        double sum = 0.0;
+        for (AppliedCustomerBillingRate bill : bills) {
+            if (bill.getTaxExcludedAmount() != null && bill.getTaxExcludedAmount().getValue() != null) {
+            	sum += bill.getTaxExcludedAmount().getValue();
+            }
+        }
+        return sum;
     }
 
     // implement retriever for key 'referred-providers-number'
     public Double computeReferredProvidersNumber(String sellerId, OffsetDateTime from, OffsetDateTime to) throws Exception {
-        // TODO: implement me
-        return 0.0;
+    	// TODO: test the method when listReferredProviders will work
+    	// retrieves the list of providers referenced by the seller
+        List<Organization> referred = tmfDataRetriever.listReferredProviders(sellerId);
+
+        if (referred == null) {
+            return 0.0;
+        }
+        
+        return (double) referred.size();
     }
 
-    // implmenent retriever for key 'referred-providers-transaction-volume'
+    // implement retriever for key 'referred-providers-transaction-volume'
     public Double computeReferredProvidersTransactionVolume(String sellerId, OffsetDateTime from, OffsetDateTime to) throws Exception {
-        // TODO: implement me
-        return 0.0;
+    	// TODO: test the method when listReferredProviders will work
+    	// retrieve the list of providers referred by the given seller
+    	List<Organization> referred = tmfDataRetriever.listReferredProviders(sellerId);
+
+	    if (referred == null || referred.isEmpty()) 
+	    	return 0.0;
+	
+	    double sum = 0.0;
+	    // iterate over each referred provider
+	    for (Organization org : referred) {
+	    	// retrieve all billing rates for this provider in the specified period
+	        List<AppliedCustomerBillingRate> bills = tmfDataRetriever.retrieveBills(org.getId(), from, to);
+
+	        // if there are any bills, sum the tax-excluded amounts
+	        if (bills != null) {
+	            for (AppliedCustomerBillingRate bill : bills) {
+	                if (bill.getTaxExcludedAmount() != null && bill.getTaxExcludedAmount().getValue() != null) {
+	                    sum += bill.getTaxExcludedAmount().getValue();
+	                }
+	            }
+	        }
+	    }
+	    return sum;
     }
 
     public Double computeValueForKey(String key, String sellerId, OffsetDateTime from, OffsetDateTime to) throws Exception {
