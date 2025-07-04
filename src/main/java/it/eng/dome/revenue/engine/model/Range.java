@@ -2,6 +2,7 @@ package it.eng.dome.revenue.engine.model;
 
 import jakarta.validation.constraints.PositiveOrZero;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 
 import jakarta.validation.constraints.AssertTrue;
@@ -37,7 +38,7 @@ public class Range {
     public void setMax(Double max) {
         this.max = max;
     }
-
+    @JsonIgnore
     @AssertTrue(message = "The maximum value must be greater than or equal to the minimum.")
     public boolean isMaxGreaterOrEqualMin() {
         if (min == null || max == null) {
