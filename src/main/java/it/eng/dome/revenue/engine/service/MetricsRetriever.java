@@ -90,6 +90,42 @@ public class MetricsRetriever implements InitializingBean {
 	        }
 	    }
 	    return sum;
+	    
+	    
+    }
+    
+    // implement retriever for key 'referred-provider-max-transaction-volume'
+    public Double computeReferredProviderMaxTransactionVolume(String sellerId, OffsetDateTime from, OffsetDateTime to) throws Exception {
+    	// TODO: test the method when listReferredProviders will work
+    	// retrieve the list of providers referred by the given seller
+    	List<Organization> referred = tmfDataRetriever.listReferredProviders(sellerId);
+
+	    if (referred == null || referred.isEmpty()) 
+	    	return 0.0;
+	    
+	    double maxBilling = 0.0;
+	    
+	    // iterate over each referred provider	    
+	    for (Organization org : referred) {
+	        List<AppliedCustomerBillingRate> bills = tmfDataRetriever.retrieveBills(org.getId(), from, to);
+
+	        double sum = 0.0;
+	        // if there are any bills, sum the tax-excluded amounts
+	        if (bills != null) {
+	            for (AppliedCustomerBillingRate bill : bills) {
+	                if (bill.getTaxExcludedAmount() != null && bill.getTaxExcludedAmount().getValue() != null) {
+	                    sum += bill.getTaxExcludedAmount().getValue();
+	                }
+	            }
+	        }
+
+	        // keep track of the maximum billing amount among all referred providers
+	        if (sum > maxBilling) {
+	            maxBilling = sum;
+	        }
+	    }
+
+	    return maxBilling;
     }
 
     public Double computeValueForKey(String key, String sellerId, OffsetDateTime from, OffsetDateTime to) throws Exception {
@@ -100,6 +136,8 @@ public class MetricsRetriever implements InitializingBean {
                 return computeReferredProvidersNumber(sellerId, from, to);
             case "referred-providers-transaction-volume":
                 return computeReferredProvidersTransactionVolume(sellerId, from, to);
+            case "referred-provider-max-transaction-volume":
+                return computeReferredProviderMaxTransactionVolume(sellerId, from, to);
             default:
                 throw new IllegalArgumentException("Unknown metric key: " + key);
         }
