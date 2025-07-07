@@ -47,7 +47,9 @@ public class MetricsRetriever implements InitializingBean {
         for (AppliedCustomerBillingRate bill : bills) {
             if (bill.getTaxExcludedAmount() != null && bill.getTaxExcludedAmount().getValue() != null) {
             	sum += bill.getTaxExcludedAmount().getValue();
-            }
+            } else {
+                logger.warn("Bill {} contains no amount. Skipping it for the revenue computation", bill.getId());
+           }
         }
         return sum;
     }
@@ -85,6 +87,8 @@ public class MetricsRetriever implements InitializingBean {
 	            for (AppliedCustomerBillingRate bill : bills) {
 	                if (bill.getTaxExcludedAmount() != null && bill.getTaxExcludedAmount().getValue() != null) {
 	                    sum += bill.getTaxExcludedAmount().getValue();
+	                } else {
+	                    logger.warn("Bill {} contains no amount. Skipping it for the revenue computation", bill.getId());
 	                }
 	            }
 	        }
@@ -115,6 +119,8 @@ public class MetricsRetriever implements InitializingBean {
 	            for (AppliedCustomerBillingRate bill : bills) {
 	                if (bill.getTaxExcludedAmount() != null && bill.getTaxExcludedAmount().getValue() != null) {
 	                    sum += bill.getTaxExcludedAmount().getValue();
+	                } else {
+	                    logger.warn("Bill {} contains no amount. Skipping it for the revenue computation", bill.getId());
 	                }
 	            }
 	        }
