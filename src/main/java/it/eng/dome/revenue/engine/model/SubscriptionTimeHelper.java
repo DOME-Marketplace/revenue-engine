@@ -1,6 +1,10 @@
 package it.eng.dome.revenue.engine.model;
 
 import java.time.OffsetDateTime;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+import java.util.TreeSet;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -13,6 +17,41 @@ public class SubscriptionTimeHelper {
 
     public SubscriptionTimeHelper(Subscription subscription) {
         this.subscription = subscription;
+    }
+
+    /**
+     * Starting from the subscription start date, this method returns a list of all the charge period times
+     * for the subscription, based on the price's recurring charge period type and length.
+     * @return
+     */
+    public Set<TimePeriod> getChargePeriodTimes() {
+        if(this.subscription != null && this.subscription.getPlan() != null && this.subscription.getPlan().getPrice() != null) {
+            return this.getChargePeriodTimes(this.subscription.getPlan().getPrice());
+        } else {
+            return new HashSet<>();
+        }
+    }
+
+    private Set<TimePeriod> getChargePeriodTimes(Price price) {
+        // the start date of the subscription
+        OffsetDateTime start = this.subscription.getStartDate();
+        Set<TimePeriod> chargePeriodTimes = new TreeSet<>();
+        if(price.getIsBundle()) {
+            for(Price p: price.getPrices()) {
+                chargePeriodTimes.addAll(this.getChargePeriodTimes(p));
+            }
+        } else {
+            // iterate over the charge periods, until reaching the current time
+            // or a year in the future
+            OffsetDateTime stopAt = OffsetDateTime.now().plusYears(1);
+            while(!start.isAfter(stopAt)) {
+                OffsetDateTime end = this.rollChargePeriod(start, price, 1);
+                chargePeriodTimes.add(new TimePeriod(start, end));
+                start = end;
+            }
+            return chargePeriodTimes;
+        }
+        return chargePeriodTimes;
     }
 
     // Compute the subscription period at a given time
@@ -143,7 +182,7 @@ public class SubscriptionTimeHelper {
 
         Subscription subscription = new Subscription();
         subscription.setPlan(plan);
-        subscription.setStartDate(OffsetDateTime.now().minusMonths(8)); // start 8 months ago
+        subscription.setStartDate(OffsetDateTime.now().minusYears(8)); // start 8 months ago
         logger.debug("Subscription start date: " + subscription.getStartDate());
         // create an helper
         SubscriptionTimeHelper helper = new SubscriptionTimeHelper(subscription);
@@ -153,10 +192,22 @@ public class SubscriptionTimeHelper {
         OffsetDateTime rolledTime = helper.rollSubscriptionPeriod(now, 2);
         logger.debug(rolledTime.toString());
 
+        Price bundle = new Price();
+        bundle.setName("Bundle Price");
+        bundle.setIsBundle(true);
+
         // now create a price with a charge period
         Price price = new Price();
-        price.setRecurringChargePeriodType(RecurringPeriod.MONTH);
+        price.setRecurringChargePeriodType(RecurringPeriod.YEAR);
         price.setRecurringChargePeriodLength(1);
+
+        Price anotherPrice = new Price();
+        anotherPrice.setRecurringChargePeriodType(RecurringPeriod.MONTH);
+        anotherPrice.setRecurringChargePeriodLength(13);
+
+        List<Price> prices = List.of(price, anotherPrice);
+        bundle.setPrices(prices);
+        plan.setPrice(bundle);
 
         Thread.sleep(1000);
         now = OffsetDateTime.now();
@@ -164,6 +215,11 @@ public class SubscriptionTimeHelper {
         TimePeriod chargePeriod = helper.getChargePeriodByOffset(now, price, 18);
         logger.debug(chargePeriod.getFromDate().toString());
         logger.debug(chargePeriod.getToDate().toString());
+
+        Set<TimePeriod> chargePeriods = helper.getChargePeriodTimes();
+        for(TimePeriod t : chargePeriods) {
+            System.out.println("Charge period: " + t);
+        }
     }
 
 }

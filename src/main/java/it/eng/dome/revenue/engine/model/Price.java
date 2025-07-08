@@ -88,7 +88,7 @@ public class Price {
 	}
 
 	public Boolean getIsBundle() {
-		return isBundle;
+		return (this.isBundle!=null && this.isBundle==true);
 	}
 
 	public void setIsBundle(Boolean isBundle) {

@@ -9,7 +9,7 @@ import jakarta.validation.constraints.AssertTrue;
 import jakarta.validation.constraints.NotNull;
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public class TimePeriod {
+public class TimePeriod implements Comparable<TimePeriod> {
 
 	@NotNull
 	private OffsetDateTime fromDate; 
@@ -48,6 +48,19 @@ public class TimePeriod {
 	        return false;
 	    }
 	    return !fromDate.isAfter(toDate);
+	}
+
+	@Override
+	public int compareTo(TimePeriod o) {
+		int fromComparison = this.fromDate.compareTo(o.fromDate);
+		if (fromComparison != 0) {
+			return fromComparison;
+		}
+		return this.toDate.compareTo(o.toDate);
+	}
+
+	public String toString() {
+		return "TimePeriod [fromDate=" + fromDate + ", toDate=" + toDate + "]";
 	}
 
 }
