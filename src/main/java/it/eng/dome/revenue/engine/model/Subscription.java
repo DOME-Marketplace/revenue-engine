@@ -9,6 +9,8 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class Subscription {
     
+    private String id;
+
     private String name;
     
     @JsonProperty("subscriptionPlan") //@Valid ???????
@@ -29,6 +31,14 @@ public class Subscription {
         this.relatedParties = relatedParties;
         this.status = status;
         this.startDate = startDate;
+    }
+
+    public void setId(String id) {
+        this.id = id;
+    }
+
+    public String getId() {
+        return id;
     }
 
     public String getName() {
