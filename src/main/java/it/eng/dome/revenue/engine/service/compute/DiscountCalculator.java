@@ -17,13 +17,14 @@ public class DiscountCalculator {
     // this is the main method to be called by some extenal service
     // the caller will pick a discount in the subscription plan and ask this to compute the discount
     public Double compute(Discount discount, OffsetDateTime time) {
-
-        // TODO: remove the below, as soon as really used. Just to avoid PMD complaining about unused properties
-        this.subscription.getName();
-
-        // first compute the price
-        Double discoutValue;
-        if(discount.getIsBundle()) {
+     
+     if(discount == null) {
+      return 0.0;
+     }
+     
+     // first compute the price
+        Double discoutValue = 0.0;
+        if (Boolean.TRUE.equals(discount.getIsBundle())) {
             switch(discount.getBundleOp()) {
                 case CUMULATIVE:
                     discoutValue = this.getCumulativeDiscount(discount.getDiscounts(), time);
@@ -42,23 +43,28 @@ public class DiscountCalculator {
             discoutValue = this.getAtomicDiscount(discount, time);
         }
 
-        // TODO: apply constraints
+        // TODO: apply constraints ???
 
-        // return thee value;
         return discoutValue;
     }
 
         // assuming that the discount is atomic, compute the discount value
         private Double getAtomicDiscount(Discount discount, OffsetDateTime time) {
             // TODO: remove the below. Just to avoid PMD complaining about unused variables
-            discount.getIsBundle();
-            time.getYear();
+            //Boolean isBundle = discount.getIsBundle();
+            //time.getYear();
             // compute the period
             // retrive applicable base range
             // check applicableBase is in range (if any)
             // compute the discount (can be a percentage of the base or a fixed amount)
             // apply a constraint (min/max) on discount, if any
-            return 0.0;
+            // Check if the base is within the valid range (if applicable)
+
+
+         if (discount.getPercent() != null) {
+                return discount.getPercent();
+            }
+         return 0.0;
         }
 
         private Double getCumulativeDiscount(List<Discount> discounts, OffsetDateTime time) {
@@ -86,4 +92,24 @@ public class DiscountCalculator {
             }
             return higher;
         }
+        
+        private Double getApplicableBaseAmount(Discount discount) {
+            String base = discount.getComputationBase();
+            if (base == null) return null;
+
+            switch (base) {
+                case "price":
+                    if (discount.getParentPrice() != null) {
+                        return discount.getParentPrice().getAmount();
+                    }
+                    break;
+                // In futuro puoi aggiungere altri tipi di base
+                default:
+                    throw new IllegalArgumentException("Unknown computation base: " + base);
+            }
+
+            return null;
+        }
 }
+
+ 

@@ -11,6 +11,7 @@ import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.io.ClassPathResource;
 import org.springframework.stereotype.Service;
 
 import com.fasterxml.jackson.databind.DeserializationFeature;
@@ -47,12 +48,18 @@ public class SubscriptionService {
 
 	// === GET BY FILENAME===
 
-//    public SubscriptionActive loadFromClasspath(String path) throws IOException {
-//        try (var in = new ClassPathResource(path).getInputStream()) {
-//            return mapper.readValue(in, SubscriptionActive.class);
-//        }
-//    }
-
+    public Subscription loadFromClasspath(String path) throws IOException {
+        try (var in = new ClassPathResource(path).getInputStream()) {
+            return mapper.readValue(in, Subscription.class);
+        }
+    }
+    // === GET BY Id===
+    public Subscription getBySubscriptionId(String id) throws IOException {
+        return loadAllFromStorage().stream()
+                .filter(sub -> sub.getId() != null && sub.getId().equals(id))
+                .findFirst()
+                .orElse(null);
+    }
 	// === GET ALL ===
 
 	public List<Subscription> loadAllFromStorage() throws IOException {

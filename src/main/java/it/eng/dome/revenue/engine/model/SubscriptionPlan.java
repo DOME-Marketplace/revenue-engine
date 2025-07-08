@@ -157,5 +157,15 @@ public class SubscriptionPlan {
 	public void setAgreements(List<String> agreements) {
 		this.agreements = agreements;
 	}
+	
+	@Override
+	public String toString() {
+		return "SubscriptionPlan [id=" + id + ", name=" + name + ", description=" + description + ", validFor="
+				+ validFor + ", lifecycleStatus=" + lifecycleStatus + ", price=" + price
+				+ ", contractDurationLength=" + contractDurationLength + ", contractDurationPeriodType="
+				+ contractDurationPeriodType + ", renewalTermLength=" + renewalTermLength
+				+ ", renewalTermPeriodType=" + renewalTermPeriodType + ", billingPeriod=" + billingPeriod
+				+ ", agreements=" + agreements + "]";
+	}
 
 }

@@ -9,8 +9,8 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class Subscription {
     
-    private String id;
-
+	private String id;
+	
     private String name;
     
     @JsonProperty("subscriptionPlan") //@Valid ???????
@@ -24,23 +24,25 @@ public class Subscription {
 
     public Subscription() {}
 
-    public Subscription(String name, SubscriptionPlan plan, List<RelatedParty> relatedParties, 
-                             String status, OffsetDateTime startDate) {
-        this.name = name;
-        this.plan = plan;
-        this.relatedParties = relatedParties;
-        this.status = status;
-        this.startDate = startDate;
-    }
 
-    public void setId(String id) {
-        this.id = id;
-    }
-
+    public Subscription(String id, String name, SubscriptionPlan plan, String status, OffsetDateTime startDate,
+			List<RelatedParty> relatedParties) {
+		this.id = id;
+		this.name = name;
+		this.plan = plan;
+		this.status = status;
+		this.startDate = startDate;
+		this.relatedParties = relatedParties;
+	}
+    
     public String getId() {
-        return id;
+		return id;
+	}
+    
+    public void setId(String id) {
+    	this.id = id;
     }
-
+    
     public String getName() {
         return name;
     }
@@ -83,7 +85,13 @@ public class Subscription {
 
     @Override
     public String toString() {
-        return "SubscriptionActive [name=" + name + ", plan=" + plan + ", relatedParties=" + 
-               relatedParties + ", status=" + status + ", startDate=" + startDate + "]";
-    }
+		return "Subscription{" +
+				"id='" + id + '\'' +
+				", name='" + name + '\'' +
+				", plan=" + plan +
+				", status='" + status + '\'' +
+				", startDate=" + startDate +
+				", relatedParties=" + relatedParties +
+				'}';
+	}
 }

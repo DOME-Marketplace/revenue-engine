@@ -52,7 +52,10 @@ public class RelatedParty {
 		this.href = href;
 	}
 	
-	
+	@Override
+	public String toString() {
+		return "RelatedParty [id=" + id + ", name=" + name + ", role=" + role + ", href=" + href + "]";
+	}
 	
 	
 }

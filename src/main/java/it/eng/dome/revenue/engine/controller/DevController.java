@@ -13,12 +13,16 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RestController;
 
+import it.eng.dome.revenue.engine.model.Price;
 import it.eng.dome.revenue.engine.model.RecurringPeriod;
 import it.eng.dome.revenue.engine.model.RevenueStatement;
 import it.eng.dome.revenue.engine.model.Subscription;
 import it.eng.dome.revenue.engine.model.SubscriptionPlan;
 import it.eng.dome.revenue.engine.model.SubscriptionTimeHelper;
+import it.eng.dome.revenue.engine.service.SubscriptionPlanService;
+import it.eng.dome.revenue.engine.service.SubscriptionService;
 import it.eng.dome.revenue.engine.service.TmfDataRetriever;
+import it.eng.dome.revenue.engine.service.compute.PriceCalculator;
 import it.eng.dome.tmforum.tmf678.v4.model.AppliedCustomerBillingRate;
 
 @RestController
@@ -27,6 +31,15 @@ public class DevController {
     
 	protected final Logger logger = LoggerFactory.getLogger(DevController.class);
 
+		@Autowired
+	PriceCalculator priceCalculator;
+
+	@Autowired
+	SubscriptionService subscriptionService;
+
+	@Autowired
+	SubscriptionPlanService subscriptionPlanService;
+	
 	@Autowired
     TmfDataRetriever tmfDataRetriever;
 
@@ -34,6 +47,34 @@ public class DevController {
     public DevController() {
     }
 
+    
+    
+    @GetMapping("/dev/priceCalculator/{id}")
+    public ResponseEntity<Double> priceCalculator(@PathVariable String id) {
+
+    	
+        try {
+            Subscription sub = subscriptionService.getBySubscriptionId(id);
+            logger.info("Subscription: {}", sub);
+            
+            OffsetDateTime time = OffsetDateTime.now();            
+            
+            priceCalculator.setSubscription(sub);
+                        
+            SubscriptionPlan plan = subscriptionPlanService.findPlanById(sub.getPlan().getId());
+            logger.info("Plan: {}", plan);
+            
+            Price price = plan.getPrice();
+            
+            double computedValue = priceCalculator.compute(price, time);
+            
+            return ResponseEntity.ok(computedValue);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+    
     @GetMapping("/dev/bills/")
     public ResponseEntity<List<AppliedCustomerBillingRate>> bills() {
         try {
@@ -98,5 +139,6 @@ public class DevController {
         plan.setContractDurationLength(1);
         return plan;
     }
+    
 
 }
