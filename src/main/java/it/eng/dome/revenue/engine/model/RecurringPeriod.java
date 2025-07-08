@@ -5,5 +5,5 @@ public enum RecurringPeriod {
     DAY,
     WEEK,
     MONTH,
-    YEAR;
+    YEAR
 }
