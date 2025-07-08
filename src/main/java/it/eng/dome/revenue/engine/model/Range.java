@@ -46,4 +46,13 @@ public class Range {
         }
         return max >= min;
     }
+    
+   
+    @Override
+    public String toString() {
+		return "Range{" +
+				"min=" + min +
+				", max=" + max +
+				'}';
+	}
 }

@@ -119,6 +119,13 @@ public class Discount {
 	public Price getParentPrice() {
 		return parentPrice;
 	}
-
+	
+	@Override
+	public String toString() {
+		return "Discount [isBundle=" + isBundle + ", bundleOp=" + bundleOp + ", discounts=" + discounts
+				+ ", computationBase=" + computationBase + ", referencePeriod=" + referencePeriod
+				+ ", applicableBaseRange=" + applicableBaseRange + ", percent=" + percent + ", amount=" + amount
+				+ "]";
+	}
 
 }

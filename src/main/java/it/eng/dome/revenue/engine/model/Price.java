@@ -218,5 +218,14 @@ public class Price {
 	public Price getParentPrice() {
 		return parentPrice;
 	}
-
+	
+	@Override
+	public String toString() {
+		return "Price [name=" + name + ", type=" + type + ", isBundle=" + isBundle + ", bundleOp=" + bundleOp
+				+ ", prices=" + prices + ", amount=" + amount + ", currency=" + currency + ", percent=" + percent
+				+ ", recurringChargePeriodLength=" + recurringChargePeriodLength
+				+ ", recurringChargePeriodType=" + recurringChargePeriodType + ", discount=" + discount
+				+ ", computationBase=" + computationBase + ", referencePeriod=" + referencePeriod
+				+ ", applicableBaseRange=" + applicableBaseRange + "]";
+	}
 }

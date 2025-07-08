@@ -93,6 +93,8 @@ public class SubscriptionTimeHelper {
         // retrieve subscription length
         Integer pLength = this.subscription.getPlan().getContractDurationLength();
         // increase according to pType and pLength and howManyPeriods
+        pType = (pType != null) ? pType : RecurringPeriod.YEAR; // default to YEAR if not set
+        pLength = (pLength != null) ? pLength : 1; // default to 1 if not set
         switch(pType) {
             case DAY:
                 return time.plusDays(pLength * howManyPeriods);

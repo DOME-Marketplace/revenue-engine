@@ -135,7 +135,8 @@ public class MetricsRetriever implements InitializingBean {
     }
 
     public Double computeValueForKey(String key, String sellerId, OffsetDateTime from, OffsetDateTime to) throws Exception {
-        switch (key) {
+        key = "bills-no-taxes";
+    	switch (key) {
             case "bills-no-taxes":
                 return computeBillsNoTaxes(sellerId, from, to);
             case "referred-providers-number":
