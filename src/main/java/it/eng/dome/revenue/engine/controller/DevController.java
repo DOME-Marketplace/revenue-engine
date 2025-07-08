@@ -70,7 +70,7 @@ public class DevController {
             
             return ResponseEntity.ok(computedValue);
         } catch (Exception e) {
-            e.printStackTrace();
+           logger.error(e.getMessage(), e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }

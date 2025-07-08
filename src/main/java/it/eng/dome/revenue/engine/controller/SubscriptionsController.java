@@ -15,11 +15,13 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import it.eng.dome.revenue.engine.model.Price;
 import it.eng.dome.revenue.engine.model.RecurringPeriod;
 import it.eng.dome.revenue.engine.model.RevenueStatement;
 import it.eng.dome.revenue.engine.model.Subscription;
 import it.eng.dome.revenue.engine.model.SubscriptionPlan;
 import it.eng.dome.revenue.engine.model.SubscriptionTimeHelper;
+import it.eng.dome.revenue.engine.model.TimePeriod;
 import it.eng.dome.revenue.engine.service.TmfDataRetriever;
 
 @RestController
@@ -70,11 +72,9 @@ public class SubscriptionsController {
 
             SubscriptionTimeHelper timeHelper = new SubscriptionTimeHelper(subscription);
 
-            statements.add(new RevenueStatement(subscription, timeHelper.getSubscriptionPeriodAt(OffsetDateTime.now())));
-            statements.add(new RevenueStatement(subscription, timeHelper.getSubscriptionPeriodByOffset(OffsetDateTime.now(), -1)));
-            statements.add(new RevenueStatement(subscription, timeHelper.getSubscriptionPeriodByOffset(OffsetDateTime.now(), -2)));
-            statements.add(new RevenueStatement(subscription, timeHelper.getSubscriptionPeriodByOffset(OffsetDateTime.now(), -3)));
-
+            for(TimePeriod tp : timeHelper.getChargePeriodTimes()) {
+                statements.add(new RevenueStatement(subscription, tp));
+            }
 
             return ResponseEntity.ok(statements);
         } catch (Exception e) {
@@ -102,6 +102,23 @@ public class SubscriptionsController {
         plan.setDescription("This is a test subscription plan.");
         plan.setContractDurationPeriodType(RecurringPeriod.YEAR);
         plan.setContractDurationLength(1);
+
+        Price bundle = new Price();
+        bundle.setName("Bundle Price");
+        bundle.setIsBundle(true);
+
+        Price price = new Price();
+        price.setRecurringChargePeriodType(RecurringPeriod.YEAR);
+        price.setRecurringChargePeriodLength(1);
+
+        Price anotherPrice = new Price();
+        anotherPrice.setRecurringChargePeriodType(RecurringPeriod.MONTH);
+        anotherPrice.setRecurringChargePeriodLength(13);
+
+        List<Price> prices = List.of(price, anotherPrice);
+        bundle.setPrices(prices);
+        plan.setPrice(bundle);
+
         return plan;
     }
 

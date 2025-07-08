@@ -59,6 +59,7 @@ public class TimePeriod implements Comparable<TimePeriod> {
 		return this.toDate.compareTo(o.toDate);
 	}
 
+	@Override
 	public String toString() {
 		return "TimePeriod [fromDate=" + fromDate + ", toDate=" + toDate + "]";
 	}

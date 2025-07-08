@@ -209,7 +209,7 @@ public class SubscriptionTimeHelper {
         bundle.setPrices(prices);
         plan.setPrice(bundle);
 
-        Thread.sleep(1000);
+        Thread.sleep(100);
         now = OffsetDateTime.now();
 
         TimePeriod chargePeriod = helper.getChargePeriodByOffset(now, price, 18);
@@ -218,7 +218,7 @@ public class SubscriptionTimeHelper {
 
         Set<TimePeriod> chargePeriods = helper.getChargePeriodTimes();
         for(TimePeriod t : chargePeriods) {
-            System.out.println("Charge period: " + t);
+            logger.debug("Charge period: " + t);
         }
     }
 
