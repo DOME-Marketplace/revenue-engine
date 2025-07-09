@@ -36,69 +36,69 @@ public class PriceCalculator {
 
     public RevenueStatement compute(OffsetDateTime time) {
         logger.info("Computing revenue statement for time: {}", time);
-        
+
         if (subscription == null || subscription.getPlan() == null) {
             logger.error("Cannot compute - subscription or plan is null");
         }
-        
+
         try {
             TimePeriod period = new SubscriptionTimeHelper(subscription).getSubscriptionPeriodAt(time);
             logger.debug("Computed period: {} to {}", period.getFromDate(), period.getToDate());
-            
+
             RevenueStatement statement = new RevenueStatement(subscription, period);
             Price price = subscription.getPlan().getPrice();
-            
+
             logger.debug("Starting price computation for plan: {}", subscription.getPlan().getName());
             RevenueItem revenueItem = compute(price, time);
-            
+
             statement.setRevenueItem(revenueItem);
             logger.info("Successfully computed revenue statement with total value: {}", revenueItem.getOverallValue());
-            
+
             return statement;
         } catch (Exception e) {
             logger.error("Error computing revenue statement: {}", e.getMessage(), e);
         }
-		return null;
+        return null;
     }
 
     public RevenueItem compute(Price price, OffsetDateTime time) {
         logger.debug("Computing price item: {}", price.getName());
         RevenueItem item = new RevenueItem(price.getName(), 0.0, "EUR");
-        
+
         if (Boolean.TRUE.equals(price.getIsBundle())) {
             logger.debug("Processing bundle price with operation: {}", price.getBundleOp());
+            RevenueItem subItem;
             switch (price.getBundleOp()) {
                 case CUMULATIVE:
-                    logger.debug("Calculating cumulative prices");
-                    item.setValue(getCumulativePrice(price.getPrices(), time).getOverallValue());
+                    subItem = getCumulativePrice(price.getPrices(), time);
                     break;
-                    
                 case ALTERNATIVE_HIGHER:
-                    logger.debug("Calculating higher price alternative");
-                    item.setValue(getHigherPrice(price.getPrices(), time).getOverallValue());
+                    subItem = getHigherPrice(price.getPrices(), time);
                     break;
-                    
                 case ALTERNATIVE_LOWER:
-                    logger.debug("Calculating lower price alternative");
-                    item.setValue(getLowerPrice(price.getPrices(), time).getOverallValue());
+                    subItem = getLowerPrice(price.getPrices(), time);
                     break;
-                    
                 default:
-                    logger.error("Unknown bundle operation: {}", price.getBundleOp());
                     throw new IllegalArgumentException("Unknown bundle operation: " + price.getBundleOp());
             }
+            item.setItems(List.of(subItem));
+            item.setValue(subItem.getOverallValue());
         } else {
             logger.debug("Processing atomic price");
             RevenueItem atomicItem = getAtomicPrice(price, time);
+            item.setItems(List.of(atomicItem));
             item.setValue(atomicItem.getOverallValue());
-            logger.debug("Atomic price computed: {}", atomicItem.getOverallValue());
-            
+
             if (price.getDiscount() != null && !price.getDiscount().getDiscounts().isEmpty()) {
                 logger.info("Applying discounts to price");
                 DiscountCalculator discountCalculator = new DiscountCalculator(subscription);
                 Double discountValue = discountCalculator.compute(price.getDiscount(), time);
                 Double discountAmount = item.getOverallValue() * (discountValue / 100);
-                item.addRevenueItem("Discount", -discountAmount, "EUR");
+
+                RevenueItem discountItem = new RevenueItem("Discount", -discountAmount, "EUR");
+                item.getItems().add(discountItem);
+
+                item.setValue(item.getItems().stream().mapToDouble(RevenueItem::getOverallValue).sum());
                 logger.debug("Applied discount: {}% = -{}", discountValue, discountAmount);
             }
         }
@@ -109,36 +109,60 @@ public class PriceCalculator {
 
     private RevenueItem getAtomicPrice(Price price, OffsetDateTime time) {
         logger.debug("Computing atomic price for: {}", price.getName());
-        
+
         try {
             SubscriptionTimeHelper sth = new SubscriptionTimeHelper(subscription);
-            TimePeriod tp = sth.getSubscriptionPeriodAt(time);
+
+            TimePeriod tp;
+            if (price.getType() != null) {
+                switch (price.getType()) {
+                    case RECURRING_PREPAID:
+                        tp = sth.getSubscriptionPeriodAt(time);
+                        logger.debug("Using CURRENT subscription period for RECURRING_PREPAID");
+                        break;
+                    case RECURRING_POSTPAID:
+                        tp = sth.getPreviousSubscriptionPeriod(time);
+                        logger.debug("Using PREVIOUS subscription period for RECURRING_POSTPAID");
+                        break;
+                    case ONE_TIME_PREPAID:
+                    default:
+                        tp = sth.getSubscriptionPeriodAt(time); // check if it is first time,
+                        //start date e period corrent allora si
+                        logger.debug("Using CURRENT subscription period for ONE_TIME_PREPAID or default");
+                        break;
+                }
+            } else {
+                tp = sth.getSubscriptionPeriodAt(time);
+                logger.warn("Price type is null, defaulting to CURRENT period");
+            }
+
             logger.debug("Computed time period: {} to {}", tp.getFromDate(), tp.getToDate());
 
             String sellerId = subscription.getRelatedParties().stream()
-                .filter(rp -> "BUYER".equalsIgnoreCase(rp.getRole()))
-                .findFirst()
-                .orElseThrow(() -> {
-                    logger.error("No BUYER found in related parties");
-                    return new IllegalStateException("No BUYER found in related parties");
-                })
-                .getId();
+                    .filter(rp -> "BUYER".equalsIgnoreCase(rp.getRole()))
+                    .findFirst()
+                    .orElseThrow(() -> {
+                        logger.error("No BUYER found in related parties");
+                        return new IllegalStateException("No BUYER found in related parties");
+                    })
+                    .getId();
+
             logger.debug("Using seller ID: {}", sellerId);
 
             Double computedValue = metricsRetriever.computeValueForKey(
-                price.getComputationBase(), 
-                sellerId, 
-                tp.getFromDate(), 
-                tp.getToDate());
+                    price.getComputationBase(),
+                    sellerId,
+                    tp.getFromDate(),
+                    tp.getToDate());
             logger.debug("Computed base value: {}", computedValue);
 
             RevenueItem item = new RevenueItem(price.getName(), computedValue, "EUR");
-            
+
             if (price.getApplicableBaseRange() != null) {
                 Double min = price.getApplicableBaseRange().getMin();
                 Double max = price.getApplicableBaseRange().getMax();
                 logger.debug("Checking range constraints: min={}, max={}", min, max);
-                
+
                 if ((min != null && computedValue < min) || (max != null && computedValue > max)) {
                     logger.warn("Value {} outside range, setting to 0", computedValue);
                     item.setValue(0.0);
@@ -151,17 +175,17 @@ public class PriceCalculator {
             return new RevenueItem("Error", 0.0, "EUR");
         }
     }
-    
+
     private RevenueItem getCumulativePrice(List<Price> prices, OffsetDateTime time) {
         logger.debug("Computing cumulative price from {} items", prices.size());
         RevenueItem cumulativeItem = new RevenueItem("Cumulative Price", 0.0, "EUR");
-        
+
         for (Price p : prices) {
             RevenueItem current = compute(p, time);
             cumulativeItem.addRevenueItem(p.getName(), current.getOverallValue(), "EUR");
             logger.trace("Added item: {} = {}", p.getName(), current.getOverallValue());
         }
-        
+
         logger.debug("Total cumulative value: {}", cumulativeItem.getOverallValue());
         return cumulativeItem;
     }
@@ -169,21 +193,21 @@ public class PriceCalculator {
     private RevenueItem getHigherPrice(List<Price> prices, OffsetDateTime time) {
         logger.debug("Finding higher price from {} items", prices.size());
         RevenueItem higherItem = null;
-        
+
         for (Price p : prices) {
             RevenueItem current = compute(p, time);
             logger.trace("Comparing item: {} = {}", p.getName(), current.getOverallValue());
-            
+
             if (higherItem == null || current.getOverallValue() > higherItem.getOverallValue()) {
                 higherItem = current;
             }
         }
-        
+
         if (higherItem == null) {
             logger.warn("No valid prices found, returning 0");
             return new RevenueItem("Higher Price", 0.0, "EUR");
         }
-        
+
         logger.debug("Selected higher price: {}", higherItem.getOverallValue());
         return higherItem;
     }
@@ -191,24 +215,22 @@ public class PriceCalculator {
     private RevenueItem getLowerPrice(List<Price> prices, OffsetDateTime time) {
         logger.debug("Finding lower price from {} items", prices.size());
         RevenueItem lowerItem = null;
-        
+
         for (Price p : prices) {
             RevenueItem current = compute(p, time);
             logger.trace("Comparing item: {} = {}", p.getName(), current.getOverallValue());
-            
+
             if (lowerItem == null || current.getOverallValue() < lowerItem.getOverallValue()) {
                 lowerItem = current;
             }
         }
-        
+
         if (lowerItem == null) {
             logger.warn("No valid prices found, returning 0");
             return new RevenueItem("Lower Price", 0.0, "EUR");
         }
-        
+
         logger.debug("Selected lower price: {}", lowerItem.getOverallValue());
         return lowerItem;
     }
-
-
 }

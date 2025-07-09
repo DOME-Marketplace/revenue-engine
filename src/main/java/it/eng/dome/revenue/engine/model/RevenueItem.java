@@ -21,7 +21,15 @@ public class RevenueItem {
         this.items = new ArrayList<>();
     }
 
-    public void addRevenueItem(String name, Double value, String currency) {
+    public List<RevenueItem> getItems() {
+		return items;
+	}
+
+	public void setItems(List<RevenueItem> items) {
+        this.items = (items != null) ? new ArrayList<>(items) : new ArrayList<>();
+	}
+
+	public void addRevenueItem(String name, Double value, String currency) {
         if(currency!=null && !currency.equals(this.currency)) {
             throw new IllegalArgumentException("Currency mismatch: " + this.currency + " vs " + currency);
         }

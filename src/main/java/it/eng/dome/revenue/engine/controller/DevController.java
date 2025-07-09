@@ -48,9 +48,10 @@ public class DevController {
     public DevController() {
     }
 
+    // TODO FALLO PER TUTTI I TIME PERIODS
+    // vedi il controller di paolo @GetMapping("/dev/subscriptions/{id}/statements)
     
-    
-    @GetMapping("/dev/priceCalculator/{id}")
+    @GetMapping("/dev/subscriptions/{id}/statements?time=now")
     public ResponseEntity<RevenueStatement> priceCalculator(@PathVariable String id) {
 
     	
