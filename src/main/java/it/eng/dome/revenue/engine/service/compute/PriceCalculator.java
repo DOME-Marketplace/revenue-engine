@@ -1,13 +1,17 @@
 package it.eng.dome.revenue.engine.service.compute;
 
 import java.time.OffsetDateTime;
+import java.util.ArrayList;
 import java.util.List;
+
+import javax.annotation.Nonnull;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import it.eng.dome.revenue.engine.model.Discount;
 import it.eng.dome.revenue.engine.model.Price;
 import it.eng.dome.revenue.engine.model.RevenueItem;
 import it.eng.dome.revenue.engine.model.RevenueStatement;
@@ -86,20 +90,34 @@ public class PriceCalculator {
         } else {
             logger.debug("Processing atomic price");
             RevenueItem atomicItem = getAtomicPrice(price, time);
-            item.setItems(List.of(atomicItem));
+            item.setItems(new ArrayList<>(List.of(atomicItem)));
             item.setValue(atomicItem.getOverallValue());
 
-            if (price.getDiscount() != null && !price.getDiscount().getDiscounts().isEmpty()) {
+            if (price.getDiscount() != null && price.getDiscount().getDiscounts() != null && !price.getDiscount().getDiscounts().isEmpty()) {
                 logger.info("Applying discounts to price");
                 DiscountCalculator discountCalculator = new DiscountCalculator(subscription);
                 Double discountValue = discountCalculator.compute(price.getDiscount(), time);
-                Double discountAmount = item.getOverallValue() * (discountValue / 100);
+                logger.debug("PRE SCONTO get overall value: {}", item.getOverallValue());
 
-                RevenueItem discountItem = new RevenueItem("Discount", -discountAmount, "EUR");
-                item.getItems().add(discountItem);
+                if (discountValue != null && discountValue > 0) {
+                    Double discountAmount = item.getOverallValue() * (discountValue / 100);
+                    List<RevenueItem> discountItems = new ArrayList<>();
+                    for (Discount discount : price.getDiscount().getDiscounts()) {
+                        // Aggiungiamo ogni sconto come item con valore negativo
+                        RevenueItem discountItem = new RevenueItem(discount.getName(), -discountAmount, "EUR");
+                        discountItems.add(discountItem);
+                        logger.debug("Added discount item: {} with value {}", discount.getName(), -discountAmount);
+                    }
+                    item.getItems().addAll(discountItems);
 
-                item.setValue(item.getItems().stream().mapToDouble(RevenueItem::getOverallValue).sum());
-                logger.debug("Applied discount: {}% = -{}", discountValue, discountAmount);
+                    // Ricalcoliamo il valore totale dopo sconto
+                    item.setValue(item.getOverallValue());
+                    logger.debug("Applied discounts, new overall value: {}", item.getOverallValue());
+                } else {
+                    logger.debug("Discount value is zero or null, no discounts applied");
+                }
+            } else {
+                logger.debug("No discounts applied to price");
             }
         }
 
@@ -107,13 +125,15 @@ public class PriceCalculator {
         return item;
     }
 
+
     private RevenueItem getAtomicPrice(Price price, OffsetDateTime time) {
         logger.debug("Computing atomic price for: {}", price.getName());
 
         try {
             SubscriptionTimeHelper sth = new SubscriptionTimeHelper(subscription);
 
-            TimePeriod tp;
+            @Nonnull
+			TimePeriod tp = null;
             if (price.getType() != null) {
                 switch (price.getType()) {
                     case RECURRING_PREPAID:
@@ -125,10 +145,17 @@ public class PriceCalculator {
                         logger.debug("Using PREVIOUS subscription period for RECURRING_POSTPAID");
                         break;
                     case ONE_TIME_PREPAID:
-                    default:
-                        tp = sth.getSubscriptionPeriodAt(time); // check if it is first time,
-                        //start date e period corrent allora si
-                        logger.debug("Using CURRENT subscription period for ONE_TIME_PREPAID or default");
+                    	
+                        TimePeriod currentPeriod = sth.getSubscriptionPeriodAt(time);
+                        OffsetDateTime startDate = subscription.getStartDate();
+                        
+                        if (currentPeriod.getFromDate().equals(startDate)) {
+                            logger.debug("Using CURRENT subscription period for ONE_TIME_PREPAID");
+                            tp = currentPeriod;
+                        } else {
+                            logger.debug("Skipping ONE_TIME_PREPAID - not first period");
+                            return new RevenueItem(price.getName(), 0.0, "EUR");
+                        }
                         break;
                 }
             } else {

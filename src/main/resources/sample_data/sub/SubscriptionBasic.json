@@ -2,7 +2,7 @@
   "id": "01",
   "name": "Provider Engineering Ingegneria Informatica S.p.A. subscription for plan BASIC - year 2025",
   "status": "active",
-  "startDate": "2024-06-01T09:37:29.961Z",
+  "startDate": "2024-07-09T13:37:29.961Z",
   "subscriptionPlan": {
     "id": "urn:ngsi-ld:plan:02645de3-8c7y-1276-a344-00rfl123aq1n",
     "name": "BASIC"

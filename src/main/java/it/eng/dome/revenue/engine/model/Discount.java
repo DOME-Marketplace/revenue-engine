@@ -13,6 +13,9 @@ import jakarta.validation.constraints.PositiveOrZero;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class Discount {
 	
+	@JsonProperty("name")
+	private String name;
+	
     @JsonProperty("isBundle")
     private Boolean isBundle;
     
@@ -47,6 +50,17 @@ public class Discount {
 	private Price parentPrice;
 
 	public Discount() {}
+
+	
+	public String getName() {
+		return name;
+	}
+
+
+	public void setName(String name) {
+		this.name = name;
+	}
+
 
 	public Boolean getIsBundle() {
 		return isBundle;
