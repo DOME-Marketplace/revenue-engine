@@ -1,0 +1,17 @@
+{
+  "id": "7e9865f6-e30c-4fce-949c-b6b4ca5e506d",
+  "name": "Provider DHUB subscription for plan PRO - year 2025",
+  "status": "active",
+  "startDate": "2025-01-21T01:15:39.961Z",
+  "subscriptionPlan": {
+    "id": "urn:ngsi-ld:plan:52761it5-3d4q-2321-p009-44bro198re0p",
+    "name": "PRO"
+  },
+  "relatedParty": [
+    {
+      "id": "urn:ngsi-ld:organization:38817de3-8c3e-4141-a344-86ffd915cc3b",
+      "name": "DHUB, Engineering D.HUB S.p.A.",
+      "role": "Buyer"
+    }
+  ]
+}

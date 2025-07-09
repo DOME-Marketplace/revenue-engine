@@ -1,0 +1,17 @@
+{
+  "id": "21a93ecf-9aa5-4117-8b39-8b2799ee8a50",
+  "name": "Provider Engineering Ingegneria Informatica S.p.A. subscription for plan BASIC - year 2025",
+  "status": "active",
+  "startDate": "2025-02-01T09:37:29.961Z",
+  "subscriptionPlan": {
+    "id": "urn:ngsi-ld:plan:02645de3-8c7y-1276-a344-00rfl123aq1n",
+    "name": "BASIC"
+  },
+  "relatedParty": [
+  	{
+	    "id": "urn:ngsi-ld:organization:f2ad85a5-9edf-497c-b343-f08899084ebb",
+	    "name": "Engineering Ingegneria Informatica S.p.A.",
+	    "role": "Buyer"
+  	}
+  ]
+}
