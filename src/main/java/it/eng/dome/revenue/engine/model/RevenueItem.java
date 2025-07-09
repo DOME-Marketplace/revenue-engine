@@ -36,6 +36,10 @@ public class RevenueItem {
         return value;
     }
 
+    public void setValue(Double value) {
+		this.value = value;
+	}
+    
     public Double getOverallValue() {
         Double total = this.value;
         for (RevenueItem item : items) {

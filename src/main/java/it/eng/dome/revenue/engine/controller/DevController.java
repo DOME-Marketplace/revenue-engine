@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import it.eng.dome.revenue.engine.model.Price;
 import it.eng.dome.revenue.engine.model.RecurringPeriod;
+import it.eng.dome.revenue.engine.model.RevenueItem;
 import it.eng.dome.revenue.engine.model.RevenueStatement;
 import it.eng.dome.revenue.engine.model.Subscription;
 import it.eng.dome.revenue.engine.model.SubscriptionPlan;
@@ -50,7 +51,7 @@ public class DevController {
     
     
     @GetMapping("/dev/priceCalculator/{id}")
-    public ResponseEntity<Double> priceCalculator(@PathVariable String id) {
+    public ResponseEntity<RevenueStatement> priceCalculator(@PathVariable String id) {
 
     	
         try {
@@ -66,9 +67,15 @@ public class DevController {
             
             Price price = plan.getPrice();
             
-            double computedValue = priceCalculator.compute(price, time);
+            RevenueItem computedRevenueItem = priceCalculator.compute(price, time);
+            RevenueStatement computedRevenueStatement = new RevenueStatement(sub, 
+					new SubscriptionTimeHelper(sub).getSubscriptionPeriodAt(time));
+            computedRevenueStatement.setRevenueItem(computedRevenueItem);
+            computedRevenueStatement.setSubscription(sub);
             
-            return ResponseEntity.ok(computedValue);
+            
+            
+            return ResponseEntity.ok(computedRevenueStatement);
         } catch (Exception e) {
             e.printStackTrace();
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
