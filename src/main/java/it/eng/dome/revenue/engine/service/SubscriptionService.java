@@ -30,7 +30,7 @@ public class SubscriptionService {
 	
 	private final Logger logger = LoggerFactory.getLogger(SubscriptionService.class);
 
-	private final Path storageDir = Paths.get("src/main/resources/sample_data/sub/");
+	private final Path storageDir = Paths.get("src/main/resources/data/subscriptions/");
 
 	private final ObjectMapper mapper;
 

@@ -1,5 +1,6 @@
 package it.eng.dome.revenue.engine.model;
 
+import java.sql.Time;
 import java.time.OffsetDateTime;
 import java.util.HashSet;
 import java.util.List;
@@ -33,23 +34,31 @@ public class SubscriptionTimeHelper {
     }
 
     private Set<TimePeriod> getChargePeriodTimes(Price price) {
-        // the start date of the subscription
-        OffsetDateTime start = this.subscription.getStartDate();
+        // the output
         Set<TimePeriod> chargePeriodTimes = new TreeSet<>();
+        
         if(price.getIsBundle()) {
             for(Price p: price.getPrices()) {
                 chargePeriodTimes.addAll(this.getChargePeriodTimes(p));
             }
         } else {
-            // iterate over the charge periods, until reaching the current time
-            // or a year in the future
-            OffsetDateTime stopAt = OffsetDateTime.now().plusYears(1);
-            while(!start.isAfter(stopAt)) {
-                OffsetDateTime end = this.rollChargePeriod(start, price, 1);
-                chargePeriodTimes.add(new TimePeriod(start, end));
-                start = end;
+            // the start date of the subscription
+            OffsetDateTime start = this.subscription.getStartDate();
+            if(PriceType.ONE_TIME_PREPAID.equals(price.getType())) {
+                // if the price is a one-time prepaid, return only one period for the first subscription period
+                OffsetDateTime end = this.rollSubscriptionPeriod(start, 1);
+                TimePeriod tp = new TimePeriod(start, end);
+                chargePeriodTimes.add(tp);
+            } else {
+                // iterate over the charge periods, until reaching the current time
+                // or a year in the future
+                OffsetDateTime stopAt = OffsetDateTime.now().plusYears(1);
+                while(!start.isAfter(stopAt)) {
+                    OffsetDateTime end = this.rollChargePeriod(start, price, 1);
+                    chargePeriodTimes.add(new TimePeriod(start, end));
+                    start = end;
+                }
             }
-            return chargePeriodTimes;
         }
         return chargePeriodTimes;
     }

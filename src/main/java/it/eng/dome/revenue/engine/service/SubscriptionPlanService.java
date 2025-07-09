@@ -46,7 +46,7 @@ public class SubscriptionPlanService {
 
     
     public List<SubscriptionPlan> loadAllPlans() throws IOException {
-        Path dir = Paths.get("src/main/resources/sample_data/");
+        Path dir = Paths.get("src/main/resources/data/plans");
         List<SubscriptionPlan> plans = new ArrayList<>();
         
         if (Files.exists(dir)) {
