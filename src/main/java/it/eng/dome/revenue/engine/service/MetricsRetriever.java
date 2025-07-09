@@ -58,7 +58,7 @@ public class MetricsRetriever implements InitializingBean {
     public Double computeReferredProvidersNumber(String sellerId, OffsetDateTime from, OffsetDateTime to) throws Exception {
     	// TODO: test the method when listReferredProviders will work
     	// retrieves the list of providers referenced by the seller
-        List<Organization> referred = tmfDataRetriever.listReferredProviders(sellerId);
+        List<Organization> referred = tmfDataRetriever.listReferralsProviders(sellerId);
 
         if (referred == null) {
             return 0.0;
@@ -71,7 +71,7 @@ public class MetricsRetriever implements InitializingBean {
     public Double computeReferredProvidersTransactionVolume(String sellerId, OffsetDateTime from, OffsetDateTime to) throws Exception {
     	// TODO: test the method when listReferredProviders will work
     	// retrieve the list of providers referred by the given seller
-    	List<Organization> referred = tmfDataRetriever.listReferredProviders(sellerId);
+    	List<Organization> referred = tmfDataRetriever.listReferralsProviders(sellerId);
 
 	    if (referred == null || referred.isEmpty()) 
 	    	return 0.0;
@@ -102,7 +102,7 @@ public class MetricsRetriever implements InitializingBean {
     public Double computeReferredProviderMaxTransactionVolume(String sellerId, OffsetDateTime from, OffsetDateTime to) throws Exception {
     	// TODO: test the method when listReferredProviders will work
     	// retrieve the list of providers referred by the given seller
-    	List<Organization> referred = tmfDataRetriever.listReferredProviders(sellerId);
+    	List<Organization> referred = tmfDataRetriever.listReferralsProviders(sellerId);
 
 	    if (referred == null || referred.isEmpty()) 
 	    	return 0.0;

@@ -17,9 +17,10 @@ import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
 
 import it.eng.dome.revenue.engine.tmf.TmfApiFactory;
-import it.eng.dome.tmforum.tmf678.v4.model.RelatedParty;
 import it.eng.dome.tmforum.tmf632.v4.api.OrganizationApi;
+import it.eng.dome.tmforum.tmf632.v4.model.Characteristic;
 import it.eng.dome.tmforum.tmf632.v4.model.Organization;
+import it.eng.dome.tmforum.tmf632.v4.model.RelatedParty;
 import it.eng.dome.tmforum.tmf678.v4.api.AppliedCustomerBillingRateApi;
 import it.eng.dome.tmforum.tmf678.v4.model.AppliedCustomerBillingRate;
 
@@ -99,7 +100,7 @@ public class TmfDataRetriever implements InitializingBean {
         for(AppliedCustomerBillingRate acbr: bills) {
             if(acbr==null || acbr.getRelatedParty()==null)
                 continue;
-            for(RelatedParty rp: acbr.getRelatedParty()) {
+            for(it.eng.dome.tmforum.tmf678.v4.model.RelatedParty rp: acbr.getRelatedParty()) {
                 if("Seller".equals(rp.getRole())) {
                     sellersIds.add(rp.getId());
                 }
@@ -125,9 +126,58 @@ public class TmfDataRetriever implements InitializingBean {
 
     }
 
-    public List<Organization> listReferredProviders(String referralProviderId) {
-        // TODO: implement this method to retrieve all referred providers by a given referral provider
-        return new ArrayList<Organization>();
+    public List<Organization> listReferralsProviders(String referrerOrganizationId) throws Exception {
+        try {
+
+            // outuput, the the referred organizations
+            List<Organization> referrals = new ArrayList<>();
+
+            // prepare the filter: only billed bills and in the given period
+            Map<String, String> filter = new HashMap<>();
+            filter.put("partyCharacteristic.name", "referredBy");
+
+            // retrieve organizations with the 'referredBy' field
+            List<Organization> orgs = orgApi.listOrganization(null, null, 10, filter);
+
+            // return those matching the 'referrerOrganizationId'
+            for(Organization o:orgs) {
+                if(o.getPartyCharacteristic()!=null && o.getPartyCharacteristic().stream()
+                        .anyMatch(pc -> "referredBy".equals(pc.getName()) && referrerOrganizationId.equals(pc.getValue()))) {
+                    referrals.add(o);
+                }
+            }
+            return referrals;
+        } catch (Exception e) {
+            logger.error("Error retrieving referrals for referrer provider ID: " + referrerOrganizationId, e);
+            throw(e);
+        }
+    }
+
+    public Organization getReferrerProvider(String referralOrganizationId) throws Exception{
+        try {
+            // get the id of the refferrer organization, if any
+            Organization referralOrg = orgApi.retrieveOrganization(referralOrganizationId, null);
+            // retrieve the referrefer organization from the referral organization
+            if(referralOrg!=null && referralOrg.getPartyCharacteristic()!=null) {
+                // find the 'referredBy' characteristic
+                String referrerId = null;
+                for(Characteristic pc : referralOrg.getPartyCharacteristic()) {
+                    if("referredBy".equals(pc.getName())) {
+                        referrerId = (String)pc.getValue();
+                        break;
+                    }
+                }
+                // if found, retrieve the organization
+                if(referrerId!=null) {
+                    return orgApi.retrieveOrganization(referrerId, null);
+                }
+            }
+            // otherwise, return null
+            return null;
+        } catch (Exception e) {
+            logger.error("Error retrieving referrer provider for referral provider ID: " + referralOrganizationId, e);
+            throw(e);
+        }
     }
 
     public List<Organization> retrieveActiveSellersInLastMonth() throws Exception {

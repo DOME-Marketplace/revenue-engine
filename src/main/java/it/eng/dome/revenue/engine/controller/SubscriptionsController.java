@@ -15,6 +15,8 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+
+
 import it.eng.dome.revenue.engine.model.Price;
 import it.eng.dome.revenue.engine.model.RecurringPeriod;
 import it.eng.dome.revenue.engine.model.RevenueStatement;
@@ -23,6 +25,7 @@ import it.eng.dome.revenue.engine.model.SubscriptionPlan;
 import it.eng.dome.revenue.engine.model.SubscriptionTimeHelper;
 import it.eng.dome.revenue.engine.model.TimePeriod;
 import it.eng.dome.revenue.engine.service.TmfDataRetriever;
+import it.eng.dome.tmforum.tmf632.v4.model.Organization;
 
 @RestController
 //@RequiredArgsConstructor
@@ -77,6 +80,26 @@ public class SubscriptionsController {
             }
 
             return ResponseEntity.ok(statements);
+        } catch (Exception e) {
+            logger.error(e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+
+    @GetMapping("/organizations/{referrerOrganizationId}/referrals")
+    public ResponseEntity<List<Organization>> listReferralsProviders(@PathVariable String referrerOrganizationId) {
+        try {
+            return ResponseEntity.ok(tmfDataRetriever.listReferralsProviders(referrerOrganizationId));
+        } catch (Exception e) {
+            logger.error(e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+
+    @GetMapping("/organizations/{referralOrganizationId}/referrer")
+    public ResponseEntity<Organization> getReferrerProvider(@PathVariable String referralOrganizationId) {
+        try {
+            return ResponseEntity.ok(tmfDataRetriever.getReferrerProvider(referralOrganizationId));
         } catch (Exception e) {
             logger.error(e.getMessage(), e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
