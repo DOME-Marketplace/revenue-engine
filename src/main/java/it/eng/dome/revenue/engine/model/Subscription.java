@@ -83,6 +83,17 @@ public class Subscription {
         this.startDate = startDate;
     }
 
+    public String getBuyerId() {
+        if (relatedParties != null && !relatedParties.isEmpty()) {
+            for (RelatedParty party : relatedParties) {
+                if ("Buyer".equalsIgnoreCase(party.getRole())) {
+                    return party.getId();
+                }
+            }
+        }
+        return null; // or throw an exception if a buyer is mandatory
+    }
+
     @Override
     public String toString() {
 		return "Subscription{" +

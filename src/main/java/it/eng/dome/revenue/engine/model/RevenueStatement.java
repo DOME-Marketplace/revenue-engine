@@ -15,7 +15,7 @@ public class RevenueStatement {
 
     @JsonProperty("description")
     public String getDescription() {
-        String name = "Revenue Statement for " + "<unknown>" + "; plan " + subscription.getPlan().getName() + " from " + period.getFromDate() + " to " + period.getToDate();
+        String name = "Revenue Statement for " + subscription.getBuyerId() + "; plan " + subscription.getPlan().getName() + " from " + period.getFromDate() + " to " + period.getToDate();
         return name;
     }
 
