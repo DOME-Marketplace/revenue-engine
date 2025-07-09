@@ -69,61 +69,119 @@ public class PriceCalculator {
         logger.debug("Computing price item: {}", price.getName());
         RevenueItem item = new RevenueItem(price.getName(), 0.0, "EUR");
 
-        if (Boolean.TRUE.equals(price.getIsBundle())) {
+        if (Boolean.TRUE.equals(price.getIsBundle()) && price.getPrices() != null) {
             logger.debug("Processing bundle price with operation: {}", price.getBundleOp());
-            RevenueItem subItem;
+            List<RevenueItem> childItems = new ArrayList<>();
             switch (price.getBundleOp()) {
-                case CUMULATIVE:
-                    subItem = getCumulativePrice(price.getPrices(), time);
+                case CUMULATIVE: {
+                    double sum = 0.0;
+                    for (Price p : price.getPrices()) {
+                        RevenueItem child = compute(p, time);
+                        childItems.add(child);
+                        sum += child.getOverallValue();
+                    }
+                    item.setItems(childItems);
+                    item.setValue(sum);
                     break;
-                case ALTERNATIVE_HIGHER:
-                    subItem = getHigherPrice(price.getPrices(), time);
+                }
+                case ALTERNATIVE_HIGHER: {
+                    RevenueItem maxItem = null;
+                    double maxVal = Double.NEGATIVE_INFINITY;
+                    for (Price p : price.getPrices()) {
+                        RevenueItem child = compute(p, time);
+                        childItems.add(child);
+                        double val = child.getOverallValue();
+                        if (val > maxVal) {
+                            maxVal = val;
+                            maxItem = child;
+                        }
+                    }
+                    item.setItems(childItems);
+                    item.setValue(maxVal == Double.NEGATIVE_INFINITY ? 0.0 : maxVal);
                     break;
-                case ALTERNATIVE_LOWER:
-                    subItem = getLowerPrice(price.getPrices(), time);
+                }
+                case ALTERNATIVE_LOWER: {
+                    RevenueItem minItem = null;
+                    double minVal = Double.POSITIVE_INFINITY;
+                    for (Price p : price.getPrices()) {
+                        RevenueItem child = compute(p, time);
+                        childItems.add(child);
+                        double val = child.getOverallValue();
+                        if (val < minVal) {
+                            minVal = val;
+                            minItem = child;
+                        }
+                    }
+                    item.setItems(childItems);
+                    item.setValue(minVal == Double.POSITIVE_INFINITY ? 0.0 : minVal);
                     break;
+                }
                 default:
                     throw new IllegalArgumentException("Unknown bundle operation: " + price.getBundleOp());
             }
-            item.setItems(List.of(subItem));
-            item.setValue(subItem.getOverallValue());
         } else {
             logger.debug("Processing atomic price");
             RevenueItem atomicItem = getAtomicPrice(price, time);
             item.setItems(new ArrayList<>(List.of(atomicItem)));
             item.setValue(atomicItem.getOverallValue());
+        }
 
-            if (price.getDiscount() != null && price.getDiscount().getDiscounts() != null && !price.getDiscount().getDiscounts().isEmpty()) {
-                logger.info("Applying discounts to price");
-                DiscountCalculator discountCalculator = new DiscountCalculator(subscription);
-                Double discountValue = discountCalculator.compute(price.getDiscount(), time);
-                logger.debug("PRE SCONTO get overall value: {}", item.getOverallValue());
+        if (price.getDiscount() != null) {
+            logger.info("Applying discounts to price");
+            DiscountCalculator discountCalculator = new DiscountCalculator(subscription);
+            Double discountPercent = discountCalculator.compute(price.getDiscount(), time);
+            logger.debug("Discount percent computed: {}", discountPercent);
 
-                if (discountValue != null && discountValue > 0) {
-                    Double discountAmount = item.getOverallValue() * (discountValue / 100);
-                    List<RevenueItem> discountItems = new ArrayList<>();
-                    for (Discount discount : price.getDiscount().getDiscounts()) {
-                        // Aggiungiamo ogni sconto come item con valore negativo
-                        RevenueItem discountItem = new RevenueItem(discount.getName(), -discountAmount, "EUR");
-                        discountItems.add(discountItem);
-                        logger.debug("Added discount item: {} with value {}", discount.getName(), -discountAmount);
-                    }
-                    item.getItems().addAll(discountItems);
+            if (discountPercent != null && discountPercent > 0) {
+                double discountAmount = item.getOverallValue() * (discountPercent / 100);
 
-                    // Ricalcoliamo il valore totale dopo sconto
-                    item.setValue(item.getOverallValue());
-                    logger.debug("Applied discounts, new overall value: {}", item.getOverallValue());
-                } else {
-                    logger.debug("Discount value is zero or null, no discounts applied");
+                if (item.getItems() == null) {
+                    item.setItems(new ArrayList<>());
                 }
+
+                if (Boolean.TRUE.equals(price.getDiscount().getIsBundle())
+                        && price.getDiscount().getDiscounts() != null
+                        && !price.getDiscount().getDiscounts().isEmpty()) {
+
+                    int discountCount = price.getDiscount().getDiscounts().size();
+                    double singleDiscountValue = -discountAmount / discountCount;
+                   
+	                    for (Discount discount : price.getDiscount().getDiscounts()) {
+	                    	 if(discount.getName() != null) {
+	                        RevenueItem discountItem = new RevenueItem(
+	                            "Discount: " + discount.getName() + " applied to " + price.getName(),
+	                            singleDiscountValue,
+	                            "EUR"
+	                        );
+	                        item.getItems().add(discountItem);
+	                        logger.debug("Added bundled discount item: {} with value {}", discount.getName(), singleDiscountValue);
+	                    	 }
+                       }
+                } else {
+                    // Sconto atomico
+                    RevenueItem discountItem = new RevenueItem(
+                        "Discount: " + price.getDiscount().getName() + " applied to " + price.getName(),
+                        -discountAmount,
+                        "EUR"
+                    );
+                    item.getItems().add(discountItem);
+                    logger.debug("Added atomic discount item: {} with value {}", price.getDiscount().getName(), -discountAmount);
+                }
+
+                // Aggiorna valore complessivo sommando sconti
+                item.setValue(item.getOverallValue());
+                logger.debug("Applied discounts, new overall value: {}", item.getOverallValue());
             } else {
-                logger.debug("No discounts applied to price");
+                logger.debug("Discount percent is zero or null, no discounts applied");
             }
+        } else {
+            logger.debug("No discounts applied to price");
         }
 
         logger.debug("Final computed price item: {}", item.getOverallValue());
         return item;
     }
+
 
 
     private RevenueItem getAtomicPrice(Price price, OffsetDateTime time) {
@@ -203,6 +261,7 @@ public class PriceCalculator {
         }
     }
 
+    // FIXME: IF USE these methods, THE JSON OF STATEMENT WILL NOT CATCH THE DISCOUNTS
     private RevenueItem getCumulativePrice(List<Price> prices, OffsetDateTime time) {
         logger.debug("Computing cumulative price from {} items", prices.size());
         RevenueItem cumulativeItem = new RevenueItem("Cumulative Price", 0.0, "EUR");
