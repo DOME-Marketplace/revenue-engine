@@ -35,7 +35,7 @@
               "bundleOp": "ALTERNATIVE_HIGHER",
               "discounts": [
                 {
-				  "name": "Discount tier1",
+				  "name": "Discount Tier 1",
                   "computationBase": "bills-no-taxes",
                   "referencePeriod": "PREVIOUS_SUBSCRIPTION_PERIOD",
                   "applicableBaseRange": {
@@ -45,7 +45,7 @@
                   "percent": 0
                 },
                 {
-				  "name": "Discount tier2",
+				  "name": "Discount Tier 2",
                   "computationBase": "bills-no-taxes",
                   "referencePeriod": "PREVIOUS_SUBSCRIPTION_PERIOD",
                   "applicableBaseRange": {
@@ -55,7 +55,7 @@
                   "percent": 15
                 },
                 {
-				  "name": "Discount tier3",
+				  "name": "Discount Tier 3",
                   "computationBase": "bills-no-taxes",
                   "referencePeriod": "PREVIOUS_SUBSCRIPTION_PERIOD",
                   "applicableBaseRange": {
@@ -65,7 +65,7 @@
                   "percent": 30
                 },
                 {
-				  "name": "Discount tier4",
+				  "name": "Discount Tier 4",
                   "computationBase": "bills-no-taxes",
                   "referencePeriod": "PREVIOUS_SUBSCRIPTION_PERIOD",
                   "applicableBaseRange": {
@@ -75,7 +75,7 @@
                   "percent": 50
                 },
                 {
-				  "name": "Discount tier5",	
+				  "name": "Discount Tier 5",	
                   "computationBase": "bills-no-taxes",
                   "referencePeriod": "PREVIOUS_SUBSCRIPTION_PERIOD",
                   "applicableBaseRange": {
@@ -112,6 +112,8 @@
       {
         "name": "Transaction-based Fee",
         "type": "RECURRING_POSTPAID",
+		"isBundle": true,
+		"bundleOp": "CUMULATIVE",
         "prices": [
           {
             "amount": 0,
