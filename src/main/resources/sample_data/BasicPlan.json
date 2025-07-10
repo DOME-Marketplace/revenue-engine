@@ -30,10 +30,12 @@
           "bundleOp": "CUMULATIVE",
           "discounts": [
             {
+			  "name": "Volume-based Discount",
               "isBundle": true,
               "bundleOp": "ALTERNATIVE_HIGHER",
               "discounts": [
                 {
+				  "name": "Discount Tier 1",
                   "computationBase": "bills-no-taxes",
                   "referencePeriod": "PREVIOUS_SUBSCRIPTION_PERIOD",
                   "applicableBaseRange": {
@@ -43,6 +45,7 @@
                   "percent": 0
                 },
                 {
+				  "name": "Discount Tier 2",
                   "computationBase": "bills-no-taxes",
                   "referencePeriod": "PREVIOUS_SUBSCRIPTION_PERIOD",
                   "applicableBaseRange": {
@@ -52,6 +55,7 @@
                   "percent": 15
                 },
                 {
+				  "name": "Discount Tier 3",
                   "computationBase": "bills-no-taxes",
                   "referencePeriod": "PREVIOUS_SUBSCRIPTION_PERIOD",
                   "applicableBaseRange": {
@@ -61,6 +65,7 @@
                   "percent": 30
                 },
                 {
+				  "name": "Discount Tier 4",
                   "computationBase": "bills-no-taxes",
                   "referencePeriod": "PREVIOUS_SUBSCRIPTION_PERIOD",
                   "applicableBaseRange": {
@@ -70,6 +75,7 @@
                   "percent": 50
                 },
                 {
+				  "name": "Discount Tier 5",	
                   "computationBase": "bills-no-taxes",
                   "referencePeriod": "PREVIOUS_SUBSCRIPTION_PERIOD",
                   "applicableBaseRange": {
@@ -84,11 +90,13 @@
               "bundleOp": "ALTERNATIVE_HIGHER",
               "discounts": [
                 {
+				  "name": "Discount for referrals",	
                   "computationBase": "referred-providers-number",
                   "referencePeriod": "PREVIOUS_SUBSCRIPTION_PERIOD",
                   "percent": 10
                 },
                 {
+				 "name": "Discount for referred providers with sales over 100k",
                   "computationBase": "referred-providers-transaction-volume",
                   "referencePeriod": "PREVIOUS_SUBSCRIPTION_PERIOD",
                   "applicableBaseRange": {
@@ -104,6 +112,8 @@
       {
         "name": "Transaction-based Fee",
         "type": "RECURRING_POSTPAID",
+		"isBundle": true,
+		"bundleOp": "CUMULATIVE",
         "prices": [
           {
             "amount": 0,

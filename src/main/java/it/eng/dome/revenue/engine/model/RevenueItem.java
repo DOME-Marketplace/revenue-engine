@@ -16,12 +16,20 @@ public class RevenueItem {
 
     public RevenueItem(String name, Double value, String currency) {
         this.name = name;
-        this.value = value;
+        this.value = value; 
         this.currency = currency;
         this.items = new ArrayList<>();
     }
 
-    public void addRevenueItem(String name, Double value, String currency) {
+    public List<RevenueItem> getItems() {
+		return items;
+	}
+
+	public void setItems(List<RevenueItem> items) {
+        this.items = (items != null) ? new ArrayList<>(items) : new ArrayList<>();
+	}
+
+	public void addRevenueItem(String name, Double value, String currency) {
         if(currency!=null && !currency.equals(this.currency)) {
             throw new IllegalArgumentException("Currency mismatch: " + this.currency + " vs " + currency);
         }
@@ -36,6 +44,10 @@ public class RevenueItem {
         return value;
     }
 
+    public void setValue(Double value) {
+		this.value = value;
+	}
+    
     public Double getOverallValue() {
         Double total = this.value;
         for (RevenueItem item : items) {
