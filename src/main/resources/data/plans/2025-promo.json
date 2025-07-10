@@ -104,6 +104,8 @@
       {
         "name": "Transaction-based Fee",
         "type": "RECURRING_POSTPAID",
+		"isBundle": true,
+		"bundleOp": "CUMULATIVE",
         "recurringChargePeriodLength": 1,
         "recurringChargePeriodType": "MONTH",
         "prices": [

@@ -32,7 +32,7 @@ public class DevController {
     
 	protected final Logger logger = LoggerFactory.getLogger(DevController.class);
 
-		@Autowired
+	@Autowired
 	PriceCalculator priceCalculator;
 
 	@Autowired
@@ -48,8 +48,7 @@ public class DevController {
     public DevController() {
     }
 
-    // TODO FALLO PER TUTTI I TIME PERIODS
-    // vedi il controller di paolo @GetMapping("/dev/subscriptions/{id}/statements)
+
     
     @GetMapping("/dev/subscriptions/{id}/statements")
     public ResponseEntity<RevenueStatement> priceCalculator(@PathVariable String id) {
