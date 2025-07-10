@@ -26,69 +26,85 @@
         "recurringChargePeriodLength": 1,
         "recurringChargePeriodType": "YEAR",
         "discount": {
+          "name": "List of Discounts",
           "isBundle": true,
           "bundleOp": "CUMULATIVE",
           "discounts": [
             {
+              "name": "AtomicPrice-based Discount",
               "isBundle": true,
               "bundleOp": "ALTERNATIVE_HIGHER",
               "discounts": [
                 {
-                  "computationBase": "bills-no-taxes",
+                  "name": "Discount Tier 1",
                   "referencePeriod": "PREVIOUS_SUBSCRIPTION_PERIOD",
+                  "applicableBase": "bills-no-taxes",
                   "applicableBaseRange": {
                     "min": 0,
                     "max": 100000
                   },
+                  "computationBase": "parent-price",
                   "percent": 0
                 },
                 {
-                  "computationBase": "bills-no-taxes",
+                  "name": "Discount Tier 2",
                   "referencePeriod": "PREVIOUS_SUBSCRIPTION_PERIOD",
+                  "applicableBase": "bills-no-taxes",
                   "applicableBaseRange": {
                     "min": 100001,
                     "max": 250000
                   },
+                  "computationBase": "parent-price",
                   "percent": 15
                 },
                 {
-                  "computationBase": "bills-no-taxes",
+                  "name": "Discount Tier 3",
                   "referencePeriod": "PREVIOUS_SUBSCRIPTION_PERIOD",
+                  "applicableBase": "bills-no-taxes",
                   "applicableBaseRange": {
                     "min": 250001,
                     "max": 750000
                   },
+                  "computationBase": "parent-price",
                   "percent": 30
                 },
                 {
-                  "computationBase": "bills-no-taxes",
+                  "name": "Discount Tier 4",
                   "referencePeriod": "PREVIOUS_SUBSCRIPTION_PERIOD",
+                  "applicableBase": "bills-no-taxes",
                   "applicableBaseRange": {
                     "min": 750001,
                     "max": 1000000
                   },
+                  "computationBase": "parent-price",
                   "percent": 50
                 },
                 {
-                  "computationBase": "bills-no-taxes",
+                  "name": "Discount Tier 5",
                   "referencePeriod": "PREVIOUS_SUBSCRIPTION_PERIOD",
+                  "applicableBase": "bills-no-taxes",
                   "applicableBaseRange": {
                     "min": 1000001
                   },
+                  "computationBase": "parent-price",
                   "percent": 80
                 }
               ]
             },
             {
+              "name": "Referred-based Discount",
               "isBundle": true,
               "bundleOp": "ALTERNATIVE_HIGHER",
-              "discounts": [
+              "discounts": 
+              [
                 {
+                  "name": "Discount Ref 1",
                   "computationBase": "referred-providers-number",
                   "referencePeriod": "PREVIOUS_SUBSCRIPTION_PERIOD",
                   "percent": 10
                 },
                 {
+                  "name": "Discount Ref 2",
                   "computationBase": "referred-providers-transaction-volume",
                   "referencePeriod": "PREVIOUS_SUBSCRIPTION_PERIOD",
                   "applicableBaseRange": {
@@ -108,49 +124,59 @@
 		"bundleOp": "CUMULATIVE",
         "prices": [
           {
-            "amount": 0,
-            "currency": "EUR",
-            "computationBase": "bills-no-taxes",
+            "name": "Price Range 1",
             "referencePeriod": "CURRENT_SUBSCRIPTION_PERIOD",
+            "applicableBase": "bills-no-taxes",
             "applicableBaseRange": {
               "min": 0,
               "max": 100000
-            }
+            },
+            "computationBase": "bills-no-taxes",
+            "amount": 0,
+            "currency": "EUR"
           },
           {
-            "percent": 4,
-            "computationBase": "bills-no-taxes",
+            "name": "Price Range 2",
             "referencePeriod": "CURRENT_SUBSCRIPTION_PERIOD",
+            "applicableBase": "bills-no-taxes",
             "applicableBaseRange": {
               "min": 100001,
               "max": 250000
-            }
+            },
+            "computationBase": "bills-no-taxes",
+            "percent": 4
           },
           {
-            "percent": 3.5,
-            "computationBase": "bills-no-taxes",
+            "name": "Price Range 3",
             "referencePeriod": "CURRENT_SUBSCRIPTION_PERIOD",
+            "applicableBase": "bills-no-taxes",
             "applicableBaseRange": {
               "min": 250001,
               "max": 750000
-            }
+            },
+            "computationBase": "bills-no-taxes",
+            "percent": 3.5
           },
           {
-            "percent": 3,
-            "computationBase": "bills-no-taxes",
+            "name": "Price Range 4",
             "referencePeriod": "CURRENT_SUBSCRIPTION_PERIOD",
+            "applicableBase": "bills-no-taxes",
             "applicableBaseRange": {
               "min": 750001,
               "max": 1000000
-            }
+            },
+            "computationBase": "bills-no-taxes",
+            "percent": 3
           },
           {
-            "percent": 2.5,
-            "computationBase": "bills-no-taxes",
+            "name": "Price Range 5",
             "referencePeriod": "CURRENT_SUBSCRIPTION_PERIOD",
+            "applicableBase": "bills-no-taxes",
             "applicableBaseRange": {
               "min": 1000001
-            }
+            },
+            "computationBase": "bills-no-taxes",
+            "percent": 2.5
           }
         ],
         "recurringChargePeriodLength": 1,
