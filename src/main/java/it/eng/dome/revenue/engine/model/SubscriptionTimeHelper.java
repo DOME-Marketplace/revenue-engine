@@ -1,6 +1,5 @@
 package it.eng.dome.revenue.engine.model;
 
-import java.sql.Time;
 import java.time.OffsetDateTime;
 import java.util.HashSet;
 import java.util.List;
