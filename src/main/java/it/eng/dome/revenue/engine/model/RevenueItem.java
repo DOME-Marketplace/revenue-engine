@@ -11,7 +11,9 @@ public class RevenueItem {
     private String name;
     private Double value;
     private String currency;
-
+    private String computationBase;
+    private Double computationBaseValue;
+    
     private List<RevenueItem> items;
 
     public RevenueItem(String name, Double value, String currency) {
@@ -58,6 +60,22 @@ public class RevenueItem {
 
     public String getCurrency() {
         return currency;
+    }
+
+        public String getComputationBase() {
+        return computationBase;
+    }
+
+    public void setComputationBase(String computationBase) {
+        this.computationBase = computationBase;
+    }
+
+    public Double getComputationBaseValue() {
+        return computationBaseValue;
+    }
+
+    public void setComputationBaseValue(Double computationBaseValue) {
+        this.computationBaseValue = computationBaseValue;
     }
 
 }
