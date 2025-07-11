@@ -137,8 +137,6 @@ public class PriceCalculator {
                     logger.debug("Added atomic discount item: {} with value {}", price.getDiscount().getName(), -discountAmount);
                 }
  
-                item.setValue(item.getOverallValue());
-                logger.debug("Applied discounts, new overall value: {}", item.getOverallValue());
             } else {
                 logger.debug("Discount percent is zero or null, no discounts applied");
             }
@@ -146,7 +144,6 @@ public class PriceCalculator {
             logger.debug("No discounts applied to price");
         }
  
-        logger.debug("Final computed price item: {}", item.getOverallValue());
         return item;
     }
 
@@ -178,6 +175,7 @@ public class PriceCalculator {
                         break;
                 }
             } else {
+            	// TODO: GET PARENT TYPE FROM PRICE 
                 tp = sth.getSubscriptionPeriodAt(time);
             }
 
@@ -189,7 +187,7 @@ public class PriceCalculator {
 
             if (price.getApplicableBase() != null && !price.getApplicableBase().isEmpty()) {
                 computedValue = metricsRetriever.computeValueForKey(price.getApplicableBase(), buyerId, tp.getFromDate(), tp.getToDate());
-                computedValue += 1350000.00; // Simulating a base value for testing purposes
+                computedValue += 135000.00; // Simulating a base value for testing purposes
                 if(price.getApplicableBaseRange().getMax()==null) {
                 	price.getApplicableBaseRange().setMax(Double.POSITIVE_INFINITY);
 				}
@@ -225,7 +223,6 @@ public class PriceCalculator {
             cumulativeItem.getItems().add(current);
         }
 
-        // cumulativeItem.setValue(cumulativeItem.getOverallValue()); // <-- NON necessario
         return cumulativeItem;
     }
 
