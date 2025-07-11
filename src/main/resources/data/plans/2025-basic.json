@@ -7,6 +7,15 @@
     "toDate": "2025-12-31T23:59:59Z"
   },
   "lifecycleStatus": "launched",
+  "contractDurationLength": 1,
+  "contractDurationPeriodType": "YEAR",
+  "renewalTermLength": 1,
+  "renewalTermPeriodType": "YEAR",
+  "billingPeriod": "YEAR",
+  "agreements": [
+    "Annual subscription with renewal. Providers can receive up to 80% discount based on the sales volume from the previous year",
+    "Referral bonus: an extra 10% discount on next year's fee for bringing 3 new providers or if a referred provider reaches 100k+ in sales"
+  ],
   "price": {
     "name": "Recurring Components",
     "isBundle": true,
@@ -124,6 +133,8 @@
         "type": "RECURRING_POSTPAID",
     		"isBundle": true,
 		    "bundleOp": "CUMULATIVE",
+        "recurringChargePeriodLength": 1,
+        "recurringChargePeriodType": "MONTH",
         "prices": [
           {
             "name": "Price Range 1",
@@ -183,19 +194,8 @@
             "computationBaseReferencePeriod": "CURRENT_BILLING_PERIOD",
             "percent": 2.5
           }
-        ],
-        "recurringChargePeriodLength": 1,
-        "recurringChargePeriodType": "MONTH"
+        ]
       }
     ]
-  },
-  "contractDurationLength": 1,
-  "contractDurationPeriodType": "YEAR",
-  "renewalTermLength": 1,
-  "renewalTermPeriodType": "YEAR",
-  "billingPeriod": "YEAR",
-  "agreements": [
-    "Annual subscription with renewal. Providers can receive up to 80% discount based on the sales volume from the previous year",
-    "Referral bonus: an extra 10% discount on next year's fee for bringing 3 new providers or if a referred provider reaches 100k+ in sales"
-  ]
+  }
 }

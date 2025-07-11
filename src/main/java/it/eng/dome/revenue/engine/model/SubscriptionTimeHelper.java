@@ -5,6 +5,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.regex.Pattern;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -94,6 +95,35 @@ public class SubscriptionTimeHelper {
         // compute the previous subscription period wrt given time
     public TimePeriod getNextSubscriptionPeriod(OffsetDateTime time) {
         return this.getSubscriptionPeriodByOffset(time, 1);
+    }
+
+    public TimePeriod getCustomPeriod(OffsetDateTime time, Price price, String keyword) {
+        // if the keyword is null or empty, return null
+        if(keyword != null && !keyword.isEmpty()) {
+            Pattern p = Pattern.compile("^(LAST|PREVIOUS)_(\\d+)_BILLING_PERIODS$");
+            var matcher = p.matcher(keyword);
+            if(matcher.matches()) {
+                Integer howManyPeriods = Integer.parseInt(matcher.group(2));
+                String timeWindowEndType = matcher.group(1);
+                TimePeriod startPeriod = null;
+                TimePeriod endPeriod = null;
+                if("LAST".equals(timeWindowEndType)) {
+                    startPeriod = this.getChargePeriodByOffset(time, price, -howManyPeriods+1);
+                    endPeriod = this.getChargePeriodAt(time, price);
+                } else if("PREVIOUS".equals(timeWindowEndType)) {
+                    startPeriod = this.getChargePeriodByOffset(time, price, -howManyPeriods);
+                    endPeriod = this.getPreviousChargePeriod(time, price);
+                }
+                if(startPeriod==null) {
+                    // the period is before the subscription, constraining to the start of the subscription
+                    startPeriod = this.getChargePeriodAt(this.subscription.getStartDate(), price);
+                }
+                if(startPeriod != null && endPeriod != null) {
+                    return new TimePeriod(startPeriod.getFromDate(), endPeriod.getToDate());
+                }
+            }
+        }
+        return null;
     }
 
     // Compute the subscription period at a given time
@@ -228,6 +258,12 @@ public class SubscriptionTimeHelper {
         for(TimePeriod t : chargePeriods) {
             logger.debug("Charge period: " + t);
         }
+
+        TimePeriod tp = helper.getCustomPeriod(now, price, "PREVIOUS_1_BILLING_PERIODS");
+        logger.debug("Custom period: " + tp);
+
+        logger.debug(helper.getPreviousChargePeriod(now, price).toString());
+        logger.debug(helper.getCurrentChargePeriod(price).toString());
     }
 
 }

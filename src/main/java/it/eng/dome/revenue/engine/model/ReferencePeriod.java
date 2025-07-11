@@ -1,9 +1,28 @@
 package it.eng.dome.revenue.engine.model;
 
-public enum ReferencePeriod {
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonValue;
 
-    CURRENT_BILLING_PERIOD,
-    PREVIOUS_BILLING_PERIOD,
-    CURRENT_SUBSCRIPTION_PERIOD,
-    PREVIOUS_SUBSCRIPTION_PERIOD
+@JsonInclude(JsonInclude.Include.NON_NULL)
+public class ReferencePeriod {
+
+    @JsonValue
+    String value = null;
+
+    public ReferencePeriod(String value) {
+        this.value = value;
+    }
+
+    public String getValue() {
+        return value;
+    }
+
+    public void setValue(String value) {
+        this.value = value;
+    }
+
+//    CURRENT_BILLING_PERIOD,
+//    PREVIOUS_BILLING_PERIOD,
+//    CURRENT_SUBSCRIPTION_PERIOD,
+//    PREVIOUS_SUBSCRIPTION_PERIOD
 }
