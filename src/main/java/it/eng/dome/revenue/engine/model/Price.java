@@ -9,7 +9,7 @@ import jakarta.validation.Valid;
 import jakarta.validation.constraints.Positive;
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public class Price extends SubscriptionPlanItem {
+public class Price extends PlanItem {
     
     @JsonProperty("type")
     private PriceType type;

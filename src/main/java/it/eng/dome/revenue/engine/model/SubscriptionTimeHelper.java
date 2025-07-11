@@ -214,7 +214,7 @@ public class SubscriptionTimeHelper {
         final Logger logger = LoggerFactory.getLogger(SubscriptionTimeHelper.class);
 
         // create a fake subscription plan
-        SubscriptionPlan plan = new SubscriptionPlan();
+        Plan plan = new Plan();
         plan.setContractDurationPeriodType(RecurringPeriod.YEAR);
         plan.setContractDurationLength(1);
 

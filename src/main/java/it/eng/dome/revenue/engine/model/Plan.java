@@ -9,7 +9,7 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public class SubscriptionPlan {
+public class Plan {
 
 	private String id;
 	private String name;
@@ -41,10 +41,10 @@ public class SubscriptionPlan {
 
 	private List<String> agreements;
 
-	public SubscriptionPlan() {
+	public Plan() {
 	}
 
-	public SubscriptionPlan(String id, String name, String description, @Valid @NotNull TimePeriod validFor,
+	public Plan(String id, String name, String description, @Valid @NotNull TimePeriod validFor,
 			String lifecycleStatus, @Valid @NotNull Price price, @Positive Integer contractDurationLength,
 			RecurringPeriod contractDurationPeriodType, @Positive Integer renewalTermLength,
 			RecurringPeriod renewalTermPeriodType, RecurringPeriod billingPeriod, List<String> agreements) {

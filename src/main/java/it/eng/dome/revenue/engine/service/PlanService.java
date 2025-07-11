@@ -16,15 +16,15 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 
-import it.eng.dome.revenue.engine.model.SubscriptionPlan;
+import it.eng.dome.revenue.engine.model.Plan;
 
 @Service
-public class SubscriptionPlanService {
+public class PlanService {
  
     private final ObjectMapper mapper;
 
 
-    public SubscriptionPlanService() {
+    public PlanService() {
         this.mapper = new ObjectMapper()
                 .registerModule(new JavaTimeModule())        // LocalDate
                 .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
@@ -36,9 +36,9 @@ public class SubscriptionPlanService {
     // === GET ALL ===
 
     
-    public List<SubscriptionPlan> loadAllPlans() throws IOException {
+    public List<Plan> loadAllPlans() throws IOException {
         Path dir = Paths.get("src/main/resources/data/plans");
-        List<SubscriptionPlan> plans = new ArrayList<>();
+        List<Plan> plans = new ArrayList<>();
         
         if (Files.exists(dir)) {
             return Files.walk(dir)
@@ -46,7 +46,7 @@ public class SubscriptionPlanService {
                 .filter(p -> p.toString().endsWith(".json"))
                 .map(p -> {
                     try {
-                        return mapper.readValue(p.toFile(), SubscriptionPlan.class);
+                        return mapper.readValue(p.toFile(), Plan.class);
                     } catch (IOException e) {
                         throw new RuntimeException("Error reading file: " + p, e);
                     }
@@ -57,8 +57,8 @@ public class SubscriptionPlanService {
     }
     
     // === GET BY ID ===
-    public SubscriptionPlan findPlanById(String id) throws IOException {
-        List<SubscriptionPlan> plans = loadAllPlans();
+    public Plan findPlanById(String id) throws IOException {
+        List<Plan> plans = loadAllPlans();
         return plans.stream()
             .filter(plan -> plan.getId().equals(id))  
             .findFirst()

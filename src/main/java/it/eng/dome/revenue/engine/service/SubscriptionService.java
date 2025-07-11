@@ -30,7 +30,7 @@ public class SubscriptionService {
 		this.mapper = new ObjectMapper().registerModule(new JavaTimeModule())
 				.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
 				.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
-		new SubscriptionPlanService();
+		new PlanService();
 	}
 
 

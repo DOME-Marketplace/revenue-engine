@@ -17,10 +17,10 @@ import org.springframework.web.bind.annotation.RestController;
 
 import it.eng.dome.revenue.engine.model.RevenueStatement;
 import it.eng.dome.revenue.engine.model.Subscription;
-import it.eng.dome.revenue.engine.model.SubscriptionPlan;
+import it.eng.dome.revenue.engine.model.Plan;
 import it.eng.dome.revenue.engine.model.SubscriptionTimeHelper;
 import it.eng.dome.revenue.engine.model.TimePeriod;
-import it.eng.dome.revenue.engine.service.SubscriptionPlanService;
+import it.eng.dome.revenue.engine.service.PlanService;
 import it.eng.dome.revenue.engine.service.SubscriptionService;
 import it.eng.dome.revenue.engine.service.TmfDataRetriever;
 
@@ -36,10 +36,10 @@ public class SubscriptionsController {
 
     @Autowired
     SubscriptionService subscriptionService;
-    SubscriptionPlanService subscriptionPlanService;
+    PlanService subscriptionPlanService;
 
     @Autowired
-    public SubscriptionsController(SubscriptionPlanService subscriptionPlanService,
+    public SubscriptionsController(PlanService subscriptionPlanService,
                               SubscriptionService subscriptionService /*, ObjectMapper mapper*/) {
         this.subscriptionPlanService = subscriptionPlanService;
         this.subscriptionService = subscriptionService;
@@ -87,7 +87,7 @@ public class SubscriptionsController {
             Subscription subscription = subscriptionService.getBySubscriptionId(subscriptionId);
 
             // retrive the plan for the subscription
-            SubscriptionPlan plan = this.subscriptionPlanService.findPlanById(subscription.getPlan().getId());
+            Plan plan = this.subscriptionPlanService.findPlanById(subscription.getPlan().getId());
 
             // add the plan to the subscription
             subscription.setPlan(plan);
