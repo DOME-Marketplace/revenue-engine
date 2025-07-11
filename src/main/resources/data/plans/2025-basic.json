@@ -37,7 +37,7 @@
               "discounts": [
                 {
                   "name": "Discount Tier 1",
-                  "referencePeriod": "PREVIOUS_SUBSCRIPTION_PERIOD",
+                  "applicableBaseReferencePeriod": "PREVIOUS_SUBSCRIPTION_PERIOD",
                   "applicableBase": "bills-no-taxes",
                   "applicableBaseRange": {
                     "min": 0,
@@ -48,7 +48,7 @@
                 },
                 {
                   "name": "Discount Tier 2",
-                  "referencePeriod": "PREVIOUS_SUBSCRIPTION_PERIOD",
+                  "applicableBaseReferencePeriod": "PREVIOUS_SUBSCRIPTION_PERIOD",
                   "applicableBase": "bills-no-taxes",
                   "applicableBaseRange": {
                     "min": 100001,
@@ -59,7 +59,7 @@
                 },
                 {
                   "name": "Discount Tier 3",
-                  "referencePeriod": "PREVIOUS_SUBSCRIPTION_PERIOD",
+                  "applicableBaseReferencePeriod": "PREVIOUS_SUBSCRIPTION_PERIOD",
                   "applicableBase": "bills-no-taxes",
                   "applicableBaseRange": {
                     "min": 250001,
@@ -70,7 +70,7 @@
                 },
                 {
                   "name": "Discount Tier 4",
-                  "referencePeriod": "PREVIOUS_SUBSCRIPTION_PERIOD",
+                  "applicableBaseReferencePeriod": "PREVIOUS_SUBSCRIPTION_PERIOD",
                   "applicableBase": "bills-no-taxes",
                   "applicableBaseRange": {
                     "min": 750001,
@@ -81,7 +81,7 @@
                 },
                 {
                   "name": "Discount Tier 5",
-                  "referencePeriod": "PREVIOUS_SUBSCRIPTION_PERIOD",
+                  "applicableBaseReferencePeriod": "PREVIOUS_SUBSCRIPTION_PERIOD",
                   "applicableBase": "bills-no-taxes",
                   "applicableBaseRange": {
                     "min": 1000001
@@ -99,17 +99,19 @@
               [
                 {
                   "name": "Discount Ref 1",
-                  "computationBase": "referred-providers-number",
-                  "referencePeriod": "PREVIOUS_SUBSCRIPTION_PERIOD",
+                  "applicableBase": "referred-providers-number",
+                  "applicableBaseReferencePeriod": "PREVIOUS_SUBSCRIPTION_PERIOD",
+                  "computationBase": "parent-price",
                   "percent": 10
                 },
                 {
                   "name": "Discount Ref 2",
-                  "computationBase": "referred-providers-transaction-volume",
-                  "referencePeriod": "PREVIOUS_SUBSCRIPTION_PERIOD",
+                  "applicableBase": "referred-providers-transaction-volume",
+                  "applicableBaseReferencePeriod": "PREVIOUS_SUBSCRIPTION_PERIOD",
                   "applicableBaseRange": {
                     "min": 100000
                   },
+                  "computationBase": "parent-price",
                   "percent": 10
                 }
               ]
@@ -120,62 +122,65 @@
       {
         "name": "Transaction-based Fee",
         "type": "RECURRING_POSTPAID",
-		"isBundle": true,
-		"bundleOp": "CUMULATIVE",
+    		"isBundle": true,
+		    "bundleOp": "CUMULATIVE",
         "prices": [
           {
             "name": "Price Range 1",
-            "referencePeriod": "CURRENT_SUBSCRIPTION_PERIOD",
+            "applicableBaseReferencePeriod": "CURRENT_SUBSCRIPTION_PERIOD",
             "applicableBase": "bills-no-taxes",
             "applicableBaseRange": {
               "min": 0,
               "max": 100000
             },
-            "computationBase": "bills-no-taxes",
             "amount": 0,
             "currency": "EUR"
           },
           {
             "name": "Price Range 2",
-            "referencePeriod": "CURRENT_SUBSCRIPTION_PERIOD",
+            "applicableBaseReferencePeriod": "CURRENT_SUBSCRIPTION_PERIOD",
             "applicableBase": "bills-no-taxes",
             "applicableBaseRange": {
               "min": 100001,
               "max": 250000
             },
             "computationBase": "bills-no-taxes",
+            "computationBaseReferencePeriod": "CURRENT_BILLING_PERIOD",
             "percent": 4
           },
           {
             "name": "Price Range 3",
-            "referencePeriod": "CURRENT_SUBSCRIPTION_PERIOD",
+            "applicableBaseReferencePeriod": "CURRENT_SUBSCRIPTION_PERIOD",
             "applicableBase": "bills-no-taxes",
             "applicableBaseRange": {
               "min": 250001,
               "max": 750000
             },
             "computationBase": "bills-no-taxes",
+            "computationBaseReferencePeriod": "CURRENT_BILLING_PERIOD",
             "percent": 3.5
           },
           {
             "name": "Price Range 4",
-            "referencePeriod": "CURRENT_SUBSCRIPTION_PERIOD",
+            "applicableBaseReferencePeriod": "CURRENT_SUBSCRIPTION_PERIOD",
             "applicableBase": "bills-no-taxes",
             "applicableBaseRange": {
               "min": 750001,
               "max": 1000000
             },
             "computationBase": "bills-no-taxes",
+            "computationBaseReferencePeriod": "CURRENT_BILLING_PERIOD",
             "percent": 3
           },
           {
             "name": "Price Range 5",
-            "referencePeriod": "CURRENT_SUBSCRIPTION_PERIOD",
+            "referenceapplicableBaseReferencePeriodPeriod": "CURRENT_SUBSCRIPTION_PERIOD",
             "applicableBase": "bills-no-taxes",
             "applicableBaseRange": {
               "min": 1000001
             },
             "computationBase": "bills-no-taxes",
+            "computationBaseReferencePeriod": "CURRENT_BILLING_PERIOD",
             "percent": 2.5
           }
         ],

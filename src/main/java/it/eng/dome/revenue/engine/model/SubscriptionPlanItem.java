@@ -39,8 +39,13 @@ public class SubscriptionPlanItem {
     @Valid
     private Range applicableBaseRange;
 
-    @JsonProperty("referencePeriod")
-    private ReferencePeriod referencePeriod;
+	@JsonProperty("applicableBaseReferencePeriod")
+	@Deprecated 
+    private ReferencePeriod applicableBaseReferencePeriod;
+
+	@JsonProperty("computationBaseReferencePeriod")
+	@Deprecated 
+    private ReferencePeriod computationBaseReferencePeriod;
 
 	// reference to the parent price, if any
 	@JsonIgnore
@@ -118,12 +123,20 @@ public class SubscriptionPlanItem {
 		this.percent = percent;
 	}
 
-	public ReferencePeriod getReferencePeriod() {
-		return referencePeriod;
+	public ReferencePeriod getApplicableBaseReferencePeriod() {
+		return applicableBaseReferencePeriod;
 	}
 
-	public void setReferencePeriod(ReferencePeriod referencePeriod) {
-		this.referencePeriod = referencePeriod;
+	public void setApplicableBaseReferencePeriod(ReferencePeriod applicableBaseReferencePeriod) {
+		this.applicableBaseReferencePeriod = applicableBaseReferencePeriod;
+	}
+
+	public ReferencePeriod getComputationBaseReferencePeriod() {
+		return computationBaseReferencePeriod;
+	}
+
+	public void setComputationBaseReferencePeriod(ReferencePeriod computationBaseReferencePeriod) {
+		this.computationBaseReferencePeriod = computationBaseReferencePeriod;
 	}
 
 

@@ -107,7 +107,8 @@ public class Price extends SubscriptionPlanItem {
 				+ ", prices=" + prices + ", amount=" + this.getAmount() + ", currency=" + getCurrency() + ", percent=" + getPercent()
 				+ ", recurringChargePeriodLength=" + recurringChargePeriodLength
 				+ ", recurringChargePeriodType=" + recurringChargePeriodType + ", discount=" + discount
-				+ ", computationBase=" + getComputationBase() + ", referencePeriod=" + getReferencePeriod()
+				+ ", computationBase=" + getComputationBase() + ", ABreferencePeriod=" + getApplicableBaseReferencePeriod()
+				+ ", CBreferencePeriod=" + getComputationBaseReferencePeriod()
 				+ ", applicableBaseRange=" + getApplicableBaseRange() + "]";
 	}
 }

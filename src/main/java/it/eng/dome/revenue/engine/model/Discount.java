@@ -27,7 +27,8 @@ public class Discount extends SubscriptionPlanItem{
 	@Override
 	public String toString() {
 		return "Discount [isBundle=" + getIsBundle() + ", bundleOp=" + getBundleOp() + ", discounts=" + discounts
-				+ ", computationBase=" + this.getComputationBase() + ", referencePeriod=" + getReferencePeriod()
+				+ ", computationBase=" + this.getComputationBase() + ", ABreferencePeriod=" + getApplicableBaseReferencePeriod()
+				+ ", CBreferencePeriod=" + getComputationBaseReferencePeriod()
 				+ ", applicableBaseRange=" + getApplicableBaseRange() + ", percent=" + getPercent() + ", amount=" + this.getAmount()
 				+ "]";
 	}
