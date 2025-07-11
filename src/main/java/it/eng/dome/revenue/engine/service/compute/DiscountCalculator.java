@@ -59,12 +59,11 @@ public class DiscountCalculator {
             // compute the discount (can be a percentage of the base or a fixed amount)
             // apply a constraint (min/max) on discount, if any
             // Check if the base is within the valid range (if applicable)
-
-
-         if (discount.getPercent() != null) {
-                return discount.getPercent();
-            }
-         return 0.0;
+        	time = OffsetDateTime.now();
+			if (discount.getPercent() != null) {
+				return discount.getPercent();
+			}
+			return 0.0;
         }
 
         private Double getCumulativeDiscount(List<Discount> discounts, OffsetDateTime time) {
