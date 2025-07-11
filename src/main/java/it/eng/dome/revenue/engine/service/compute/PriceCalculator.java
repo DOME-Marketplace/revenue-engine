@@ -137,8 +137,6 @@ public class PriceCalculator {
                     logger.debug("Added atomic discount item: {} with value {}", price.getDiscount().getName(), -discountAmount);
                 }
  
-                item.setValue(item.getOverallValue());
-                logger.debug("Applied discounts, new overall value: {}", item.getOverallValue());
             } else {
                 logger.debug("Discount percent is zero or null, no discounts applied");
             }
@@ -225,7 +223,6 @@ public class PriceCalculator {
             cumulativeItem.getItems().add(current);
         }
 
-        // cumulativeItem.setValue(cumulativeItem.getOverallValue()); // <-- NON necessario
         return cumulativeItem;
     }
 
