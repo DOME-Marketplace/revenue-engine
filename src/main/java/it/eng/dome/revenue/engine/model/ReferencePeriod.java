@@ -7,7 +7,11 @@ import com.fasterxml.jackson.annotation.JsonValue;
 public class ReferencePeriod {
 
     @JsonValue
-    String value = null;
+    String value;
+    
+    public ReferencePeriod() {
+    	
+    }
 
     public ReferencePeriod(String value) {
         this.value = value;
