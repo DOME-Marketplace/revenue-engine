@@ -15,9 +15,9 @@ import it.eng.dome.revenue.engine.model.Price;
 import it.eng.dome.revenue.engine.model.RevenueItem;
 import it.eng.dome.revenue.engine.model.RevenueStatement;
 import it.eng.dome.revenue.engine.model.Subscription;
-import it.eng.dome.revenue.engine.model.SubscriptionPlan;
+import it.eng.dome.revenue.engine.model.Plan;
 import it.eng.dome.revenue.engine.model.SubscriptionTimeHelper;
-import it.eng.dome.revenue.engine.service.SubscriptionPlanService;
+import it.eng.dome.revenue.engine.service.PlanService;
 import it.eng.dome.revenue.engine.service.SubscriptionService;
 import it.eng.dome.revenue.engine.service.TmfDataRetriever;
 import it.eng.dome.revenue.engine.service.compute.PriceCalculator;
@@ -35,7 +35,7 @@ public class DevController {
 	SubscriptionService subscriptionService;
 
 	@Autowired
-	SubscriptionPlanService subscriptionPlanService;
+	PlanService subscriptionPlanService;
 	
 	@Autowired
     TmfDataRetriever tmfDataRetriever;
@@ -58,7 +58,7 @@ public class DevController {
             
             priceCalculator.setSubscription(sub);
                         
-            SubscriptionPlan plan = subscriptionPlanService.findPlanById(sub.getPlan().getId());
+            Plan plan = subscriptionPlanService.findPlanById(sub.getPlan().getId());
             logger.info("Plan: {}", plan);
             
             Price price = plan.getPrice();

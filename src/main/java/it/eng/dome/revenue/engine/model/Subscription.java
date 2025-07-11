@@ -14,7 +14,7 @@ public class Subscription {
     private String name;
     
     @JsonProperty("subscriptionPlan") //@Valid ???????
-    private SubscriptionPlan plan;
+    private Plan plan;
     
     private String status;
     private OffsetDateTime startDate;
@@ -25,7 +25,7 @@ public class Subscription {
     public Subscription() {}
 
 
-    public Subscription(String id, String name, SubscriptionPlan plan, String status, OffsetDateTime startDate,
+    public Subscription(String id, String name, Plan plan, String status, OffsetDateTime startDate,
 			List<RelatedParty> relatedParties) {
 		this.id = id;
 		this.name = name;
@@ -51,11 +51,11 @@ public class Subscription {
         this.name = name;
     }
 
-    public SubscriptionPlan getPlan() {
+    public Plan getPlan() {
         return plan;
     }
 
-    public void setPlan(SubscriptionPlan plan) {
+    public void setPlan(Plan plan) {
         this.plan = plan;
     }
 

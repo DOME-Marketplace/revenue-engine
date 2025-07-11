@@ -7,7 +7,7 @@ import jakarta.validation.Valid;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.PositiveOrZero;
 
-public class SubscriptionPlanItem {
+public class PlanItem {
 
     @JsonProperty("name")
 	private String name;
@@ -34,6 +34,9 @@ public class SubscriptionPlanItem {
 
     @JsonProperty("computationBase")
     private String computationBase;
+    
+    @JsonProperty("applicableBase")
+    private String applicableBase;
 
     @JsonProperty("applicableBaseRange")
     @Valid
@@ -50,6 +53,16 @@ public class SubscriptionPlanItem {
 	// reference to the parent price, if any
 	@JsonIgnore
 	private Price parentPrice;
+	
+	
+
+	public String getApplicableBase() {
+		return applicableBase;
+	}
+
+	public void setApplicableBase(String applicableBase) {
+		this.applicableBase = applicableBase;
+	}
 
 	public String getName() {
 		return name;

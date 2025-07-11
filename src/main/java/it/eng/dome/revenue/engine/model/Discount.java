@@ -8,7 +8,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.validation.Valid;
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public class Discount extends SubscriptionPlanItem{
+public class Discount extends PlanItem{
 	    
     @JsonProperty("discounts")
     @Valid
