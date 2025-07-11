@@ -1,9 +1,6 @@
 package it.eng.dome.revenue.engine.controller;
 
-import java.time.OffsetDateTime;
-import java.util.ArrayList;
 import java.util.List;
-import java.util.UUID;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

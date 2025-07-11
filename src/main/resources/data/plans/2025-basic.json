@@ -131,14 +131,15 @@
       {
         "name": "Transaction-based Fee",
         "type": "RECURRING_POSTPAID",
-    		"isBundle": true,
-		    "bundleOp": "CUMULATIVE",
+  	  	"isBundle": true,
+	  	  "bundleOp": "CUMULATIVE",
         "recurringChargePeriodLength": 1,
         "recurringChargePeriodType": "MONTH",
         "prices": [
           {
             "name": "Price Range 1",
             "applicableBaseReferencePeriod": "CURRENT_SUBSCRIPTION_PERIOD",
+            "applicableFrom": "2026-01-01T00:00:00Z",
             "applicableBase": "bills-no-taxes",
             "applicableBaseRange": {
               "min": 0,
@@ -150,6 +151,7 @@
           {
             "name": "Price Range 2",
             "applicableBaseReferencePeriod": "CURRENT_SUBSCRIPTION_PERIOD",
+            "applicableFrom": "2026-01-01T00:00:00Z",
             "applicableBase": "bills-no-taxes",
             "applicableBaseRange": {
               "min": 100001,
@@ -157,11 +159,13 @@
             },
             "computationBase": "bills-no-taxes",
             "computationBaseReferencePeriod": "CURRENT_BILLING_PERIOD",
+            "computationFrom": "2026-01-01T00:00:00Z",
             "percent": 4
           },
           {
             "name": "Price Range 3",
             "applicableBaseReferencePeriod": "CURRENT_SUBSCRIPTION_PERIOD",
+            "applicableFrom": "2026-01-01T00:00:00Z",
             "applicableBase": "bills-no-taxes",
             "applicableBaseRange": {
               "min": 250001,
@@ -169,29 +173,34 @@
             },
             "computationBase": "bills-no-taxes",
             "computationBaseReferencePeriod": "CURRENT_BILLING_PERIOD",
+            "computationFrom": "2026-01-01T00:00:00Z",
             "percent": 3.5
           },
           {
             "name": "Price Range 4",
             "applicableBaseReferencePeriod": "CURRENT_SUBSCRIPTION_PERIOD",
             "applicableBase": "bills-no-taxes",
+            "applicableFrom": "2026-01-01T00:00:00Z",
             "applicableBaseRange": {
               "min": 750001,
               "max": 1000000
             },
             "computationBase": "bills-no-taxes",
             "computationBaseReferencePeriod": "CURRENT_BILLING_PERIOD",
+            "computationFrom": "2026-01-01T00:00:00Z",
             "percent": 3
           },
           {
             "name": "Price Range 5",
             "referenceapplicableBaseReferencePeriodPeriod": "CURRENT_SUBSCRIPTION_PERIOD",
             "applicableBase": "bills-no-taxes",
+            "applicableFrom": "2026-01-01T00:00:00Z",
             "applicableBaseRange": {
               "min": 1000001
             },
             "computationBase": "bills-no-taxes",
             "computationBaseReferencePeriod": "CURRENT_BILLING_PERIOD",
+            "computationFrom": "2026-01-01T00:00:00Z",
             "percent": 2.5
           }
         ]
