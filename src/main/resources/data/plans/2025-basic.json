@@ -107,14 +107,14 @@
               "discounts": 
               [
                 {
-                  "name": "Discount Ref 1",
+                  "name": "Discount for referring 3 providers",
                   "applicableBase": "referred-providers-number",
                   "applicableBaseReferencePeriod": "PREVIOUS_SUBSCRIPTION_PERIOD",
                   "computationBase": "parent-price",
                   "percent": 10
                 },
                 {
-                  "name": "Discount Ref 2",
+                  "name": "Discount for referred provider with sales over 100k",
                   "applicableBase": "referred-providers-transaction-volume",
                   "applicableBaseReferencePeriod": "PREVIOUS_SUBSCRIPTION_PERIOD",
                   "applicableBaseRange": {
