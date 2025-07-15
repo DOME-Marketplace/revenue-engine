@@ -142,11 +142,11 @@ public class MetricsRetriever implements InitializingBean {
     	switch (key) {
             case "bills-no-taxes":
                 return computeBillsNoTaxes(sellerId, from, to);
-            case "referrals-providers-number":
+            case "referred-providers-number":
                 return (double)computeReferralsProvidersNumber(sellerId, from, to);
-            case "referrals-providers-transaction-volume":
+            case "referred-providers-transaction-volume":
                 return computeReferralsProvidersTransactionVolume(sellerId, from, to);
-            case "referrals-provider-max-transaction-volume":
+            case "referred-provider-max-transaction-volume":
                 return computeReferralsProviderMaxTransactionVolume(sellerId, from, to);
             default:
                 throw new IllegalArgumentException("Unknown metric key: " + key);
