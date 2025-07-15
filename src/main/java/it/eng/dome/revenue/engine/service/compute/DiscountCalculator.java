@@ -80,7 +80,7 @@ public class DiscountCalculator {
 
             try {
                 SubscriptionTimeHelper sth = new SubscriptionTimeHelper(subscription);
-                TimePeriod tp = null;
+                TimePeriod tp;
 
                 if (discount.getApplicableBaseReferencePeriod() != null) {
                 	
