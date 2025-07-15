@@ -4,6 +4,7 @@ import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -98,8 +99,10 @@ public class PriceCalculator {
 
         if (price.getDiscount() != null) {
             List<RevenueItem> discountItems = new ArrayList<>();
-            DiscountCalculator discountCalculator = new DiscountCalculator(subscription);
-            RevenueItem discountItem = discountCalculator.compute(price.getDiscount(), time);
+
+            Double fixedFee = price.getAmount(); //TODO implement fixed fee logic
+            DiscountCalculator discountCalculator = new DiscountCalculator(subscription, metricsRetriever);
+            RevenueItem discountItem = discountCalculator.compute(price.getDiscount(), time, fixedFee);
             if (discountItem != null) {
                 discountItems.add(discountItem);
             }
@@ -122,7 +125,8 @@ public class PriceCalculator {
 
         try {
             SubscriptionTimeHelper sth = new SubscriptionTimeHelper(subscription);
-            TimePeriod tp = null;
+
+			TimePeriod tp = new TimePeriod();
 
             if (price.getType() != null) {
                 switch (price.getType()) {
@@ -147,7 +151,6 @@ public class PriceCalculator {
                 tp = sth.getSubscriptionPeriodAt(time);
             }
 
-            logger.debug("Computed time period: {} to {}", tp.getFromDate(), tp.getToDate());
 
             String buyerId = subscription.getBuyerId();
             Double computedValue = 0.0;
@@ -155,7 +158,7 @@ public class PriceCalculator {
 
             if (price.getApplicableBase() != null && !price.getApplicableBase().isEmpty()) {
                 computedValue = metricsRetriever.computeValueForKey(price.getApplicableBase(), buyerId, tp.getFromDate(), tp.getToDate());
-                computedValue += 200000.00; // Simulating a base value for testing purposes
+                computedValue += 2000000.00; // Simulating a base value for testing purposes
                 if(price.getApplicableBaseRange().getMax()==null) {
                 	price.getApplicableBaseRange().setMax(Double.POSITIVE_INFINITY);
 				}
