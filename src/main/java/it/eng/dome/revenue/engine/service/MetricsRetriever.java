@@ -43,32 +43,32 @@ public class MetricsRetriever implements InitializingBean {
         List<AppliedCustomerBillingRate> bills = tmfDataRetriever.retrieveBills(sellerId, from, to);
 
         // sum taxExcludedAmount.value
-        double sum = 0.0;
+        double totalAmountNoTaxes = 0.0;
         for (AppliedCustomerBillingRate bill : bills) {
             if (bill.getTaxExcludedAmount() != null && bill.getTaxExcludedAmount().getValue() != null) {
-            	sum += bill.getTaxExcludedAmount().getValue();
+            	totalAmountNoTaxes += bill.getTaxExcludedAmount().getValue();
             } else {
                 logger.warn("Bill {} contains no amount. Skipping it for the revenue computation", bill.getId());
            }
         }
-        return sum;
+        return totalAmountNoTaxes;
     }
 
     // implement retriever for key 'referred-providers-number'
-    public Double computeReferredProvidersNumber(String sellerId, OffsetDateTime from, OffsetDateTime to) throws Exception {
+    public Integer computeReferralsProvidersNumber(String sellerId, OffsetDateTime from, OffsetDateTime to) throws Exception {
     	// TODO: test the method when listReferredProviders will work
     	// retrieves the list of providers referenced by the seller
         List<Organization> referred = tmfDataRetriever.listReferralsProviders(sellerId);
 
         if (referred == null) {
-            return 0.0;
+            return 0;
         }
         
-        return (double) referred.size();
+        return referred.size();
     }
 
     // implement retriever for key 'referred-providers-transaction-volume'
-    public Double computeReferredProvidersTransactionVolume(String sellerId, OffsetDateTime from, OffsetDateTime to) throws Exception {
+    public Double computeReferralsProvidersTransactionVolume(String sellerId, OffsetDateTime from, OffsetDateTime to) throws Exception {
     	// TODO: test the method when listReferredProviders will work
     	// retrieve the list of providers referred by the given seller
     	List<Organization> referred = tmfDataRetriever.listReferralsProviders(sellerId);
@@ -76,9 +76,11 @@ public class MetricsRetriever implements InitializingBean {
 	    if (referred == null || referred.isEmpty()) 
 	    	return 0.0;
 	
-	    double sum = 0.0;
+	    double totalTransactionVolume = 0.0;
 	    // iterate over each referred provider
 	    for (Organization org : referred) {
+			totalTransactionVolume += this.computeBillsNoTaxes(org.getId(), from, to);
+			/*
 	    	// retrieve all billing rates for this provider in the specified period
 	        List<AppliedCustomerBillingRate> bills = tmfDataRetriever.retrieveBills(org.getId(), from, to);
 
@@ -86,20 +88,19 @@ public class MetricsRetriever implements InitializingBean {
 	        if (bills != null) {
 	            for (AppliedCustomerBillingRate bill : bills) {
 	                if (bill.getTaxExcludedAmount() != null && bill.getTaxExcludedAmount().getValue() != null) {
-	                    sum += bill.getTaxExcludedAmount().getValue();
+	                    totalAmountNoTaxes += bill.getTaxExcludedAmount().getValue();
 	                } else {
 	                    logger.warn("Bill {} contains no amount. Skipping it for the revenue computation", bill.getId());
 	                }
 	            }
 	        }
+			*/
 	    }
-	    return sum;
-	    
-	    
+	    return totalTransactionVolume;	    
     }
     
     // implement retriever for key 'referred-provider-max-transaction-volume'
-    public Double computeReferredProviderMaxTransactionVolume(String sellerId, OffsetDateTime from, OffsetDateTime to) throws Exception {
+    public Double computeReferralsProviderMaxTransactionVolume(String sellerId, OffsetDateTime from, OffsetDateTime to) throws Exception {
     	// TODO: test the method when listReferredProviders will work
     	// retrieve the list of providers referred by the given seller
     	List<Organization> referred = tmfDataRetriever.listReferralsProviders(sellerId);
@@ -107,10 +108,12 @@ public class MetricsRetriever implements InitializingBean {
 	    if (referred == null || referred.isEmpty()) 
 	    	return 0.0;
 	    
-	    double maxBilling = 0.0;
+	    double maxTransactionVolume = 0.0;
 	    
 	    // iterate over each referred provider	    
 	    for (Organization org : referred) {
+			maxTransactionVolume = Math.max(maxTransactionVolume, this.computeBillsNoTaxes(org.getId(), from, to));
+			/*
 	        List<AppliedCustomerBillingRate> bills = tmfDataRetriever.retrieveBills(org.getId(), from, to);
 
 	        double sum = 0.0;
@@ -126,24 +129,25 @@ public class MetricsRetriever implements InitializingBean {
 	        }
 
 	        // keep track of the maximum billing amount among all referred providers
-	        if (sum > maxBilling) {
-	            maxBilling = sum;
+	        if (sum > transactionVolume) {
+	            transactionVolume = sum;
 	        }
+			*/
 	    }
 
-	    return maxBilling;
+	    return maxTransactionVolume;
     }
 
     public Double computeValueForKey(String key, String sellerId, OffsetDateTime from, OffsetDateTime to) throws Exception {
     	switch (key) {
             case "bills-no-taxes":
                 return computeBillsNoTaxes(sellerId, from, to);
-            case "referred-providers-number":
-                return computeReferredProvidersNumber(sellerId, from, to);
-            case "referred-providers-transaction-volume":
-                return computeReferredProvidersTransactionVolume(sellerId, from, to);
-            case "referred-provider-max-transaction-volume":
-                return computeReferredProviderMaxTransactionVolume(sellerId, from, to);
+            case "referrals-providers-number":
+                return (double)computeReferralsProvidersNumber(sellerId, from, to);
+            case "referrals-providers-transaction-volume":
+                return computeReferralsProvidersTransactionVolume(sellerId, from, to);
+            case "referrals-provider-max-transaction-volume":
+                return computeReferralsProviderMaxTransactionVolume(sellerId, from, to);
             default:
                 throw new IllegalArgumentException("Unknown metric key: " + key);
         }
