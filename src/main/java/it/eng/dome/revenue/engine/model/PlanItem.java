@@ -1,5 +1,7 @@
 package it.eng.dome.revenue.engine.model;
 
+import java.time.OffsetDateTime;
+
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
@@ -46,9 +48,15 @@ public class PlanItem {
 	@Deprecated 
     private ReferencePeriod applicableBaseReferencePeriod;
 
+	@JsonProperty("applicableFrom")
+	private OffsetDateTime applicableFrom;
+
 	@JsonProperty("computationBaseReferencePeriod")
 	@Deprecated 
     private ReferencePeriod computationBaseReferencePeriod;
+
+	@JsonProperty("computationFrom")
+	private OffsetDateTime computationFrom;
 
 	// reference to the parent price, if any
 	@JsonIgnore
@@ -152,5 +160,20 @@ public class PlanItem {
 		this.computationBaseReferencePeriod = computationBaseReferencePeriod;
 	}
 
+	public OffsetDateTime getApplicableFrom() {
+		return this.applicableFrom;
+	}
+
+	public void setApplicableFrom(OffsetDateTime applicableFrom) {
+		this.applicableFrom = applicableFrom;
+	}
+
+	public OffsetDateTime getComputationFrom() {
+		return this.computationFrom;
+	}
+
+	public void setComputationFrom(OffsetDateTime computationFrom) {
+		this.computationFrom = computationFrom;
+	}
 
 }

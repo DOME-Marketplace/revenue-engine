@@ -24,7 +24,7 @@ public class Range {
     }
 
     public Double getMin() {
-        return min;
+        return (this.min==null) ? Double.NEGATIVE_INFINITY : this.min;
     }
 
     public void setMin(Double min) {
@@ -32,12 +32,20 @@ public class Range {
     }
 
     public Double getMax() {
-        return max;
+        return (this.max==null) ? Double.POSITIVE_INFINITY : this.max;
     }
 
     public void setMax(Double max) {
         this.max = max;
     }
+
+    public boolean inRange(Double value) {
+        if (value == null) {
+            return false;
+        }
+        return value >= this.getMin() && value <= getMax();
+    }
+
     @JsonIgnore
     @AssertTrue(message = "The maximum value must be greater than or equal to the minimum.")
     public boolean isMaxGreaterOrEqualMin() {
