@@ -91,6 +91,7 @@ public class PriceCalculator {
             }
 
             item.setItems(bundleResult.getItems());
+            item.setBundleOp(bundleResult.getBundleOp()); 
 
         } else {
             logger.debug("Processing atomic price");
@@ -158,7 +159,7 @@ public class PriceCalculator {
 
             if (price.getApplicableBase() != null && !price.getApplicableBase().isEmpty()) {
                 computedValue = metricsRetriever.computeValueForKey(price.getApplicableBase(), buyerId, tp.getFromDate(), tp.getToDate());
-                computedValue += 2000000.00; // Simulating a base value for testing purposes
+                computedValue += 200000.00; // Simulating a base value for testing purposes
                 if(price.getApplicableBaseRange().getMax()==null) {
                 	price.getApplicableBaseRange().setMax(Double.POSITIVE_INFINITY);
 				}

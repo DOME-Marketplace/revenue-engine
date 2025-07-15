@@ -43,6 +43,9 @@ public class DiscountCalculator {
     /**
      * Compute a Discount into a RevenueItem, recursively managing bundles.
      */
+    
+    //TODO: handle cases where discount is referred-base
+    
     public RevenueItem compute(Discount discount, OffsetDateTime time, Double fixedFee) {
         if (discount == null) return null;
 
@@ -70,8 +73,8 @@ public class DiscountCalculator {
 
             RevenueItem bundleItem = new RevenueItem(discount.getName(), 0.0, "EUR");
             bundleItem.setItems(bundleResult.getItems());
-            bundleItem.setBundleOp(discount.getBundleOp());  // TODO: CHECK IN PRICECALCULATOR SAME LOGIC
-
+            bundleItem.setBundleOp(discount.getBundleOp()); 
+            
             return bundleItem;
 
         } else {
@@ -103,7 +106,7 @@ public class DiscountCalculator {
                 	computedValue = metricsRetriever.computeValueForKey(discount.getApplicableBase(), buyerId, tp.getFromDate(), tp.getToDate());
                 }
                 
-                computedValue += 2000000.0; // Add a fixed base value for testing purposes
+                computedValue += 200000.0; // Add a fixed base value for testing purposes
                 // Apply range check if present
                 boolean inRange = true;
                 if (discount.getApplicableBaseRange() != null) {
@@ -115,7 +118,6 @@ public class DiscountCalculator {
                 double discountValue = 0.0;
                 if (inRange) {
                     if (discount.getPercent() != null) {
-                    	// TODO USE FEE, NO 5K get from parent price of discount
 
                         discountValue = fixedFee * (discount.getPercent() / 100.0);
                     } else if (discount.getAmount() != null) {

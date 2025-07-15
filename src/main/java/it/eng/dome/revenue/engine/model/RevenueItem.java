@@ -1,6 +1,7 @@
 package it.eng.dome.revenue.engine.model;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
@@ -80,28 +81,32 @@ public class RevenueItem {
 
     public Double getOverallValue() {
         if (items == null || items.isEmpty()) {
-            return value;
+            return value != null ? value : 0.0;
         }
 
         switch (bundleOp != null ? bundleOp : BundleOperator.CUMULATIVE) {
             case ALTERNATIVE_HIGHER:
                 return items.stream()
                     .mapToDouble(RevenueItem::getOverallValue)
-                    .min()
+                    .boxed()
+                    .max(Comparator.comparingDouble(Math::abs))
                     .orElse(0.0);
 
             case ALTERNATIVE_LOWER:
                 return items.stream()
                     .mapToDouble(RevenueItem::getOverallValue)
-                    .max()
-                    .orElse(0.0); 
+                    .boxed()
+                    .min(Comparator.comparingDouble(Math::abs))
+                    .orElse(0.0);
 
             case CUMULATIVE:
             default:
-                return value + items.stream()
-                    .mapToDouble(RevenueItem::getOverallValue)
-                    .sum();
+                return (value != null ? value : 0.0) +
+                    items.stream()
+                        .mapToDouble(RevenueItem::getOverallValue)
+                        .sum();
         }
     }
+
 
 }
