@@ -9,7 +9,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import it.eng.dome.revenue.engine.model.Discount;
 import it.eng.dome.revenue.engine.model.Price;
 import it.eng.dome.revenue.engine.model.RevenueItem;
 import it.eng.dome.revenue.engine.model.RevenueStatement;
@@ -24,7 +23,8 @@ public class PriceCalculator {
 
     @Autowired
     private MetricsRetriever metricsRetriever;
-
+    
+    
     private Subscription subscription;
 
     public Subscription getSubscription() {
@@ -97,53 +97,21 @@ public class PriceCalculator {
         }
 
         if (price.getDiscount() != null) {
-            logger.info("Applying discounts to price");
+            List<RevenueItem> discountItems = new ArrayList<>();
             DiscountCalculator discountCalculator = new DiscountCalculator(subscription);
-            Double discountPercent = discountCalculator.compute(price.getDiscount(), time);
-            logger.debug("Discount percent computed: {}", discountPercent);
-           
-            if (discountPercent != null && discountPercent > 0) {
-                double discountAmount = item.getOverallValue() * (discountPercent / 100);
- 
+            RevenueItem discountItem = discountCalculator.compute(price.getDiscount(), time);
+            if (discountItem != null) {
+                discountItems.add(discountItem);
+            }
+
+            if (!discountItems.isEmpty()) {
                 if (item.getItems() == null) {
                     item.setItems(new ArrayList<>());
                 }
- 
-                if (Boolean.TRUE.equals(price.getDiscount().getIsBundle())
-                        && price.getDiscount().getDiscounts() != null
-                        && !price.getDiscount().getDiscounts().isEmpty()) {
- 
-                    int discountCount = price.getDiscount().getDiscounts().size(); //for testing purposes
-                    double singleDiscountValue = -discountAmount / discountCount;
- 
-                    for (Discount discount : price.getDiscount().getDiscounts()) {
-                        if (discount.getName() != null) {
-                            RevenueItem discountItem = new RevenueItem(
-                                    "Discount: " + discount.getName() + " applied to " + price.getName(),
-                                    singleDiscountValue,
-                                    "EUR"
-                            );
-                            item.getItems().add(discountItem);
-                            logger.debug("Added bundled discount item: {} with value {}", discount.getName(), singleDiscountValue);
-                        }
-                    }
-                } else {
-                    RevenueItem discountItem = new RevenueItem(
-                            "Discount: " + price.getDiscount().getName() + " applied to " + price.getName(),
-                            -discountAmount,
-                            "EUR"
-                    );
-                    item.getItems().add(discountItem);
-                    logger.debug("Added atomic discount item: {} with value {}", price.getDiscount().getName(), -discountAmount);
-                }
- 
-            } else {
-                logger.debug("Discount percent is zero or null, no discounts applied");
+                item.getItems().addAll(discountItems);
             }
-        } else {
-            logger.debug("No discounts applied to price");
         }
- 
+
         return item;
     }
 
@@ -187,7 +155,7 @@ public class PriceCalculator {
 
             if (price.getApplicableBase() != null && !price.getApplicableBase().isEmpty()) {
                 computedValue = metricsRetriever.computeValueForKey(price.getApplicableBase(), buyerId, tp.getFromDate(), tp.getToDate());
-                computedValue += 135000.00; // Simulating a base value for testing purposes
+                computedValue += 200000.00; // Simulating a base value for testing purposes
                 if(price.getApplicableBaseRange().getMax()==null) {
                 	price.getApplicableBaseRange().setMax(Double.POSITIVE_INFINITY);
 				}

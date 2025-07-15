@@ -1,114 +1,195 @@
 package it.eng.dome.revenue.engine.service.compute;
 
 import java.time.OffsetDateTime;
+import java.util.ArrayList;
 import java.util.List;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+
 import it.eng.dome.revenue.engine.model.Discount;
+import it.eng.dome.revenue.engine.model.RevenueItem;
 import it.eng.dome.revenue.engine.model.Subscription;
+import it.eng.dome.revenue.engine.model.SubscriptionTimeHelper;
+import it.eng.dome.revenue.engine.model.TimePeriod;
+import it.eng.dome.revenue.engine.service.MetricsRetriever;
 
 public class DiscountCalculator {
 
+    @Autowired
+    private MetricsRetriever metricsRetriever;
+
     private Subscription subscription;
+
+    private static final Logger logger = LoggerFactory.getLogger(DiscountCalculator.class);
+
+    public DiscountCalculator() {
+    }
 
     public DiscountCalculator(Subscription subscription) {
         this.subscription = subscription;
     }
 
-    // this is the main method to be called by some extenal service
-    // the caller will pick a discount in the subscription plan and ask this to compute the discount
-    public Double compute(Discount discount, OffsetDateTime time) {
-     
-     if(discount == null) {
-      return 0.0;
-     }
-     
-     // first compute the price
-        Double discoutValue = 0.0;
+    public void setSubscription(Subscription subscription) {
+        this.subscription = subscription;
+    }
+
+    /**
+     * Compute a Discount into a RevenueItem, recursively managing bundles.
+     */
+    public RevenueItem compute(Discount discount, OffsetDateTime time) {
+        if (discount == null) return null;
+
         if (Boolean.TRUE.equals(discount.getIsBundle())) {
-            switch(discount.getBundleOp()) {
+            List<Discount> childDiscounts = discount.getDiscounts();
+            if (childDiscounts == null || childDiscounts.isEmpty()) {
+                return new RevenueItem(discount.getName(), 0.0, "EUR");
+            }
+
+            RevenueItem bundleResult;
+
+            switch (discount.getBundleOp()) {
                 case CUMULATIVE:
-                    discoutValue = this.getCumulativeDiscount(discount.getDiscounts(), time);
+                    bundleResult = getCumulativeDiscount(childDiscounts, time);
                     break;
                 case ALTERNATIVE_HIGHER:
-                    discoutValue = this.getHigherDiscount(discount.getDiscounts(), time);
+                    bundleResult = getHigherDiscount(childDiscounts, time);
                     break;
                 case ALTERNATIVE_LOWER:
-                    discoutValue = this.getLowerDiscount(discount.getDiscounts(), time);
+                    bundleResult = getLowerDiscount(childDiscounts, time);
                     break;
                 default:
                     throw new IllegalArgumentException("Unknown bundle operation: " + discount.getBundleOp());
             }
 
+            RevenueItem bundleItem = new RevenueItem(discount.getName(), 0.0, "EUR");
+            bundleItem.setItems(bundleResult.getItems());
+            return bundleItem;
+
         } else {
-            discoutValue = this.getAtomicDiscount(discount, time);
+            // Atomic discount: compute base value and apply percent/amount
+
+            try {
+                SubscriptionTimeHelper sth = new SubscriptionTimeHelper(subscription);
+                TimePeriod tp = null;
+
+                if (discount.getApplicableBaseReferencePeriod() != null) {
+                	
+                	// TODO IMPLEMENT SWITCH CASE
+                	tp = sth.getSubscriptionPeriodAt(time);
+                }else {
+                	//TODO get by parent
+                	tp = sth.getSubscriptionPeriodAt(time);
+
+                }
+
+
+                logger.debug("Computing atomic discount '{}' for period {} - {}", discount.getName(), tp.getFromDate(), tp.getToDate());
+
+                String buyerId = subscription.getBuyerId();
+                double baseValue = 0.0;
+                
+                // FIXME: fix this logic to retrieve the base value correctly
+//                if (discount.getApplicableBase() != null && !discount.getApplicableBase().isEmpty()) {
+//                    // Compute base value from metricsRetriever for given base key and period
+//                    baseValue = metricsRetriever.computeValueForKey(discount.getApplicableBase(), buyerId, tp.getFromDate(), tp.getToDate());
+//                }
+                
+                baseValue += 200000.0; // Add a fixed base value for testing purposes
+                // Apply range check if present
+                boolean inRange = true;
+                if (discount.getApplicableBaseRange() != null) {
+                    Double min = discount.getApplicableBaseRange().getMin() != null ? discount.getApplicableBaseRange().getMin() : Double.NEGATIVE_INFINITY;
+                    Double max = discount.getApplicableBaseRange().getMax() != null ? discount.getApplicableBaseRange().getMax() : Double.POSITIVE_INFINITY;
+                    inRange = (baseValue >= min) && (baseValue <= max);
+                }
+
+                double discountValue = 0.0;
+                if (inRange) {
+                    if (discount.getPercent() != null) {
+                    	// TODO USE FEE, NO 5K
+                        discountValue = 5000.0 * (discount.getPercent() / 100.0);
+                    } else if (discount.getAmount() != null) {
+                        discountValue = discount.getAmount();
+                    } else {
+                        // no percent or amount, zero discount
+                        discountValue = 0.0;
+                    }
+                } else {
+                    discountValue = 0.0;
+                }
+
+                return new RevenueItem(discount.getName(), -discountValue, "EUR");
+
+            } catch (Exception e) {
+                throw new RuntimeException("Error computing atomic discount: " + e.getMessage(), e);
+            }
         }
-
-        // TODO: apply constraints ???
-
-        return discoutValue;
     }
 
-        // assuming that the discount is atomic, compute the discount value
-        private Double getAtomicDiscount(Discount discount, OffsetDateTime time) {
-            // TODO: remove the below. Just to avoid PMD complaining about unused variables
-            //Boolean isBundle = discount.getIsBundle();
-            //time.getYear();
-            // compute the period
-            // retrive applicable base range
-            // check applicableBase is in range (if any)
-            // compute the discount (can be a percentage of the base or a fixed amount)
-            // apply a constraint (min/max) on discount, if any
-            // Check if the base is within the valid range (if applicable)
-        	time = OffsetDateTime.now();
-			if (discount.getPercent() != null) {
-				return discount.getPercent();
-			}
-			return 0.0;
-        }
 
-        private Double getCumulativeDiscount(List<Discount> discounts, OffsetDateTime time) {
-            Double cumulativePrice = 0.0;
-            for (Discount d : discounts) {
-                cumulativePrice += this.compute(d, time);
+    
+    private RevenueItem getCumulativeDiscount(List<Discount> discounts, OffsetDateTime time) {
+        if (discounts == null || discounts.isEmpty()) {
+            return new RevenueItem("bundle_cumulative", 0.0, "EUR");
+        }
+        double cumulativeValue = 0.0;
+        List<RevenueItem> children = new ArrayList<>();
+        for (Discount d : discounts) {
+            RevenueItem childItem = compute(d, time);
+            if (childItem != null) {
+                cumulativeValue += childItem.getValue();
+                children.add(childItem);
             }
-            return cumulativePrice;
         }
+        RevenueItem bundleItem = new RevenueItem("bundle_cumulative", cumulativeValue, "EUR");
+        bundleItem.setItems(children);
+        return bundleItem;
+    }
 
-        private Double getHigherDiscount(List<Discount> discounts, OffsetDateTime time) {
-            Double higher = 0.0;
-            for (Discount d : discounts) {
-                Double pValue = this.compute(d, time);
-                higher = Math.max(higher, pValue);
+    private RevenueItem getHigherDiscount(List<Discount> discounts, OffsetDateTime time) {
+        if (discounts == null || discounts.isEmpty()) {
+            return new RevenueItem("bundle_higher", 0.0, "EUR");
+        }
+        List<RevenueItem> children = new ArrayList<>();
+        RevenueItem maxItem = null;
+
+        for (Discount d : discounts) {
+            RevenueItem item = compute(d, time);
+            if (item != null) {
+                children.add(item);
+                if (maxItem == null || item.getValue() > maxItem.getValue()) {
+                    maxItem = item;
+                }
             }
-            return higher;
         }
 
-        private Double getLowerDiscount(List<Discount> discounts, OffsetDateTime time) {
-            Double higher = 0.0;
-            for (Discount d : discounts) {
-                Double pValue = this.compute(d, time);
-                higher = Math.min(higher, pValue);
+        double maxValue = (maxItem != null) ? maxItem.getValue() : 0.0;
+        RevenueItem bundleItem = new RevenueItem("bundle_higher", maxValue, "EUR");
+        bundleItem.setItems(children);
+        return bundleItem;
+    }
+
+
+    private RevenueItem getLowerDiscount(List<Discount> discounts, OffsetDateTime time) {
+        if (discounts == null || discounts.isEmpty()) {
+            return new RevenueItem("bundle_lower", 0.0, "EUR");
+        }
+        RevenueItem lowerItem = null;
+        List<RevenueItem> children = new ArrayList<>();
+        for (Discount d : discounts) {
+            RevenueItem childItem = compute(d, time);
+            if (childItem != null) {
+                children.add(childItem);
+                if (lowerItem == null || childItem.getValue() < lowerItem.getValue()) {
+                    lowerItem = childItem;
+                }
             }
-            return higher;
         }
-        
-        private Double getApplicableBaseAmount(Discount discount) {
-            String base = discount.getComputationBase();
-            if (base == null) return null;
-
-            switch (base) {
-                case "price":
-                    if (discount.getParentPrice() != null) {
-                        return discount.getParentPrice().getAmount();
-                    }
-                    break;
-                // In futuro puoi aggiungere altri tipi di base
-                default:
-                    throw new IllegalArgumentException("Unknown computation base: " + base);
-            }
-
-            return null;
-        }
+        double value = lowerItem != null ? lowerItem.getValue() : 0.0;
+        RevenueItem bundleItem = new RevenueItem("bundle_lower", value, "EUR");
+        bundleItem.setItems(children);
+        return bundleItem;
+    }
 }
-
- 
