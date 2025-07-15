@@ -91,7 +91,6 @@ public class PriceCalculator {
             }
 
             item.setItems(bundleResult.getItems());
-            item.setBundleOp(bundleResult.getBundleOp()); 
 
         } else {
             logger.debug("Processing atomic price");
@@ -104,7 +103,7 @@ public class PriceCalculator {
             Double fixedFee = price.getAmount(); //TODO implement fixed fee logic
             DiscountCalculator discountCalculator = new DiscountCalculator(subscription, metricsRetriever);
             RevenueItem discountItem = discountCalculator.compute(price.getDiscount(), time, fixedFee);
-            if (discountItem != null) {
+            if (discountItem != null && discountItem.getValue() != 0) {
                 discountItems.add(discountItem);
             }
 
@@ -119,8 +118,6 @@ public class PriceCalculator {
         return item;
     }
 
-    
-    
     private RevenueItem getAtomicPrice(Price price, OffsetDateTime time) {
         logger.debug("Computing atomic price for: {}", price.getName());
 

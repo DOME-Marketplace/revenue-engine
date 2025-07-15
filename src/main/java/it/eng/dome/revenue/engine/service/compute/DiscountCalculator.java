@@ -43,7 +43,6 @@ public class DiscountCalculator {
     /**
      * Compute a Discount into a RevenueItem, recursively managing bundles.
      */
-    
     //TODO: handle cases where discount is referred-base
     
     public RevenueItem compute(Discount discount, OffsetDateTime time, Double fixedFee) {
@@ -73,7 +72,6 @@ public class DiscountCalculator {
 
             RevenueItem bundleItem = new RevenueItem(discount.getName(), 0.0, "EUR");
             bundleItem.setItems(bundleResult.getItems());
-            bundleItem.setBundleOp(discount.getBundleOp()); 
             
             return bundleItem;
 
@@ -136,8 +134,6 @@ public class DiscountCalculator {
         }
     }
 
-
-    
     private RevenueItem getCumulativeDiscount(List<Discount> discounts, OffsetDateTime time, Double fixedFee) {
         if (discounts == null || discounts.isEmpty()) {
             return new RevenueItem("bundle_cumulative", 0.0, "EUR");
@@ -178,7 +174,6 @@ public class DiscountCalculator {
         bundleItem.setItems(children);
         return bundleItem;
     }
-
 
     private RevenueItem getLowerDiscount(List<Discount> discounts, OffsetDateTime time, Double fixedFee) {
         if (discounts == null || discounts.isEmpty()) {
