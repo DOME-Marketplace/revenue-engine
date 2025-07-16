@@ -98,18 +98,17 @@ public class PriceCalculator {
 
     private RevenueItem getBundlePrice(Price price, OffsetDateTime time) {
         logger.debug("Processing bundle price with operation: {}", price.getBundleOp());
-        List<Price> childPrices = price.getPrices();
         RevenueItem bundleResult;
 
         switch (price.getBundleOp()) {
             case CUMULATIVE:
-                bundleResult = getCumulativePrice(price, childPrices, time);
+                bundleResult = getCumulativePrice(price, time);
                 break;
             case ALTERNATIVE_HIGHER:
-                bundleResult = getHigherPrice(price, childPrices, time);
+                bundleResult = getHigherPrice(price, time);
                 break;
             case ALTERNATIVE_LOWER:
-                bundleResult = getLowerPrice(price, childPrices, time);
+                bundleResult = getLowerPrice(price, time);
                 break;
             default:
                 throw new IllegalArgumentException("Unknown bundle operation: " + price.getBundleOp());
@@ -244,26 +243,34 @@ public class PriceCalculator {
         return applicableValue;
     }
 
-    private RevenueItem getCumulativePrice(Price bundlePrice, List<Price> prices, OffsetDateTime time) {
-        logger.debug("Computing cumulative price from {} items", prices.size());
+    private RevenueItem getCumulativePrice(Price bundlePrice, OffsetDateTime time) {
+        List<Price> childPrices = bundlePrice.getPrices();
+        logger.debug("Computing cumulative price from {} items", childPrices.size());
+
         RevenueItem cumulativeItem = new RevenueItem(bundlePrice.getName());
         cumulativeItem.setItems(new ArrayList<>());
 
-        for (Price p : prices) {
+        for (Price p : childPrices) {
             RevenueItem current = compute(p, time);
             if (current != null) {
                 cumulativeItem.getItems().add(current);
             }
         }
 
+        if (cumulativeItem.getItems().isEmpty()) {
+            return null;
+        }
+
         return cumulativeItem;
     }
 
-    private RevenueItem getHigherPrice(Price bundlePrice, List<Price> prices, OffsetDateTime time) {
-        logger.debug("Finding higher price from {} items", prices.size());
+    private RevenueItem getHigherPrice(Price bundlePrice, OffsetDateTime time) {
+        List<Price> childPrices = bundlePrice.getPrices();
+        logger.debug("Finding higher price from {} items", childPrices.size());
+
         RevenueItem higherItem = null;
 
-        for (Price p : prices) {
+        for (Price p : childPrices) {
             RevenueItem current = compute(p, time);
             if (current == null) continue;
 
@@ -273,7 +280,6 @@ public class PriceCalculator {
         }
 
         if (higherItem != null) {
-            // wrap in bundle with parent's name
             RevenueItem wrapper = new RevenueItem(bundlePrice.getName());
             wrapper.setItems(List.of(higherItem));
             return wrapper;
@@ -282,11 +288,13 @@ public class PriceCalculator {
         return null;
     }
 
-    private RevenueItem getLowerPrice(Price bundlePrice, List<Price> prices, OffsetDateTime time) {
-        logger.debug("Finding lower price from {} items", prices.size());
+    private RevenueItem getLowerPrice(Price bundlePrice, OffsetDateTime time) {
+        List<Price> childPrices = bundlePrice.getPrices();
+        logger.debug("Finding lower price from {} items", childPrices.size());
+
         RevenueItem lowerItem = null;
 
-        for (Price p : prices) {
+        for (Price p : childPrices) {
             RevenueItem current = compute(p, time);
             if (current == null) continue;
 
