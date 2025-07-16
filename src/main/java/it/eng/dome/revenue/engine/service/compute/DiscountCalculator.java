@@ -93,7 +93,7 @@ public class DiscountCalculator {
                 }
 
 
-                logger.debug("Computing atomic discount '{}' for period {} - {}", discount.getName(), tp.getFromDate(), tp.getToDate());
+                logger.debug("Computing atomic discount '{}' for period {} - {}", discount.getName(), tp);
 
                 String buyerId = subscription.getBuyerId();
                 double computedValue = 0.0;
@@ -101,7 +101,7 @@ public class DiscountCalculator {
                 // FIXME: fix this logic to retrieve the base value correctly
                 if (discount.getApplicableBase() != null && !discount.getApplicableBase().isEmpty()) {
                     // Compute base value from metricsRetriever for given base key and period
-                	computedValue = metricsRetriever.computeValueForKey(discount.getApplicableBase(), buyerId, tp.getFromDate(), tp.getToDate());
+                	computedValue = metricsRetriever.computeValueForKey(discount.getApplicableBase(), buyerId, tp);
                 }
                 
                 computedValue += 200000.0; // Add a fixed base value for testing purposes
