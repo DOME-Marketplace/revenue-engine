@@ -33,10 +33,6 @@ public class PlanItem {
     @JsonProperty("currency")
     private String currency;
     
-
-    @JsonProperty("computationBase")
-    private String computationBase;
-    
     @JsonProperty("applicableBase")
     private String applicableBase;
 
@@ -50,7 +46,10 @@ public class PlanItem {
 
 	@JsonProperty("applicableFrom")
 	private OffsetDateTime applicableFrom;
-
+	
+	@JsonProperty("computationBase")
+	private String computationBase;
+	
 	@JsonProperty("computationBaseReferencePeriod")
 	@Deprecated 
     private ReferencePeriod computationBaseReferencePeriod;

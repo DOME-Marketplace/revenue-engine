@@ -40,12 +40,9 @@ public class DevController {
 	@Autowired
     TmfDataRetriever tmfDataRetriever;
 
-    @Autowired
     public DevController() {
     }
 
-
-    
     @GetMapping("/dev/subscriptions/{id}/statements")
     public ResponseEntity<RevenueStatement> priceCalculator(@PathVariable String id) {
 
@@ -64,12 +61,9 @@ public class DevController {
             Price price = plan.getPrice();
             
             RevenueItem computedRevenueItem = priceCalculator.compute(price, time);
-            RevenueStatement computedRevenueStatement = new RevenueStatement(sub, 
-					new SubscriptionTimeHelper(sub).getSubscriptionPeriodAt(time));
+            RevenueStatement computedRevenueStatement = new RevenueStatement(sub, new SubscriptionTimeHelper(sub).getSubscriptionPeriodAt(time));
             computedRevenueStatement.setRevenueItem(computedRevenueItem);
             computedRevenueStatement.setSubscription(sub);
-            
-            
             
             return ResponseEntity.ok(computedRevenueStatement);
         } catch (Exception e) {

@@ -11,11 +11,13 @@ public class RevenueItem {
     private String name;
     private Double value;
     private String currency;
-    private String computationBase;
-    private Double computationBaseValue;
     
     private List<RevenueItem> items;
 
+    public RevenueItem() {
+    	this.items = new ArrayList<>();
+    }
+    
     public RevenueItem(String name, Double value, String currency) {
         this.name = name;
         this.value = value; 
@@ -37,9 +39,13 @@ public class RevenueItem {
         }
         this.items.add(new RevenueItem(name, value, currency));
     }
-
+ 
     public String getName() {
         return name;
+    }
+    
+    public void setName(String name) {
+    	this.name = name;
     }
 
     public Double getValue() {
@@ -47,13 +53,16 @@ public class RevenueItem {
     }
 
     public void setValue(Double value) {
-  this.value = value;
- }
+    	this.value = value;
+    }
     
     public Double getOverallValue() {
-        Double total = this.value;
+        double total = (this.value != null) ? this.value : 0.0;
         for (RevenueItem item : items) {
-            total += item.getOverallValue();
+            Double childValue = item.getOverallValue();
+            if (childValue != null) {
+                total += childValue;
+            }
         }
         return total;
     }
@@ -62,20 +71,8 @@ public class RevenueItem {
         return currency;
     }
 
-        public String getComputationBase() {
-        return computationBase;
-    }
-
-    public void setComputationBase(String computationBase) {
-        this.computationBase = computationBase;
-    }
-
-    public Double getComputationBaseValue() {
-        return computationBaseValue;
-    }
-
-    public void setComputationBaseValue(Double computationBaseValue) {
-        this.computationBaseValue = computationBaseValue;
-    }
-
+	@Override
+	public String toString() {
+		return "RevenueItem [name=" + name + ", value=" + value + ", currency=" + currency + ", items=" + items + "]";
+	}
 }
