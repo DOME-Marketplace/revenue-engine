@@ -14,6 +14,12 @@ public class RevenueItem {
     
     private List<RevenueItem> items;
 
+ 
+    public RevenueItem(String name) {
+		this.name = name;
+		
+	}
+
     public RevenueItem() {
     	this.items = new ArrayList<>();
     }
@@ -67,10 +73,17 @@ public class RevenueItem {
         return total;
     }
 
+
+    public void setCurrency(String currency) {
+		this.currency = currency;
+	} 
+    
     public String getCurrency() {
         return currency;
     }
 
+    
+    
 	@Override
 	public String toString() {
 		return "RevenueItem [name=" + name + ", value=" + value + ", currency=" + currency + ", items=" + items + "]";
