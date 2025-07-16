@@ -120,10 +120,10 @@ public class PriceCalculator {
     private List<RevenueItem> getDiscountItems(Price price, OffsetDateTime time) {
         List<RevenueItem> discountItems = new ArrayList<>();
 
-        Double amount = price.getAmount();
+        Double amount = price.getAmount(); // Assuming amount is the base amount for the discount
         DiscountCalculator discountCalculator = new DiscountCalculator(subscription, metricsRetriever);
         RevenueItem discountItem = discountCalculator.compute(price.getDiscount(), time, amount);
-        if (discountItem != null && discountItem.getValue() != 0) {
+        if (discountItem != null ) {
             discountItems.add(discountItem);
         }
         return discountItems;
