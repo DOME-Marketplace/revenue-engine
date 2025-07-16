@@ -1,6 +1,5 @@
 package it.eng.dome.revenue.engine.service;
 
-import java.time.OffsetDateTime;
 import java.util.List;
 
 import org.slf4j.Logger;
@@ -11,8 +10,9 @@ import org.springframework.beans.factory.config.ConfigurableBeanFactory;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
 
-import it.eng.dome.tmforum.tmf678.v4.model.AppliedCustomerBillingRate;
+import it.eng.dome.revenue.engine.model.TimePeriod;
 import it.eng.dome.tmforum.tmf632.v4.model.Organization;
+import it.eng.dome.tmforum.tmf678.v4.model.AppliedCustomerBillingRate;
 
 @Component(value = "metricsRetriever")
 @Scope(value = ConfigurableBeanFactory.SCOPE_PROTOTYPE)
@@ -35,12 +35,11 @@ public class MetricsRetriever implements InitializingBean {
     }
     
     // implement retriever for key 'bills-no-taxes'
-    public Double computeBillsNoTaxes(String sellerId, OffsetDateTime from, OffsetDateTime to) throws Exception {
-
+    public Double computeBillsNoTaxes(String sellerId, TimePeriod timePeriod) throws Exception {
     	logger.info("Compute bills-no-taxes");
     	
     	// retrieve all seller invoices in the period
-        List<AppliedCustomerBillingRate> bills = tmfDataRetriever.retrieveBills(sellerId, from, to);
+        List<AppliedCustomerBillingRate> bills = tmfDataRetriever.retrieveBills(sellerId, timePeriod);
 
         // sum taxExcludedAmount.value
         double totalAmountNoTaxes = 0.0;
@@ -55,7 +54,7 @@ public class MetricsRetriever implements InitializingBean {
     }
 
     // implement retriever for key 'referred-providers-number'
-    public Integer computeReferralsProvidersNumber(String sellerId, OffsetDateTime from, OffsetDateTime to) throws Exception {
+    public Integer computeReferralsProvidersNumber(String sellerId, TimePeriod timePeriod) throws Exception {
     	// TODO: test the method when listReferredProviders will work
     	// retrieves the list of providers referenced by the seller
         List<Organization> referred = tmfDataRetriever.listReferralsProviders(sellerId);
@@ -68,86 +67,45 @@ public class MetricsRetriever implements InitializingBean {
     }
 
     // implement retriever for key 'referred-providers-transaction-volume'
-    public Double computeReferralsProvidersTransactionVolume(String sellerId, OffsetDateTime from, OffsetDateTime to) throws Exception {
+    public Double computeReferralsProvidersTransactionVolume(String sellerId, TimePeriod timePeriod) throws Exception {
     	// TODO: test the method when listReferredProviders will work
     	// retrieve the list of providers referred by the given seller
     	List<Organization> referred = tmfDataRetriever.listReferralsProviders(sellerId);
-
 	    if (referred == null || referred.isEmpty()) 
 	    	return 0.0;
-	
 	    double totalTransactionVolume = 0.0;
 	    // iterate over each referred provider
 	    for (Organization org : referred) {
-			totalTransactionVolume += this.computeBillsNoTaxes(org.getId(), from, to);
-			/*
-	    	// retrieve all billing rates for this provider in the specified period
-	        List<AppliedCustomerBillingRate> bills = tmfDataRetriever.retrieveBills(org.getId(), from, to);
-
-	        // if there are any bills, sum the tax-excluded amounts
-	        if (bills != null) {
-	            for (AppliedCustomerBillingRate bill : bills) {
-	                if (bill.getTaxExcludedAmount() != null && bill.getTaxExcludedAmount().getValue() != null) {
-	                    totalAmountNoTaxes += bill.getTaxExcludedAmount().getValue();
-	                } else {
-	                    logger.warn("Bill {} contains no amount. Skipping it for the revenue computation", bill.getId());
-	                }
-	            }
-	        }
-			*/
+			totalTransactionVolume += this.computeBillsNoTaxes(org.getId(), timePeriod);
 	    }
 	    return totalTransactionVolume;	    
     }
     
     // implement retriever for key 'referred-provider-max-transaction-volume'
-    public Double computeReferralsProviderMaxTransactionVolume(String sellerId, OffsetDateTime from, OffsetDateTime to) throws Exception {
+    public Double computeReferralsProviderMaxTransactionVolume(String sellerId, TimePeriod timePeriod) throws Exception {
     	// TODO: test the method when listReferredProviders will work
     	// retrieve the list of providers referred by the given seller
     	List<Organization> referred = tmfDataRetriever.listReferralsProviders(sellerId);
-
 	    if (referred == null || referred.isEmpty()) 
 	    	return 0.0;
-	    
 	    double maxTransactionVolume = 0.0;
-	    
 	    // iterate over each referred provider	    
 	    for (Organization org : referred) {
-			maxTransactionVolume = Math.max(maxTransactionVolume, this.computeBillsNoTaxes(org.getId(), from, to));
-			/*
-	        List<AppliedCustomerBillingRate> bills = tmfDataRetriever.retrieveBills(org.getId(), from, to);
-
-	        double sum = 0.0;
-	        // if there are any bills, sum the tax-excluded amounts
-	        if (bills != null) {
-	            for (AppliedCustomerBillingRate bill : bills) {
-	                if (bill.getTaxExcludedAmount() != null && bill.getTaxExcludedAmount().getValue() != null) {
-	                    sum += bill.getTaxExcludedAmount().getValue();
-	                } else {
-	                    logger.warn("Bill {} contains no amount. Skipping it for the revenue computation", bill.getId());
-	                }
-	            }
-	        }
-
-	        // keep track of the maximum billing amount among all referred providers
-	        if (sum > transactionVolume) {
-	            transactionVolume = sum;
-	        }
-			*/
+			maxTransactionVolume = Math.max(maxTransactionVolume, this.computeBillsNoTaxes(org.getId(), timePeriod));
 	    }
-
 	    return maxTransactionVolume;
     }
 
-    public Double computeValueForKey(String key, String sellerId, OffsetDateTime from, OffsetDateTime to) throws Exception {
+    public Double computeValueForKey(String key, String sellerId, TimePeriod timePeriod) throws Exception {
     	switch (key) {
             case "bills-no-taxes":
-                return computeBillsNoTaxes(sellerId, from, to);
+                return computeBillsNoTaxes(sellerId, timePeriod);
             case "referred-providers-number":
-                return (double)computeReferralsProvidersNumber(sellerId, from, to);
+                return (double)computeReferralsProvidersNumber(sellerId, timePeriod);
             case "referred-providers-transaction-volume":
-                return computeReferralsProvidersTransactionVolume(sellerId, from, to);
+                return computeReferralsProvidersTransactionVolume(sellerId, timePeriod);
             case "referred-provider-max-transaction-volume":
-                return computeReferralsProviderMaxTransactionVolume(sellerId, from, to);
+                return computeReferralsProviderMaxTransactionVolume(sellerId, timePeriod);
             default:
                 throw new IllegalArgumentException("Unknown metric key: " + key);
         }

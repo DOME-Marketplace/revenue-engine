@@ -16,6 +16,7 @@ import org.springframework.beans.factory.config.ConfigurableBeanFactory;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
 
+import it.eng.dome.revenue.engine.model.TimePeriod;
 import it.eng.dome.revenue.engine.tmf.TmfApiFactory;
 import it.eng.dome.tmforum.tmf632.v4.api.OrganizationApi;
 import it.eng.dome.tmforum.tmf632.v4.model.Characteristic;
@@ -49,17 +50,17 @@ public class TmfDataRetriever implements InitializingBean {
 
     // retrieve all bills in the specified period, optionally filtered by sellerId
     // if sellerId is null, all bills in the period are retrieved
-    public List<AppliedCustomerBillingRate> retrieveBills(String sellerId, OffsetDateTime from, OffsetDateTime to) throws Exception {
+    public List<AppliedCustomerBillingRate> retrieveBills(String sellerId, TimePeriod timePeriod) throws Exception {
 
-        logger.debug("Retrieving bills from TMF API between " + from + " and " + to);
+        logger.debug("Retrieving bills from TMF API between " + timePeriod.getFromDate() + " and " + timePeriod.getToDate());
 
         // prepare the filter: only billed bills and in the given period
         Map<String, String> filter = new HashMap<>();
         filter.put("isBilled", "true");
-        if(from!=null)
-            filter.put("date.gt", from.toString());
-        if(to!=null)
-            filter.put("date.lt", to.toString());
+        if(timePeriod.getFromDate()!=null)
+            filter.put("date.gt", timePeriod.getFromDate().toString());
+        if(timePeriod.getToDate()!=null)
+            filter.put("date.lt", timePeriod.getToDate().toString());
         if(sellerId!=null) {
             filter.put("relatedParty", sellerId);
             filter.put("relatedParty.role", "Seller");
@@ -76,9 +77,9 @@ public class TmfDataRetriever implements InitializingBean {
     }
 
     // retrieve all providers with at least one bill in the specified period
-    public List<Organization> retrieveActiveSellers(OffsetDateTime from, OffsetDateTime to) throws Exception {
+    public List<Organization> retrieveActiveSellers(TimePeriod timePeriod) throws Exception {
 
-        logger.debug("Retrieving active sellers from TMF API between " + from + " and " + to);
+        logger.debug("Retrieving active sellers from TMF API between " + timePeriod.getFromDate() + " and " + timePeriod.getToDate());
 
         // id of sellers from bills
         Set<String> sellersIds = new TreeSet<>(); 
@@ -89,13 +90,13 @@ public class TmfDataRetriever implements InitializingBean {
         // prepare the filter: only billed bills and in the given period
         Map<String, String> filter = new HashMap<>();
         filter.put("isBilled", "true");
-        if(from!=null)
-            filter.put("date.gt", from.toString());
-        if(to!=null)
-            filter.put("date.lt", to.toString());
+        if(timePeriod.getFromDate()!=null)
+            filter.put("date.gt", timePeriod.getFromDate().toString());
+        if(timePeriod.getToDate()!=null)
+            filter.put("date.lt", timePeriod.getToDate().toString());
 
         // retrieve bills and extract seller ids
-        List<AppliedCustomerBillingRate> bills = this.retrieveBills(null, from, to);
+        List<AppliedCustomerBillingRate> bills = this.retrieveBills(null, timePeriod);
         for(AppliedCustomerBillingRate acbr: bills) {
             if(acbr==null || acbr.getRelatedParty()==null)
                 continue;
@@ -182,19 +183,22 @@ public class TmfDataRetriever implements InitializingBean {
     public List<Organization> retrieveActiveSellersInLastMonth() throws Exception {
         OffsetDateTime to = OffsetDateTime.now();
         OffsetDateTime from = to.plusMonths(-1);
-        return this.retrieveActiveSellers(from, to);
+        TimePeriod timePeriod = new TimePeriod(from, to);
+        return this.retrieveActiveSellers(timePeriod);
     }
 
     public List<AppliedCustomerBillingRate> retrieveBillsForSellerInLastMonth(String sellerId) throws Exception {
         OffsetDateTime to = OffsetDateTime.now();
         OffsetDateTime from = to.plusMonths(-1);
-        return this.retrieveBills(sellerId, from, to);
+        TimePeriod timePeriod = new TimePeriod(from, to);
+        return this.retrieveBills(sellerId, timePeriod);
     }
 
     public List<AppliedCustomerBillingRate> retrieveBillsInLastMonth() throws Exception {
         OffsetDateTime to = OffsetDateTime.now();
         OffsetDateTime from = to.plusMonths(-1);
-        return this.retrieveBills(null, from, to);
+        TimePeriod timePeriod = new TimePeriod(from, to);
+        return this.retrieveBills(null, timePeriod);
     }
 
 
