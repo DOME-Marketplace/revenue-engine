@@ -161,15 +161,14 @@ public class PriceCalculator {
                     if (currentPeriod.getFromDate().equals(startDate)) {
                         tp = currentPeriod;
                     } else {
-                        // TODO: manage this case
-                        logger.warn("current period not match with startDate");
+                        logger.info("Current period not match with startDate. It has probably already been calculated");
                     }
                     break;
                 default:
                     throw new IllegalArgumentException("Unsupported price type: " + price.getType());
             }
         } else {
-            // TODO: GET PARENT TYPE FROM PRICE
+            // TODO: GET PARENT TYPE FROM PRICE ?? - discuss if it can be removed
             tp = sth.getSubscriptionPeriodAt(time);
         }
 
@@ -200,28 +199,23 @@ public class PriceCalculator {
         logger.info("Computation of value");
         // computation logic
         if (price.getComputationBase() != null && !price.getComputationBase().isEmpty()) {
-            Double computationValue = 0.0;
-            try {
-                computationValue = metricsRetriever.computeValueForKey(price.getComputationBase(), buyerId, tp);
-                computationValue += 200000.00;
-                logger.info("Computed value: {}", computationValue);
-            } catch (Exception e) {
-            	logger.error("Error computing value for base '{}': {}", price.getComputationBase(), e.getMessage(), e);
-            }
-
-            if (price.getPercent() != null) {
+        	if (price.getPercent() != null) {
+	            Double computationValue = 0.0;
+	            try {
+	                computationValue = metricsRetriever.computeValueForKey(price.getComputationBase(), buyerId, tp);
+	                computationValue += 200000.00;
+	                logger.info("Computed value: {}", computationValue);
+	            } catch (Exception e) {
+	            	logger.error("Error computing value for base '{}': {}", price.getComputationBase(), e.getMessage(), e);
+	            }
                 return (computationValue * (price.getPercent() / 100));
             } else if (price.getAmount() != null) {
                 return price.getAmount();
-                // TODO: discutere di come gestire questo amount o percent e sicuro questa non è la posizione per fare questo if
             }
-
         } else {
-            // TODO: logic when computation not exists
-            logger.info("computation not exists");
-            return 0.0;
+            // TODO: discuss about this else
+            logger.warn("Computation not exists!");
         }
-
         return null;
     }
 

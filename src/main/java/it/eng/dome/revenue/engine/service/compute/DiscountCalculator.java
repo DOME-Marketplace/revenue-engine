@@ -105,7 +105,7 @@ public class DiscountCalculator {
                 tp = null;
             }
         } else {
-            // TODO: get by parent reference period
+            // TODO: get by parent reference period ?? - discuss if it can be removed
             tp = sth.getSubscriptionPeriodAt(time);
         }
 
@@ -137,37 +137,32 @@ public class DiscountCalculator {
 
     private Double getComputationValue(Discount discount, String buyerId, TimePeriod tp, Double amount) {
         logger.info("Computation of discount value");
-        
         // computation logic
         if (discount.getComputationBase() != null && !discount.getComputationBase().isEmpty()) {
-            Double computationValue = 0.0;
-            try {
-                // Handle special case for "parent-price" computation base
-                if ("parent-price".equals(discount.getComputationBase())) {
-                    computationValue = amount; // Use the parent price amount
-                    logger.info("Using parent price amount: {}", computationValue);
-                } else {
-                    computationValue = metricsRetriever.computeValueForKey(discount.getComputationBase(), buyerId, tp);
-                    computationValue += 200000.00; // Simulating a base value for testing purposes
-                    logger.info("Computed value from metrics: {}", computationValue);
-                }
-            } catch (Exception e) {
-                logger.error("Error computing discount value: {}", e.getMessage(), e);
-            }
+        	 if (discount.getPercent() != null) {
+	            Double computationValue = 0.0;
+	            try {
+	                // Handle special case for "parent-price" computation base
+	                if ("parent-price".equals(discount.getComputationBase())) {
+	                    computationValue = amount; // Use the parent price amount
+	                    logger.info("Using parent price amount: {}", computationValue);
+	                } else {
+	                    computationValue = metricsRetriever.computeValueForKey(discount.getComputationBase(), buyerId, tp);
+	                    computationValue += 200000.00; // Simulating a base value for testing purposes
+	                    logger.info("Computed value from metrics: {}", computationValue);
+	                }
+	            } catch (Exception e) {
+	                logger.error("Error computing discount value: {}", e.getMessage(), e);
+	            }
 
-            if (discount.getPercent() != null) {
                 return (computationValue * (discount.getPercent() / 100));
             } else if (discount.getAmount() != null) {
                 return discount.getAmount();
-                // TODO: discutere di come gestire questo amount o percent e sicuro questa non è la posizione per fare questo if
             }
-
         } else {
-            // TODO: logic when computation not exists
-            logger.info("computation not exists");
-            return 0.0;
+        	// TODO: discuss about this else
+            logger.warn("Computation not exists!");
         }
-
         return null;
     }
 
