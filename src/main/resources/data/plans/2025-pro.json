@@ -110,6 +110,9 @@
 				  "name": "Discount for referring 3 providers",
                   "applicableBase": "referred-providers-number",
                   "applicableBaseReferencePeriod": "PREVIOUS_SUBSCRIPTION_PERIOD",
+				  "applicableBaseRange": {
+                    "min": 3
+                  },
                   "computationBase": "parent-price",
                   "percent": 10
                 },
