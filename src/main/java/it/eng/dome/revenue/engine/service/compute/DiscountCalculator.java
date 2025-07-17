@@ -95,7 +95,7 @@ public class DiscountCalculator {
 
     private TimePeriod getTimePeriod(Discount discount, OffsetDateTime time) {
         SubscriptionTimeHelper sth = new SubscriptionTimeHelper(subscription);
-        TimePeriod tp = new TimePeriod();
+        TimePeriod tp;
         //TODO: handle this case properly
         if (discount.getApplicableBaseReferencePeriod() != null) {
  
@@ -151,7 +151,6 @@ public class DiscountCalculator {
                 }
             } catch (Exception e) {
                 logger.error("Error computing discount value: {}", e.getMessage(), e);
-                e.printStackTrace();
             }
 
             if (discount.getPercent() != null) {
@@ -179,7 +178,6 @@ public class DiscountCalculator {
                 applicableValue = metricsRetriever.computeValueForKey(discount.getApplicableBase(), buyerId, tp);
             } catch (Exception e) {
                 logger.error("Error getting applicable value: {}", e.getMessage(), e);
-                e.printStackTrace();
             }
             applicableValue += 200000.00; // Simulating a base value for testing purposes
         } else {
