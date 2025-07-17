@@ -98,16 +98,19 @@ public class DiscountCalculator {
         TimePeriod tp;
         //TODO: handle this case properly
         if (discount.getApplicableBaseReferencePeriod() != null) {
- 
-        	tp = sth.getSubscriptionPeriodAt(time);
-                   
-            
-        } else {
+        	if (discount.getApplicableBaseReferencePeriod().getValue().equalsIgnoreCase("PREVIOUS_SUBSCRIPTION_PERIOD")) {
+
+        		tp = sth.getSubscriptionPeriodAt(time);
+        	}        	
+        	tp = null;        	
+        }
+        else {
             // TODO: get by parent reference period
             tp = sth.getSubscriptionPeriodAt(time);
         }
 
         return tp;
+        
     }
 
     private Double computeDiscount(Discount discount, String buyerId, TimePeriod tp, Double amount) {
