@@ -206,7 +206,7 @@ public class PriceCalculator {
                 computationValue += 200000.00;
                 logger.info("Computed value: {}", computationValue);
             } catch (Exception e) {
-                e.printStackTrace();
+            	logger.error("Error computing value for base '{}': {}", price.getComputationBase(), e.getMessage(), e);
             }
 
             if (price.getPercent() != null) {
@@ -233,7 +233,7 @@ public class PriceCalculator {
             try {
                 applicableValue = metricsRetriever.computeValueForKey(price.getApplicableBase(), buyerId, tp);
             } catch (Exception e) {
-                e.printStackTrace();
+                logger.error("Error computing applicable value for base '{}': {}", price.getApplicableBase(), e.getMessage(), e);
             }
             applicableValue += 200000.00; // Simulating a base value for testing purposes
         } else {
