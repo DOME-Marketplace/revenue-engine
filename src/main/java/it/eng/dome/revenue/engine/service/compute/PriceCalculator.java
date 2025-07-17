@@ -268,47 +268,53 @@ public class PriceCalculator {
         List<Price> childPrices = bundlePrice.getPrices();
         logger.debug("Finding higher price from {} items", childPrices.size());
 
-        RevenueItem higherItem = null;
+        RevenueItem bestItem = null;
 
         for (Price p : childPrices) {
             RevenueItem current = compute(p, time);
             if (current == null) continue;
 
-            if (higherItem == null || current.getValue() > higherItem.getValue()) {
-                higherItem = current;
+            if (bestItem == null || current.getOverallValue() > bestItem.getOverallValue()) {
+                bestItem = current;
             }
         }
 
-        if (higherItem != null) {
-            RevenueItem wrapper = new RevenueItem(bundlePrice.getName());
-            wrapper.setItems(List.of(higherItem));
-            return wrapper;
+        if (bestItem == null) {
+            return null;
         }
 
-        return null;
+        RevenueItem wrapper = new RevenueItem(bundlePrice.getName());
+        List<RevenueItem> items = new ArrayList<>();
+        items.add(bestItem);
+        wrapper.setItems(items);
+
+        return wrapper;
     }
 
     private RevenueItem getLowerPrice(Price bundlePrice, OffsetDateTime time) {
         List<Price> childPrices = bundlePrice.getPrices();
         logger.debug("Finding lower price from {} items", childPrices.size());
 
-        RevenueItem lowerItem = null;
+        RevenueItem bestItem = null;
 
         for (Price p : childPrices) {
             RevenueItem current = compute(p, time);
             if (current == null) continue;
 
-            if (lowerItem == null || current.getValue() < lowerItem.getValue()) {
-                lowerItem = current;
+            if (bestItem == null || current.getOverallValue() < bestItem.getOverallValue()) {
+                bestItem = current;
             }
         }
 
-        if (lowerItem != null) {
-            RevenueItem wrapper = new RevenueItem(bundlePrice.getName());
-            wrapper.setItems(List.of(lowerItem));
-            return wrapper;
+        if (bestItem == null) {
+            return null;
         }
 
-        return null;
+        RevenueItem wrapper = new RevenueItem(bundlePrice.getName());
+        List<RevenueItem> items = new ArrayList<>();
+        items.add(bestItem);
+        wrapper.setItems(items);
+
+        return wrapper;
     }
 }
