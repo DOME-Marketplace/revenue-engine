@@ -12,8 +12,8 @@ import it.eng.dome.revenue.engine.model.Discount;
 import it.eng.dome.revenue.engine.model.RevenueItem;
 import it.eng.dome.revenue.engine.model.Subscription;
 import it.eng.dome.revenue.engine.model.SubscriptionTimeHelper;
-import it.eng.dome.revenue.engine.model.TimePeriod;
 import it.eng.dome.revenue.engine.service.MetricsRetriever;
+import it.eng.dome.tmforum.tmf678.v4.model.TimePeriod;
 
 public class DiscountCalculator {
     private static final Logger logger = LoggerFactory.getLogger(DiscountCalculator.class);

@@ -13,16 +13,14 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-
-
+import it.eng.dome.revenue.engine.model.Plan;
 import it.eng.dome.revenue.engine.model.RevenueStatement;
 import it.eng.dome.revenue.engine.model.Subscription;
-import it.eng.dome.revenue.engine.model.Plan;
 import it.eng.dome.revenue.engine.model.SubscriptionTimeHelper;
-import it.eng.dome.revenue.engine.model.TimePeriod;
 import it.eng.dome.revenue.engine.service.PlanService;
 import it.eng.dome.revenue.engine.service.SubscriptionService;
 import it.eng.dome.revenue.engine.service.TmfDataRetriever;
+import it.eng.dome.tmforum.tmf678.v4.model.TimePeriod;
 
 @RestController
 //@RequiredArgsConstructor

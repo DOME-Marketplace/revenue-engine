@@ -10,6 +10,8 @@ import java.util.regex.Pattern;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import it.eng.dome.tmforum.tmf678.v4.model.TimePeriod;
+
 public class SubscriptionTimeHelper {
 
     private final Logger logger = LoggerFactory.getLogger(SubscriptionTimeHelper.class);
@@ -44,10 +46,12 @@ public class SubscriptionTimeHelper {
         } else {
             // the start date of the subscription
             OffsetDateTime start = this.subscription.getStartDate();
+            TimePeriod tp = new TimePeriod();
             if(PriceType.ONE_TIME_PREPAID.equals(price.getType())) {
                 // if the price is a one-time prepaid, return only one period for the first subscription period
                 OffsetDateTime end = this.rollSubscriptionPeriod(start, 1);
-                TimePeriod tp = new TimePeriod(start, end);
+                tp.setStartDateTime(start);
+                tp.setEndDateTime(end);
                 chargePeriodTimes.add(tp);
             } else {
                 // iterate over the charge periods, until reaching the current time
@@ -55,7 +59,9 @@ public class SubscriptionTimeHelper {
                 OffsetDateTime stopAt = OffsetDateTime.now().plusYears(1);
                 while(!start.isAfter(stopAt)) {
                     OffsetDateTime end = this.rollChargePeriod(start, price, 1);
-                    chargePeriodTimes.add(new TimePeriod(start, end));
+                    tp.setStartDateTime(start);
+                    tp.setEndDateTime(end);
+                    chargePeriodTimes.add(tp);
                     start = end;
                 }
             }
@@ -75,7 +81,10 @@ public class SubscriptionTimeHelper {
         while(!start.isAfter(time)) {
             OffsetDateTime end = this.rollSubscriptionPeriod(start, 1);
             if(!time.isBefore(start) && time.isBefore(end)) {
-                return new TimePeriod(start, end);
+            	TimePeriod tp = new TimePeriod();
+            	tp.setStartDateTime(start);
+            	tp.setEndDateTime(end);
+                return tp;
             }
             start = end;
         }
@@ -119,7 +128,10 @@ public class SubscriptionTimeHelper {
                     startPeriod = this.getChargePeriodAt(this.subscription.getStartDate(), price);
                 }
                 if(startPeriod != null && endPeriod != null) {
-                    return new TimePeriod(startPeriod.getFromDate(), endPeriod.getToDate());
+                	TimePeriod tp = new TimePeriod();
+                	tp.setStartDateTime(startPeriod.getStartDateTime());
+                	tp.setEndDateTime(endPeriod.getEndDateTime());
+                    return tp;
                 }
             }
         }
@@ -139,7 +151,10 @@ public class SubscriptionTimeHelper {
             OffsetDateTime end = this.rollChargePeriod(start, price, 1);
             logger.debug("Checking period: " + start + " - " + end);
             if(!time.isBefore(start) && time.isBefore(end)) {
-                return new TimePeriod(start, end);
+            	TimePeriod tp = new TimePeriod();
+            	tp.setStartDateTime(start);
+            	tp.setEndDateTime(time);
+                return tp;
             }
             start = end;
         }
@@ -251,8 +266,8 @@ public class SubscriptionTimeHelper {
         now = OffsetDateTime.now();
 
         TimePeriod chargePeriod = helper.getChargePeriodByOffset(now, price, 18);
-        logger.debug(chargePeriod.getFromDate().toString());
-        logger.debug(chargePeriod.getToDate().toString());
+        logger.debug(chargePeriod.getStartDateTime().toString());
+        logger.debug(chargePeriod.getEndDateTime().toString());
 
         Set<TimePeriod> chargePeriods = helper.getChargePeriodTimes();
         for(TimePeriod t : chargePeriods) {

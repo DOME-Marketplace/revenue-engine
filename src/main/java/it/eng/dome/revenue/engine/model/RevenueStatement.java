@@ -1,6 +1,7 @@
 package it.eng.dome.revenue.engine.model;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import it.eng.dome.tmforum.tmf678.v4.model.TimePeriod;
 
 public class RevenueStatement {
 
@@ -15,7 +16,7 @@ public class RevenueStatement {
 
     @JsonProperty("description")
     public String getDescription() {
-        String name = "Revenue Statement for " + subscription.getBuyerId() + "; plan " + subscription.getPlan().getName() + " from " + period.getFromDate() + " to " + period.getToDate();
+        String name = "Revenue Statement for " + subscription.getBuyerId() + "; plan " + subscription.getPlan().getName() + " from " + period.getStartDateTime() + " to " + period.getEndDateTime();
         return name;
     }
 

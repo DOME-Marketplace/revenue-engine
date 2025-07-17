@@ -14,8 +14,8 @@ import it.eng.dome.revenue.engine.model.RevenueItem;
 import it.eng.dome.revenue.engine.model.RevenueStatement;
 import it.eng.dome.revenue.engine.model.Subscription;
 import it.eng.dome.revenue.engine.model.SubscriptionTimeHelper;
-import it.eng.dome.revenue.engine.model.TimePeriod;
 import it.eng.dome.revenue.engine.service.MetricsRetriever;
+import it.eng.dome.tmforum.tmf678.v4.model.TimePeriod;
 
 @Service
 public class PriceCalculator {
@@ -46,7 +46,7 @@ public class PriceCalculator {
 
         try {
             TimePeriod period = new SubscriptionTimeHelper(subscription).getSubscriptionPeriodAt(time);
-            logger.debug("Computed period: {} to {}", period.getFromDate(), period.getToDate());
+            logger.debug("Computed period: {} to {}", period.getStartDateTime(), period.getEndDateTime());
 
             RevenueStatement statement = new RevenueStatement(subscription, period);
             Price price = subscription.getPlan().getPrice();
@@ -158,7 +158,7 @@ public class PriceCalculator {
                 case ONE_TIME_PREPAID:
                     TimePeriod currentPeriod = sth.getSubscriptionPeriodAt(time);
                     OffsetDateTime startDate = subscription.getStartDate();
-                    if (currentPeriod.getFromDate().equals(startDate)) {
+                    if (currentPeriod.getStartDateTime().equals(startDate)) {
                         tp = currentPeriod;
                     } else {
                         logger.info("Current period not match with startDate. It has probably already been calculated");
