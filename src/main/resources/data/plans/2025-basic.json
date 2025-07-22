@@ -140,8 +140,8 @@
         "recurringChargePeriodType": "MONTH",
         "prices": [
           {
-            "name": "Price Range 1",
-            "applicableBaseReferencePeriod": "CURRENT_SUBSCRIPTION_PERIOD",
+            "name": "Price Tier 1",
+            "applicableBaseReferencePeriod": "LAST_9_BILLING_PERIODS",
             "applicableFrom": "2026-01-01T00:00:00Z",
             "applicableBase": "bills-no-taxes",
             "applicableBaseRange": {
@@ -153,7 +153,7 @@
           },
           {
             "name": "Price Range 2",
-            "applicableBaseReferencePeriod": "CURRENT_SUBSCRIPTION_PERIOD",
+            "applicableBaseReferencePeriod": "LAST_9_BILLING_PERIODS",
             "applicableFrom": "2026-01-01T00:00:00Z",
             "applicableBase": "bills-no-taxes",
             "applicableBaseRange": {
@@ -161,13 +161,17 @@
               "max": 250000
             },
             "computationBase": "bills-no-taxes",
-            "computationBaseReferencePeriod": "CURRENT_BILLING_PERIOD",
+            "computationBaseReferencePeriod": "LAST_9_BILLING_PERIODS",
             "computationFrom": "2026-01-01T00:00:00Z",
-            "percent": 4
+            "percent": 4,
+            "discount": {
+              "amount": 4000,
+              "currency": "EUR"
+            }
           },
           {
             "name": "Price Range 3",
-            "applicableBaseReferencePeriod": "CURRENT_SUBSCRIPTION_PERIOD",
+            "applicableBaseReferencePeriod": "LAST_9_BILLING_PERIODS",
             "applicableFrom": "2026-01-01T00:00:00Z",
             "applicableBase": "bills-no-taxes",
             "applicableBaseRange": {
@@ -175,13 +179,17 @@
               "max": 750000
             },
             "computationBase": "bills-no-taxes",
-            "computationBaseReferencePeriod": "CURRENT_BILLING_PERIOD",
+            "computationBaseReferencePeriod": "LAST_9_BILLING_PERIODS",
             "computationFrom": "2026-01-01T00:00:00Z",
-            "percent": 3.5
+            "percent": 3.5,
+            "discount": {
+              "amount": 8750,
+              "currency": "EUR"
+            }
           },
           {
             "name": "Price Range 4",
-            "applicableBaseReferencePeriod": "CURRENT_SUBSCRIPTION_PERIOD",
+            "applicableBaseReferencePeriod": "LAST_9_BILLING_PERIODS",
             "applicableBase": "bills-no-taxes",
             "applicableFrom": "2026-01-01T00:00:00Z",
             "applicableBaseRange": {
@@ -189,22 +197,30 @@
               "max": 1000000
             },
             "computationBase": "bills-no-taxes",
-            "computationBaseReferencePeriod": "CURRENT_BILLING_PERIOD",
+            "computationBaseReferencePeriod": "LAST_9_BILLING_PERIODS",
             "computationFrom": "2026-01-01T00:00:00Z",
-            "percent": 3
+            "percent": 3,
+            "discount": {
+              "amount": 22500,
+              "currency": "EUR"
+            }
           },
           {
             "name": "Price Range 5",
-            "referenceapplicableBaseReferencePeriodPeriod": "CURRENT_SUBSCRIPTION_PERIOD",
+            "referenceapplicableBaseReferencePeriodPeriod": "LAST_9_BILLING_PERIODS",
             "applicableBase": "bills-no-taxes",
             "applicableFrom": "2026-01-01T00:00:00Z",
             "applicableBaseRange": {
               "min": 1000001
             },
             "computationBase": "bills-no-taxes",
-            "computationBaseReferencePeriod": "CURRENT_BILLING_PERIOD",
+            "computationBaseReferencePeriod": "LAST_9_BILLING_PERIODS",
             "computationFrom": "2026-01-01T00:00:00Z",
-            "percent": 2.5
+            "percent": 2.5,
+            "discount": {
+              "amount": 25000,
+              "currency": "EUR"
+            }
           }
         ]
       }
