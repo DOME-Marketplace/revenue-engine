@@ -76,10 +76,10 @@ public class SubscriptionsController {
         }
     }
 
-    @GetMapping("{id}/statements")
-    public ResponseEntity<RevenueStatement> statementCalculator(@PathVariable String id) {    	
+    @GetMapping("{subscriptionId}/statements")
+    public ResponseEntity<RevenueStatement> statementCalculator(@PathVariable String subscriptionId) {    	
         try {
-            Subscription sub = subscriptionService.getBySubscriptionId(id);
+            Subscription sub = subscriptionService.getSubscriptionById(subscriptionId);
             logger.info("Subscription: {}", sub);
             
             OffsetDateTime time = OffsetDateTime.now();            

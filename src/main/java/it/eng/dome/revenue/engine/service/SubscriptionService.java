@@ -67,6 +67,7 @@ public class SubscriptionService implements InitializingBean {
 
 
     // === GET BY Id===
+	/*
 	@Deprecated
     public Subscription getBySubscriptionId(String id) throws IOException {
         return loadAllFromStorage().stream()
@@ -74,6 +75,7 @@ public class SubscriptionService implements InitializingBean {
                 .findFirst()
                 .orElse(null);
     }
+	*/
 
 	public Subscription getSubscriptionById(String id) throws ApiException, IOException {
 		// 1. check the id is in the right format
@@ -157,6 +159,8 @@ public class SubscriptionService implements InitializingBean {
 
 
 	// === GET ALL ===
+	/*
+	@Deprecated
 	public List<Subscription> loadAllFromStorage() throws IOException {
 
 		List<Subscription> subscriptions = new ArrayList<>();
@@ -173,23 +177,29 @@ public class SubscriptionService implements InitializingBean {
 		}
 		return subscriptions;
 	}
+	*/
 
 	// === GET BY PARTY ID ===
 
+	/*
 	public List<Subscription> getByRelatedPartyId(String id) throws IOException {
 		return loadAllFromStorage().stream().filter(subscription -> subscription.getRelatedParties() != null)
 				.filter(subscription -> subscription.getRelatedParties().stream()
 						.anyMatch(party -> party != null && party.getId() != null && party.getId().equals(id)))
 				.collect(Collectors.toList());
 	}
+	*/
 
 	public List<Subscription> getByPlanId(String id) {
 	    try {
-	        return loadAllFromStorage().stream()
+	        return this.getAllSubscriptions().stream()
 	                .filter(sub -> sub.getPlan() != null && id.equals(sub.getPlan().getId()))
 	                .collect(Collectors.toList());
 	    } catch (IOException e) {
 	        throw new RuntimeException("Unable to load subscriptions for planId: " + id, e);
+	    } catch (ApiException e) {
+	        throw new RuntimeException("Unable to load subscriptions for planId: " + id, e);
 	    }
 	}
+	
 }

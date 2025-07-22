@@ -18,7 +18,7 @@ import it.eng.dome.revenue.engine.service.SubscriptionService;
 
 @RestController
 //@RequiredArgsConstructor
-@RequestMapping("revenue/plans")
+@RequestMapping("/revenue/plans")
 public class PlansController {
     
 	@Autowired
@@ -30,7 +30,7 @@ public class PlansController {
     public PlansController() {
     }
     
-    @GetMapping("")
+    @GetMapping("/")
     public ResponseEntity<List<Plan>> getAllPlans() {
         try {
             List<Plan> plans = subscriptionPlanService.loadAllPlans();
@@ -40,18 +40,18 @@ public class PlansController {
         }
     }
     
-    @GetMapping("/{id}")
-    public ResponseEntity<Plan> getPlanById(@PathVariable String id) {
+    @GetMapping("/{planId}")
+    public ResponseEntity<Plan> getPlanById(@PathVariable String planId) {
         try {
-            Plan plan = subscriptionPlanService.findPlanById(id);
+            Plan plan = subscriptionPlanService.findPlanById(planId);
             return ResponseEntity.ok(plan);
         } catch (IOException e) {
             return ResponseEntity.notFound().build(); 
         }
     }
     
-    @GetMapping("/{id}/subscriptions")
-    public ResponseEntity<List<Subscription>> getSubscriptionsByPlanId(@PathVariable("id") String planId) {
+    @GetMapping("/{planId}/subscriptions")
+    public ResponseEntity<List<Subscription>> getSubscriptionsByPlanId(@PathVariable("planId") String planId) {
         List<Subscription> subscriptions = subscriptionService.getByPlanId(planId);
         if (subscriptions == null || subscriptions.isEmpty()) {
             return ResponseEntity.noContent().build();
