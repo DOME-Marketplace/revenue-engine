@@ -24,9 +24,6 @@ public class PlansController {
         this.subscriptionPlanService = subscriptionPlanService;
     }
     
-
- 
-
     @GetMapping("/plans/{id}")
     public ResponseEntity<Plan> getPlanById(@PathVariable String id) {
         try {
@@ -46,6 +43,5 @@ public class PlansController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
-
 
 }

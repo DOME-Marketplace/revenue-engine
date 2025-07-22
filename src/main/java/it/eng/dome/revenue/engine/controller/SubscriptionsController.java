@@ -22,6 +22,7 @@ import it.eng.dome.revenue.engine.service.SubscriptionService;
 import it.eng.dome.revenue.engine.service.TmfDataRetriever;
 import it.eng.dome.tmforum.tmf678.v4.model.TimePeriod;
 
+
 @RestController
 //@RequiredArgsConstructor
 @RequestMapping("/dev2/revenue/subscriptions")
@@ -47,12 +48,8 @@ public class SubscriptionsController {
     @GetMapping("/")
     public ResponseEntity<List<Subscription>> getAllSubscriptions() {
         try {
-            /*
-            List<Subscription> subscriptions = new ArrayList<>();
-            subscriptions.add(this.createFakeSubscription(UUID.randomUUID().toString()));
-            return ResponseEntity.ok(subscriptions);
-            */
-            List<Subscription> subscriptions = subscriptionService.loadAllFromStorage();
+//            List<Subscription> subscriptions = subscriptionService.loadAllFromStorage();
+            List<Subscription> subscriptions = subscriptionService.getAllSubscriptions();
             return ResponseEntity.ok(subscriptions);
         } catch (Exception e) {
             logger.error(e.getMessage(), e);
@@ -63,7 +60,8 @@ public class SubscriptionsController {
     @GetMapping("/{subscriptionId}")
     public ResponseEntity<Subscription> getSubscription(@PathVariable String subscriptionId) {
         try {
-            Subscription subscription = subscriptionService.getBySubscriptionId(subscriptionId);
+//            Subscription subscription = subscriptionService.getBySubscriptionId(subscriptionId);
+            Subscription subscription = subscriptionService.getSubscriptionById(subscriptionId);
             if (subscription == null) {
                 return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
             }
@@ -82,7 +80,7 @@ public class SubscriptionsController {
             List<RevenueStatement> statements = new ArrayList<>();
 
             // retrieve the subscription by id
-            Subscription subscription = subscriptionService.getBySubscriptionId(subscriptionId);
+            Subscription subscription = subscriptionService.getSubscriptionById(subscriptionId);
 
             // retrive the plan for the subscription
             Plan plan = this.subscriptionPlanService.findPlanById(subscription.getPlan().getId());

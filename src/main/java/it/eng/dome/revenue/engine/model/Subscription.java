@@ -85,6 +85,7 @@ public class Subscription {
         this.startDate = startDate;
     }
 
+    @JsonIgnore
     public String getBuyerId() {
         if (relatedParties != null && !relatedParties.isEmpty()) {
             for (RelatedParty party : relatedParties) {
