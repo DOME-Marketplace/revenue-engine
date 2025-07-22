@@ -32,22 +32,18 @@ public class SubscriptionsController {
 	protected final Logger logger = LoggerFactory.getLogger(StatementsController.class);
 
 	@Autowired
-	PriceCalculator priceCalculator;
+	private PriceCalculator priceCalculator;
 
 	@Autowired
-	SubscriptionService subscriptionService;
+	private SubscriptionService subscriptionService;
 
 	@Autowired
-	PlanService subscriptionPlanService;
+	private PlanService subscriptionPlanService;
 	
 	@Autowired
-    TmfDataRetriever tmfDataRetriever;
+	TmfDataRetriever tmfDataRetriever;
 
-    public SubscriptionsController(PlanService subscriptionPlanService,
-                              SubscriptionService subscriptionService /*, ObjectMapper mapper*/) {
-        this.subscriptionPlanService = subscriptionPlanService;
-        this.subscriptionService = subscriptionService;
-//        this.mapper = mapper;
+    public SubscriptionsController() {
     }
 
     @GetMapping("")
@@ -82,7 +78,7 @@ public class SubscriptionsController {
         }
     }
 
-    @GetMapping("subscriptions/{id}/statements")
+    @GetMapping("{id}/statements")
     public ResponseEntity<RevenueStatement> statementCalculator(@PathVariable String id) {    	
         try {
             Subscription sub = subscriptionService.getBySubscriptionId(id);
@@ -108,6 +104,33 @@ public class SubscriptionsController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
+    
+//    @GetMapping("/summary")
+//    public ResponseEntity<RevenueSummary> getSubscriptionSummaryByProviderId(@PathVariable String id) {    	
+//        try {
+//            Subscription sub = subscriptionService.getBySubscriptionId(id);
+//            logger.info("Subscription: {}", sub);
+//            
+//            OffsetDateTime time = OffsetDateTime.now();            
+//            
+//            priceCalculator.setSubscription(sub);
+//                        
+//            Plan plan = subscriptionPlanService.findPlanById(sub.getPlan().getId());
+//            logger.info("Plan: {}", plan);
+//            
+//            Price price = plan.getPrice();
+//            
+//            RevenueItem computedRevenueItem = priceCalculator.compute(price, time);
+//            RevenueStatement computedRevenueStatement = new RevenueStatement(sub, new SubscriptionTimeHelper(sub).getSubscriptionPeriodAt(time));
+//            computedRevenueStatement.setRevenueItem(computedRevenueItem);
+//            computedRevenueStatement.setSubscription(sub);
+//            
+//            return ResponseEntity.ok(computedRevenueStatement);
+//        } catch (Exception e) {
+//           logger.error(e.getMessage(), e);
+//            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+//        }
+//    }
     
 //    @GetMapping("/{subscriptionId}/statements")
 //    public ResponseEntity<List<RevenueStatement>> sellerStatements(@PathVariable String subscriptionId) {

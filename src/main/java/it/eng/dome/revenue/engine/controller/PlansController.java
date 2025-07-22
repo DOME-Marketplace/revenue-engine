@@ -27,8 +27,7 @@ public class PlansController {
     @Autowired
 	private SubscriptionService subscriptionService;
 
-    public PlansController(PlanService subscriptionPlanService) {
-        this.subscriptionPlanService = subscriptionPlanService;
+    public PlansController() {
     }
     
     @GetMapping("")

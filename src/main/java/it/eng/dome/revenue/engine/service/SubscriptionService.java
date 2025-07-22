@@ -78,5 +78,4 @@ public class SubscriptionService {
 	        throw new RuntimeException("Unable to load subscriptions for planId: " + id, e);
 	    }
 	}
-
 }
