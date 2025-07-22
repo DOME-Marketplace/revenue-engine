@@ -188,7 +188,7 @@ public class DiscountCalculator {
         List<Discount> childDiscounts = bundleDiscount.getDiscounts();
         logger.debug("Computing cumulative discount from {} items", childDiscounts.size());
 
-        RevenueItem cumulativeItem = new RevenueItem(bundleDiscount.getName());
+        RevenueItem cumulativeItem = new RevenueItem(bundleDiscount.getName(), bundleDiscount.getCurrency());
         cumulativeItem.setItems(new ArrayList<>());
 
         for (Discount d : childDiscounts) {
@@ -222,7 +222,7 @@ public class DiscountCalculator {
 
         if (bestItem == null) return null;
 
-        RevenueItem wrapper = new RevenueItem(bundleDiscount.getName());
+        RevenueItem wrapper = new RevenueItem(bundleDiscount.getName(), bundleDiscount.getCurrency());
         List<RevenueItem> items = new ArrayList<>();
         items.add(bestItem);
         wrapper.setItems(items);
@@ -248,7 +248,7 @@ public class DiscountCalculator {
 
         if (bestItem == null) return null;
 
-        RevenueItem wrapper = new RevenueItem(bundleDiscount.getName());
+        RevenueItem wrapper = new RevenueItem(bundleDiscount.getName(), bundleDiscount.getCurrency());
         List<RevenueItem> items = new ArrayList<>();
         items.add(bestItem);
         wrapper.setItems(items);

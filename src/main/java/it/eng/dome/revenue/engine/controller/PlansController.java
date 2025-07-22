@@ -19,14 +19,10 @@ public class PlansController {
     
     private final PlanService subscriptionPlanService;
 
-    @Autowired
     public PlansController(PlanService subscriptionPlanService) {
         this.subscriptionPlanService = subscriptionPlanService;
     }
     
-
- 
-
     @GetMapping("/plans/{id}")
     public ResponseEntity<Plan> getPlanById(@PathVariable String id) {
         try {

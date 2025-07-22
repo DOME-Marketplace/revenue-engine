@@ -36,7 +36,6 @@ public class SubscriptionsController {
     SubscriptionService subscriptionService;
     PlanService subscriptionPlanService;
 
-    @Autowired
     public SubscriptionsController(PlanService subscriptionPlanService,
                               SubscriptionService subscriptionService /*, ObjectMapper mapper*/) {
         this.subscriptionPlanService = subscriptionPlanService;
@@ -44,7 +43,7 @@ public class SubscriptionsController {
 //        this.mapper = mapper;
     }
 
-    @GetMapping("/")
+    @GetMapping("")
     public ResponseEntity<List<Subscription>> getAllSubscriptions() {
         try {
             /*

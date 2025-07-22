@@ -241,7 +241,7 @@ public class PriceCalculator {
         List<Price> childPrices = bundlePrice.getPrices();
         logger.debug("Computing cumulative price from {} items", childPrices.size());
 
-        RevenueItem cumulativeItem = new RevenueItem(bundlePrice.getName());
+        RevenueItem cumulativeItem = new RevenueItem(bundlePrice.getName(), bundlePrice.getCurrency());
         cumulativeItem.setItems(new ArrayList<>());
 
         for (Price p : childPrices) {
@@ -277,7 +277,7 @@ public class PriceCalculator {
             return null;
         }
 
-        RevenueItem wrapper = new RevenueItem(bundlePrice.getName());
+        RevenueItem wrapper = new RevenueItem(bundlePrice.getName(), bundlePrice.getCurrency());
         List<RevenueItem> items = new ArrayList<>();
         items.add(bestItem);
         wrapper.setItems(items);
@@ -304,7 +304,7 @@ public class PriceCalculator {
             return null;
         }
 
-        RevenueItem wrapper = new RevenueItem(bundlePrice.getName());
+        RevenueItem wrapper = new RevenueItem(bundlePrice.getName(), bundlePrice.getCurrency());
         List<RevenueItem> items = new ArrayList<>();
         items.add(bestItem);
         wrapper.setItems(items);

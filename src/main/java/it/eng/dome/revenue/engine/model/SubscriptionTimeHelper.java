@@ -1,6 +1,7 @@
 package it.eng.dome.revenue.engine.model;
 
 import java.time.OffsetDateTime;
+import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -37,7 +38,7 @@ public class SubscriptionTimeHelper {
 
     private Set<TimePeriod> getChargePeriodTimes(Price price) {
         // the output
-        Set<TimePeriod> chargePeriodTimes = new TreeSet<>();
+    	Set<TimePeriod> chargePeriodTimes = new TreeSet<>(Comparator.comparing(TimePeriod::getStartDateTime));
         
         if(price.getIsBundle()) {
             for(Price p: price.getPrices()) {
