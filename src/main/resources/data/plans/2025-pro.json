@@ -3,8 +3,8 @@
   "name": "PRO",
   "description": "Standard access and features, Dome Foundation Membership, Advanced Reporting & Analytics, Advanced Marketing Promotion",
   "validFor": {
-    "fromDate": "2025-01-01T00:00:00Z",
-    "toDate": "2025-12-31T23:59:59Z"
+    "startDateTime": "2025-01-01T00:00:00Z",
+    "endDateTime": "2025-12-31T23:59:59Z"
   },
   "lifecycleStatus": "launched",
   "contractDurationLength": 1,
@@ -19,6 +19,7 @@
   "price": {
     "name": "Recurring Components",
     "isBundle": true,
+    "currency": "EUR",
     "bundleOp": "CUMULATIVE",
     "prices": [
       {
@@ -165,6 +166,7 @@
             "computationFrom": "2026-01-01T00:00:00Z",
             "percent": 4,
             "discount": {
+              "name" : "Discount example for price range 2",
               "amount": 4000,
               "currency": "EUR"
             }
@@ -183,6 +185,7 @@
             "computationFrom": "2026-01-01T00:00:00Z",
             "percent": 3.5,
             "discount": {
+              "name" : "Discount example for price range 3",
               "amount": 8750,
               "currency": "EUR"
             }
@@ -201,6 +204,7 @@
             "computationFrom": "2026-01-01T00:00:00Z",
             "percent": 3,
             "discount": {
+              "name" : "Discount example for price range 4",
               "amount": 22500,
               "currency": "EUR"
             }
@@ -218,6 +222,7 @@
             "computationFrom": "2026-01-01T00:00:00Z",
             "percent": 2.5,
             "discount": {
+              "name" : "Discount example for price range 5",
               "amount": 25000,
               "currency": "EUR"
             }

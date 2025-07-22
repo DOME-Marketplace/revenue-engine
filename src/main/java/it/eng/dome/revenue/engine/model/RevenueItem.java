@@ -15,9 +15,9 @@ public class RevenueItem {
     private List<RevenueItem> items;
 
  
-    public RevenueItem(String name) {
+    public RevenueItem(String name, String currency) {
 		this.name = name;
-		
+		this.currency = currency;
 	}
 
     public RevenueItem() {

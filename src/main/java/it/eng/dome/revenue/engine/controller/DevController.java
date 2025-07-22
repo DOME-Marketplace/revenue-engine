@@ -1,22 +1,10 @@
 package it.eng.dome.revenue.engine.controller;
 
-import java.time.OffsetDateTime;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RestController;
 
-import it.eng.dome.revenue.engine.model.Price;
-import it.eng.dome.revenue.engine.model.RevenueItem;
-import it.eng.dome.revenue.engine.model.RevenueStatement;
-import it.eng.dome.revenue.engine.model.Subscription;
-import it.eng.dome.revenue.engine.model.Plan;
-import it.eng.dome.revenue.engine.model.SubscriptionTimeHelper;
 import it.eng.dome.revenue.engine.service.PlanService;
 import it.eng.dome.revenue.engine.service.SubscriptionService;
 import it.eng.dome.revenue.engine.service.TmfDataRetriever;
@@ -42,35 +30,23 @@ public class DevController {
 
     public DevController() {
     }
-
-    @GetMapping("/dev/subscriptions/{id}/statements")
-    public ResponseEntity<RevenueStatement> priceCalculator(@PathVariable String id) {
-
-    	
-        try {
-            Subscription sub = subscriptionService.getBySubscriptionId(id);
-            logger.info("Subscription: {}", sub);
-            
-            OffsetDateTime time = OffsetDateTime.now();            
-            
-            priceCalculator.setSubscription(sub);
-                        
-            Plan plan = subscriptionPlanService.findPlanById(sub.getPlan().getId());
-            logger.info("Plan: {}", plan);
-            
-            Price price = plan.getPrice();
-            
-            RevenueItem computedRevenueItem = priceCalculator.compute(price, time);
-            RevenueStatement computedRevenueStatement = new RevenueStatement(sub, new SubscriptionTimeHelper(sub).getSubscriptionPeriodAt(time));
-            computedRevenueStatement.setRevenueItem(computedRevenueItem);
-            computedRevenueStatement.setSubscription(sub);
-            
-            return ResponseEntity.ok(computedRevenueStatement);
-        } catch (Exception e) {
-           logger.error(e.getMessage(), e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
-        }
-    }
+    
+//    @PostMapping("dev/to-acbr")
+//    public ResponseEntity<AppliedCustomerBillingRate> convertToACBR(@RequestBody RevenueStatement revenueStatement) {
+//        AppliedCustomerBillingRate acbr = RevenueBillingMapper.toACBR(revenueStatement);
+//        return ResponseEntity.ok(acbr);
+//    }    
+//    
+//    @GetMapping("/dev/referrals/{referrerId}")
+//    public ResponseEntity<List<Organization>> getReferrals(@PathVariable String referrerId) {
+//        try {
+//            List<Organization> referrals = tmfDataRetriever.listReferralsProviders(referrerId);
+//            return ResponseEntity.ok(referrals);
+//        } catch (Exception e) {
+//            logger.error("Error in getReferrals", e);
+//            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+//        }
+//    }
     
 
 }

@@ -3,6 +3,7 @@ package it.eng.dome.revenue.engine.model;
 import java.time.OffsetDateTime;
 import java.util.List;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
@@ -15,7 +16,7 @@ public class Subscription {
 	
     private String name;
     
-    @JsonProperty("subscriptionPlan") //@Valid ???????
+    @JsonProperty("subscriptionPlan")
     private Plan plan;
     
     private String status;

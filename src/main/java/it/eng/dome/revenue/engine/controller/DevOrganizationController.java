@@ -24,8 +24,6 @@ public class DevOrganizationController {
 	@Autowired
     TmfDataRetriever tmfDataRetriever;
 
-
-    @Autowired
     public DevOrganizationController() {
         // Constructor for dependency injection
     }

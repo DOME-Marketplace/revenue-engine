@@ -183,7 +183,13 @@ public class SubscriptionService implements InitializingBean {
 				.collect(Collectors.toList());
 	}
 
-
-
-
+	public List<Subscription> getByPlanId(String id) {
+	    try {
+	        return loadAllFromStorage().stream()
+	                .filter(sub -> sub.getPlan() != null && id.equals(sub.getPlan().getId()))
+	                .collect(Collectors.toList());
+	    } catch (IOException e) {
+	        throw new RuntimeException("Unable to load subscriptions for planId: " + id, e);
+	    }
+	}
 }

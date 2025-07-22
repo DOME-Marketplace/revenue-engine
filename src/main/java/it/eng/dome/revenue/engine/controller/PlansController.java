@@ -8,23 +8,39 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import it.eng.dome.revenue.engine.model.Plan;
+import it.eng.dome.revenue.engine.model.Subscription;
 import it.eng.dome.revenue.engine.service.PlanService;
+import it.eng.dome.revenue.engine.service.SubscriptionService;
 
 @RestController
 //@RequiredArgsConstructor
+@RequestMapping("revenue/plans")
 public class PlansController {
     
-    private final PlanService subscriptionPlanService;
-
+	@Autowired
+    private PlanService subscriptionPlanService;
+    
     @Autowired
-    public PlansController(PlanService subscriptionPlanService) {
-        this.subscriptionPlanService = subscriptionPlanService;
+	private SubscriptionService subscriptionService;
+
+    public PlansController() {
     }
     
-    @GetMapping("/plans/{id}")
+    @GetMapping("")
+    public ResponseEntity<List<Plan>> getAllPlans() {
+        try {
+            List<Plan> plans = subscriptionPlanService.loadAllPlans();
+            return ResponseEntity.ok(plans);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+    
+    @GetMapping("/{id}")
     public ResponseEntity<Plan> getPlanById(@PathVariable String id) {
         try {
             Plan plan = subscriptionPlanService.findPlanById(id);
@@ -34,14 +50,12 @@ public class PlansController {
         }
     }
     
-    @GetMapping("/plans")
-    public ResponseEntity<List<Plan>> getAllPlans() {
-        try {
-            List<Plan> plans = subscriptionPlanService.loadAllPlans();
-            return ResponseEntity.ok(plans);
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+    @GetMapping("/{id}/subscriptions")
+    public ResponseEntity<List<Subscription>> getSubscriptionsByPlanId(@PathVariable("id") String planId) {
+        List<Subscription> subscriptions = subscriptionService.getByPlanId(planId);
+        if (subscriptions == null || subscriptions.isEmpty()) {
+            return ResponseEntity.noContent().build();
         }
+        return ResponseEntity.ok(subscriptions);
     }
-
 }

@@ -10,16 +10,35 @@ import it.eng.dome.revenue.engine.service.TmfDataRetriever;
 
 @RestController
 //@RequiredArgsConstructor
-@RequestMapping("/dev2/revenue")
+@RequestMapping("revenue/statements")
 public class StatementsController {
     
 	protected final Logger logger = LoggerFactory.getLogger(StatementsController.class);
-
+	
 	@Autowired
     TmfDataRetriever tmfDataRetriever;
 
-    @Autowired
     public StatementsController() {
     }
 
+//    @GetMapping("")
+//    public ResponseEntity<List<RevenueStatement>> getAllStatements() {
+//        try {
+//            List<RevenueStatement> statements = statementService.loadAllStatements();
+//            return ResponseEntity.ok(statements);
+//        } catch (Exception e) {
+//            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+//        }
+//    }
+    
+//    @GetMapping("/{id}")
+//    public ResponseEntity<RevenueStatement> getStatementsById(@PathVariable String id) {
+//        try {
+//        	RevenueStatement statement = statementService.findStatementById(id);
+//            return ResponseEntity.ok(statement);
+//        } catch (IOException e) {
+//            return ResponseEntity.notFound().build(); 
+//        }
+//    }
+    
 }
