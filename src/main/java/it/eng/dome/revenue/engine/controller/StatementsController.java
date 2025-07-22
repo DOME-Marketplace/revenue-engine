@@ -25,7 +25,7 @@ import it.eng.dome.revenue.engine.service.compute.PriceCalculator;
 
 @RestController
 //@RequiredArgsConstructor
-@RequestMapping("/dev2/revenue")
+@RequestMapping("/dev/revenue/")
 public class StatementsController {
     
 	protected final Logger logger = LoggerFactory.getLogger(StatementsController.class);
@@ -45,7 +45,7 @@ public class StatementsController {
     public StatementsController() {
     }
     
-    @GetMapping("/subscriptions/{id}/statements")
+    @GetMapping("subscriptions/{id}/statements")
     public ResponseEntity<RevenueStatement> statementCalculator(@PathVariable String id) {    	
         try {
             Subscription sub = subscriptionService.getBySubscriptionId(id);
