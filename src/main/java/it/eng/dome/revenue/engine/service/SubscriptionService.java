@@ -90,7 +90,7 @@ public class SubscriptionService implements InitializingBean {
 
 		// 2. retrieve the organization
 		Organization organization = this.orgApi.retrieveOrganization(organisationId, null);
-		logger.debug("Retrieved organization: " + organization);
+		logger.debug("TradingName organization: {}", organization.getTradingName());
 
 		// 3. retrieve the plan
 		Plan plan = new PlanService().findPlanById(planId);

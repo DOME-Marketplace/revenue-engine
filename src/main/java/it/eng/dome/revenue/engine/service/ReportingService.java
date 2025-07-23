@@ -5,6 +5,8 @@ import it.eng.dome.revenue.engine.service.compute.PriceCalculator;
 import it.eng.dome.tmforum.tmf632.v4.ApiException;
 import it.eng.dome.tmforum.tmf678.v4.model.TimePeriod;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -16,6 +18,8 @@ import java.util.List;
 
 @Service
 public class ReportingService {
+	
+	protected final Logger logger = LoggerFactory.getLogger(ReportingService.class);
 
     @Autowired
     SubscriptionService subscriptionService;
@@ -29,15 +33,25 @@ public class ReportingService {
     // Generates a list of RevenueStatement objects, one per charge period
     public List<RevenueStatement> getRevenueStatements(String relatedPartyId) throws ApiException, IOException {
     	
+    	logger.info("Call getRevenueStatements with relatedPartyId: {}", relatedPartyId);
+    	
     	String subscriptionId = subscriptionService.getSubscriptionIdByRelatedPartyId(relatedPartyId);
+    	logger.info("Get subscriptionId: {}", subscriptionId);
     	
         Subscription subscription = subscriptionService.getSubscriptionById(subscriptionId);
+        logger.info("Subscription: {}", subscription);
         
         
-        if (subscription == null || subscription.getPlan() == null) return List.of();
+        if (subscription == null || subscription.getPlan() == null) {
+        	return List.of();
+        }
 
+        logger.info("Plan id: {}", subscription.getPlan().getId());
         Plan plan = planService.findPlanById(subscription.getPlan().getId());
-        if (plan == null || plan.getPrice() == null) return List.of();
+        
+        if (plan == null || plan.getPrice() == null) {
+        	return List.of();
+        }
 
         subscription.setPlan(plan);
         priceCalculator.setSubscription(subscription);
@@ -56,7 +70,10 @@ public class ReportingService {
     }
 
     // Prepares the dashboard report including revenue
-    public List<Reporting> getDashboardReport(String subscriptionId) throws ApiException, IOException {
+    public List<Reporting> getDashboardReport(String relatedPartyId) throws ApiException, IOException {
+    	
+    	logger.info("Call getDashboardReport for relatedPartyId: {}", relatedPartyId);
+    	
         List<Reporting> report = new ArrayList<>();
 
         // 1: My Subscription Plan (hardcoded)
@@ -84,7 +101,7 @@ public class ReportingService {
         )));
 
         // 3: Revenue section (computed)
-        List<RevenueStatement> statements = getRevenueStatements(subscriptionId);
+        List<RevenueStatement> statements = getRevenueStatements(relatedPartyId);
         report.add(generateRevenueSection(statements));
 
         // 4: Referral Program (hardcoded)

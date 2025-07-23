@@ -9,6 +9,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import com.fasterxml.jackson.databind.DeserializationFeature;
@@ -20,6 +22,8 @@ import it.eng.dome.revenue.engine.model.Plan;
 
 @Service
 public class PlanService {
+	
+	protected final Logger logger = LoggerFactory.getLogger(PlanService.class);
  
     private final ObjectMapper mapper;
 
@@ -37,15 +41,25 @@ public class PlanService {
 
     
     public List<Plan> loadAllPlans() throws IOException {
+    	logger.info("Loading all plans ... ");
         Path dir = Paths.get("src/main/resources/data/plans");
+                
         List<Plan> plans = new ArrayList<>();
+        logger.debug("dir exist? {}", Files.exists(dir));
+        
+        logger.info("Current path: {}", System.getProperty("user.dir"));
         
         if (Files.exists(dir)) {
+        	logger.debug("AbsolutePath: {}", dir.toAbsolutePath().toString());
+        	
             return Files.walk(dir)
                 .filter(Files::isRegularFile)
                 .filter(p -> p.toString().endsWith(".json"))
                 .map(p -> {
+                	
+                	logger.info("found file json: {}", p.toFile().getName());
                     try {
+                    	                    	
                         return mapper.readValue(p.toFile(), Plan.class);
                     } catch (IOException e) {
                         throw new RuntimeException("Error reading file: " + p, e);
