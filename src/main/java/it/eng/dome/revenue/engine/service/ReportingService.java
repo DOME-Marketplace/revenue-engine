@@ -44,7 +44,7 @@ public class ReportingService {
     }
 
     // Prepares the dashboard report including revenue and mock sections
-    public List<Reporting> getDashboardReport(String subscriptionId) throws ApiException, IOException {
+    public List<Reporting> getDashboardReport(String relatedPartyId) throws ApiException, IOException {
         List<Reporting> report = new ArrayList<>();
 
         // 1: My Subscription Plan (hardcoded)
@@ -72,7 +72,7 @@ public class ReportingService {
         )));
 
         // 3: Revenue (computed)
-        RevenueStatement statement = getRevenueStatement(subscriptionId);
+        RevenueStatement statement = getRevenueStatement(relatedPartyId);
         report.add(generateRevenueSection(statement));
 
         // 4: Referral Program (hardcoded)
