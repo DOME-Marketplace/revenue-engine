@@ -12,6 +12,9 @@ public class Reporting {
     
     public Reporting() {}
 
+    public Reporting(String label) {
+		this.label = label;
+	}
     public Reporting(String label, String text) {
         this.label = label;
         this.text = text;
@@ -31,7 +34,12 @@ public class Reporting {
         this.items = items;
     }
 
-    public String getLabel() {
+    public Reporting(String string, List<Reporting> items) {
+    	this.label = string;
+		this.items = items;
+    }
+
+	public String getLabel() {
         return label;
     }
 
