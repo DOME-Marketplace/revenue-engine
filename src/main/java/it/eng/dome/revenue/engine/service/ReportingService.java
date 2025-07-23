@@ -26,25 +26,37 @@ public class ReportingService {
     @Autowired
     PriceCalculator priceCalculator;
 
-    // Generates the RevenueStatement object using current date
-    public RevenueStatement getRevenueStatement(String subscriptionId) throws ApiException, IOException {
+    // Generates a list of RevenueStatement objects, one per charge period
+    public List<RevenueStatement> getRevenueStatements(String relatedPartyId) throws ApiException, IOException {
+    	
+    	String subscriptionId = subscriptionService.getSubscriptionIdByRelatedPartyId(relatedPartyId);
+    	
         Subscription subscription = subscriptionService.getSubscriptionById(subscriptionId);
-        if (subscription == null || subscription.getPlan() == null) return null;
+        
+        
+        if (subscription == null || subscription.getPlan() == null) return List.of();
 
         Plan plan = planService.findPlanById(subscription.getPlan().getId());
-        if (plan == null || plan.getPrice() == null) return null;
+        if (plan == null || plan.getPrice() == null) return List.of();
 
-        OffsetDateTime now = OffsetDateTime.now();
-
+        subscription.setPlan(plan);
         priceCalculator.setSubscription(subscription);
-        RevenueItem revenueItem = priceCalculator.compute(plan.getPrice(), now);
 
-        TimePeriod period = new SubscriptionTimeHelper(subscription).getSubscriptionPeriodAt(now);
-        return new RevenueStatement(subscription, period, revenueItem);
+        SubscriptionTimeHelper helper = new SubscriptionTimeHelper(subscription);
+        List<RevenueStatement> statements = new ArrayList<>();
+
+        for (TimePeriod period : helper.getChargePeriodTimes()) {
+            RevenueItem revenueItem = priceCalculator.compute(plan.getPrice(), period.getStartDateTime());
+            if (revenueItem != null) {
+                statements.add(new RevenueStatement(subscription, period, revenueItem));
+            }
+        }
+
+        return statements;
     }
 
-    // Prepares the dashboard report including revenue and mock sections
-    public List<Reporting> getDashboardReport(String relatedPartyId) throws ApiException, IOException {
+    // Prepares the dashboard report including revenue
+    public List<Reporting> getDashboardReport(String subscriptionId) throws ApiException, IOException {
         List<Reporting> report = new ArrayList<>();
 
         // 1: My Subscription Plan (hardcoded)
@@ -71,9 +83,9 @@ public class ReportingService {
             ))
         )));
 
-        // 3: Revenue (computed)
-        RevenueStatement statement = getRevenueStatement(relatedPartyId);
-        report.add(generateRevenueSection(statement));
+        // 3: Revenue section (computed)
+        List<RevenueStatement> statements = getRevenueStatements(subscriptionId);
+        report.add(generateRevenueSection(statements));
 
         // 4: Referral Program (hardcoded)
         report.add(new Reporting("Referral Program", null, null, Arrays.asList(
@@ -81,7 +93,13 @@ public class ReportingService {
             new Reporting("Reward Earned", "EUR 500")
         )));
 
-        // 5: Support (hardcoded)
+        // 5: Change Request (hardcoded)
+        report.add(new Reporting("Plan Change Request", null, null, Arrays.asList(
+            new Reporting("Status", "Pending Review"),
+            new Reporting("Requested Changing", "Basic to Advanced")
+        )));
+
+        // 6: Support (hardcoded)
         report.add(new Reporting("Support", null, null, Arrays.asList(
             new Reporting("Email", "support@dome-marketplace.org"),
             new Reporting("Help Center", "Visit Support Portal", "https://www.dome-helpcenter.org")
@@ -90,27 +108,43 @@ public class ReportingService {
         return report;
     }
 
-    // Generates the revenue section as a nested reporting tree
-    public Reporting generateRevenueSection(RevenueStatement revenueStatement) {
-        if (revenueStatement == null || revenueStatement.getRevenueItem() == null) {
+    // Converts a list of RevenueStatement into a nested Reporting section
+    public Reporting generateRevenueSection(List<RevenueStatement> statements) {
+        if (statements == null || statements.isEmpty()) {
             return new Reporting("Revenue", " ", null);
         }
 
-        RevenueItem root = revenueStatement.getRevenueItem();
-        String currency = root.getCurrency() != null ? root.getCurrency() + " " : "";
-        Double total = root.getOverallValue();
+        List<Reporting> items = new ArrayList<>();
 
-        Reporting revenueSection = new Reporting("Revenue", null);
-        List<Reporting> children = new ArrayList<>();
-        children.add(new Reporting("Total Revenue", currency + format(total)));
+        for (RevenueStatement rs : statements) {
+            RevenueItem root = rs.getRevenueItem();
+            if (root == null) continue;
 
-        for (RevenueItem item : root.getItems()) {
-            children.add(flattenRevenueItemNested(item, currency));
+            String currency = root.getCurrency() != null ? root.getCurrency() + " " : "";
+            TimePeriod period = rs.getPeriod();
+            OffsetDateTime startDateTime = period.getStartDateTime();
+			OffsetDateTime endDateTime = period.getEndDateTime();
+			String periodLabel = String.format("%s to %s",
+                startDateTime != null ? startDateTime.toLocalDate() : "?",
+                endDateTime != null ? endDateTime.toLocalDate() : "?"
+            );
+
+            double periodTotal = root.getOverallValue();
+
+            List<Reporting> children = new ArrayList<>();
+            children.add(new Reporting("Total Revenue", currency + format(periodTotal)));
+            for (RevenueItem item : root.getItems()) {
+                children.add(flattenRevenueItemNested(item, currency));
+            }
+
+            items.add(new Reporting("Period " + periodLabel, null, null, children));
         }
 
-        revenueSection.setItems(children);
+        Reporting revenueSection = new Reporting("Revenue", null);
+        revenueSection.setItems(items);
         return revenueSection;
     }
+
 
     // Recursively transforms a RevenueItem into a nested Reporting object
     private Reporting flattenRevenueItemNested(RevenueItem item, String currency) {

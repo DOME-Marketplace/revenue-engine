@@ -182,15 +182,18 @@ public class SubscriptionService implements InitializingBean {
 	*/
 
 	// === GET BY PARTY ID ===
-
-	/*
-	public List<Subscription> getByRelatedPartyId(String id) throws IOException {
-		return loadAllFromStorage().stream().filter(subscription -> subscription.getRelatedParties() != null)
-				.filter(subscription -> subscription.getRelatedParties().stream()
-						.anyMatch(party -> party != null && party.getId() != null && party.getId().equals(id)))
-				.collect(Collectors.toList());
+	
+	public Subscription getSubscriptionByRelatedPartyId(String id) throws IOException, ApiException {
+	    return getAllSubscriptions().stream()
+	            .filter(subscription -> subscription.getRelatedParties() != null)
+	            .filter(subscription -> subscription.getRelatedParties().stream()
+	                    .anyMatch(party -> party != null && party.getId() != null && party.getId().equals(id)))
+	            .findFirst()
+	            .orElse(null);
 	}
-	*/
+	
+	// === GET BY PLAN ID ===
+
 
 	public List<Subscription> getByPlanId(String id) {
 	    try {
@@ -203,5 +206,14 @@ public class SubscriptionService implements InitializingBean {
 	        throw new RuntimeException("Unable to load subscriptions for planId: " + id, e);
 	    }
 	}
+	
+	
+	
+	// === GET SUBSCRIPTION ID BY RELATED PARTY ID ===
+	public String getSubscriptionIdByRelatedPartyId(String relatedPartyId) throws IOException, ApiException {
+	    Subscription subscription = getSubscriptionByRelatedPartyId(relatedPartyId);
+	    return subscription != null ? subscription.getId() : null;
+	}
+
 	
 }
