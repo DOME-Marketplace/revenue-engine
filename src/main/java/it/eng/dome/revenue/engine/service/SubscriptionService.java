@@ -122,8 +122,10 @@ public class SubscriptionService implements InitializingBean {
 		subscription.setRelatedParties(relatedParties);
 
 		// 2 status and start date
-		subscription.setStatus("sctive");
-		subscription.setStartDate(OffsetDateTime.now());
+		subscription.setStatus("active");
+		// default start time for everybody is 1 July 2025
+		OffsetDateTime startTime = OffsetDateTime.parse("2025-07-01T00:00:00+08:00");
+		subscription.setStartDate(startTime);	
 
 		return subscription;
 	}
