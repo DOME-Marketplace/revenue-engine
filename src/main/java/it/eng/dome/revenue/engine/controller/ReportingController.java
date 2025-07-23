@@ -23,7 +23,7 @@ public class ReportingController {
         this.reportingService = reportingService;
     }
 
-    @GetMapping("/{subscriptionId}")
+    @GetMapping("/{relatedPartyId}")
     public List<Reporting> getDashboard(@PathVariable String subscriptionId) throws ApiException, IOException {
         return reportingService.getDashboardReport(subscriptionId);
     }
