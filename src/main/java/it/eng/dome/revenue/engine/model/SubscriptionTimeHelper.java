@@ -13,6 +13,19 @@ import org.slf4j.LoggerFactory;
 
 import it.eng.dome.tmforum.tmf678.v4.model.TimePeriod;
 
+class TimePeriodComparator implements Comparator<TimePeriod> {
+
+    @Override
+    public int compare(TimePeriod o1, TimePeriod o2) {
+        int result = o1.getStartDateTime().compareTo(o2.getStartDateTime());
+        if (result != 0)
+            return result;  // Compare by start date    
+        return o1.getEndDateTime().compareTo(o2.getEndDateTime());
+
+
+    }
+}
+
 public class SubscriptionTimeHelper {
 
     private final Logger logger = LoggerFactory.getLogger(SubscriptionTimeHelper.class);
@@ -37,8 +50,9 @@ public class SubscriptionTimeHelper {
     }
 
     private Set<TimePeriod> getChargePeriodTimes(Price price) {
-        // the output
-    	Set<TimePeriod> chargePeriodTimes = new TreeSet<>(Comparator.comparing(TimePeriod::getStartDateTime));
+
+//        Set<TimePeriod> chargePeriodTimes = new TreeSet<>(Comparator.comparing(TimePeriod::getStartDateTime));
+        Set<TimePeriod> chargePeriodTimes = new TreeSet<>(new TimePeriodComparator());       
         
         if(price.getIsBundle()) {
             for(Price p: price.getPrices()) {
@@ -54,16 +68,18 @@ public class SubscriptionTimeHelper {
                 tp.setStartDateTime(start);
                 tp.setEndDateTime(end);
                 chargePeriodTimes.add(tp);
+                logger.debug("One-time prepaid price, returning single charge period: " + tp + " for price: " + price.getName());
             } else {
                 // iterate over the charge periods, until reaching the current time
                 // or a year in the future
-                OffsetDateTime stopAt = OffsetDateTime.now().plusYears(1);
+                OffsetDateTime stopAt = OffsetDateTime.now();
                 while(!start.isAfter(stopAt)) {
                     OffsetDateTime end = this.rollChargePeriod(start, price, 1);
                     tp.setStartDateTime(start);
                     tp.setEndDateTime(end);
                     chargePeriodTimes.add(tp);
                     start = end;
+                    logger.debug("Adding charge period: " + tp + " for price: " + price.getName());
                 }
             }
         }

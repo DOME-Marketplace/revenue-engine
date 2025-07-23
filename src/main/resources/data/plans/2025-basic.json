@@ -17,13 +17,13 @@
     "Referral bonus: an extra 10% discount on next year's fee for bringing 3 new providers or if a referred provider reaches 100k+ in sales"
   ],
   "price": {
-    "name": "Recurring Components",
+    "name": "All plan components",
     "isBundle": true,
     "currency": "EUR",
     "bundleOp": "CUMULATIVE",
     "prices": [
       {
-        "name": "Annual Fee",
+        "name": "Initial Subscription Fee",
         "type": "ONE_TIME_PREPAID",
         "amount": 5000,
         "currency": "EUR"
