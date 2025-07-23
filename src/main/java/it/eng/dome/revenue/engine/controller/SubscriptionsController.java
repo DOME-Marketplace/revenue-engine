@@ -47,7 +47,7 @@ public class SubscriptionsController {
     public SubscriptionsController() {
     }
 
-    @GetMapping(value = {"", "/"})
+    @GetMapping("")
     public ResponseEntity<List<Subscription>> getAllSubscriptions() {
         try {
 //            List<Subscription> subscriptions = subscriptionService.loadAllFromStorage();

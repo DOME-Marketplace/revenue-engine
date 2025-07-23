@@ -30,7 +30,7 @@ public class PlansController {
     public PlansController() {
     }
     
-    @GetMapping(value = {"", "/"})
+    @GetMapping("")
     public ResponseEntity<List<Plan>> getAllPlans() {
         try {
             List<Plan> plans = subscriptionPlanService.loadAllPlans();
