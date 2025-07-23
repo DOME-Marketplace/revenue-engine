@@ -8,18 +8,27 @@ public class Reporting {
     private String text;            // value
     private String link;            // optional
     private List<Reporting> items;  // recursive
-
+    
+    
     public Reporting() {}
 
     public Reporting(String label, String text) {
         this.label = label;
         this.text = text;
     }
-
+    
     public Reporting(String label, String text, String link) {
         this.label = label;
         this.text = text;
         this.link = link;
+
+    }
+
+    public Reporting(String label, String text, String link, List<Reporting> items) {
+        this.label = label;
+        this.text = text;
+        this.link = link;
+        this.items = items;
     }
 
     public String getLabel() {

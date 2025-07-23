@@ -9,11 +9,19 @@ public class RevenueStatement {
     private TimePeriod period;
     private RevenueItem revenueItem;
 
+    public RevenueStatement() {}
+    
     public RevenueStatement(Subscription subscription, TimePeriod period) {
         this.subscription = subscription;
         this.period = period;
     }
 
+    public RevenueStatement(Subscription subscription, TimePeriod period, RevenueItem revenueItem) {
+		this.subscription = subscription;
+		this.period = period;
+		this.revenueItem = revenueItem;
+	}
+    
     @JsonProperty("description")
     public String getDescription() {
         String name = "Revenue Statement for " + subscription.getBuyerId() + "; plan " + subscription.getPlan().getName() + " from " + period.getStartDateTime() + " to " + period.getEndDateTime();
