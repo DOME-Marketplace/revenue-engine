@@ -21,14 +21,10 @@ public class MetricsRetriever implements InitializingBean {
     private final Logger logger = LoggerFactory.getLogger(MetricsRetriever.class);
 
     @Autowired
-    // Factory for TMF APIss
     private TmfDataRetriever tmfDataRetriever;
 
     @Override
     public void afterPropertiesSet() throws Exception {
-//        this.billApi = new AppliedCustomerBillingRateApi(tmfApiFactory.getTMF678CustomerBillApiClient());
- //       this.orgApi = new OrganizationApi(tmfApiFactory.getTMF632PartyManagementApiClient());
- //       logger.info("TmfDataRetriever initialized with billApi and orgApi");
     }
 
     public MetricsRetriever() {

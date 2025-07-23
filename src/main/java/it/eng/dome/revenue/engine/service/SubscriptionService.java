@@ -97,7 +97,7 @@ public class SubscriptionService implements InitializingBean {
 		logger.debug("Retrieved plan: " + plan);
 
 		// 4. create the subscription
-		Subscription subscription = this.createSubscription(planId, organization, plan);
+		Subscription subscription = this.createSubscription(id, organization, plan);
 		return subscription;
 	}
 
@@ -106,7 +106,7 @@ public class SubscriptionService implements InitializingBean {
 		// 1. create the subscription
 		Subscription subscription = new Subscription();
 		subscription.setId(id);
-		subscription.setName("Subscription for " + organization.getName() + " on plan " + plan.getName());
+		subscription.setName("Subscription for " + organization.getTradingName() + " on plan " + plan.getName());
 		// 1.1 embed a plan
 		Plan planRef = new Plan();
 		planRef.setId(plan.getId());
