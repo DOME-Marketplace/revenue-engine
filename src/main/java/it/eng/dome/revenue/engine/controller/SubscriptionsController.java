@@ -77,6 +77,19 @@ public class SubscriptionsController {
         }
     }
 
+    @GetMapping("{subscriptionId}/statements/itemsonly/")
+    public ResponseEntity<List<RevenueItem>> statementItems(@PathVariable String subscriptionId) {    	
+        // FIXME: terrible code below... move the called method to a service without REST business logic
+        List<RevenueStatement> statements = this.statementCalculator(subscriptionId).getBody();
+        List<RevenueItem> items = new ArrayList<>();
+        for(RevenueStatement s:statements) {
+            for(RevenueItem i:s.getRevenueItems()) {
+                items.add(i);
+            }
+        }
+        return ResponseEntity.ok(items);
+    }
+
     @GetMapping("{subscriptionId}/statements")
     public ResponseEntity<List<RevenueStatement>> statementCalculator(@PathVariable String subscriptionId) {    	
         try {
@@ -103,14 +116,7 @@ public class SubscriptionsController {
             for(TimePeriod tp : timeHelper.getChargePeriodTimes()) {
                 RevenueStatement statement = priceCalculator.compute(tp);
                 if(statement!=null) {
-                    List<RevenueItem> newItems = new ArrayList<>();
-                    // replace items with filtered ones
-                    for(RevenueItem item : statement.getRevenueItems()) {
-                        for(OffsetDateTime chargeTime : item.extractChargeTimes()) {
-                            newItems.add(item.getFilteredClone(chargeTime));
-                        }
-                        statement.setRevenueItems(newItems);
-                    }
+                    statement.clusterizeItems();
                     statements.add(statement);
                 }
             }

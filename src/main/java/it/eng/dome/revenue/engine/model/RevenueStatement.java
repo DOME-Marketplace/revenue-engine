@@ -1,5 +1,6 @@
 package it.eng.dome.revenue.engine.model;
 
+import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -60,6 +61,17 @@ public class RevenueStatement {
             this.revenueItems = new ArrayList<>();
         }
         this.revenueItems.add(item);
+    }
+
+    public void clusterizeItems() {
+        List<RevenueItem> newItems = new ArrayList<>();
+        // replace items with filtered ones
+        for(RevenueItem item : this.getRevenueItems()) {
+            for(OffsetDateTime chargeTime : item.extractChargeTimes()) {
+                newItems.add(item.getFilteredClone(chargeTime));
+            }
+        }
+        this.setRevenueItems(newItems);
     }
 
 }
