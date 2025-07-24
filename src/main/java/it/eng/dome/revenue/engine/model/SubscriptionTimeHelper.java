@@ -170,7 +170,7 @@ public class SubscriptionTimeHelper {
             if(!time.isBefore(start) && time.isBefore(end)) {
             	TimePeriod tp = new TimePeriod();
             	tp.setStartDateTime(start);
-            	tp.setEndDateTime(time);
+            	tp.setEndDateTime(end);
                 return tp;
             }
             start = end;

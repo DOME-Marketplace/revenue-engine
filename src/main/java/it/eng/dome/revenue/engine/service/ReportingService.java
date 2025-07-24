@@ -60,10 +60,15 @@ public class ReportingService {
         List<RevenueStatement> statements = new ArrayList<>();
 
         for (TimePeriod period : helper.getChargePeriodTimes()) {
+            RevenueStatement statement = priceCalculator.compute(period);
+            if(statement!=null)
+                statements.add(statement);
+            /*
             RevenueItem revenueItem = priceCalculator.compute(plan.getPrice(), period.getStartDateTime());
             if (revenueItem != null) {
                 statements.add(new RevenueStatement(subscription, period, revenueItem));
             }
+            */
         }
 
         return statements;
