@@ -18,8 +18,8 @@ import java.util.List;
 
 @Service
 public class ReportingService {
-	
-	protected final Logger logger = LoggerFactory.getLogger(ReportingService.class);
+    
+    protected final Logger logger = LoggerFactory.getLogger(ReportingService.class);
 
     @Autowired
     SubscriptionService subscriptionService;
@@ -30,27 +30,24 @@ public class ReportingService {
     @Autowired
     PriceCalculator priceCalculator;
 
-    // Generates a list of RevenueStatement objects, one per charge period
     public List<RevenueStatement> getRevenueStatements(String relatedPartyId) throws ApiException, IOException {
-    	
-    	logger.info("Call getRevenueStatements with relatedPartyId: {}", relatedPartyId);
-    	
-    	String subscriptionId = subscriptionService.getSubscriptionIdByRelatedPartyId(relatedPartyId);
-    	logger.info("Get subscriptionId: {}", subscriptionId);
-    	
+        logger.info("Call getRevenueStatements with relatedPartyId: {}", relatedPartyId);
+        
+        String subscriptionId = subscriptionService.getSubscriptionIdByRelatedPartyId(relatedPartyId);
+        logger.info("Get subscriptionId: {}", subscriptionId);
+        
         Subscription subscription = subscriptionService.getSubscriptionById(subscriptionId);
         logger.info("Subscription: {}", subscription);
         
-        
         if (subscription == null || subscription.getPlan() == null) {
-        	return List.of();
+            return List.of();
         }
 
         logger.info("Plan id: {}", subscription.getPlan().getId());
         Plan plan = planService.findPlanById(subscription.getPlan().getId());
         
         if (plan == null || plan.getPrice() == null) {
-        	return List.of();
+            return List.of();
         }
 
         subscription.setPlan(plan);
@@ -63,30 +60,19 @@ public class ReportingService {
             RevenueStatement statement = priceCalculator.compute(period);
             if(statement!=null)
                 statements.add(statement);
-            /*
-            RevenueItem revenueItem = priceCalculator.compute(plan.getPrice(), period.getStartDateTime());
-            if (revenueItem != null) {
-                statements.add(new RevenueStatement(subscription, period, revenueItem));
-            }
-            */
         }
 
         return statements;
     }
 
-    // Prepares the dashboard report including revenue
     public List<Reporting> getDashboardReport(String relatedPartyId) throws ApiException, IOException {
-    	
-    	logger.info("Call getDashboardReport for relatedPartyId: {}", relatedPartyId);
-    	
+        logger.info("Call getDashboardReport for relatedPartyId: {}", relatedPartyId);
+        
         List<Reporting> report = new ArrayList<>();
 
         // 1: My Subscription Plan
         Reporting subscriptionSection = getSubscriptionSection(relatedPartyId);
         report.add(subscriptionSection);
-			
-
-    
 
         // 2: Billing History (hardcoded)
         report.add(new Reporting("Billing History", Arrays.asList(
@@ -104,9 +90,9 @@ public class ReportingService {
             ))
         )));
 
-        // 3: Revenue section (computed)
+        // 3: Revenue section (computed) 
         List<RevenueStatement> statements = getRevenueStatements(relatedPartyId);
-        report.add(getRevenueSection(statements));
+        report.add(getTotalRevenueSection(statements));
 
         // 4: Referral Program (hardcoded)
         report.add(new Reporting("Referral Program Area", Arrays.asList(
@@ -130,30 +116,29 @@ public class ReportingService {
     }
 
     public Reporting getSubscriptionSection(String relatedPartyId) throws ApiException, IOException {
-		Subscription subscription = subscriptionService.getSubscriptionByRelatedPartyId(relatedPartyId);
-		if (subscription == null) {
-			return new Reporting("Subscription", "No active subscription found for this user.");
-		}
-
-		String planName = subscription.getPlan() != null ? subscription.getPlan().getName() : "Unknown Plan";
-		String startDate = subscription.getStartDate() != null ? subscription.getStartDate().toString() : "Unknown Start Date";
-		String renewalDate = subscription.getStartDate() != null ? subscription.getStartDate().plusYears(1).toString() : "Unknown Renewal Date";
-
-		return new Reporting("My Subscription Plan", Arrays.asList(
-			new Reporting("Plan Name", planName),
-			new Reporting("Start Date", startDate),
-			new Reporting("Renewal Date", renewalDate),
-            new Reporting("Discounts", "10% referral, 20% performance")
-
-		));
-	}
-    // Converts a list of RevenueStatement into a nested Reporting section
-    public Reporting getRevenueSection(List<RevenueStatement> statements) {
-        if (statements == null || statements.isEmpty()) {
-            return new Reporting("Revenue", " ", null);
+        Subscription subscription = subscriptionService.getSubscriptionByRelatedPartyId(relatedPartyId);
+        if (subscription == null) {
+            return new Reporting("Subscription", "No active subscription found for this user.");
         }
 
-        List<Reporting> items = new ArrayList<>();
+        String planName = subscription.getPlan() != null ? subscription.getPlan().getName() : "Unknown Plan";
+        String startDate = subscription.getStartDate() != null ? subscription.getStartDate().toString() : "Unknown Start Date";
+        String renewalDate = subscription.getStartDate() != null ? subscription.getStartDate().plusYears(1).toString() : "Unknown Renewal Date";
+
+        return new Reporting("My Subscription Plan", Arrays.asList(
+            new Reporting("Plan Name", planName),
+            new Reporting("Start Date", startDate),
+            new Reporting("Renewal Date", renewalDate),
+            new Reporting("Discounts", "10% referral, 20% performance")
+        ));
+    }
+
+    public Reporting getTotalRevenueSection(List<RevenueStatement> statements) {
+        if (statements == null || statements.isEmpty()) {
+            return new Reporting("Revenue Summary", "No revenue data available");
+        }
+
+        List<Reporting> totalRevenueItems = new ArrayList<>();
 
         for (RevenueStatement rs : statements) {
             RevenueItem root = rs.getRevenueItem();
@@ -162,44 +147,19 @@ public class ReportingService {
             String currency = root.getCurrency() != null ? root.getCurrency() + " " : "";
             TimePeriod period = rs.getPeriod();
             OffsetDateTime startDateTime = period.getStartDateTime();
-			OffsetDateTime endDateTime = period.getEndDateTime();
-			String periodLabel = String.format("%s to %s",
+            OffsetDateTime endDateTime = period.getEndDateTime();
+            String periodLabel = String.format("%s to %s",
                 startDateTime != null ? startDateTime.toLocalDate() : "?",
                 endDateTime != null ? endDateTime.toLocalDate() : "?"
             );
 
             double periodTotal = root.getOverallValue();
-
-            List<Reporting> children = new ArrayList<>();
-            children.add(new Reporting("Total Revenue", currency + format(periodTotal)));
-            for (RevenueItem item : root.getItems()) {
-                children.add(flattenRevenueItemNested(item, currency));
-            }
-
-            items.add(new Reporting("Period " + periodLabel, children));
+            
+            String label = String.format("Total Revenue for %s", periodLabel);
+            totalRevenueItems.add(new Reporting(label, currency + format(periodTotal)));
         }
 
-        Reporting revenueSection = new Reporting("Revenue Volume Monitoring");
-        revenueSection.setItems(items);
-        return revenueSection;
-    }
-
-
-    // Recursively transforms a RevenueItem into a nested Reporting object
-    private Reporting flattenRevenueItemNested(RevenueItem item, String currency) {
-        String label = item.getName();
-        String text = (item.getValue() != null) ? currency + format(item.getValue()) : null;
-        Reporting reporting = new Reporting(label, text);
-
-        if (!item.getItems().isEmpty()) {
-            List<Reporting> children = new ArrayList<>();
-            for (RevenueItem child : item.getItems()) {
-                children.add(flattenRevenueItemNested(child, currency));
-            }
-            reporting.setItems(children);
-        }
-
-        return reporting;
+        return new Reporting("Revenue Volume Monitoring", totalRevenueItems);
     }
 
     private String format(Double value) {
