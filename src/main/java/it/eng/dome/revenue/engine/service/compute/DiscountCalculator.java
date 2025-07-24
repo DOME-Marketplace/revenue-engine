@@ -153,8 +153,8 @@ public class DiscountCalculator {
 	                    logger.info("Using parent price amount: {}", computationValue);
 	                } else {
 	                    computationValue = metricsRetriever.computeValueForKey(discount.getComputationBase(), buyerId, tp);
-	                    computationValue += 200000.00; // Simulating a base value for testing purposes
-	                    logger.info("Computed value from metrics: {}", computationValue);
+	                    //computationValue += 200000.00; // Simulating a base value for testing purposes
+	                    logger.info("Computation value computed: {} in tp: {}", computationValue, tp);
 	                }
 	            } catch (Exception e) {
 	                logger.error("Error computing discount value: {}", e.getMessage(), e);
@@ -178,10 +178,11 @@ public class DiscountCalculator {
         if (discount.getApplicableBase() != null && !discount.getApplicableBase().isEmpty()) {
             try {
                 applicableValue = metricsRetriever.computeValueForKey(discount.getApplicableBase(), buyerId, tp);
+                logger.info("Applicable value computed: {} in tp: {}", applicableValue, tp);
             } catch (Exception e) {
                 logger.error("Error getting applicable value: {}", e.getMessage(), e);
             }
-            applicableValue += 200000.00; // Simulating a base value for testing purposes
+            //applicableValue += 200000.00; // Simulating a base value for testing purposes
         } else {
             return null;
         }

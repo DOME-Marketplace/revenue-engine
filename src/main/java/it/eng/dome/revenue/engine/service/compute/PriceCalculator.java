@@ -246,8 +246,8 @@ public class PriceCalculator {
 	            Double computationValue = 0.0;
 	            try {
 	                computationValue = metricsRetriever.computeValueForKey(price.getComputationBase(), buyerId, tp);
-	                computationValue += 200000.00;
-	                logger.info("Computed value: {}", computationValue);
+	                //computationValue += 200000.00;
+	                logger.info("Computation value computed: {} in tp: {}", computationValue, tp);
 	            } catch (Exception e) {
 	            	logger.error("Error computing value for base '{}': {}", price.getComputationBase(), e.getMessage(), e);
 	            }
@@ -269,10 +269,11 @@ public class PriceCalculator {
         if (price.getApplicableBase() != null && !price.getApplicableBase().isEmpty()) {
             try {
                 applicableValue = metricsRetriever.computeValueForKey(price.getApplicableBase(), buyerId, tp);
+                logger.info("Applicable value computed: {} in tp: {}", applicableValue, tp);
             } catch (Exception e) {
                 logger.error("Error computing applicable value for base '{}': {}", price.getApplicableBase(), e.getMessage(), e);
             }
-            applicableValue += 200000.00; // Simulating a base value for testing purposes
+            //applicableValue += 200000.00; // Simulating a base value for testing purposes
         } else {
             return null;
         }
