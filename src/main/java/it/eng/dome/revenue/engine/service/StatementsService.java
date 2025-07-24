@@ -2,6 +2,7 @@ package it.eng.dome.revenue.engine.service;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -45,6 +46,26 @@ public class StatementsService implements InitializingBean {
         }
         return items;
     }
+
+    public Set<TimePeriod> getBillPeriods(String subscriptionId) throws Exception {
+
+            // retrieve the subscription by id
+            Subscription sub = subscriptionService.getSubscriptionById(subscriptionId);
+
+            // retrive the plan for the subscription
+            Plan plan = this.planService.findPlanById(sub.getPlan().getId());
+
+            // add the full plan to the subscription
+            sub.setPlan(plan);
+
+            // configure the price calculator
+            priceCalculator.setSubscription(sub);
+
+            // build all statements
+            SubscriptionTimeHelper timeHelper = new SubscriptionTimeHelper(sub);
+
+            return timeHelper.getBillingTimePeriods();
+        }
 
     public List<RevenueStatement> getStatementsForSubscription(String subscriptionId) throws Exception {    	
         try {

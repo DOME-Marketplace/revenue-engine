@@ -38,13 +38,15 @@ public class Plan {
 	private Integer renewalTermLength; // es. 1
 	private RecurringPeriod renewalTermPeriodType; // es. YEAR
 
-	private RecurringPeriod billingPeriod;
+	private Integer billingPeriodLength; // es. 1
+	private RecurringPeriod billingPeriodType;
 
 	private List<String> agreements;
 
 	public Plan() {
 	}
 
+	/*
 	public Plan(String id, String name, String description, @Valid @NotNull TimePeriod validFor,
 			String lifecycleStatus, @Valid @NotNull Price price, @Positive Integer contractDurationLength,
 			RecurringPeriod contractDurationPeriodType, @Positive Integer renewalTermLength,
@@ -62,6 +64,7 @@ public class Plan {
 		this.billingPeriod = billingPeriod;
 		this.agreements = agreements;
 	}
+	*/
 
 	public String getId() {
 		return id;
@@ -143,20 +146,28 @@ public class Plan {
 		this.renewalTermPeriodType = renewalTermPeriodType;
 	}
 
-	public RecurringPeriod getBillingPeriod() {
-		return billingPeriod;
-	}
-
-	public void setBillingPeriod(RecurringPeriod billingPeriod) {
-		this.billingPeriod = billingPeriod;
-	}
-
 	public List<String> getAgreements() {
 		return agreements;
 	}
 
 	public void setAgreements(List<String> agreements) {
 		this.agreements = agreements;
+	}
+
+	public Integer getBillingPeriodLength() {
+		return billingPeriodLength;
+	}
+
+	public void setBillingPeriodLength(Integer billingPeriodLength) {
+		this.billingPeriodLength = billingPeriodLength;
+	}
+
+	public RecurringPeriod getBillingPeriodType() {
+		return billingPeriodType;
+	}
+
+	public void setBillingPeriodType(RecurringPeriod billingPeriodType) {
+		this.billingPeriodType = billingPeriodType;
 	}
 
 	public Plan buildRef() {
@@ -172,7 +183,7 @@ public class Plan {
 				+ validFor + ", lifecycleStatus=" + lifecycleStatus + ", price=" + price
 				+ ", contractDurationLength=" + contractDurationLength + ", contractDurationPeriodType="
 				+ contractDurationPeriodType + ", renewalTermLength=" + renewalTermLength
-				+ ", renewalTermPeriodType=" + renewalTermPeriodType + ", billingPeriod=" + billingPeriod
+				+ ", renewalTermPeriodType=" + renewalTermPeriodType + ", billingPeriodLength=" + billingPeriodLength
 				+ ", agreements=" + agreements + "]";
 	}
 

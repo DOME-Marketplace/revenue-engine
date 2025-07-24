@@ -1,6 +1,7 @@
 package it.eng.dome.revenue.engine.controller;
 
 import java.util.List;
+import java.util.Set;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -18,6 +19,7 @@ import it.eng.dome.revenue.engine.model.Subscription;
 import it.eng.dome.revenue.engine.service.StatementsService;
 import it.eng.dome.revenue.engine.service.SubscriptionService;
 import it.eng.dome.revenue.engine.service.TmfDataRetriever;
+import it.eng.dome.tmforum.tmf678.v4.model.TimePeriod;
 
 
 @RestController
@@ -42,7 +44,6 @@ public class SubscriptionsController {
     @GetMapping("")
     public ResponseEntity<List<Subscription>> getAllSubscriptions() {
         try {
-//            List<Subscription> subscriptions = subscriptionService.loadAllFromStorage();
             List<Subscription> subscriptions = subscriptionService.getAllSubscriptions();
             return ResponseEntity.ok(subscriptions);
         } catch (Exception e) {
@@ -54,7 +55,6 @@ public class SubscriptionsController {
     @GetMapping("/{subscriptionId}")
     public ResponseEntity<Subscription> getSubscription(@PathVariable String subscriptionId) {
         try {
-//            Subscription subscription = subscriptionService.getBySubscriptionId(subscriptionId);
             Subscription subscription = subscriptionService.getSubscriptionById(subscriptionId);
             if (subscription == null) {
                 return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
@@ -87,5 +87,15 @@ public class SubscriptionsController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
+
+    @GetMapping("{subscriptionId}/bills")
+    public ResponseEntity<Set<TimePeriod>> getBillPeriods(@PathVariable String subscriptionId) {    	   
+        try {
+            return ResponseEntity.ok(this.statementsService.getBillPeriods(subscriptionId));
+        } catch (Exception e) {
+           logger.error(e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }    
 
 }
