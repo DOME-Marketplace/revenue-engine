@@ -70,6 +70,11 @@ public class PriceCalculator {
     public RevenueItem compute(Price price, TimePeriod timePeriod) {
         logger.debug("Computing price item: {}", price.getName());
 
+        if(price.getApplicableFrom()!=null && timePeriod.getStartDateTime().isBefore(price.getApplicableFrom())) {
+            logger.info("Price {} not applicable for time period {} (applicable from {})", price.getName(), timePeriod, price.getApplicableFrom());
+            return null;
+        }
+
         if (Boolean.TRUE.equals(price.getIsBundle()) && price.getPrices() != null) {
             RevenueItem bundleResult = getBundlePrice(price, timePeriod);
             return bundleResult;
@@ -82,7 +87,7 @@ public class PriceCalculator {
             RevenueItem item = atomicPrice;
 
             if (price.getDiscount() != null) {
-                List<RevenueItem> discountItems = this.getDiscountItems(price, timePeriod.getStartDateTime());
+                List<RevenueItem> discountItems = this.getDiscountItems(price, timePeriod);
                 if (!discountItems.isEmpty()) {
                     if (item.getItems() == null) {
                         item.setItems(new ArrayList<>());
@@ -117,12 +122,12 @@ public class PriceCalculator {
         return bundleResult;
     }
 
-    private List<RevenueItem> getDiscountItems(Price price, OffsetDateTime time) {
+    private List<RevenueItem> getDiscountItems(Price price, TimePeriod timePeriod) {
         List<RevenueItem> discountItems = new ArrayList<>();
 
         Double amount = price.getAmount(); // Assuming amount is the base amount for the discount
         DiscountCalculator discountCalculator = new DiscountCalculator(subscription, metricsRetriever);
-        RevenueItem discountItem = discountCalculator.compute(price.getDiscount(), time, amount);
+        RevenueItem discountItem = discountCalculator.compute(price.getDiscount(), timePeriod, amount);
         if (discountItem != null ) {
             discountItems.add(discountItem);
         }
