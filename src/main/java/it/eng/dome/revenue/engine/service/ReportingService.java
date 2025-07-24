@@ -76,23 +76,22 @@ public class ReportingService {
     	
         List<Reporting> report = new ArrayList<>();
 
-        // 1: My Subscription Plan (hardcoded)
-        report.add(new Reporting("My Subscription Plan", null, null, Arrays.asList(
-            new Reporting("Plan Type", "Advanced"),
-            new Reporting("Subscribed on", "2025-06-01"),
-            new Reporting("Renewal Due", "2026-06-01"),
-            new Reporting("Discounts", "10% referral, 20% performance")
-        )));
+        // 1: My Subscription Plan
+        Reporting subscriptionSection = getSubscriptionSection(relatedPartyId);
+        report.add(subscriptionSection);
+			
+
+    
 
         // 2: Billing History (hardcoded)
-        report.add(new Reporting("Billing History", null, null, Arrays.asList(
-            new Reporting("Invoice INV-2025-001", null, null, Arrays.asList(
+        report.add(new Reporting("Billing History", Arrays.asList(
+            new Reporting("Invoice INV-2025-001", Arrays.asList(
                 new Reporting("Status", "Paid"),
                 new Reporting("Issued On", "2025-01-15"),
                 new Reporting("Amount", "EUR 5,000"),
                 new Reporting("Download", "Download PDF", "https://billing.dome.org/invoices/INV-2025-001")
             )),
-            new Reporting("Invoice INV-2025-002", null, null, Arrays.asList(
+            new Reporting("Invoice INV-2025-002", Arrays.asList(
                 new Reporting("Status", "Pending"),
                 new Reporting("Issued On", "2025-06-15"),
                 new Reporting("Amount", "EUR 5,000"),
@@ -102,22 +101,22 @@ public class ReportingService {
 
         // 3: Revenue section (computed)
         List<RevenueStatement> statements = getRevenueStatements(relatedPartyId);
-        report.add(generateRevenueSection(statements));
+        report.add(getRevenueSection(statements));
 
         // 4: Referral Program (hardcoded)
-        report.add(new Reporting("Referral Program", null, null, Arrays.asList(
+        report.add(new Reporting("Referral Program Area", Arrays.asList(
             new Reporting("Referred Providers", "5"),
             new Reporting("Reward Earned", "EUR 500")
         )));
 
         // 5: Change Request (hardcoded)
-        report.add(new Reporting("Plan Change Request", null, null, Arrays.asList(
+        report.add(new Reporting("Plan Change Request", Arrays.asList(
             new Reporting("Status", "Pending Review"),
             new Reporting("Requested Changing", "Basic to Advanced")
         )));
 
         // 6: Support (hardcoded)
-        report.add(new Reporting("Support", null, null, Arrays.asList(
+        report.add(new Reporting("Support",Arrays.asList(
             new Reporting("Email", "support@dome-marketplace.org"),
             new Reporting("Help Center", "Visit Support Portal", "https://www.dome-helpcenter.org")
         )));
@@ -125,8 +124,26 @@ public class ReportingService {
         return report;
     }
 
+    public Reporting getSubscriptionSection(String relatedPartyId) throws ApiException, IOException {
+		Subscription subscription = subscriptionService.getSubscriptionByRelatedPartyId(relatedPartyId);
+		if (subscription == null) {
+			return new Reporting("Subscription", "No active subscription found for this user.");
+		}
+
+		String planName = subscription.getPlan() != null ? subscription.getPlan().getName() : "Unknown Plan";
+		String startDate = subscription.getStartDate() != null ? subscription.getStartDate().toString() : "Unknown Start Date";
+		String renewalDate = subscription.getStartDate() != null ? subscription.getStartDate().plusYears(1).toString() : "Unknown Renewal Date";
+
+		return new Reporting("My Subscription Plan", Arrays.asList(
+			new Reporting("Plan Name", planName),
+			new Reporting("Start Date", startDate),
+			new Reporting("Renewal Date", renewalDate),
+            new Reporting("Discounts", "10% referral, 20% performance")
+
+		));
+	}
     // Converts a list of RevenueStatement into a nested Reporting section
-    public Reporting generateRevenueSection(List<RevenueStatement> statements) {
+    public Reporting getRevenueSection(List<RevenueStatement> statements) {
         if (statements == null || statements.isEmpty()) {
             return new Reporting("Revenue", " ", null);
         }
@@ -154,10 +171,10 @@ public class ReportingService {
                 children.add(flattenRevenueItemNested(item, currency));
             }
 
-            items.add(new Reporting("Period " + periodLabel, null, null, children));
+            items.add(new Reporting("Period " + periodLabel, children));
         }
 
-        Reporting revenueSection = new Reporting("Revenue", null);
+        Reporting revenueSection = new Reporting("Revenue Volume Monitoring");
         revenueSection.setItems(items);
         return revenueSection;
     }
