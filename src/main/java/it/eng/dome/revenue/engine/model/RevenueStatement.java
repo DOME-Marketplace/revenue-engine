@@ -22,7 +22,7 @@ public class RevenueStatement {
     public RevenueStatement(Subscription subscription, TimePeriod period, List<RevenueItem> revenueItem) {
     	this.subscription = subscription;
         this.period = period;
-		this.revenueItems = new ArrayList<>();
+		this.revenueItems = new ArrayList<>(revenueItem);
 	}
     
     @JsonProperty("description")
