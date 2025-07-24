@@ -36,8 +36,8 @@ public class PriceCalculator {
         this.subscription = subscription;
     }
 
-    public RevenueStatement compute(OffsetDateTime time) {
-        logger.info("Computing revenue statement for time: {}", time);
+    public RevenueStatement compute(TimePeriod period) {
+        logger.info("Computing revenue statement for time: {}", period);
 
         if (subscription == null || subscription.getPlan() == null) {
             logger.error("Cannot compute - subscription or plan is null");
@@ -45,14 +45,12 @@ public class PriceCalculator {
         }
 
         try {
-            TimePeriod period = new SubscriptionTimeHelper(subscription).getSubscriptionPeriodAt(time);
-            logger.debug("Computed period: {} to {}", period.getStartDateTime(), period.getEndDateTime());
 
             RevenueStatement statement = new RevenueStatement(subscription, period);
             Price price = subscription.getPlan().getPrice();
 
             logger.debug("Starting price computation for plan: {}", subscription.getPlan().getName());
-            RevenueItem revenueItem = compute(price, time);
+            RevenueItem revenueItem = compute(price, period.getStartDateTime());
             if (revenueItem == null) {
                 logger.info("No revenue item computed for plan: {}", subscription.getPlan().getName());
                 return null;

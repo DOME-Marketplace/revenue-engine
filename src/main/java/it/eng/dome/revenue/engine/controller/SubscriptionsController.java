@@ -97,7 +97,7 @@ public class SubscriptionsController {
 
             SubscriptionTimeHelper timeHelper = new SubscriptionTimeHelper(sub);
             for(TimePeriod tp : timeHelper.getChargePeriodTimes()) {
-                RevenueStatement statement = priceCalculator.compute(tp.getStartDateTime());
+                RevenueStatement statement = priceCalculator.compute(tp);
                 if(statement!=null)
                     statements.add(statement);
             }
