@@ -2,6 +2,7 @@ package it.eng.dome.revenue.engine.service;
 
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -11,6 +12,8 @@ import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.core.io.Resource;
+import org.springframework.core.io.support.PathMatchingResourcePatternResolver;
 import org.springframework.stereotype.Service;
 
 import com.fasterxml.jackson.databind.DeserializationFeature;
@@ -41,32 +44,24 @@ public class PlanService {
 
     
     public List<Plan> loadAllPlans() throws IOException {
-    	logger.info("Loading all plans ... ");
-        Path dir = Paths.get("src/main/resources/data/plans");
-                
+
+    	//FIXME - replace to get dynamic contents 
+    	logger.info("Loading all plans from files ... ");
+        
+        PathMatchingResourcePatternResolver resolver = new PathMatchingResourcePatternResolver();
+        Resource[] resources = resolver.getResources("classpath:data/plans/*.json");
+        
         List<Plan> plans = new ArrayList<>();
-        logger.debug("dir exist? {}", Files.exists(dir));
         
-        logger.info("Current path: {}", System.getProperty("user.dir"));
-        
-        if (Files.exists(dir)) {
-        	logger.debug("AbsolutePath: {}", dir.toAbsolutePath().toString());
-        	
-            return Files.walk(dir)
-                .filter(Files::isRegularFile)
-                .filter(p -> p.toString().endsWith(".json"))
-                .map(p -> {
-                	
-                	logger.info("found file json: {}", p.toFile().getName());
-                    try {
-                    	                    	
-                        return mapper.readValue(p.toFile(), Plan.class);
-                    } catch (IOException e) {
-                        throw new RuntimeException("Error reading file: " + p, e);
-                    }
-                })
-                .collect(Collectors.toList());
+        for (Resource resource : resources) {
+        	logger.info("Loading: {} ", resource.getFilename());
+            try (InputStream is = resource.getInputStream()) {
+                Plan plan = mapper.readValue(is, Plan.class);
+                plans.add(plan);
+            }
         }
+        
+        logger.info("Number of files json read: {}", plans.size());
         return plans;
     }
     
@@ -79,7 +74,4 @@ public class PlanService {
             .orElseThrow(() -> new IOException("Plan not found with ID: " + id));
     }
     
-
-    
-
 }
