@@ -3,6 +3,8 @@ package it.eng.dome.revenue.engine.model;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
+import java.util.TreeSet;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 
@@ -16,7 +18,6 @@ public class RevenueItem {
     
     private List<RevenueItem> items;
 
- 
     public RevenueItem(String name, String currency) {
 		this.name = name;
 		this.currency = currency;
@@ -75,7 +76,6 @@ public class RevenueItem {
         return total;
     }
 
-
     public void setCurrency(String currency) {
 		this.currency = currency;
 	} 
@@ -96,4 +96,36 @@ public class RevenueItem {
 	public String toString() {
 		return "RevenueItem [name=" + name + ", value=" + value + ", currency=" + currency + ", items=" + items + "]";
 	}
+
+    public Set<OffsetDateTime> extractChargeTimes() {
+        Set<OffsetDateTime> out = new TreeSet<>();
+        if(this.getItems()==null || this.getItems().isEmpty()) {
+            if(this.getChargeTime()!=null)
+                out.add(this.getChargeTime());
+        } else {
+            for(RevenueItem i:this.getItems()) {
+                out.addAll(i.extractChargeTimes());
+            }
+        }
+        return out;
+    }
+
+    /*
+    public List<RevenueItem> clusterAccordingToChargeTime() {
+        List<RevenueItem> out = new ArrayList<>();
+        if(this.getItems()==null || this.getItems().isEmpty()) {
+            out.add(this);
+        } else {
+            Map<OffsetDateTime, List<RevenueItem>> clusters = new HashMap<>();
+            for(RevenueItem i:this.getItems()) {
+                List<RevenueItem> ris = i.clusterAccordingToChargeTime();
+                List<RevenueItem> cluster = clusters.get(ris.getC).clusterAccordingToChargeTime();
+                out.addAll(i.clusterAccordingToChargeTime());
+            }
+
+        }
+        return out;
+    }
+    */
+
 }

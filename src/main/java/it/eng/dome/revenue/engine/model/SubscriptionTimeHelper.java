@@ -43,17 +43,16 @@ public class SubscriptionTimeHelper {
      */
     public Set<TimePeriod> getChargePeriodTimes() {
         if(this.subscription != null && this.subscription.getPlan() != null && this.subscription.getPlan().getPrice() != null) {
+            logger.debug("STAGE 1");
             return this.getChargePeriodTimes(this.subscription.getPlan().getPrice());
         } else {
+            logger.debug("STAGE 2");
             return new HashSet<>();
         }
     }
 
     private Set<TimePeriod> getChargePeriodTimes(Price price) {
-
-//        Set<TimePeriod> chargePeriodTimes = new TreeSet<>(Comparator.comparing(TimePeriod::getStartDateTime));
         Set<TimePeriod> chargePeriodTimes = new TreeSet<>(new TimePeriodComparator());       
-        
         if(price.getIsBundle()) {
             for(Price p: price.getPrices()) {
                 chargePeriodTimes.addAll(this.getChargePeriodTimes(p));
@@ -61,8 +60,8 @@ public class SubscriptionTimeHelper {
         } else {
             // the start date of the subscription
             OffsetDateTime start = this.subscription.getStartDate();
-            TimePeriod tp = new TimePeriod();
             if(PriceType.ONE_TIME_PREPAID.equals(price.getType())) {
+                TimePeriod tp = new TimePeriod();
                 // if the price is a one-time prepaid, return only one period for the first subscription period
                 OffsetDateTime end = this.rollSubscriptionPeriod(start, 1);
                 tp.setStartDateTime(start);
@@ -75,6 +74,7 @@ public class SubscriptionTimeHelper {
                 OffsetDateTime stopAt = OffsetDateTime.now();
                 while(!start.isAfter(stopAt)) {
                     OffsetDateTime end = this.rollChargePeriod(start, price, 1);
+                    TimePeriod tp = new TimePeriod();
                     tp.setStartDateTime(start);
                     tp.setEndDateTime(end);
                     chargePeriodTimes.add(tp);

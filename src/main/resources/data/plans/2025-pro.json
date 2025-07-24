@@ -29,12 +29,20 @@
         "currency": "EUR"
       },
       {
-        "name": "End-of-period fee (for dev purposes only)",
+        "name": "End-of-period yearly fee (for dev purposes only)",
         "type": "RECURRING_POSTPAID",
         "amount": 2550,
         "currency": "EUR",
         "recurringChargePeriodLength": 1,
         "recurringChargePeriodType": "YEAR"
+      },
+      {
+        "name": "Weekly postpaid fee (for dev purposes only)",
+        "type": "RECURRING_POSTPAID",
+        "amount": 3.5,
+        "currency": "EUR",
+        "recurringChargePeriodLength": 1,
+        "recurringChargePeriodType": "WEEK"
       },
       {
         "name": "Recurring Yearly Fee",

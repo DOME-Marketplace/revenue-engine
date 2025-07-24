@@ -101,6 +101,7 @@ public class SubscriptionsController {
                 RevenueStatement statement = priceCalculator.compute(tp);
                 if(statement!=null) {
                     statements.add(statement);
+                    logger.debug("charge times: " + statement.getRevenueItem().extractChargeTimes());
                 }
             }
 
