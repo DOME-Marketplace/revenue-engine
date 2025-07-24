@@ -28,7 +28,7 @@ public class ReportingController {
 
     @GetMapping("/{relatedPartyId}")
     public List<Reporting> getDashboard(@PathVariable String relatedPartyId) throws ApiException, IOException {
-    	logger.info("Call to  getDashboard");
+    	logger.info("Request reporting for Dashboard");
         return reportingService.getDashboardReport(relatedPartyId);
     }
 }
