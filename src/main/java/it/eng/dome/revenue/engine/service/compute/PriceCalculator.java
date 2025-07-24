@@ -76,10 +76,10 @@ public class PriceCalculator {
         }
 
         if (Boolean.TRUE.equals(price.getIsBundle()) && price.getPrices() != null) {
-            RevenueItem bundleResult = getBundlePrice(price, timePeriod);
+            RevenueItem bundleResult = this.getBundlePrice(price, timePeriod);
             return bundleResult;
         } else {
-            RevenueItem atomicPrice = getAtomicPrice(price, timePeriod);
+            RevenueItem atomicPrice = this.getAtomicPrice(price, timePeriod);
             if (atomicPrice == null) {
                 logger.info("Price {} not applicable (atomic price is null), skipping item creation.", price.getName());
                 return null;
@@ -100,26 +100,29 @@ public class PriceCalculator {
         }
     }
 
-//    private RevenueItem getBundlePrice(Price price, OffsetDateTime time) {
     private RevenueItem getBundlePrice(Price price, TimePeriod timePeriod) {
         logger.debug("Processing bundle price with operation: {}", price.getBundleOp());
-        RevenueItem bundleResult;
+        RevenueItem bundledItems;
 
         switch (price.getBundleOp()) {
             case CUMULATIVE:
-                bundleResult = getCumulativePrice(price, timePeriod);
+                bundledItems = this.getCumulativePrice(price, timePeriod);
                 break;
             case ALTERNATIVE_HIGHER:
-                bundleResult = getHigherPrice(price, timePeriod);
+                bundledItems = this.getHigherPrice(price, timePeriod);
                 break;
             case ALTERNATIVE_LOWER:
-                bundleResult = getLowerPrice(price, timePeriod);
+                bundledItems = this.getLowerPrice(price, timePeriod);
                 break;
             default:
                 throw new IllegalArgumentException("Unknown bundle operation: " + price.getBundleOp());
         }
 
-        return bundleResult;
+        if(bundledItems!=null)
+            bundledItems.setChargeTime(this.getChargeTime(timePeriod, price));
+        
+        return bundledItems;
+
     }
 
     private List<RevenueItem> getDiscountItems(Price price, TimePeriod timePeriod) {
@@ -134,7 +137,6 @@ public class PriceCalculator {
         return discountItems;
     }
 
-//    private RevenueItem getAtomicPrice(Price price, OffsetDateTime time) {
     private RevenueItem getAtomicPrice(Price price, TimePeriod timePeriod) {
         logger.debug("Computing atomic price for: {}", price.getName());
 
@@ -153,7 +155,26 @@ public class PriceCalculator {
             return null;
         }
 
-        return new RevenueItem(price.getName(), amountValue, "EUR");
+        RevenueItem outItem = new RevenueItem(price.getName(), amountValue, "EUR");
+        outItem.setChargeTime(this.getChargeTime(tp, price));
+        return outItem;
+    }
+
+    private OffsetDateTime getChargeTime(TimePeriod timePeriod, Price price) {
+        if(price.getType()==null) {
+            logger.warn("Missing price type for price: {}. Defaulting to endTime", price.getName());
+            return timePeriod.getEndDateTime();
+        }
+        switch (price.getType()) {
+            case RECURRING_PREPAID:
+            case ONE_TIME_PREPAID:
+                return timePeriod.getStartDateTime();
+            case RECURRING_POSTPAID:
+                return timePeriod.getEndDateTime();
+            default:
+                logger.warn("Unknown price type for charge time: {}. Defaulting to endTime", price.getType());
+                return timePeriod.getEndDateTime();
+        }
     }
 
     private TimePeriod getTimePeriod(Price price, OffsetDateTime time) {
@@ -167,16 +188,11 @@ public class PriceCalculator {
         if (price.getType() != null) {
             switch (price.getType()) {
                 case RECURRING_PREPAID:
-                    // FIXME: this should be the charge period, not the subscription
-//                    tp = sth.getSubscriptionPeriodAt(time);
                     logger.debug("Computing charge period for RECURRING_PREPAID price type");
                     tp = sth.getChargePeriodAt(time, price);
                     break;
                 case RECURRING_POSTPAID:
-                    // FIXME: this should be the charge period, not the subscription
-//                    tp = sth.getPreviousSubscriptionPeriod(time);
                     logger.debug("Computing charge period for RECURRING_POSTPAID price type");
-//                    tp = sth.getPreviousChargePeriod(time, price);
                     tp = sth.getChargePeriodAt(time, price);
                     break;
                 case ONE_TIME_PREPAID:

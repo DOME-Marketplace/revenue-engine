@@ -1,5 +1,6 @@
 package it.eng.dome.revenue.engine.model;
 
+import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -11,6 +12,7 @@ public class RevenueItem {
     private String name;
     private Double value;
     private String currency;
+    private OffsetDateTime chargeTime;
     
     private List<RevenueItem> items;
 
@@ -32,14 +34,14 @@ public class RevenueItem {
     }
 
     public List<RevenueItem> getItems() {
-  return items;
- }
+        return items;
+    }
 
- public void setItems(List<RevenueItem> items) {
+    public void setItems(List<RevenueItem> items) {
         this.items = (items != null) ? new ArrayList<>(items) : new ArrayList<>();
- }
+    }
 
- public void addRevenueItem(String name, Double value, String currency) {
+    public void addRevenueItem(String name, Double value, String currency) {
         if(currency!=null && !currency.equals(this.currency)) {
             throw new IllegalArgumentException("Currency mismatch: " + this.currency + " vs " + currency);
         }
@@ -82,7 +84,13 @@ public class RevenueItem {
         return currency;
     }
 
-    
+    public OffsetDateTime getChargeTime() {
+        return chargeTime;
+    }
+
+    public void setChargeTime(OffsetDateTime chargeTime) {
+        this.chargeTime = chargeTime;
+    }    
     
 	@Override
 	public String toString() {
