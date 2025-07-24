@@ -55,7 +55,7 @@ public class PriceCalculator {
                 logger.info("No revenue item computed for plan: {}", subscription.getPlan().getName());
                 return null;
             }
-            statement.setRevenueItem(revenueItem);
+            statement.addRevenueItem(revenueItem);
             logger.info("Successfully computed revenue statement with total value: {}", revenueItem.getOverallValue());
 
             return statement;
@@ -102,26 +102,26 @@ public class PriceCalculator {
 
     private RevenueItem getBundlePrice(Price price, TimePeriod timePeriod) {
         logger.debug("Processing bundle price with operation: {}", price.getBundleOp());
-        RevenueItem bundledItems;
+        RevenueItem bundledRevenueItem;
 
         switch (price.getBundleOp()) {
             case CUMULATIVE:
-                bundledItems = this.getCumulativePrice(price, timePeriod);
+                bundledRevenueItem = this.getCumulativePrice(price, timePeriod);
                 break;
             case ALTERNATIVE_HIGHER:
-                bundledItems = this.getHigherPrice(price, timePeriod);
+                bundledRevenueItem = this.getHigherPrice(price, timePeriod);
                 break;
             case ALTERNATIVE_LOWER:
-                bundledItems = this.getLowerPrice(price, timePeriod);
+                bundledRevenueItem = this.getLowerPrice(price, timePeriod);
                 break;
             default:
                 throw new IllegalArgumentException("Unknown bundle operation: " + price.getBundleOp());
         }
 
-        if(bundledItems!=null)
-            bundledItems.setChargeTime(this.getChargeTime(timePeriod, price));
+        if(bundledRevenueItem!=null)
+            bundledRevenueItem.setChargeTime(this.getChargeTime(timePeriod, price));
         
-        return bundledItems;
+        return bundledRevenueItem;
 
     }
 
@@ -162,8 +162,9 @@ public class PriceCalculator {
 
     private OffsetDateTime getChargeTime(TimePeriod timePeriod, Price price) {
         if(price.getType()==null) {
-            logger.warn("Missing price type for price: {}. Defaulting to endTime", price.getName());
-            return timePeriod.getEndDateTime();
+//            logger.warn("Missing price type for price: {}. Defaulting to endTime", price.getName());
+            return null;
+//            return timePeriod.getEndDateTime();
         }
         switch (price.getType()) {
             case RECURRING_PREPAID:
@@ -172,8 +173,9 @@ public class PriceCalculator {
             case RECURRING_POSTPAID:
                 return timePeriod.getEndDateTime();
             default:
-                logger.warn("Unknown price type for charge time: {}. Defaulting to endTime", price.getType());
-                return timePeriod.getEndDateTime();
+//                logger.warn("Unknown price type for charge time: {}. Defaulting to endTime", price.getType());
+//                return timePeriod.getEndDateTime();
+                return null;
         }
     }
 
@@ -245,6 +247,7 @@ public class PriceCalculator {
         	if (price.getPercent() != null) {
 	            Double computationValue = 0.0;
 	            try {
+                    // FIXME: timeperiod (below) should be based on tp.end and computationBaseReferencePeriod
 	                computationValue = metricsRetriever.computeValueForKey(price.getComputationBase(), buyerId, tp);
 	                //computationValue += 200000.00;
 	                logger.info("Computation value computed: {} in tp: {}", computationValue, tp);
@@ -268,6 +271,7 @@ public class PriceCalculator {
         // APPLICABLE LOGIC
         if (price.getApplicableBase() != null && !price.getApplicableBase().isEmpty()) {
             try {
+                // FIXME: timeperiod (below) should be based on tp.end and applicableBaseReferencePeriod
                 applicableValue = metricsRetriever.computeValueForKey(price.getApplicableBase(), buyerId, tp);
                 logger.info("Applicable value computed: {} in tp: {}", applicableValue, tp);
             } catch (Exception e) {

@@ -110,6 +110,18 @@ public class RevenueItem {
         return out;
     }
 
+    public RevenueItem getFilteredClone(OffsetDateTime chargeTime) {
+        RevenueItem clone = new RevenueItem(this.name, this.value, this.currency);
+        clone.setChargeTime(chargeTime);
+        if (this.items != null) {
+            for (RevenueItem item : this.items) {
+                if(item.getChargeTime() == null || item.getChargeTime().equals(chargeTime))
+                    clone.getItems().add(item.getFilteredClone(chargeTime));
+            }
+        }
+        return clone;
+    }
+
     /*
     public List<RevenueItem> clusterAccordingToChargeTime() {
         List<RevenueItem> out = new ArrayList<>();

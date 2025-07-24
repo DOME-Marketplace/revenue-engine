@@ -141,7 +141,8 @@ public class ReportingService {
         List<Reporting> totalRevenueItems = new ArrayList<>();
 
         for (RevenueStatement rs : statements) {
-            RevenueItem root = rs.getRevenueItem();
+            // FIXME: (PF) now that items are an array, returing the first item (to let it compile)
+            RevenueItem root = rs.getRevenueItems().get(0);
             if (root == null) continue;
 
             String currency = root.getCurrency() != null ? root.getCurrency() + " " : "";

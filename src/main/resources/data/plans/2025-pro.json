@@ -227,7 +227,7 @@
           },
           {
             "name": "2.5% revenue share for transactions over 1M in the last 9 billing periods",
-            "referenceapplicableBaseReferencePeriodPeriod": "LAST_9_BILLING_PERIODS",
+            "applicableBaseReferencePeriod": "LAST_9_BILLING_PERIODS",
             "applicableBase": "bills-no-taxes",
             "applicableFrom": "2025-01-01T00:00:00Z",
             "applicableBaseRange": {

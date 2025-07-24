@@ -1,5 +1,6 @@
 package it.eng.dome.revenue.engine.controller;
 
+import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -14,6 +15,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import it.eng.dome.revenue.engine.model.Plan;
+import it.eng.dome.revenue.engine.model.RevenueItem;
 import it.eng.dome.revenue.engine.model.RevenueStatement;
 import it.eng.dome.revenue.engine.model.Subscription;
 import it.eng.dome.revenue.engine.model.SubscriptionTimeHelper;
@@ -96,12 +98,20 @@ public class SubscriptionsController {
             priceCalculator.setSubscription(sub);
 
             // build all statements
+            // FIXME: move the business logic below to a service
             SubscriptionTimeHelper timeHelper = new SubscriptionTimeHelper(sub);
             for(TimePeriod tp : timeHelper.getChargePeriodTimes()) {
                 RevenueStatement statement = priceCalculator.compute(tp);
                 if(statement!=null) {
+                    List<RevenueItem> newItems = new ArrayList<>();
+                    // replace items with filtered ones
+                    for(RevenueItem item : statement.getRevenueItems()) {
+                        for(OffsetDateTime chargeTime : item.extractChargeTimes()) {
+                            newItems.add(item.getFilteredClone(chargeTime));
+                        }
+                        statement.setRevenueItems(newItems);
+                    }
                     statements.add(statement);
-                    logger.debug("charge times: " + statement.getRevenueItem().extractChargeTimes());
                 }
             }
 
