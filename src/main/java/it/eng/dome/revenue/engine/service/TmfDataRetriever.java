@@ -1,5 +1,6 @@
 package it.eng.dome.revenue.engine.service;
 
+import java.net.URI;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -16,12 +17,15 @@ import org.springframework.beans.factory.config.ConfigurableBeanFactory;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
 
+import it.eng.dome.brokerage.api.AccountManagementApis;
+import it.eng.dome.brokerage.api.AppliedCustomerBillRateApis;
 import it.eng.dome.revenue.engine.tmf.TmfApiFactory;
 import it.eng.dome.tmforum.tmf632.v4.api.OrganizationApi;
 import it.eng.dome.tmforum.tmf632.v4.model.Characteristic;
 import it.eng.dome.tmforum.tmf632.v4.model.Organization;
-import it.eng.dome.tmforum.tmf678.v4.api.AppliedCustomerBillingRateApi;
+import it.eng.dome.tmforum.tmf666.v4.model.BillingAccount;
 import it.eng.dome.tmforum.tmf678.v4.model.AppliedCustomerBillingRate;
+import it.eng.dome.tmforum.tmf678.v4.model.BillingAccountRef;
 import it.eng.dome.tmforum.tmf678.v4.model.TimePeriod;
 
 @Component(value = "tmfDataRetriever")
@@ -35,13 +39,15 @@ public class TmfDataRetriever implements InitializingBean {
     private TmfApiFactory tmfApiFactory;
 
     // TMForum API to retrieve bills
-    private AppliedCustomerBillingRateApi billApi;
+    private AppliedCustomerBillRateApis billApi;
     private OrganizationApi orgApi;
+    private AccountManagementApis accountApi;
 
     @Override
     public void afterPropertiesSet() throws Exception {
-        this.billApi = new AppliedCustomerBillingRateApi(tmfApiFactory.getTMF678CustomerBillApiClient());
+        this.billApi = new AppliedCustomerBillRateApis(tmfApiFactory.getTMF678CustomerBillApiClient());
         this.orgApi = new OrganizationApi(tmfApiFactory.getTMF632PartyManagementApiClient());
+        this.accountApi = new AccountManagementApis(tmfApiFactory.getTMF666AccountManagementApiClient());
         logger.info("TmfDataRetriever initialized with billApi and orgApi");
     }
 
@@ -63,14 +69,15 @@ public class TmfDataRetriever implements InitializingBean {
             filter.put("date.lt", timePeriod.getEndDateTime().toString());
         if(sellerId!=null) {
             filter.put("relatedParty", sellerId);
-            filter.put("relatedParty.role", "Seller");
+//            filter.put("relatedParty.role", "Seller");
             logger.debug("Retrieving bills for seller with id: " + sellerId);
         } else {
             logger.debug("Retrieving all bills in the specified period");
         }
 
         // retrieve bills
-        List<AppliedCustomerBillingRate> out = billApi.listAppliedCustomerBillingRate(null, null, 1000, filter);
+//        List<AppliedCustomerBillingRate> out = billApi.listAppliedCustomerBillingRate(null, null, 1000, filter);
+        List<AppliedCustomerBillingRate> out = billApi.getAllAppliedCustomerBillingRates(null, filter);
 
         logger.debug("found " + out.size() + " bills in the specified period");
         return out;
@@ -206,7 +213,49 @@ public class TmfDataRetriever implements InitializingBean {
         timePeriod.setEndDateTime(to);
         return this.retrieveBills(null, timePeriod);
     }
+    
+    public BillingAccountRef retrieveBillingAccountByRelatedPartyId(String relatedPartyId) {
+        logger.debug("Retrieving Billing Account from TMF API By RelatedParty with id: " + relatedPartyId);
+        
+        if (relatedPartyId == null) {
+                logger.warn("RelatedParty ID is null, cannot retrieve billing account.");
+                return null;
+        }
+        
+        try {
+            // filter
+            Map<String, String> filter = new HashMap<>();
+//            filter.put("relatedParty.id", URLEncoder.encode(relatedPartyId, StandardCharsets.UTF_8));
+            filter.put("relatedParty.id", relatedPartyId);
 
+//            List<BillingAccount> billAccs = accountApi.getAllBillingAccounts(null, null, 1000, filter);
+            List<BillingAccount> billAccs = accountApi.getAllBillingAccounts(null, filter);
+            
+            if (billAccs == null || billAccs.isEmpty()) {
+                logger.info("No billing accounts found for related party: " + relatedPartyId);
+                return null;
+            }
+
+            // Supponiamo che ci interessi il primo (o unico) account
+            BillingAccount first = billAccs.get(0);
+
+            // Mappa su BillingAccountRef
+            BillingAccountRef ref = new BillingAccountRef();
+            ref.setId(first.getId());
+            URI hrefURI = first.getHref();
+            if (hrefURI != null) {
+                ref.setHref(hrefURI.toString());
+            }
+            ref.setName(first.getName());
+            ref.setAtReferredType("BillingAccount");
+
+            return ref;
+
+        } catch (Exception e) {
+            logger.error("Error retrieving billing account for related party: " + relatedPartyId, e);
+            return null;
+        }
+    }
 
 }
 

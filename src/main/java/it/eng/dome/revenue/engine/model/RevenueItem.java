@@ -1,7 +1,10 @@
 package it.eng.dome.revenue.engine.model;
 
+import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
+import java.util.TreeSet;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 
@@ -11,10 +14,10 @@ public class RevenueItem {
     private String name;
     private Double value;
     private String currency;
+    private OffsetDateTime chargeTime;
     
     private List<RevenueItem> items;
 
- 
     public RevenueItem(String name, String currency) {
 		this.name = name;
 		this.currency = currency;
@@ -32,14 +35,14 @@ public class RevenueItem {
     }
 
     public List<RevenueItem> getItems() {
-  return items;
- }
+        return items;
+    }
 
- public void setItems(List<RevenueItem> items) {
+    public void setItems(List<RevenueItem> items) {
         this.items = (items != null) ? new ArrayList<>(items) : new ArrayList<>();
- }
+    }
 
- public void addRevenueItem(String name, Double value, String currency) {
+    public void addRevenueItem(String name, Double value, String currency) {
         if(currency!=null && !currency.equals(this.currency)) {
             throw new IllegalArgumentException("Currency mismatch: " + this.currency + " vs " + currency);
         }
@@ -73,7 +76,6 @@ public class RevenueItem {
         return total;
     }
 
-
     public void setCurrency(String currency) {
 		this.currency = currency;
 	} 
@@ -82,10 +84,60 @@ public class RevenueItem {
         return currency;
     }
 
-    
+    public OffsetDateTime getChargeTime() {
+        return chargeTime;
+    }
+
+    public void setChargeTime(OffsetDateTime chargeTime) {
+        this.chargeTime = chargeTime;
+    }    
     
 	@Override
 	public String toString() {
 		return "RevenueItem [name=" + name + ", value=" + value + ", currency=" + currency + ", items=" + items + "]";
 	}
+
+    public Set<OffsetDateTime> extractChargeTimes() {
+        Set<OffsetDateTime> out = new TreeSet<>();
+        if(this.getItems()==null || this.getItems().isEmpty()) {
+            if(this.getChargeTime()!=null)
+                out.add(this.getChargeTime());
+        } else {
+            for(RevenueItem i:this.getItems()) {
+                out.addAll(i.extractChargeTimes());
+            }
+        }
+        return out;
+    }
+
+    public RevenueItem getFilteredClone(OffsetDateTime chargeTime) {
+        RevenueItem clone = new RevenueItem(this.name, this.value, this.currency);
+        clone.setChargeTime(chargeTime);
+        if (this.items != null) {
+            for (RevenueItem item : this.items) {
+                if(item.getChargeTime() == null || item.getChargeTime().equals(chargeTime))
+                    clone.getItems().add(item.getFilteredClone(chargeTime));
+            }
+        }
+        return clone;
+    }
+
+    /*
+    public List<RevenueItem> clusterAccordingToChargeTime() {
+        List<RevenueItem> out = new ArrayList<>();
+        if(this.getItems()==null || this.getItems().isEmpty()) {
+            out.add(this);
+        } else {
+            Map<OffsetDateTime, List<RevenueItem>> clusters = new HashMap<>();
+            for(RevenueItem i:this.getItems()) {
+                List<RevenueItem> ris = i.clusterAccordingToChargeTime();
+                List<RevenueItem> cluster = clusters.get(ris.getC).clusterAccordingToChargeTime();
+                out.addAll(i.clusterAccordingToChargeTime());
+            }
+
+        }
+        return out;
+    }
+    */
+
 }

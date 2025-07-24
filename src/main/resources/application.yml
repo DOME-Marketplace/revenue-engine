@@ -50,4 +50,5 @@ tmforumapi:
   tmf632_party_management_path: tmf-api/party/v4
   tmf637_inventory_path: tmf-api/productInventory/v4
   tmf651_agreement_management_path: tmf-api/agreementManagement/v4
+  tmf666_account_management_path: tmf-api/accountManagement/v4
   tmf678_billing_path: tmf-api/customerBillManagement/v4

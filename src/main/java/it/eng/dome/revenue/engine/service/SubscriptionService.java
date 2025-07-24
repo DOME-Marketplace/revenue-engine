@@ -1,9 +1,6 @@
 package it.eng.dome.revenue.engine.service;
 
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -15,18 +12,12 @@ import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationFeature;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
-
 import it.eng.dome.revenue.engine.model.Plan;
 import it.eng.dome.revenue.engine.model.Subscription;
 import it.eng.dome.revenue.engine.tmf.TmfApiFactory;
 import it.eng.dome.tmforum.tmf632.v4.ApiException;
 import it.eng.dome.tmforum.tmf632.v4.api.OrganizationApi;
 import it.eng.dome.tmforum.tmf632.v4.model.Organization;
-
 import it.eng.dome.tmforum.tmf678.v4.model.RelatedParty;
 
 @Service
@@ -42,16 +33,16 @@ public class SubscriptionService implements InitializingBean {
     // TMForum API to retrieve bills
     private OrganizationApi orgApi;
 
-	private final Path storageDir = Paths.get("src/main/resources/data/subscriptions/");
-
-	private final ObjectMapper mapper;
-
-	public SubscriptionService() {
-		this.mapper = new ObjectMapper().registerModule(new JavaTimeModule())
-				.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
-				.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
-		new PlanService();
-	}
+//	private final Path storageDir = Paths.get("src/main/resources/data/subscriptions/");
+//
+//	private final ObjectMapper mapper;
+//
+//	public SubscriptionService() {
+//		this.mapper = new ObjectMapper().registerModule(new JavaTimeModule())
+//				.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
+//				.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
+//		new PlanService();
+//	}
 
     @Override
     public void afterPropertiesSet() throws Exception {
@@ -107,11 +98,8 @@ public class SubscriptionService implements InitializingBean {
 		Subscription subscription = new Subscription();
 		subscription.setId(id);
 		subscription.setName("Subscription for " + organization.getTradingName() + " on plan " + plan.getName());
-		// 1.1 embed a plan
-		Plan planRef = new Plan();
-		planRef.setId(plan.getId());
-		planRef.setName(plan.getName());
-		subscription.setPlan(planRef);
+		// 1.1 embed a plan reference
+		subscription.setPlan(plan.buildRef());
 		// 1.2 embed an organisation ref
 		RelatedParty party = new RelatedParty();
 		party.setId(organization.getId());

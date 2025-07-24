@@ -16,7 +16,7 @@ public class Subscription {
 	
     private String name;
     
-    @JsonProperty("subscriptionPlan")
+    @JsonProperty("plan")
     private Plan plan;
     
     private String status;

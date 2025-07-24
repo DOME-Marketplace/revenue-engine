@@ -33,9 +33,20 @@ public class Price extends PlanItem {
     
     public Price() {}
 
+	/* Return the inherited type, if any. Otherwise the local value. */
 	public PriceType getType() {
-		return type;
+		PriceType inheritedType;
+		if(this.getParentPrice() != null) {
+			inheritedType = this.getParentPrice().getType();
+		} else {
+			inheritedType = null;
+		}
+		if(inheritedType != null) {
+			return inheritedType;
+		} else {}
+			return this.type;
 	}
+
 
 	public void setType(PriceType type) {
 		this.type = type;

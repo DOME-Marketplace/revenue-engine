@@ -1,5 +1,8 @@
 package it.eng.dome.revenue.engine.model;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import com.fasterxml.jackson.annotation.JsonProperty;
 import it.eng.dome.tmforum.tmf678.v4.model.TimePeriod;
 
@@ -7,7 +10,7 @@ public class RevenueStatement {
 
     private Subscription subscription;
     private TimePeriod period;
-    private RevenueItem revenueItem;
+    private List<RevenueItem> revenueItems;
 
     public RevenueStatement() {}
     
@@ -16,10 +19,10 @@ public class RevenueStatement {
         this.period = period;
     }
 
-    public RevenueStatement(Subscription subscription, TimePeriod period, RevenueItem revenueItem) {
-		this.subscription = subscription;
-		this.period = period;
-		this.revenueItem = revenueItem;
+    public RevenueStatement(Subscription subscription, TimePeriod period, List<RevenueItem> revenueItem) {
+    	this.subscription = subscription;
+        this.period = period;
+		this.revenueItems = new ArrayList<>(revenueItem);
 	}
     
     @JsonProperty("description")
@@ -44,12 +47,19 @@ public class RevenueStatement {
         this.period = period;
     }
 
-    public RevenueItem getRevenueItem() {
-        return revenueItem;
+    public List<RevenueItem> getRevenueItems() {
+        return revenueItems;
     }
 
-    public void setRevenueItem(RevenueItem revenueItem) {
-        this.revenueItem = revenueItem;
+    public void setRevenueItems(List<RevenueItem> revenueItems) {
+        this.revenueItems = revenueItems;
+    }
+
+    public void addRevenueItem(RevenueItem item) {
+        if (this.revenueItems == null) {
+            this.revenueItems = new ArrayList<>();
+        }
+        this.revenueItems.add(item);
     }
 
 }

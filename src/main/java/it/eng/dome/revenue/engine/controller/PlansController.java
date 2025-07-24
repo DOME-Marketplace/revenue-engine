@@ -3,6 +3,8 @@ package it.eng.dome.revenue.engine.controller;
 import java.io.IOException;
 import java.util.List;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -17,9 +19,10 @@ import it.eng.dome.revenue.engine.service.PlanService;
 import it.eng.dome.revenue.engine.service.SubscriptionService;
 
 @RestController
-//@RequiredArgsConstructor
 @RequestMapping("/revenue/plans")
 public class PlansController {
+	
+	private static final Logger logger = LoggerFactory.getLogger(PlansController.class);
     
 	@Autowired
     private PlanService subscriptionPlanService;
@@ -27,11 +30,11 @@ public class PlansController {
     @Autowired
 	private SubscriptionService subscriptionService;
 
-    public PlansController() {
-    }
-    
+   
     @GetMapping("")
     public ResponseEntity<List<Plan>> getAllPlans() {
+    	logger.info("Request all plans");
+    	
         try {
             List<Plan> plans = subscriptionPlanService.loadAllPlans();
             return ResponseEntity.ok(plans);
@@ -42,16 +45,21 @@ public class PlansController {
     
     @GetMapping("/{planId}")
     public ResponseEntity<Plan> getPlanById(@PathVariable String planId) {
+    	logger.info("Request plan with planId: {}", planId);
+    	
         try {
             Plan plan = subscriptionPlanService.findPlanById(planId);
             return ResponseEntity.ok(plan);
         } catch (IOException e) {
+        	logger.error("Error: {}", e.getMessage());
             return ResponseEntity.notFound().build(); 
         }
     }
     
     @GetMapping("/{planId}/subscriptions")
     public ResponseEntity<List<Subscription>> getSubscriptionsByPlanId(@PathVariable("planId") String planId) {
+    	logger.info("Request subscriptions for planId: {}", planId);
+    	
         List<Subscription> subscriptions = subscriptionService.getByPlanId(planId);
         if (subscriptions == null || subscriptions.isEmpty()) {
             return ResponseEntity.noContent().build();

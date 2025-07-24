@@ -39,16 +39,14 @@ public class DiscountCalculator {
         this.subscription = subscription;
     }
 
-    public RevenueItem compute(Discount discount, OffsetDateTime time, Double amount) {
+    public RevenueItem compute(Discount discount, TimePeriod timePeriod, Double amount) {
         logger.debug("Computing discount item: {}", discount.getName());
 
-
-
         if (Boolean.TRUE.equals(discount.getIsBundle()) && discount.getDiscounts() != null) {
-            RevenueItem bundleResult = getBundleDiscount(discount, time, amount);
+            RevenueItem bundleResult = getBundleDiscount(discount, timePeriod, amount);
             return bundleResult;
         } else {
-            RevenueItem atomicDiscount = getAtomicDiscount(discount, time, amount);
+            RevenueItem atomicDiscount = getAtomicDiscount(discount, timePeriod, amount);
             if (atomicDiscount == null) {
                 logger.info("Discount {} not applicable (atomic discount is null), skipping item creation.", discount.getName());
                 return null;
@@ -57,19 +55,19 @@ public class DiscountCalculator {
         }
     }
 
-    private RevenueItem getBundleDiscount(Discount discount, OffsetDateTime time, Double amount) {
+    private RevenueItem getBundleDiscount(Discount discount, TimePeriod timePeriod, Double amount) {
         logger.debug("Processing bundle discount with operation: {}", discount.getBundleOp());
         RevenueItem bundleResult;
 
         switch (discount.getBundleOp()) {
             case CUMULATIVE:
-                bundleResult = getCumulativeDiscount(discount, time, amount);
+                bundleResult = getCumulativeDiscount(discount, timePeriod, amount);
                 break;
             case ALTERNATIVE_HIGHER:
-                bundleResult = getHigherDiscount(discount, time, amount);
+                bundleResult = getHigherDiscount(discount, timePeriod, amount);
                 break;
             case ALTERNATIVE_LOWER:
-                bundleResult = getLowerDiscount(discount, time, amount);
+                bundleResult = getLowerDiscount(discount, timePeriod, amount);
                 break;
             default:
                 throw new IllegalArgumentException("Unknown bundle operation: " + discount.getBundleOp());
@@ -78,12 +76,19 @@ public class DiscountCalculator {
         return bundleResult;
     }
 
-    private RevenueItem getAtomicDiscount(Discount discount, OffsetDateTime time, Double amount) {
+    private RevenueItem getAtomicDiscount(Discount discount, TimePeriod timePeriod, Double amount) {
         logger.debug("Computing atomic discount for: {}", discount.getName());
 
-        TimePeriod tp = getTimePeriod(discount, time);
+        TimePeriod tp = getTimePeriod(discount, timePeriod.getStartDateTime().plusSeconds(1));
+//        TimePeriod tp = getTimePeriod(discount, time);
+
+        if(!tp.getStartDateTime().equals(timePeriod.getStartDateTime()) || !tp.getEndDateTime().equals(timePeriod.getEndDateTime())) {
+            logger.debug("Time period mismatch for price {}: REF {}, DISCOUNT TP {}. Skipping this price.", discount.getName(), timePeriod, tp);
+            return null;
+        }
+
         String buyerId = subscription.getBuyerId();
-        Double amountValue = computeDiscount(discount, buyerId, tp, amount);
+        Double amountValue = this.computeDiscount(discount, buyerId, tp, amount);
 
         if (amountValue == null || amountValue == 0.0) {
             logger.info("Atomic discount for {} is null or zero, returning null", discount.getName());
@@ -148,8 +153,8 @@ public class DiscountCalculator {
 	                    logger.info("Using parent price amount: {}", computationValue);
 	                } else {
 	                    computationValue = metricsRetriever.computeValueForKey(discount.getComputationBase(), buyerId, tp);
-	                    computationValue += 200000.00; // Simulating a base value for testing purposes
-	                    logger.info("Computed value from metrics: {}", computationValue);
+	                    //computationValue += 200000.00; // Simulating a base value for testing purposes
+	                    logger.info("Computation value computed: {} in tp: {}", computationValue, tp);
 	                }
 	            } catch (Exception e) {
 	                logger.error("Error computing discount value: {}", e.getMessage(), e);
@@ -173,10 +178,11 @@ public class DiscountCalculator {
         if (discount.getApplicableBase() != null && !discount.getApplicableBase().isEmpty()) {
             try {
                 applicableValue = metricsRetriever.computeValueForKey(discount.getApplicableBase(), buyerId, tp);
+                logger.info("Applicable value computed: {} in tp: {}", applicableValue, tp);
             } catch (Exception e) {
                 logger.error("Error getting applicable value: {}", e.getMessage(), e);
             }
-            applicableValue += 200000.00; // Simulating a base value for testing purposes
+            //applicableValue += 200000.00; // Simulating a base value for testing purposes
         } else {
             return null;
         }
@@ -184,7 +190,7 @@ public class DiscountCalculator {
         return applicableValue;
     }
 
-    private RevenueItem getCumulativeDiscount(Discount bundleDiscount, OffsetDateTime time, Double amount) {
+    private RevenueItem getCumulativeDiscount(Discount bundleDiscount, TimePeriod timePeriod, Double amount) {
         List<Discount> childDiscounts = bundleDiscount.getDiscounts();
         logger.debug("Computing cumulative discount from {} items", childDiscounts.size());
 
@@ -192,7 +198,7 @@ public class DiscountCalculator {
         cumulativeItem.setItems(new ArrayList<>());
 
         for (Discount d : childDiscounts) {
-            RevenueItem current = compute(d, time, amount);
+            RevenueItem current = this.compute(d, timePeriod, amount);
             if (current != null) {
                 cumulativeItem.getItems().add(current);
             }
@@ -205,14 +211,14 @@ public class DiscountCalculator {
         return cumulativeItem;
     }
 
-    private RevenueItem getHigherDiscount(Discount bundleDiscount, OffsetDateTime time, Double amount) {
+    private RevenueItem getHigherDiscount(Discount bundleDiscount, TimePeriod timePeriod, Double amount) {
         List<Discount> childDiscounts = bundleDiscount.getDiscounts();
         logger.debug("Finding higher discount from {} items", childDiscounts.size());
 
         RevenueItem bestItem = null;
 
         for (Discount d : childDiscounts) {
-            RevenueItem current = compute(d, time, amount);
+            RevenueItem current = this.compute(d, timePeriod, amount);
             if (current == null) continue;
 
             if (bestItem == null || current.getOverallValue() < bestItem.getOverallValue()) {
@@ -231,14 +237,14 @@ public class DiscountCalculator {
     }
 
 
-    private RevenueItem getLowerDiscount(Discount bundleDiscount, OffsetDateTime time, Double amount) {
+    private RevenueItem getLowerDiscount(Discount bundleDiscount, TimePeriod timePeriod, Double amount) {
         List<Discount> childDiscounts = bundleDiscount.getDiscounts();
         logger.debug("Finding lower discount from {} items", childDiscounts.size());
 
         RevenueItem bestItem = null;
 
         for (Discount d : childDiscounts) {
-            RevenueItem current = compute(d, time, amount);
+            RevenueItem current = compute(d, timePeriod, amount);
             if (current == null) continue;
 
             if (bestItem == null || current.getOverallValue() > bestItem.getOverallValue()) {

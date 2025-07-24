@@ -6,6 +6,7 @@
 **Feature**
 * Aligned with `[2.1.0, 2.2.0)` version of `Brokerage Utils`.
 * Display `ENV VARs` in the Listener at beginning.
+* Implemented **Revenue Statement** output.
 
 ### <code>0.0.3</code> :calendar: 03/07/2025
 **Feature**
