@@ -98,11 +98,8 @@ public class SubscriptionService implements InitializingBean {
 		Subscription subscription = new Subscription();
 		subscription.setId(id);
 		subscription.setName("Subscription for " + organization.getTradingName() + " on plan " + plan.getName());
-		// 1.1 embed a plan
-		Plan planRef = new Plan();
-		planRef.setId(plan.getId());
-		planRef.setName(plan.getName());
-		subscription.setPlan(planRef);
+		// 1.1 embed a plan reference
+		subscription.setPlan(plan.buildRef());
 		// 1.2 embed an organisation ref
 		RelatedParty party = new RelatedParty();
 		party.setId(organization.getId());

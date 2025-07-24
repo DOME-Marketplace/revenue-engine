@@ -158,6 +158,13 @@ public class Plan {
 	public void setAgreements(List<String> agreements) {
 		this.agreements = agreements;
 	}
+
+	public Plan buildRef() {
+		Plan planRef = new Plan();
+		planRef.setId(this.getId());
+		planRef.setName(this.getName());
+		return planRef;
+	}
 	
 	@Override
 	public String toString() {

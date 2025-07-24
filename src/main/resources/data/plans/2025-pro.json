@@ -23,10 +23,26 @@
     "bundleOp": "CUMULATIVE",
     "prices": [
       {
-        "name": "Annual Fee",
+        "name": "One-time Activation Fee",
         "type": "ONE_TIME_PREPAID",
         "amount": 8000,
         "currency": "EUR"
+      },
+      {
+        "name": "End-of-period yearly fee (for dev purposes only)",
+        "type": "RECURRING_POSTPAID",
+        "amount": 2550,
+        "currency": "EUR",
+        "recurringChargePeriodLength": 1,
+        "recurringChargePeriodType": "YEAR"
+      },
+      {
+        "name": "Weekly postpaid fee (for dev purposes only)",
+        "type": "RECURRING_POSTPAID",
+        "amount": 3.5,
+        "currency": "EUR",
+        "recurringChargePeriodLength": 1,
+        "recurringChargePeriodType": "WEEK"
       },
       {
         "name": "Recurring Yearly Fee",
@@ -36,17 +52,17 @@
         "recurringChargePeriodLength": 1,
         "recurringChargePeriodType": "YEAR",
         "discount": {
-          "name": "List of Discounts",
+          "name": "Discount on yearly fee based on previous years sales and referrals",
           "isBundle": true,
           "bundleOp": "CUMULATIVE",
           "discounts": [
             {
-              "name": "AtomicPrice-based Discount",
+              "name": "Discount based on previous year's sales",
               "isBundle": true,
               "bundleOp": "ALTERNATIVE_HIGHER",
               "discounts": [
                 {
-                  "name": "Discount Tier 1",
+                  "name": "No discount for sales up to 100k",
                   "applicableBaseReferencePeriod": "PREVIOUS_SUBSCRIPTION_PERIOD",
                   "applicableBase": "bills-no-taxes",
                   "applicableBaseRange": {
@@ -57,7 +73,7 @@
                   "percent": 0
                 },
                 {
-                  "name": "Discount Tier 2",
+                  "name": "15% Discount for sales between 100k and 250k",
                   "applicableBaseReferencePeriod": "PREVIOUS_SUBSCRIPTION_PERIOD",
                   "applicableBase": "bills-no-taxes",
                   "applicableBaseRange": {
@@ -68,7 +84,7 @@
                   "percent": 15
                 },
                 {
-                  "name": "Discount Tier 3",
+                  "name": "30% discount for sales between 250k and 750k",
                   "applicableBaseReferencePeriod": "PREVIOUS_SUBSCRIPTION_PERIOD",
                   "applicableBase": "bills-no-taxes",
                   "applicableBaseRange": {
@@ -79,7 +95,7 @@
                   "percent": 30
                 },
                 {
-                  "name": "Discount Tier 4",
+                  "name": "50% Discount for sales between 750k and 1M",
                   "applicableBaseReferencePeriod": "PREVIOUS_SUBSCRIPTION_PERIOD",
                   "applicableBase": "bills-no-taxes",
                   "applicableBaseRange": {
@@ -90,7 +106,7 @@
                   "percent": 50
                 },
                 {
-                  "name": "Discount Tier 5",
+                  "name": "80% discount for sales over 1M",
                   "applicableBaseReferencePeriod": "PREVIOUS_SUBSCRIPTION_PERIOD",
                   "applicableBase": "bills-no-taxes",
                   "applicableBaseRange": {
@@ -108,17 +124,17 @@
               "discounts": 
               [
                 {
-				  "name": "Discount for referring 3 providers",
+				          "name": "Discount for referring 3 providers",
                   "applicableBase": "referred-providers-number",
                   "applicableBaseReferencePeriod": "PREVIOUS_SUBSCRIPTION_PERIOD",
-				  "applicableBaseRange": {
+				          "applicableBaseRange": {
                     "min": 3
                   },
                   "computationBase": "parent-price",
                   "percent": 10
                 },
                 {
-				  "name": "Discount for referred provider with sales over 100k",
+				          "name": "Discount for referred provider with sales over 100k",
                   "applicableBase": "referred-providers-transaction-volume",
                   "applicableBaseReferencePeriod": "PREVIOUS_SUBSCRIPTION_PERIOD",
                   "applicableBaseRange": {
@@ -133,7 +149,7 @@
         }
       },
       {
-        "name": "Transaction-based Fee",
+        "name": "Montly revenue-sharing based on transactions",
         "type": "RECURRING_POSTPAID",
   	  	"isBundle": true,
 	  	  "bundleOp": "CUMULATIVE",
@@ -141,9 +157,9 @@
         "recurringChargePeriodType": "MONTH",
         "prices": [
           {
-            "name": "Price Tier 1",
+            "name": "Nothing to be shared with DOME for transactions below 100k",
             "applicableBaseReferencePeriod": "LAST_9_BILLING_PERIODS",
-            "applicableFrom": "2026-01-01T00:00:00Z",
+            "applicableFrom": "2025-01-01T00:00:00Z",
             "applicableBase": "bills-no-taxes",
             "applicableBaseRange": {
               "min": 0,
@@ -153,9 +169,9 @@
             "currency": "EUR"
           },
           {
-            "name": "Price Range 2",
+            "name": "4% revenue share for transactions between 100k and 250k in the last 9 billing periods",
             "applicableBaseReferencePeriod": "LAST_9_BILLING_PERIODS",
-            "applicableFrom": "2026-01-01T00:00:00Z",
+            "applicableFrom": "2025-01-01T00:00:00Z",
             "applicableBase": "bills-no-taxes",
             "applicableBaseRange": {
               "min": 100001,
@@ -172,9 +188,9 @@
             }
           },
           {
-            "name": "Price Range 3",
+            "name": "3.5% revenue share for transactions between 250K and 750k in the last 9 billing periods",
             "applicableBaseReferencePeriod": "LAST_9_BILLING_PERIODS",
-            "applicableFrom": "2026-01-01T00:00:00Z",
+            "applicableFrom": "2025-01-01T00:00:00Z",
             "applicableBase": "bills-no-taxes",
             "applicableBaseRange": {
               "min": 250001,
@@ -191,10 +207,10 @@
             }
           },
           {
-            "name": "Price Range 4",
+            "name": "3% revenue share for transactions between 750K and 1M in the last 9 billing periods",
             "applicableBaseReferencePeriod": "LAST_9_BILLING_PERIODS",
             "applicableBase": "bills-no-taxes",
-            "applicableFrom": "2026-01-01T00:00:00Z",
+            "applicableFrom": "2025-01-01T00:00:00Z",
             "applicableBaseRange": {
               "min": 750001,
               "max": 1000000
@@ -210,10 +226,10 @@
             }
           },
           {
-            "name": "Price Range 5",
+            "name": "2.5% revenue share for transactions over 1M in the last 9 billing periods",
             "referenceapplicableBaseReferencePeriodPeriod": "LAST_9_BILLING_PERIODS",
             "applicableBase": "bills-no-taxes",
-            "applicableFrom": "2026-01-01T00:00:00Z",
+            "applicableFrom": "2025-01-01T00:00:00Z",
             "applicableBaseRange": {
               "min": 1000001
             },

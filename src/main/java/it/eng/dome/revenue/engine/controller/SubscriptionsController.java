@@ -95,12 +95,19 @@ public class SubscriptionsController {
             // configure the price calculator
             priceCalculator.setSubscription(sub);
 
+            // build all statements
             SubscriptionTimeHelper timeHelper = new SubscriptionTimeHelper(sub);
             for(TimePeriod tp : timeHelper.getChargePeriodTimes()) {
                 RevenueStatement statement = priceCalculator.compute(tp);
-                if(statement!=null)
+                if(statement!=null) {
                     statements.add(statement);
+                    logger.debug("charge times: " + statement.getRevenueItem().extractChargeTimes());
+                }
             }
+
+            // replace the plan with a reference
+            sub.setPlan(plan.buildRef());
+
             return ResponseEntity.ok(statements);
         } catch (Exception e) {
            logger.error(e.getMessage(), e);
