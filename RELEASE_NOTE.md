@@ -21,7 +21,6 @@
   - Full support for `computationBase`, `applicableBase`, `applicableBaseRange`.
   - Bundle strategies: `CUMULATIVE`, `ALTERNATIVE_HIGHER`, `ALTERNATIVE_LOWER`.
   - Supports both `amount` and `percentage` discounts.
-- Inheritance of `referencePeriod` and other null values from parent components.
 - Discounts now integrated into `PriceCalculator`.
  
 **Refactor**
