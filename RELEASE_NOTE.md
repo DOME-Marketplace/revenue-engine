@@ -2,7 +2,7 @@
  
 **Release Notes** of the *Revenue Engine* software:
  
-### <code>1.2.0</code> :calendar: 24/07/2025 (WIP)
+### <code>1.2.0</code> :calendar: 25/07/2025
 **Feature**
 * Aligned with `[2.1.0, 2.2.0)` version of `Brokerage Utils`.
 * Display `ENV VARs` in the Listener at beginning.
@@ -10,7 +10,7 @@
  
 ### <code>0.0.6</code> :calendar: 21/07/2025
 **Feature**
-- First operational version of reporting dashboard with:
+- First operational version of reporting **dashboard** with:
   - Subscription plan overview
   - Revenue summary
   
