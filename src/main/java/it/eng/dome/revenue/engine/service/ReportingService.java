@@ -79,13 +79,11 @@ public class ReportingService {
             new Reporting("Invoice INV-2025-001", Arrays.asList(
                 new Reporting("Status", "Paid"),
                 new Reporting("Issued On", "2025-01-15"),
-                new Reporting("Amount", "EUR 5,000"),
                 new Reporting("Download", "Download PDF", "https://billing.dome.org/invoices/INV-2025-001")
             )),
             new Reporting("Invoice INV-2025-002", Arrays.asList(
                 new Reporting("Status", "Pending"),
                 new Reporting("Issued On", "2025-06-15"),
-                new Reporting("Amount", "EUR 5,000"),
                 new Reporting("Download", "Download PDF", "https://billing.dome.org/invoices/INV-2025-002")
             ))
         )));
@@ -97,14 +95,14 @@ public class ReportingService {
         // 4: Referral Program (hardcoded)
         report.add(new Reporting("Referral Program Area", Arrays.asList(
             new Reporting("Referred Providers", "5"),
-            new Reporting("Reward Earned", "EUR 500")
+            new Reporting("Discount Earned", "10%")
         )));
 
-        // 5: Change Request (hardcoded)
-        report.add(new Reporting("Plan Change Request", Arrays.asList(
-            new Reporting("Status", "Pending Review"),
-            new Reporting("Requested Changing", "Basic to Advanced")
-        )));
+//        // 5: Change Request (hardcoded)
+//        report.add(new Reporting("Plan Change Request", Arrays.asList(
+//            new Reporting("Status", "Pending Review"),
+//            new Reporting("Requested Changing", "Basic to Advanced")
+//        )));
 
         // 6: Support (hardcoded)
         report.add(new Reporting("Support",Arrays.asList(
