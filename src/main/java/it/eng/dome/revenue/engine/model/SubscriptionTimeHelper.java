@@ -43,12 +43,27 @@ public class SubscriptionTimeHelper {
      */
     public Set<TimePeriod> getChargePeriodTimes() {
         if(this.subscription != null && this.subscription.getPlan() != null && this.subscription.getPlan().getPrice() != null) {
-            logger.debug("STAGE 1");
             return this.getChargePeriodTimes(this.subscription.getPlan().getPrice());
         } else {
-            logger.debug("STAGE 2");
             return new HashSet<>();
         }
+    }
+
+    public Set<TimePeriod> getBillingTimePeriods() {
+        Set<TimePeriod> billingPeriodTimes = new TreeSet<>(new TimePeriodComparator());       
+        if(this.subscription != null && this.subscription.getPlan() != null && this.subscription.getPlan().getPrice() != null) {
+            OffsetDateTime start = this.subscription.getStartDate();
+            OffsetDateTime stopAt = OffsetDateTime.now().plusYears(1);
+            while(!start.isAfter(stopAt)) {
+                OffsetDateTime end = start.plusMonths(this.subscription.getPlan().getBillingPeriodLength());
+                TimePeriod tp = new TimePeriod();
+                tp.setStartDateTime(start);
+                tp.setEndDateTime(end);
+                billingPeriodTimes.add(tp);
+                start = end;
+            }
+        }
+        return billingPeriodTimes;
     }
 
     private Set<TimePeriod> getChargePeriodTimes(Price price) {
