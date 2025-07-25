@@ -273,7 +273,7 @@ public class PriceCalculator {
             try {
                 // FIXME: timeperiod (below) should be based on tp.end and applicableBaseReferencePeriod
                 applicableValue = metricsRetriever.computeValueForKey(price.getApplicableBase(), buyerId, tp);
-                logger.info("Applicable value computed: {} in tp: {}", applicableValue, tp);
+                logger.info("Applicable value computed: {} in tp: {} - {}", applicableValue, tp.getStartDateTime(), tp.getEndDateTime());
             } catch (Exception e) {
                 logger.error("Error computing applicable value for base '{}': {}", price.getApplicableBase(), e.getMessage(), e);
             }

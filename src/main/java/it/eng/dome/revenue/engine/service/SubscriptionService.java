@@ -120,19 +120,34 @@ public class SubscriptionService implements InitializingBean {
 
 
 	public List<Subscription> getAllSubscriptions() throws ApiException, IOException {
+		
+		logger.info("Request getAllSubscriptions");
+		
 		// 1. retrieve all organizations
 		List<Organization> organizations = this.orgApi.listOrganization(null, null, 5, null);
+		
+		logger.info("Number of organization found: {}", organizations.size());
 
 		// 2. build the subscription and add it to the output
 		List<Subscription> subscriptions = new ArrayList<>();
 		for(Organization o:organizations) {
+			
+			logger.debug("Analysing organizationId: {}", o.getId());
+			
 			// 2.1. identify a default plan for each organization.
 			Plan plan = this.getPlanForOrganization(o);
+			
 			// 2.2 create the subscription
 			String subscriptionId = "urn:ngsi-ld:subscription:" + o.getId().substring("urn:ngsi-ld:organization:".length()) + "-" + plan.getId().substring("urn:ngsi-ld:plan:".length());
+			logger.debug("Subscription id: {}", subscriptionId);
+			
 			Subscription subscription = this.createSubscription(subscriptionId, o, plan);
+			logger.info("Adding subsription to list");
 			subscriptions.add(subscription);
 		}
+		
+		logger.info("Subscriptions size: {}", subscriptions.size());
+		
 		return subscriptions;
 	}
 
