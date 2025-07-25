@@ -69,6 +69,7 @@ public class SubscriptionService implements InitializingBean {
 	*/
 
 	public Subscription getSubscriptionById(String id) throws ApiException, IOException {
+		logger.debug("Retrieving subscription by id: {}", id);
 		// 1. check the id is in the right format
 		if (id == null || id.isEmpty() || id.length()!=98) {
 			logger.info("malformed subscription id: " + id);
@@ -93,6 +94,7 @@ public class SubscriptionService implements InitializingBean {
 	}
 
 	private Subscription createSubscription(String id, Organization organization, Plan plan) throws ApiException, IOException {
+		logger.debug("Creating subscription with id: {}", id);
 
 		// 1. create the subscription
 		Subscription subscription = new Subscription();
@@ -187,6 +189,7 @@ public class SubscriptionService implements InitializingBean {
 	// === GET BY PARTY ID ===
 	
 	public Subscription getSubscriptionByRelatedPartyId(String id) throws IOException, ApiException {
+		logger.debug("Retrieving subscription by related party id: {}", id);
 	    return getAllSubscriptions().stream()
 	            .filter(subscription -> subscription.getRelatedParties() != null)
 	            .filter(subscription -> subscription.getRelatedParties().stream()
@@ -199,6 +202,7 @@ public class SubscriptionService implements InitializingBean {
 
 
 	public List<Subscription> getByPlanId(String id) {
+		logger.debug("Retrieving subscriptions by plan id: {}", id);
 	    try {
 	        return this.getAllSubscriptions().stream()
 	                .filter(sub -> sub.getPlan() != null && id.equals(sub.getPlan().getId()))
@@ -214,6 +218,7 @@ public class SubscriptionService implements InitializingBean {
 	
 	// === GET SUBSCRIPTION ID BY RELATED PARTY ID ===
 	public String getSubscriptionIdByRelatedPartyId(String relatedPartyId) throws IOException, ApiException {
+		logger.debug("Retrieving subscription id by related party id: {}", relatedPartyId);
 	    Subscription subscription = getSubscriptionByRelatedPartyId(relatedPartyId);
 	    return subscription != null ? subscription.getId() : null;
 	}
