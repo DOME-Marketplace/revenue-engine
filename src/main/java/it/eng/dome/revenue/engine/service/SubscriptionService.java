@@ -94,6 +94,7 @@ public class SubscriptionService implements InitializingBean {
 	}
 
 	private Subscription createSubscription(String id, Organization organization, Plan plan) throws ApiException, IOException {
+		
 		logger.debug("Creating subscription with id: {}", id);
 
 		// 1. create the subscription
