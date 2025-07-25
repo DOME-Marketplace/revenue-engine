@@ -1,20 +1,27 @@
 package it.eng.dome.revenue.engine.service;
 
-import it.eng.dome.revenue.engine.model.*;
-import it.eng.dome.revenue.engine.service.compute.PriceCalculator;
-import it.eng.dome.tmforum.tmf632.v4.ApiException;
-import it.eng.dome.tmforum.tmf678.v4.model.TimePeriod;
+import java.io.IOException;
+import java.time.LocalDate;
+import java.time.OffsetDateTime;
+import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.io.IOException;
-import java.time.OffsetDateTime;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
+import it.eng.dome.revenue.engine.model.Plan;
+import it.eng.dome.revenue.engine.model.Reporting;
+import it.eng.dome.revenue.engine.model.RevenueItem;
+import it.eng.dome.revenue.engine.model.RevenueStatement;
+import it.eng.dome.revenue.engine.model.Subscription;
+import it.eng.dome.revenue.engine.model.SubscriptionTimeHelper;
+import it.eng.dome.revenue.engine.service.compute.PriceCalculator;
+import it.eng.dome.tmforum.tmf632.v4.ApiException;
+import it.eng.dome.tmforum.tmf678.v4.model.TimePeriod;
 
 @Service
 public class ReportingService {
@@ -32,37 +39,45 @@ public class ReportingService {
 
     public List<RevenueStatement> getRevenueStatements(String relatedPartyId) throws ApiException, IOException {
         logger.info("Call getRevenueStatements with relatedPartyId: {}", relatedPartyId);
-        
-        String subscriptionId = subscriptionService.getSubscriptionIdByRelatedPartyId(relatedPartyId);
-        logger.info("Get subscriptionId: {}", subscriptionId);
-        
-        Subscription subscription = subscriptionService.getSubscriptionById(subscriptionId);
-        logger.info("Subscription: {}", subscription);
-        
-        if (subscription == null || subscription.getPlan() == null) {
-            return List.of();
+                
+        try {
+            String subscriptionId = subscriptionService.getSubscriptionIdByRelatedPartyId(relatedPartyId);
+            logger.info("Get subscriptionId: {}", subscriptionId);
+
+            // prepare output
+            List<RevenueStatement> statements = new ArrayList<>();
+
+            // retrieve the subscription by id
+            Subscription sub = subscriptionService.getSubscriptionById(subscriptionId);
+            logger.info("Subscription: {}", sub);
+
+            // retrive the plan for the subscription
+            Plan plan = this.planService.findPlanById(sub.getPlan().getId());
+
+            // add the full plan to the subscription
+            sub.setPlan(plan);
+
+            // configure the price calculator
+            priceCalculator.setSubscription(sub);
+
+            // build all statements
+            SubscriptionTimeHelper timeHelper = new SubscriptionTimeHelper(sub);
+            for(TimePeriod tp : timeHelper.getChargePeriodTimes()) {
+                RevenueStatement statement = priceCalculator.compute(tp);
+                if(statement!=null) {
+                    statement.clusterizeItems();
+                    statements.add(statement);
+                }
+            }
+
+            // replace the plan with a reference
+            sub.setPlan(plan.buildRef());
+
+            return statements;
+        } catch (Exception e) {
+           logger.error(e.getMessage(), e);
+           throw(e);
         }
-
-        logger.info("Plan id: {}", subscription.getPlan().getId());
-        Plan plan = planService.findPlanById(subscription.getPlan().getId());
-        
-        if (plan == null || plan.getPrice() == null) {
-            return List.of();
-        }
-
-        subscription.setPlan(plan);
-        priceCalculator.setSubscription(subscription);
-
-        SubscriptionTimeHelper helper = new SubscriptionTimeHelper(subscription);
-        List<RevenueStatement> statements = new ArrayList<>();
-
-        for (TimePeriod period : helper.getChargePeriodTimes()) {
-            RevenueStatement statement = priceCalculator.compute(period);
-            if(statement!=null)
-                statements.add(statement);
-        }
-
-        return statements;
     }
 
     public List<Reporting> getDashboardReport(String relatedPartyId) throws ApiException, IOException {
@@ -130,39 +145,93 @@ public class ReportingService {
             new Reporting("Discounts", "10% referral, 20% performance")
         ));
     }
-
     public Reporting getTotalRevenueSection(List<RevenueStatement> statements) {
         if (statements == null || statements.isEmpty()) {
-            return new Reporting("Revenue Summary", "No revenue data available");
+            return new Reporting("Revenue Volume Monitoring", "No revenue data available");
         }
 
-        List<Reporting> totalRevenueItems = new ArrayList<>();
+        LocalDate today = OffsetDateTime.now().toLocalDate();
+        Reporting monthly = null;
+        Reporting yearly = null;
 
         for (RevenueStatement rs : statements) {
-            // FIXME: (PF) now that items are an array, returing the first item (to let it compile)
-            RevenueItem root = rs.getRevenueItems().get(0);
+            RevenueItem root = rs.getRevenueItems() != null && !rs.getRevenueItems().isEmpty()
+                ? rs.getRevenueItems().get(0)
+                : null;
             if (root == null) continue;
 
-            String currency = root.getCurrency() != null ? root.getCurrency() + " " : "";
             TimePeriod period = rs.getPeriod();
-            OffsetDateTime startDateTime = period.getStartDateTime();
-            OffsetDateTime endDateTime = period.getEndDateTime();
-            String periodLabel = String.format("%s to %s",
-                startDateTime != null ? startDateTime.toLocalDate() : "?",
-                endDateTime != null ? endDateTime.toLocalDate() : "?"
-            );
+            OffsetDateTime start = period.getStartDateTime();
+            OffsetDateTime end = period.getEndDateTime();
+            if (start == null || end == null) continue;
 
-            double periodTotal = root.getOverallValue();
+            LocalDate startDate = start.toLocalDate();
+            LocalDate endDate = end.toLocalDate();
+            long duration = ChronoUnit.DAYS.between(startDate, endDate);
+            double value = root.getOverallValue();
+            String currency = root.getCurrency() != null ? root.getCurrency() + " " : "";
+
+            boolean containsToday = !today.isBefore(startDate) && today.isBefore(endDate);
             
-            String label = String.format("Total Revenue for %s", periodLabel);
-            totalRevenueItems.add(new Reporting(label, currency + format(periodTotal)));
+            // Check if the period is within the current month or year
+            // FIXME: this is a bit of a hack(ONLY FOR CURRENT MONTH AND YEAR), but it works for now
+            if (containsToday && (duration < 32 && duration > 28)) {
+                
+                monthly = new Reporting(
+                    String.format("Current Monthly Revenue: "),
+                    currency + format(value)
+                );
+            } else if (startDate.getMonth() == today.getMonth()
+                    && startDate.getYear() == today.getYear()
+                    && duration >= 364 && duration <= 366) {
+                
+                yearly = new Reporting(
+                    String.format("Yearly Total: "),
+                    currency + format(value)
+                );
+            }
         }
 
-        return new Reporting("Revenue Volume Monitoring", totalRevenueItems);
+        List<Reporting> items = new ArrayList<>();
+        if (monthly != null) items.add(monthly);
+        if (yearly != null) items.add(yearly);
+
+        return new Reporting("Revenue Volume Monitoring", items);
     }
+
+//    public Reporting getTotalRevenueSection(List<RevenueStatement> statements) {
+//        if (statements == null || statements.isEmpty()) {
+//            return new Reporting("Revenue Summary", "No revenue data available");
+//        }
+//
+//        List<Reporting> totalRevenueItems = new ArrayList<>();
+//
+//        for (RevenueStatement rs : statements) {
+//            // FIXME: (PF) now that items are an array, returing the first item (to let it compile)
+//            RevenueItem root = rs.getRevenueItems().get(0);
+//            if (root == null) continue;
+//
+//            String currency = root.getCurrency() != null ? root.getCurrency() + " " : "";
+//            TimePeriod period = rs.getPeriod();
+//            OffsetDateTime startDateTime = period.getStartDateTime();
+//            OffsetDateTime endDateTime = period.getEndDateTime();
+//            String periodLabel = String.format("%s to %s",
+//                startDateTime != null ? startDateTime.toLocalDate() : "?",
+//                endDateTime != null ? endDateTime.toLocalDate() : "?"
+//            );
+//
+//            double periodTotal = root.getOverallValue();
+//            
+//            String label = String.format("Total Revenue for %s", periodLabel);
+//            totalRevenueItems.add(new Reporting(label, currency + format(periodTotal)));
+//        }
+//
+//        return new Reporting("Revenue Volume Monitoring", totalRevenueItems);
+//    }
 
     private String format(Double value) {
         if (value == null) return "-";
         return String.format("%,.2f", value).replace(',', 'X').replace('.', ',').replace('X', '.');
     }
+    
 }
