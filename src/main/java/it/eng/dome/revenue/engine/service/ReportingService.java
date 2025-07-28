@@ -126,28 +126,69 @@ public class ReportingService {
     }
     
     public Report getReferralSection(String relatedPartyId) throws Exception {
-        
         logger.info("Call getReferralSection for relatedPartyId: {}", relatedPartyId);
         
-        Integer referralProviders = 0;
-        
         Subscription subscription = subscriptionService.getSubscriptionByRelatedPartyId(relatedPartyId);
-           SubscriptionTimeHelper timeHelper = new SubscriptionTimeHelper(subscription);
-           TimePeriod subscriptionPeriod = timeHelper.getSubscriptionPeriodAt(subscription.getStartDate());
-           
-           referralProviders = metricsRetriever.computeReferralsProvidersNumber(
-               subscription.getBuyerId(), 
-               subscriptionPeriod
-           );
-           
-           
-        return  new Report("Referral Program Area", Arrays.asList(
-                   new Report("Referred Providers", referralProviders.toString()),
-                   // TODO: discounts should be computed
-                   new Report("Discount Earned", "10%")
-               ));
-       }
-    
+        SubscriptionTimeHelper timeHelper = new SubscriptionTimeHelper(subscription);
+        TimePeriod subscriptionPeriod = timeHelper.getSubscriptionPeriodAt(subscription.getStartDate());
+        
+        // 1. Get referral data from metrics
+        Integer referralProviders = metricsRetriever.computeReferralsProvidersNumber(
+            subscription.getBuyerId(), 
+            subscriptionPeriod
+        );
+
+        List<RevenueStatement> statements = getRevenueStatements(relatedPartyId);
+        
+        List<RevenueItem> referralDiscounts = extractReferralDiscounts(statements);
+        
+        String discountEarned = calculateTotalDiscountEarned(referralDiscounts);
+        
+        return new Report("Referral Program Area", Arrays.asList(
+            new Report("Referred Providers", referralProviders.toString()),
+            new Report("Discount Earned", discountEarned)
+        ));
+    }
+
+    private List<RevenueItem> extractReferralDiscounts(List<RevenueStatement> statements) {
+        List<RevenueItem> discounts = new ArrayList<>();
+        
+        if (statements == null) return discounts;
+
+        for (RevenueStatement statement : statements) {
+            for (RevenueItem item : statement.getRevenueItems()) {
+                if (isReferralDiscount(item)) {
+                    discounts.add(item);
+                }
+                // Check nested items
+                if (item.getItems() != null) {
+                    for (RevenueItem subItem : item.getItems()) {
+                        if (isReferralDiscount(subItem)) {
+                            discounts.add(subItem);
+                        }
+                    }
+                }
+            }
+        }
+        return discounts;
+    }
+
+    private boolean isReferralDiscount(RevenueItem item) {
+        return item != null && 
+               ((item.getValue() != null && item.getValue() < 0) || 
+               (item.getName() != null && item.getName().toLowerCase().contains("referral")));
+    }
+
+    private String calculateTotalDiscountEarned(List<RevenueItem> discountItems) {
+        double total = discountItems.stream()
+            .filter(item -> item.getValue() != null)
+            .mapToDouble(item -> Math.abs(item.getValue()))
+            .sum();
+        
+        return format(total) + " EUR";
+    }
+
+
     public List<RevenueStatement> getRevenueStatements(String relatedPartyId) throws ApiException, IOException {
         logger.info("Call getRevenueStatements with relatedPartyId: {}", relatedPartyId);
                 
