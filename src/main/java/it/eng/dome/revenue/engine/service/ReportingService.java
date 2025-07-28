@@ -36,6 +36,9 @@ public class ReportingService {
 
     @Autowired
     PriceCalculator priceCalculator;
+    
+    @Autowired
+    MetricsRetriever metricsRetriever;
 
     public List<RevenueStatement> getRevenueStatements(String relatedPartyId) throws ApiException, IOException {
         logger.info("Call getRevenueStatements with relatedPartyId: {}", relatedPartyId);
@@ -107,11 +110,12 @@ public class ReportingService {
         List<RevenueStatement> statements = getRevenueStatements(relatedPartyId);
         report.add(getTotalRevenueSection(statements));
 
-        // 4: Referral Program (hardcoded)
-        report.add(new Reporting("Referral Program Area", Arrays.asList(
-            new Reporting("Referred Providers", "5"),
-            new Reporting("Discount Earned", "10%")
-        )));
+		// 4: Referral Program Area (computed)
+		try {
+			report.add(getReferralSection(relatedPartyId));
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
 
 //        // 5: Change Request (hardcoded)
 //        report.add(new Reporting("Plan Change Request", Arrays.asList(
@@ -142,9 +146,35 @@ public class ReportingService {
             new Reporting("Plan Name", planName),
             new Reporting("Start Date", startDate),
             new Reporting("Renewal Date", renewalDate),
+            // TODO: Discounts should be computed
             new Reporting("Discounts", "10% referral, 20% performance")
         ));
     }
+    
+    public Reporting getReferralSection(String relatedPartyId) throws Exception {
+        
+        logger.info("Call getReferralSection for relatedPartyId: {}", relatedPartyId);
+        
+        Integer referralProviders = 0;
+        
+        Subscription subscription = subscriptionService.getSubscriptionByRelatedPartyId(relatedPartyId);
+           SubscriptionTimeHelper timeHelper = new SubscriptionTimeHelper(subscription);
+           TimePeriod subscriptionPeriod = timeHelper.getSubscriptionPeriodAt(subscription.getStartDate());
+           
+           referralProviders = metricsRetriever.computeReferralsProvidersNumber(
+               subscription.getBuyerId(), 
+               subscriptionPeriod
+           );
+           
+           
+        return  new Reporting("Referral Program Area", Arrays.asList(
+                   new Reporting("Referred Providers", referralProviders.toString()),
+                   // TODO: discounts should be computed
+                   new Reporting("Discount Earned", "10%")
+               ));
+       }
+    
+    
     public Reporting getTotalRevenueSection(List<RevenueStatement> statements) {
         if (statements == null || statements.isEmpty()) {
             return new Reporting("Revenue Volume Monitoring", "No revenue data available");
