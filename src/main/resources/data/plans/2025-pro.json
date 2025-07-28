@@ -21,7 +21,7 @@
     "Referral bonus: an extra 10% discount on next year's fee for bringing 3 new providers or if a referred provider reaches 100k+ in sales"
   ],
   "price": {
-    "name": "All plan components",
+    "name": "PRO Plan price components (2025)",
     "isBundle": true,
     "currency": "EUR",
     "bundleOp": "CUMULATIVE",
