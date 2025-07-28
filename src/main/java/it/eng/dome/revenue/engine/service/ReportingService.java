@@ -6,7 +6,11 @@ import java.time.OffsetDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -103,13 +107,21 @@ public class ReportingService {
         String planName = subscription.getPlan() != null ? subscription.getPlan().getName() : "Unknown Plan";
         String startDate = subscription.getStartDate() != null ? subscription.getStartDate().toString() : "Unknown Start Date";
         String renewalDate = subscription.getStartDate() != null ? subscription.getStartDate().plusYears(1).toString() : "Unknown Renewal Date";
+        
+        Plan plan = planService.findPlanById(subscription.getPlan().getId());
+        
+        String agreementsText = Optional.ofNullable(plan.getAgreements())
+                .orElse(Collections.emptyList())
+                .stream()
+                .filter(Objects::nonNull) 
+                .map(agreement -> "" + agreement.trim())  
+                .collect(Collectors.joining(". ")); 
 
         return new Report("My Subscription Plan", Arrays.asList(
             new Report("Plan Name", planName),
             new Report("Start Date", startDate),
             new Report("Renewal Date", renewalDate),
-            // TODO: Discounts should be computed
-            new Report("Discounts", "10% referral, 20% performance")
+            new Report("Agreements and Discounts", agreementsText)  
         ));
     }
     
