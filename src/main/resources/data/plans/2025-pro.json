@@ -12,8 +12,8 @@
   "renewalTermLength": 1,
   "renewalTermPeriodType": "YEAR",
 
-  "billingPeriodLength": "2",
-  "billingPeriodType": "WEEK",
+  "billingPeriodLength": "1",
+  "billingPeriodType": "MONTH",
   "billingPeriodEnd": "LAST_DAY_OF_CALENDAR_MONTH", "comment": "alternative values are COMPUTED_DAY, NEXT_FRIDAY, NEXT_MONDAY, 15_OF_CALENDAR_MONTH, ...",
 
   "agreements": [
@@ -147,9 +147,11 @@
         "recurringChargePeriodLength": 1,
         "recurringChargePeriodType": "MONTH",
         "ignorePeriod": "FIRST_3_CHARGE_PERIODS",
-        "applicableBaseReferencePeriod": "LAST_9_BILLING_PERIODS",
+        "applicableBaseReferencePeriod": "LAST_9_CHARGE_PERIODS",
         "applicableFrom": "2025-01-01T00:00:00Z",
         "applicableBase": "bills-no-taxes",
+        "computationBaseReferencePeriod": "CURRENT_CHARGE_PERIOD",
+        "computationBase": "bills-no-taxes",
         "currency": "EUR",
         "prices": [
           {
