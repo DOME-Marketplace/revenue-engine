@@ -11,9 +11,11 @@
   "contractDurationPeriodType": "YEAR",
   "renewalTermLength": 1,
   "renewalTermPeriodType": "YEAR",
-  "billingPeriodLength": "3",
+
+  "billingPeriodLength": "1",
   "billingPeriodType": "MONTH",
-  "billingPeriodEnd": "END_OF_CALENDAR_MONTH", "comment": "alternative value is END_OF_BILLING_PERIOD",
+  "billingPeriodEnd": "LAST_DAY_OF_CALENDAR_MONTH", "comment": "alternative values are COMPUTED_DAY, NEXT_FRIDAY, NEXT_MONDAY, 15_OF_CALENDAR_MONTH, ...",
+
   "agreements": [
     "Annual subscription with renewal. Providers can receive up to 80% discount based on the sales volume from the previous year",
     "Referral bonus: an extra 10% discount on next year's fee for bringing 3 new providers or if a referred provider reaches 100k+ in sales"
@@ -145,9 +147,11 @@
         "recurringChargePeriodLength": 1,
         "recurringChargePeriodType": "MONTH",
         "ignorePeriod": "FIRST_3_CHARGE_PERIODS",
-        "applicableBaseReferencePeriod": "LAST_9_BILLING_PERIODS",
+        "applicableBaseReferencePeriod": "LAST_9_CHARGE_PERIODS",
         "applicableFrom": "2025-01-01T00:00:00Z",
         "applicableBase": "bills-no-taxes",
+        "computationBaseReferencePeriod": "CURRENT_CHARGE_PERIOD",
+        "computationBase": "bills-no-taxes",
         "currency": "EUR",
         "prices": [
           {
@@ -159,7 +163,7 @@
             "percent": 0
           },
           {
-            "name": "4% revenue share for transactions between 100k and 250k in the last 9 billing periods",
+            "name": "4% revenue share for transactions between 100k and 250k in the last 9 charge periods",
             "applicableBaseRange": {
               "min": 100000,
               "max": 250000
@@ -167,7 +171,7 @@
             "percent": 4
           },
           {
-            "name": "3.5% revenue share for transactions between 250K and 750k in the last 9 billing periods",
+            "name": "3.5% revenue share for transactions between 250K and 750k in the last 9 charge periods",
             "applicableBaseRange": {
               "min": 250000,
               "max": 750000
@@ -175,7 +179,7 @@
             "percent": 3.5
           },
           {
-            "name": "3% revenue share for transactions between 750K and 1M in the last 9 billing periods",
+            "name": "3% revenue share for transactions between 750K and 1M in the last 9 charge periods",
             "applicableBaseRange": {
               "min": 750000,
               "max": 1000000
@@ -183,7 +187,7 @@
             "percent": 3
           },
           {
-            "name": "2.5% revenue share for transactions over 1M in the last 9 billing periods",
+            "name": "2.5% revenue share for transactions over 1M in the last 9 charge periods",
             "applicableBaseRange": {
               "min": 1000000
             },

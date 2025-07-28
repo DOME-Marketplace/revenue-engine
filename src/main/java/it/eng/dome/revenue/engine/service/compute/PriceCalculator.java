@@ -171,7 +171,7 @@ public class PriceCalculator {
             case ONE_TIME_PREPAID:
                 return timePeriod.getStartDateTime();
             case RECURRING_POSTPAID:
-                return timePeriod.getEndDateTime();
+                return timePeriod.getEndDateTime().minusSeconds(1);
             default:
 //                logger.warn("Unknown price type for charge time: {}. Defaulting to endTime", price.getType());
 //                return timePeriod.getEndDateTime();
@@ -241,50 +241,112 @@ public class PriceCalculator {
     }
 
     private Double getComputationValue(Price price, String buyerId, TimePeriod tp) {
-        logger.info("Computation of value");
-        // computation logic
-        if (price.getComputationBase() != null && !price.getComputationBase().isEmpty()) {
-        	if (price.getPercent() != null) {
-	            Double computationValue = 0.0;
-	            try {
-                    // FIXME: timeperiod (below) should be based on tp.end and computationBaseReferencePeriod
-	                computationValue = metricsRetriever.computeValueForKey(price.getComputationBase(), buyerId, tp);
-	                //computationValue += 200000.00;
-	                logger.info("Computation value computed: {} in tp: {}", computationValue, tp);
-	            } catch (Exception e) {
-	            	logger.error("Error computing value for base '{}': {}", price.getComputationBase(), e.getMessage(), e);
-	            }
-                return (computationValue * (price.getPercent() / 100));
-            } else if (price.getAmount() != null) {
-                return price.getAmount();
-            }
-        } else {
-            // TODO: discuss about this else
-            logger.warn("Computation not exists!");
-        }
-        return null;
-    }
-
-    private Double getApplicableValue(Price price, String buyerId, TimePeriod tp) {
-        Double applicableValue = 0.0;
-
-        // APPLICABLE LOGIC
-        if (price.getApplicableBase() != null && !price.getApplicableBase().isEmpty()) {
-            try {
-                // FIXME: timeperiod (below) should be based on tp.end and applicableBaseReferencePeriod
-                applicableValue = metricsRetriever.computeValueForKey(price.getApplicableBase(), buyerId, tp);
-                logger.info("Applicable value computed: {} in tp: {} - {}", applicableValue, tp.getStartDateTime(), tp.getEndDateTime());
-            } catch (Exception e) {
-                logger.error("Error computing applicable value for base '{}': {}", price.getApplicableBase(), e.getMessage(), e);
-            }
-            //applicableValue += 200000.00; // Simulating a base value for testing purposes
-        } else {
+        if (price.getComputationBase() == null || price.getComputationBase().isEmpty()) {
+            logger.warn("No computation base defined!");
             return null;
         }
 
-        return applicableValue;
+        if (price.getPercent() == null && price.getAmount() == null) {
+            logger.warn("Neither percent nor amount defined for computation!");
+            return null;
+        }
+
+        try {
+            TimePeriod calculationPeriod = tp; 
+            String referencePeriod = price.getComputationBaseReferencePeriod() != null ? 
+                                   price.getComputationBaseReferencePeriod().getValue() : null;
+
+            if (referencePeriod != null) {
+                SubscriptionTimeHelper helper = new SubscriptionTimeHelper(subscription);
+
+                if ("PREVIOUS_SUBSCRIPTION_PERIOD".equals(referencePeriod)) {
+                    calculationPeriod = helper.getPreviousSubscriptionPeriod(tp.getEndDateTime());
+                } 
+                else if ((referencePeriod.startsWith("PREVIOUS_") || referencePeriod.startsWith("LAST_")) 
+                        && referencePeriod.endsWith("_CHARGE_PERIODS")) {
+                    calculationPeriod = helper.getCustomPeriod(tp.getEndDateTime(), price, referencePeriod);
+                    
+                    if (calculationPeriod == null) {
+                        logger.warn("Could not compute custom period for reference: {}", referencePeriod);
+                        return null;
+                    }
+                    
+                    logger.debug("Using custom period for {}: {} - {}, based on reference: {}", 
+                        referencePeriod, calculationPeriod.getStartDateTime(), 
+                        calculationPeriod.getEndDateTime(), referencePeriod);
+                }
+            }
+
+            Double computationValue = metricsRetriever.computeValueForKey(
+                price.getComputationBase(), 
+                buyerId, 
+                calculationPeriod
+            );
+
+            logger.info("Computation value computed: {} for base '{}' in period: {} - {}, based on reference: {}",
+                computationValue, price.getComputationBase(),
+                calculationPeriod.getStartDateTime(), calculationPeriod.getEndDateTime(), referencePeriod);
+
+            if (price.getPercent() != null) {
+                return computationValue * (price.getPercent() / 100);
+            } else {
+                return price.getAmount();
+            }
+
+        } catch (Exception e) {
+            logger.error("Error computing value for base '{}': {}", 
+                price.getComputationBase(), e.getMessage(), e);
+            return null;
+        }
     }
 
+    
+    private Double getApplicableValue(Price price, String buyerId, TimePeriod tp) {
+        if (price.getApplicableBase() == null || price.getApplicableBase().isEmpty()) {
+            return null;
+        }
+
+        try {
+            TimePeriod actualTp = tp;
+            String referencePeriod = price.getApplicableBaseReferencePeriod().getValue();
+
+            if (referencePeriod != null) {
+                SubscriptionTimeHelper helper = new SubscriptionTimeHelper(subscription);
+
+                if ("PREVIOUS_SUBSCRIPTION_PERIOD".equals(referencePeriod)) {
+                    actualTp = helper.getPreviousSubscriptionPeriod(tp.getEndDateTime());
+                } 
+                else if ((referencePeriod.startsWith("PREVIOUS_") || referencePeriod.startsWith("LAST_")) 
+                        && referencePeriod.endsWith("_CHARGE_PERIODS")) {
+                 actualTp = helper.getCustomPeriod(tp.getEndDateTime(), price, referencePeriod);
+                    
+                    if (actualTp == null) {
+                        logger.warn("Could not compute custom period for reference: {}", referencePeriod);
+                        return null;
+                    }
+                    
+                    logger.debug("Using custom period for {}: {} - {}, based on reference: {}", 
+                        referencePeriod, actualTp.getStartDateTime(), actualTp.getEndDateTime(), referencePeriod);
+                }
+            }
+
+            Double applicableValue = metricsRetriever.computeValueForKey(
+                price.getApplicableBase(), 
+                buyerId, 
+                actualTp
+            );
+
+            logger.info("Applicable value computed: {} for base '{}' in period: {} - {}",
+                applicableValue, price.getApplicableBase(),
+                actualTp.getStartDateTime(), actualTp.getEndDateTime());
+
+            return applicableValue;
+        } catch (Exception e) {
+            logger.error("Error computing applicable value for base '{}': {}",
+                price.getApplicableBase(), e.getMessage(), e);
+            return null;
+        }
+    }
 //    private RevenueItem getCumulativePrice(Price bundlePrice, OffsetDateTime time) {
     private RevenueItem getCumulativePrice(Price bundlePrice, TimePeriod timePeriod) {
         List<Price> childPrices = bundlePrice.getPrices();

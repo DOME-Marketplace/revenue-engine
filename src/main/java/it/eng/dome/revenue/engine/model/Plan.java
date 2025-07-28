@@ -40,6 +40,7 @@ public class Plan {
 
 	private Integer billingPeriodLength; // es. 1
 	private RecurringPeriod billingPeriodType;
+	private String billingPeriodEnd;
 
 	private List<String> agreements;
 
@@ -176,7 +177,15 @@ public class Plan {
 		planRef.setName(this.getName());
 		return planRef;
 	}
-	
+
+	public String getBillingPeriodEnd() {
+		return billingPeriodEnd;
+	}
+
+	public void setBillingPeriodEnd(String billingPeriodEnd) {
+		this.billingPeriodEnd = billingPeriodEnd;
+	}
+
 	@Override
 	public String toString() {
 		return "SubscriptionPlan [id=" + id + ", name=" + name + ", description=" + description + ", validFor="
