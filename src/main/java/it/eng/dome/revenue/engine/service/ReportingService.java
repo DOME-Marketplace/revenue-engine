@@ -14,7 +14,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import it.eng.dome.revenue.engine.model.Plan;
-import it.eng.dome.revenue.engine.model.Reporting;
+import it.eng.dome.revenue.engine.model.Report;
 import it.eng.dome.revenue.engine.model.RevenueItem;
 import it.eng.dome.revenue.engine.model.RevenueStatement;
 import it.eng.dome.revenue.engine.model.Subscription;
@@ -40,28 +40,29 @@ public class ReportingService {
     @Autowired
     MetricsRetriever metricsRetriever;
 
-
-
-    public List<Reporting> getDashboardReport(String relatedPartyId) throws ApiException, IOException {
+    @Autowired
+    StatementsService statementsService;
+    
+    public List<Report> getDashboardReport(String relatedPartyId) throws ApiException, IOException {
         logger.info("Call getDashboardReport for relatedPartyId: {}", relatedPartyId);
         
-        List<Reporting> report = new ArrayList<>();
+        List<Report> report = new ArrayList<>();
 
         // 1: My Subscription Plan
-        Reporting subscriptionSection = getSubscriptionSection(relatedPartyId);
+        Report subscriptionSection = getSubscriptionSection(relatedPartyId);
         report.add(subscriptionSection);
 
         // 2: Billing History (hardcoded)
-        report.add(new Reporting("Billing History", Arrays.asList(
-            new Reporting("Invoice INV-2025-001", Arrays.asList(
-                new Reporting("Status", "Paid"),
-                new Reporting("Issued On", "2025-01-15"),
-                new Reporting("Download", "Download PDF", "https://billing.dome.org/invoices/INV-2025-001")
+        report.add(new Report("Billing History", Arrays.asList(
+            new Report("Invoice INV-2025-001", Arrays.asList(
+                new Report("Status", "Paid"),
+                new Report("Issued On", "2025-01-15"),
+                new Report("Download", "Download PDF", "https://billing.dome.org/invoices/INV-2025-001")
             )),
-            new Reporting("Invoice INV-2025-002", Arrays.asList(
-                new Reporting("Status", "Pending"),
-                new Reporting("Issued On", "2025-06-15"),
-                new Reporting("Download", "Download PDF", "https://billing.dome.org/invoices/INV-2025-002")
+            new Report("Invoice INV-2025-002", Arrays.asList(
+                new Report("Status", "Pending"),
+                new Report("Issued On", "2025-06-15"),
+                new Report("Download", "Download PDF", "https://billing.dome.org/invoices/INV-2025-002")
             ))
         )));
 
@@ -83,9 +84,9 @@ public class ReportingService {
 //        )));
 
         // 6: Support (hardcoded)
-        report.add(new Reporting("Support",Arrays.asList(
-            new Reporting("Email", "support@dome-marketplace.org"),
-            new Reporting("Help Center", "Visit Support Portal", "https://www.dome-helpcenter.org")
+        report.add(new Report("Support",Arrays.asList(
+            new Report("Email", "support@dome-marketplace.org"),
+            new Report("Help Center", "Visit Support Portal", "https://www.dome-helpcenter.org")
         )));
 
         return report;
@@ -93,26 +94,26 @@ public class ReportingService {
 
 
     
-    public Reporting getSubscriptionSection(String relatedPartyId) throws ApiException, IOException {
+    public Report getSubscriptionSection(String relatedPartyId) throws ApiException, IOException {
         Subscription subscription = subscriptionService.getSubscriptionByRelatedPartyId(relatedPartyId);
         if (subscription == null) {
-            return new Reporting("Subscription", "No active subscription found for this user.");
+            return new Report("Subscription", "No active subscription found for this user.");
         }
 
         String planName = subscription.getPlan() != null ? subscription.getPlan().getName() : "Unknown Plan";
         String startDate = subscription.getStartDate() != null ? subscription.getStartDate().toString() : "Unknown Start Date";
         String renewalDate = subscription.getStartDate() != null ? subscription.getStartDate().plusYears(1).toString() : "Unknown Renewal Date";
 
-        return new Reporting("My Subscription Plan", Arrays.asList(
-            new Reporting("Plan Name", planName),
-            new Reporting("Start Date", startDate),
-            new Reporting("Renewal Date", renewalDate),
+        return new Report("My Subscription Plan", Arrays.asList(
+            new Report("Plan Name", planName),
+            new Report("Start Date", startDate),
+            new Report("Renewal Date", renewalDate),
             // TODO: Discounts should be computed
-            new Reporting("Discounts", "10% referral, 20% performance")
+            new Report("Discounts", "10% referral, 20% performance")
         ));
     }
     
-    public Reporting getReferralSection(String relatedPartyId) throws Exception {
+    public Report getReferralSection(String relatedPartyId) throws Exception {
         
         logger.info("Call getReferralSection for relatedPartyId: {}", relatedPartyId);
         
@@ -128,65 +129,42 @@ public class ReportingService {
            );
            
            
-        return  new Reporting("Referral Program Area", Arrays.asList(
-                   new Reporting("Referred Providers", referralProviders.toString()),
+        return  new Report("Referral Program Area", Arrays.asList(
+                   new Report("Referred Providers", referralProviders.toString()),
                    // TODO: discounts should be computed
-                   new Reporting("Discount Earned", "10%")
+                   new Report("Discount Earned", "10%")
                ));
        }
     
     public List<RevenueStatement> getRevenueStatements(String relatedPartyId) throws ApiException, IOException {
         logger.info("Call getRevenueStatements with relatedPartyId: {}", relatedPartyId);
                 
-        try {
+        
             String subscriptionId = subscriptionService.getSubscriptionIdByRelatedPartyId(relatedPartyId);
             logger.info("Get subscriptionId: {}", subscriptionId);
 
             // prepare output
             List<RevenueStatement> statements = new ArrayList<>();
 
-            // retrieve the subscription by id
-            Subscription sub = subscriptionService.getSubscriptionById(subscriptionId);
-            logger.info("Subscription: {}", sub);
-
-            // retrive the plan for the subscription
-            Plan plan = this.planService.findPlanById(sub.getPlan().getId());
-
-            // add the full plan to the subscription
-            sub.setPlan(plan);
-
-            // configure the price calculator
-            priceCalculator.setSubscription(sub);
-
-            // build all statements
-            SubscriptionTimeHelper timeHelper = new SubscriptionTimeHelper(sub);
-            for(TimePeriod tp : timeHelper.getChargePeriodTimes()) {
-                RevenueStatement statement = priceCalculator.compute(tp);
-                if(statement!=null) {
-                    statement.clusterizeItems();
-                    statements.add(statement);
-                }
-            }
-
-            // replace the plan with a reference
-            sub.setPlan(plan.buildRef());
-
+            try {
+				statements = statementsService.getStatementsForSubscription(subscriptionId);
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+            
             return statements;
-        } catch (Exception e) {
-           logger.error(e.getMessage(), e);
-           throw(e);
-        }
+            
     }
     
     
-    public Reporting getTotalRevenueSection(List<RevenueStatement> statements) {
+    public Report getTotalRevenueSection(List<RevenueStatement> statements) {
         if (statements == null || statements.isEmpty()) {
-            return new Reporting("Revenue Volume Monitoring", "No revenue data available");
+            return new Report("Revenue Volume Monitoring", "No revenue data available");
         }
 
         LocalDate today = OffsetDateTime.now().toLocalDate();
-        Reporting monthly = null;
-        Reporting yearly = null;
+        Report monthly = null;
+        Report yearly = null;
 
         for (RevenueStatement rs : statements) {
             RevenueItem root = rs.getRevenueItems() != null && !rs.getRevenueItems().isEmpty()
@@ -211,7 +189,7 @@ public class ReportingService {
             // FIXME: this is a bit of a hack(ONLY FOR CURRENT MONTH AND YEAR), but it works for now
             if (containsToday && (duration < 32 && duration >= 28)) {
                 
-                monthly = new Reporting(
+                monthly = new Report(
                     String.format("Current Monthly Revenue: "),
                     currency + format(value)
                 );
@@ -219,18 +197,18 @@ public class ReportingService {
                     && startDate.getYear() == today.getYear()
                     && duration >= 364 && duration <= 366) {
                 
-                yearly = new Reporting(
+                yearly = new Report(
                     String.format("Yearly Total: "),
                     currency + format(value)
                 );
             }
         }
 
-        List<Reporting> items = new ArrayList<>();
+        List<Report> items = new ArrayList<>();
         if (monthly != null) items.add(monthly);
         if (yearly != null) items.add(yearly);
 
-        return new Reporting("Revenue Volume Monitoring", items);
+        return new Report("Revenue Volume Monitoring", items);
     }
 
 //    public Reporting getTotalRevenueSection(List<RevenueStatement> statements) {

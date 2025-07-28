@@ -10,7 +10,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import it.eng.dome.revenue.engine.model.Reporting;
+import it.eng.dome.revenue.engine.model.Report;
 import it.eng.dome.revenue.engine.service.ReportingService;
 import it.eng.dome.tmforum.tmf632.v4.ApiException;
 
@@ -27,7 +27,7 @@ public class ReportingController {
     }
 
     @GetMapping("/{relatedPartyId}")
-    public List<Reporting> getDashboard(@PathVariable String relatedPartyId) throws ApiException, IOException {
+    public List<Report> getDashboard(@PathVariable String relatedPartyId) throws ApiException, IOException {
     	logger.info("Request reporting for Dashboard");
         return reportingService.getDashboardReport(relatedPartyId);
     }

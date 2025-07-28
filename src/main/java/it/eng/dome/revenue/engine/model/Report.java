@@ -2,39 +2,39 @@ package it.eng.dome.revenue.engine.model;
 
 import java.util.List;
 
-public class Reporting {
+public class Report {
 
     private String label;			// key
     private String text;            // value
     private String link;            // optional
-    private List<Reporting> items;  // recursive
+    private List<Report> items;  // recursive
     
     
-    public Reporting() {}
+    public Report() {}
 
-    public Reporting(String label) {
+    public Report(String label) {
 		this.label = label;
 	}
-    public Reporting(String label, String text) {
+    public Report(String label, String text) {
         this.label = label;
         this.text = text;
     }
     
-    public Reporting(String label, String text, String link) {
+    public Report(String label, String text, String link) {
         this.label = label;
         this.text = text;
         this.link = link;
 
     }
 
-    public Reporting(String label, String text, String link, List<Reporting> items) {
+    public Report(String label, String text, String link, List<Report> items) {
         this.label = label;
         this.text = text;
         this.link = link;
         this.items = items;
     }
 
-    public Reporting(String string, List<Reporting> items) {
+    public Report(String string, List<Report> items) {
     	this.label = string;
 		this.items = items;
     }
@@ -63,11 +63,11 @@ public class Reporting {
         this.link = link;
     }
 
-    public List<Reporting> getItems() {
+    public List<Report> getItems() {
         return items;
     }
 
-    public void setItems(List<Reporting> items) {
+    public void setItems(List<Report> items) {
         this.items = items;
     }
 }
