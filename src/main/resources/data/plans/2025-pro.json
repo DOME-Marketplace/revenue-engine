@@ -163,7 +163,7 @@
             "percent": 0
           },
           {
-            "name": "4% revenue share for transactions between 100k and 250k in the last 9 billing periods",
+            "name": "4% revenue share for transactions between 100k and 250k in the last 9 charge periods",
             "applicableBaseRange": {
               "min": 100000,
               "max": 250000
@@ -171,7 +171,7 @@
             "percent": 4
           },
           {
-            "name": "3.5% revenue share for transactions between 250K and 750k in the last 9 billing periods",
+            "name": "3.5% revenue share for transactions between 250K and 750k in the last 9 charge periods",
             "applicableBaseRange": {
               "min": 250000,
               "max": 750000
@@ -179,7 +179,7 @@
             "percent": 3.5
           },
           {
-            "name": "3% revenue share for transactions between 750K and 1M in the last 9 billing periods",
+            "name": "3% revenue share for transactions between 750K and 1M in the last 9 charge periods",
             "applicableBaseRange": {
               "min": 750000,
               "max": 1000000
@@ -187,7 +187,7 @@
             "percent": 3
           },
           {
-            "name": "2.5% revenue share for transactions over 1M in the last 9 billing periods",
+            "name": "2.5% revenue share for transactions over 1M in the last 9 charge periods",
             "applicableBaseRange": {
               "min": 1000000
             },

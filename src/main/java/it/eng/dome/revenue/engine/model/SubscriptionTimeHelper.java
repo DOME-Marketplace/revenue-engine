@@ -160,7 +160,7 @@ public class SubscriptionTimeHelper {
     public TimePeriod getCustomPeriod(OffsetDateTime time, Price price, String keyword) {
         // if the keyword is null or empty, return null
         if(keyword != null && !keyword.isEmpty()) {
-            Pattern p = Pattern.compile("^(LAST|PREVIOUS)_(\\d+)_BILLING_PERIODS$");
+            Pattern p = Pattern.compile("^(LAST|PREVIOUS)_(\\d+)_CHARGE_PERIODS$");
             var matcher = p.matcher(keyword);
             if(matcher.matches()) {
                 Integer howManyPeriods = Integer.parseInt(matcher.group(2));
