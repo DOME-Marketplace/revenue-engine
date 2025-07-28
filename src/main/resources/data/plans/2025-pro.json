@@ -11,9 +11,11 @@
   "contractDurationPeriodType": "YEAR",
   "renewalTermLength": 1,
   "renewalTermPeriodType": "YEAR",
-  "billingPeriodLength": "3",
-  "billingPeriodType": "MONTH",
-  "billingPeriodEnd": "END_OF_CALENDAR_MONTH", "comment": "alternative value is END_OF_BILLING_PERIOD",
+
+  "billingPeriodLength": "2",
+  "billingPeriodType": "WEEK",
+  "billingPeriodEnd": "LAST_DAY_OF_CALENDAR_MONTH", "comment": "alternative values are COMPUTED_DAY, NEXT_FRIDAY, NEXT_MONDAY, 15_OF_CALENDAR_MONTH, ...",
+
   "agreements": [
     "Annual subscription with renewal. Providers can receive up to 80% discount based on the sales volume from the previous year",
     "Referral bonus: an extra 10% discount on next year's fee for bringing 3 new providers or if a referred provider reaches 100k+ in sales"

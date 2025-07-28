@@ -1,7 +1,6 @@
 package it.eng.dome.revenue.engine.controller;
 
 import java.util.List;
-import java.util.Set;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -15,11 +14,12 @@ import org.springframework.web.bind.annotation.RestController;
 
 import it.eng.dome.revenue.engine.model.RevenueItem;
 import it.eng.dome.revenue.engine.model.RevenueStatement;
+import it.eng.dome.revenue.engine.model.SimpleBill;
 import it.eng.dome.revenue.engine.model.Subscription;
+import it.eng.dome.revenue.engine.service.BillsService;
 import it.eng.dome.revenue.engine.service.StatementsService;
 import it.eng.dome.revenue.engine.service.SubscriptionService;
 import it.eng.dome.revenue.engine.service.TmfDataRetriever;
-import it.eng.dome.tmforum.tmf678.v4.model.TimePeriod;
 
 
 @RestController
@@ -34,6 +34,9 @@ public class SubscriptionsController {
 
     @Autowired
 	private StatementsService statementsService;
+
+    @Autowired
+	private BillsService billsService;
 
 	@Autowired
 	TmfDataRetriever tmfDataRetriever;
@@ -88,10 +91,10 @@ public class SubscriptionsController {
         }
     }
 
-    @GetMapping("{subscriptionId}/bills")
-    public ResponseEntity<Set<TimePeriod>> getBillPeriods(@PathVariable String subscriptionId) {    	   
+    @GetMapping("{subscriptionId}/bills/")
+    public ResponseEntity<List<SimpleBill>> getBillPeriods(@PathVariable String subscriptionId) {    	   
         try {
-            return ResponseEntity.ok(this.statementsService.getBillPeriods(subscriptionId));
+            return ResponseEntity.ok(this.billsService.getSubscriptionBills(subscriptionId));
         } catch (Exception e) {
            logger.error(e.getMessage(), e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();

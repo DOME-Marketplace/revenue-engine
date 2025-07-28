@@ -171,7 +171,7 @@ public class PriceCalculator {
             case ONE_TIME_PREPAID:
                 return timePeriod.getStartDateTime();
             case RECURRING_POSTPAID:
-                return timePeriod.getEndDateTime();
+                return timePeriod.getEndDateTime().minusSeconds(1);
             default:
 //                logger.warn("Unknown price type for charge time: {}. Defaulting to endTime", price.getType());
 //                return timePeriod.getEndDateTime();
