@@ -13,6 +13,7 @@
   "renewalTermPeriodType": "YEAR",
   "billingPeriodLength": "3",
   "billingPeriodType": "MONTH",
+  "billingPeriodEnd": "END_OF_CALENDAR_MONTH", "comment": "alternative value is END_OF_BILLING_PERIOD",
   "agreements": [
     "Annual subscription with renewal. Providers can receive up to 80% discount based on the sales volume from the previous year",
     "Referral bonus: an extra 10% discount on next year's fee for bringing 3 new providers or if a referred provider reaches 100k+ in sales"
@@ -61,59 +62,47 @@
               "name": "Discount based on previous year's sales",
               "isBundle": true,
               "bundleOp": "ALTERNATIVE_HIGHER",
+              "applicableBaseReferencePeriod": "PREVIOUS_SUBSCRIPTION_PERIOD",
+              "applicableBase": "bills-no-taxes",
+              "computationBase": "parent-price",
               "discounts": [
                 {
                   "name": "No discount for sales up to 100k",
-                  "applicableBaseReferencePeriod": "PREVIOUS_SUBSCRIPTION_PERIOD",
-                  "applicableBase": "bills-no-taxes",
                   "applicableBaseRange": {
                     "min": 0,
                     "max": 100000
                   },
-                  "computationBase": "parent-price",
                   "percent": 0
                 },
                 {
                   "name": "15% Discount for sales between 100k and 250k",
-                  "applicableBaseReferencePeriod": "PREVIOUS_SUBSCRIPTION_PERIOD",
-                  "applicableBase": "bills-no-taxes",
                   "applicableBaseRange": {
                     "min": 100001,
                     "max": 250000
                   },
-                  "computationBase": "parent-price",
                   "percent": 15
                 },
                 {
                   "name": "30% discount for sales between 250k and 750k",
-                  "applicableBaseReferencePeriod": "PREVIOUS_SUBSCRIPTION_PERIOD",
-                  "applicableBase": "bills-no-taxes",
                   "applicableBaseRange": {
                     "min": 250001,
                     "max": 750000
                   },
-                  "computationBase": "parent-price",
                   "percent": 30
                 },
                 {
                   "name": "50% Discount for sales between 750k and 1M",
-                  "applicableBaseReferencePeriod": "PREVIOUS_SUBSCRIPTION_PERIOD",
-                  "applicableBase": "bills-no-taxes",
                   "applicableBaseRange": {
                     "min": 750001,
                     "max": 1000000
                   },
-                  "computationBase": "parent-price",
                   "percent": 50
                 },
                 {
                   "name": "80% discount for sales over 1M",
-                  "applicableBaseReferencePeriod": "PREVIOUS_SUBSCRIPTION_PERIOD",
-                  "applicableBase": "bills-no-taxes",
                   "applicableBaseRange": {
                     "min": 1000001
                   },
-                  "computationBase": "parent-price",
                   "percent": 80
                 }
               ]
@@ -122,12 +111,12 @@
               "name": "Referred-based Discount",
               "isBundle": true,
               "bundleOp": "ALTERNATIVE_HIGHER",
+              "applicableBaseReferencePeriod": "PREVIOUS_SUBSCRIPTION_PERIOD",
               "discounts": 
               [
                 {
 				          "name": "Discount for referring 3 providers",
                   "applicableBase": "referred-providers-number",
-                  "applicableBaseReferencePeriod": "PREVIOUS_SUBSCRIPTION_PERIOD",
 				          "applicableBaseRange": {
                     "min": 3
                   },
@@ -137,7 +126,6 @@
                 {
 				          "name": "Discount for referred provider with sales over 100k",
                   "applicableBase": "referred-providers-transaction-volume",
-                  "applicableBaseReferencePeriod": "PREVIOUS_SUBSCRIPTION_PERIOD",
                   "applicableBaseRange": {
                     "min": 100000
                   },
@@ -156,93 +144,50 @@
 	  	  "bundleOp": "CUMULATIVE",
         "recurringChargePeriodLength": 1,
         "recurringChargePeriodType": "MONTH",
+        "ignorePeriod": "FIRST_3_CHARGE_PERIODS",
+        "applicableBaseReferencePeriod": "LAST_9_BILLING_PERIODS",
+        "applicableFrom": "2025-01-01T00:00:00Z",
+        "applicableBase": "bills-no-taxes",
+        "currency": "EUR",
         "prices": [
           {
             "name": "Nothing to be shared with DOME for transactions below 100k",
-            "applicableBaseReferencePeriod": "LAST_9_BILLING_PERIODS",
-            "applicableFrom": "2025-01-01T00:00:00Z",
-            "applicableBase": "bills-no-taxes",
             "applicableBaseRange": {
               "min": 0,
               "max": 100000
             },
-            "amount": 0,
-            "currency": "EUR"
+            "percent": 0
           },
           {
             "name": "4% revenue share for transactions between 100k and 250k in the last 9 billing periods",
-            "applicableBaseReferencePeriod": "LAST_9_BILLING_PERIODS",
-            "applicableFrom": "2025-01-01T00:00:00Z",
-            "applicableBase": "bills-no-taxes",
             "applicableBaseRange": {
-              "min": 100001,
+              "min": 100000,
               "max": 250000
             },
-            "computationBase": "bills-no-taxes",
-            "computationBaseReferencePeriod": "LAST_9_BILLING_PERIODS",
-            "computationFrom": "2026-01-01T00:00:00Z",
-            "percent": 4,
-            "discount": {
-              "name" : "Discount example for price range 2",
-              "amount": 4000,
-              "currency": "EUR"
-            }
+            "percent": 4
           },
           {
             "name": "3.5% revenue share for transactions between 250K and 750k in the last 9 billing periods",
-            "applicableBaseReferencePeriod": "LAST_9_BILLING_PERIODS",
-            "applicableFrom": "2025-01-01T00:00:00Z",
-            "applicableBase": "bills-no-taxes",
             "applicableBaseRange": {
-              "min": 250001,
+              "min": 250000,
               "max": 750000
             },
-            "computationBase": "bills-no-taxes",
-            "computationBaseReferencePeriod": "LAST_9_BILLING_PERIODS",
-            "computationFrom": "2026-01-01T00:00:00Z",
-            "percent": 3.5,
-            "discount": {
-              "name" : "Discount example for price range 3",
-              "amount": 8750,
-              "currency": "EUR"
-            }
+            "percent": 3.5
           },
           {
             "name": "3% revenue share for transactions between 750K and 1M in the last 9 billing periods",
-            "applicableBaseReferencePeriod": "LAST_9_BILLING_PERIODS",
-            "applicableBase": "bills-no-taxes",
-            "applicableFrom": "2025-01-01T00:00:00Z",
             "applicableBaseRange": {
-              "min": 750001,
+              "min": 750000,
               "max": 1000000
             },
-            "computationBase": "bills-no-taxes",
-            "computationBaseReferencePeriod": "LAST_9_BILLING_PERIODS",
-            "computationFrom": "2026-01-01T00:00:00Z",
-            "percent": 3,
-            "discount": {
-              "name" : "Discount example for price range 4",
-              "amount": 22500,
-              "currency": "EUR"
-            }
+            "percent": 3
           },
           {
             "name": "2.5% revenue share for transactions over 1M in the last 9 billing periods",
-            "applicableBaseReferencePeriod": "LAST_9_BILLING_PERIODS",
-            "applicableBase": "bills-no-taxes",
-            "applicableFrom": "2025-01-01T00:00:00Z",
             "applicableBaseRange": {
-              "min": 1000001
+              "min": 1000000
             },
-            "computationBase": "bills-no-taxes",
-            "computationBaseReferencePeriod": "LAST_9_BILLING_PERIODS",
-            "computationFrom": "2026-01-01T00:00:00Z",
-            "percent": 2.5,
-            "discount": {
-              "name" : "Discount example for price range 5",
-              "amount": 25000,
-              "currency": "EUR"
-            }
+            "percent": 2.5
           }
         ]
       }

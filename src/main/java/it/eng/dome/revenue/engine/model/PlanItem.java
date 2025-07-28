@@ -61,10 +61,11 @@ public class PlanItem {
 	@JsonIgnore
 	private Price parentPrice;
 	
-	
-
 	public String getApplicableBase() {
-		return applicableBase;
+		if(this.getParentPrice()!=null && this.getParentPrice().getApplicableBase()!=null)
+			return this.getParentPrice().getApplicableBase();
+		else
+			return this.applicableBase;
 	}
 
 	public void setApplicableBase(String applicableBase) {
@@ -104,7 +105,10 @@ public class PlanItem {
 	}
 
     public String getComputationBase() {
-		return computationBase;
+		if(this.getParentPrice()!=null && this.getParentPrice().getComputationBase()!=null)
+			return this.getParentPrice().getComputationBase();
+		else
+			return this.computationBase;
 	}
 
 	public void setComputationBase(String computationBase) {
@@ -112,7 +116,10 @@ public class PlanItem {
 	}
 
     public Range getApplicableBaseRange() {
-		return applicableBaseRange;
+		if(this.getParentPrice()!=null && this.getParentPrice().getApplicableBaseRange()!=null)
+			return this.getParentPrice().getApplicableBaseRange();
+		else
+			return this.applicableBaseRange;
 	}
 
 	public void setApplicableBaseRange(Range applicableBaseRange) {
@@ -120,7 +127,10 @@ public class PlanItem {
 	}
 
 	public String getCurrency() {
-		return currency;
+		if(this.getParentPrice()!=null && this.getParentPrice().getCurrency()!=null)
+			return this.getParentPrice().getCurrency();
+		else
+			return this.currency;
 	}
 
 	public void setCurrency(String currency) {
@@ -144,7 +154,10 @@ public class PlanItem {
 	}
 
 	public ReferencePeriod getApplicableBaseReferencePeriod() {
-		return applicableBaseReferencePeriod;
+		if(this.getParentPrice()!=null && this.getParentPrice().getApplicableBaseReferencePeriod()!=null)
+			return this.getParentPrice().getApplicableBaseReferencePeriod();
+		else
+			return this.applicableBaseReferencePeriod;
 	}
 
 	public void setApplicableBaseReferencePeriod(ReferencePeriod applicableBaseReferencePeriod) {
@@ -152,7 +165,10 @@ public class PlanItem {
 	}
 
 	public ReferencePeriod getComputationBaseReferencePeriod() {
-		return computationBaseReferencePeriod;
+		if(this.getParentPrice()!=null && this.getParentPrice().getComputationBaseReferencePeriod()!=null)
+			return this.getParentPrice().getComputationBaseReferencePeriod();
+		else
+			return this.computationBaseReferencePeriod;
 	}
 
 	public void setComputationBaseReferencePeriod(ReferencePeriod computationBaseReferencePeriod) {
@@ -160,7 +176,10 @@ public class PlanItem {
 	}
 
 	public OffsetDateTime getApplicableFrom() {
-		return this.applicableFrom;
+		if(this.getParentPrice()!=null && this.getParentPrice().getApplicableFrom()!=null)
+			return this.getParentPrice().getApplicableFrom();
+		else
+			return this.applicableFrom;
 	}
 
 	public void setApplicableFrom(OffsetDateTime applicableFrom) {
@@ -168,7 +187,10 @@ public class PlanItem {
 	}
 
 	public OffsetDateTime getComputationFrom() {
-		return this.computationFrom;
+		if(this.getParentPrice()!=null && this.getParentPrice().getComputationFrom()!=null)
+			return this.getParentPrice().getComputationFrom();
+		else
+			return this.computationFrom;
 	}
 
 	public void setComputationFrom(OffsetDateTime computationFrom) {
