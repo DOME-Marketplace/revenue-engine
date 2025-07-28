@@ -40,48 +40,7 @@ public class ReportingService {
     @Autowired
     MetricsRetriever metricsRetriever;
 
-    public List<RevenueStatement> getRevenueStatements(String relatedPartyId) throws ApiException, IOException {
-        logger.info("Call getRevenueStatements with relatedPartyId: {}", relatedPartyId);
-                
-        try {
-            String subscriptionId = subscriptionService.getSubscriptionIdByRelatedPartyId(relatedPartyId);
-            logger.info("Get subscriptionId: {}", subscriptionId);
 
-            // prepare output
-            List<RevenueStatement> statements = new ArrayList<>();
-
-            // retrieve the subscription by id
-            Subscription sub = subscriptionService.getSubscriptionById(subscriptionId);
-            logger.info("Subscription: {}", sub);
-
-            // retrive the plan for the subscription
-            Plan plan = this.planService.findPlanById(sub.getPlan().getId());
-
-            // add the full plan to the subscription
-            sub.setPlan(plan);
-
-            // configure the price calculator
-            priceCalculator.setSubscription(sub);
-
-            // build all statements
-            SubscriptionTimeHelper timeHelper = new SubscriptionTimeHelper(sub);
-            for(TimePeriod tp : timeHelper.getChargePeriodTimes()) {
-                RevenueStatement statement = priceCalculator.compute(tp);
-                if(statement!=null) {
-                    statement.clusterizeItems();
-                    statements.add(statement);
-                }
-            }
-
-            // replace the plan with a reference
-            sub.setPlan(plan.buildRef());
-
-            return statements;
-        } catch (Exception e) {
-           logger.error(e.getMessage(), e);
-           throw(e);
-        }
-    }
 
     public List<Reporting> getDashboardReport(String relatedPartyId) throws ApiException, IOException {
         logger.info("Call getDashboardReport for relatedPartyId: {}", relatedPartyId);
@@ -132,6 +91,8 @@ public class ReportingService {
         return report;
     }
 
+
+    
     public Reporting getSubscriptionSection(String relatedPartyId) throws ApiException, IOException {
         Subscription subscription = subscriptionService.getSubscriptionByRelatedPartyId(relatedPartyId);
         if (subscription == null) {
@@ -174,6 +135,49 @@ public class ReportingService {
                ));
        }
     
+    public List<RevenueStatement> getRevenueStatements(String relatedPartyId) throws ApiException, IOException {
+        logger.info("Call getRevenueStatements with relatedPartyId: {}", relatedPartyId);
+                
+        try {
+            String subscriptionId = subscriptionService.getSubscriptionIdByRelatedPartyId(relatedPartyId);
+            logger.info("Get subscriptionId: {}", subscriptionId);
+
+            // prepare output
+            List<RevenueStatement> statements = new ArrayList<>();
+
+            // retrieve the subscription by id
+            Subscription sub = subscriptionService.getSubscriptionById(subscriptionId);
+            logger.info("Subscription: {}", sub);
+
+            // retrive the plan for the subscription
+            Plan plan = this.planService.findPlanById(sub.getPlan().getId());
+
+            // add the full plan to the subscription
+            sub.setPlan(plan);
+
+            // configure the price calculator
+            priceCalculator.setSubscription(sub);
+
+            // build all statements
+            SubscriptionTimeHelper timeHelper = new SubscriptionTimeHelper(sub);
+            for(TimePeriod tp : timeHelper.getChargePeriodTimes()) {
+                RevenueStatement statement = priceCalculator.compute(tp);
+                if(statement!=null) {
+                    statement.clusterizeItems();
+                    statements.add(statement);
+                }
+            }
+
+            // replace the plan with a reference
+            sub.setPlan(plan.buildRef());
+
+            return statements;
+        } catch (Exception e) {
+           logger.error(e.getMessage(), e);
+           throw(e);
+        }
+    }
+    
     
     public Reporting getTotalRevenueSection(List<RevenueStatement> statements) {
         if (statements == null || statements.isEmpty()) {
@@ -205,7 +209,7 @@ public class ReportingService {
             
             // Check if the period is within the current month or year
             // FIXME: this is a bit of a hack(ONLY FOR CURRENT MONTH AND YEAR), but it works for now
-            if (containsToday && (duration < 32 && duration > 28)) {
+            if (containsToday && (duration < 32 && duration >= 28)) {
                 
                 monthly = new Reporting(
                     String.format("Current Monthly Revenue: "),
