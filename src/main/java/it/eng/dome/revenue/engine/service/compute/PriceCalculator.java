@@ -79,24 +79,29 @@ public class PriceCalculator {
             RevenueItem bundleResult = this.getBundlePrice(price, timePeriod);
             return bundleResult;
         } else {
-            RevenueItem atomicPrice = this.getAtomicPrice(price, timePeriod);
-            if (atomicPrice == null) {
+            RevenueItem priceRevenueItem = this.getAtomicPrice(price, timePeriod);
+            if (priceRevenueItem == null) {
                 logger.info("Price {} not applicable (atomic price is null), skipping item creation.", price.getName());
                 return null;
             }
-            RevenueItem item = atomicPrice;
 
             if (price.getDiscount() != null) {
-                List<RevenueItem> discountItems = this.getDiscountItems(price, timePeriod);
+                List<RevenueItem> discountRevenueItems = this.getDiscountItems(price, timePeriod);
+                if(discountRevenueItems!=null) {
+                    for(RevenueItem di: discountRevenueItems)
+                        priceRevenueItem.addRevenueItem(di);
+                }
+                /*
                 if (!discountItems.isEmpty()) {
                     if (item.getItems() == null) {
                         item.setItems(new ArrayList<>());
                     }
                     item.getItems().addAll(discountItems);
                 }
+                */
             }
 
-            return item;
+            return priceRevenueItem;
         }
     }
 
@@ -157,6 +162,14 @@ public class PriceCalculator {
 
         RevenueItem outItem = new RevenueItem(price.getName(), amountValue, "EUR");
         outItem.setChargeTime(this.getChargeTime(tp, price));
+
+        // variable prices for future items lead to estimaed revenueItems
+        if(price.isVariable() && outItem.getChargeTime().isAfter(OffsetDateTime.now())) {
+            outItem.setEstimated(true);
+        } else {
+            outItem.setEstimated(false);
+        }
+
         return outItem;
     }
 
@@ -299,7 +312,6 @@ public class PriceCalculator {
             return null;
         }
     }
-
     
     private Double getApplicableValue(Price price, String buyerId, TimePeriod tp) {
         if (price.getApplicableBase() == null || price.getApplicableBase().isEmpty()) {
@@ -347,7 +359,7 @@ public class PriceCalculator {
             return null;
         }
     }
-//    private RevenueItem getCumulativePrice(Price bundlePrice, OffsetDateTime time) {
+
     private RevenueItem getCumulativePrice(Price bundlePrice, TimePeriod timePeriod) {
         List<Price> childPrices = bundlePrice.getPrices();
         logger.debug("Computing cumulative price from {} items", childPrices.size());
@@ -356,9 +368,10 @@ public class PriceCalculator {
         cumulativeItem.setItems(new ArrayList<>());
 
         for (Price p : childPrices) {
-            RevenueItem current = this.compute(p, timePeriod);
-            if (current != null) {
-                cumulativeItem.getItems().add(current);
+            RevenueItem childRevenueItem = this.compute(p, timePeriod);
+            if (childRevenueItem != null) {
+//                cumulativeItem.getItems().add(current);
+                cumulativeItem.addRevenueItem(childRevenueItem);
             }
         }
 
@@ -369,7 +382,6 @@ public class PriceCalculator {
         return cumulativeItem;
     }
 
-//    private RevenueItem getHigherPrice(Price bundlePrice, OffsetDateTime time) {
     private RevenueItem getHigherPrice(Price bundlePrice, TimePeriod timePeriod) {
         List<Price> childPrices = bundlePrice.getPrices();
         logger.debug("Finding higher price from {} items", childPrices.size());
@@ -390,14 +402,16 @@ public class PriceCalculator {
         }
 
         RevenueItem wrapper = new RevenueItem(bundlePrice.getName(), bundlePrice.getCurrency());
+        wrapper.addRevenueItem(bestItem);
+        /*
         List<RevenueItem> items = new ArrayList<>();
         items.add(bestItem);
         wrapper.setItems(items);
+        */
 
         return wrapper;
     }
 
-//    private RevenueItem getLowerPrice(Price bundlePrice, OffsetDateTime time) {
     private RevenueItem getLowerPrice(Price bundlePrice, TimePeriod timePeriod) {
         List<Price> childPrices = bundlePrice.getPrices();
         logger.debug("Finding lower price from {} items", childPrices.size());
@@ -418,9 +432,12 @@ public class PriceCalculator {
         }
 
         RevenueItem wrapper = new RevenueItem(bundlePrice.getName(), bundlePrice.getCurrency());
+        wrapper.addRevenueItem(bestItem);
+        /*
         List<RevenueItem> items = new ArrayList<>();
         items.add(bestItem);
         wrapper.setItems(items);
+        */
 
         return wrapper;
     }
