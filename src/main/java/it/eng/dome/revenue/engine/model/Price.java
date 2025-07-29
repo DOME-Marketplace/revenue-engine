@@ -112,6 +112,19 @@ public class Price extends PlanItem {
 		}
 	}
 
+	public boolean isVariable() {
+		if(this.prices!=null)
+			for(Price p: this.prices) {
+				if(p.isVariable())
+					return true;
+			}
+		if(this.discount!=null && this.discount.isVariable())
+			return true;
+		if(this.isConditional())
+			return true;
+		return false;
+	}
+
 	@Override
 	public String toString() {
 		return "Price [name=" + this.getName() + ", type=" + type + ", isBundle=" + this.getIsBundle() + ", bundleOp=" + this.getBundleOp()

@@ -22,7 +22,7 @@
   "billingPeriodEnd": "LAST_DAY_OF_CALENDAR_MONTH", "comment": "alternative values are COMPUTED_DAY, NEXT_FRIDAY, NEXT_MONDAY, 15_OF_CALENDAR_MONTH, ...",
 
   "price": {
-    "name": "All plan components",
+    "name": "BASIC Plan price components (2025)",
     "isBundle": true,
     "currency": "EUR",
     "bundleOp": "CUMULATIVE",
@@ -41,19 +41,19 @@
         "recurringChargePeriodLength": 1,
         "recurringChargePeriodType": "YEAR",
         "discount": {
-          "name": "List of Discounts",
+          "name": "Discount on yearly fee based on previous years sales and referrals",
           "isBundle": true,
           "bundleOp": "CUMULATIVE",
           "discounts": [
             {
-              "name": "AtomicPrice-based Discount",
+              "name": "Discount based on previous year's sales",
               "isBundle": true,
               "bundleOp": "ALTERNATIVE_HIGHER",
+              "applicableBaseReferencePeriod": "PREVIOUS_SUBSCRIPTION_PERIOD",
+              "applicableBase": "bills-no-taxes",
               "discounts": [
                 {
                   "name": "Discount Tier 1",
-                  "applicableBaseReferencePeriod": "PREVIOUS_SUBSCRIPTION_PERIOD",
-                  "applicableBase": "bills-no-taxes",
                   "applicableBaseRange": {
                     "min": 0,
                     "max": 100000
@@ -63,8 +63,6 @@
                 },
                 {
                   "name": "Discount Tier 2",
-                  "applicableBaseReferencePeriod": "PREVIOUS_SUBSCRIPTION_PERIOD",
-                  "applicableBase": "bills-no-taxes",
                   "applicableBaseRange": {
                     "min": 100001,
                     "max": 250000
@@ -74,8 +72,6 @@
                 },
                 {
                   "name": "Discount Tier 3",
-                  "applicableBaseReferencePeriod": "PREVIOUS_SUBSCRIPTION_PERIOD",
-                  "applicableBase": "bills-no-taxes",
                   "applicableBaseRange": {
                     "min": 250001,
                     "max": 750000
@@ -85,8 +81,6 @@
                 },
                 {
                   "name": "Discount Tier 4",
-                  "applicableBaseReferencePeriod": "PREVIOUS_SUBSCRIPTION_PERIOD",
-                  "applicableBase": "bills-no-taxes",
                   "applicableBaseRange": {
                     "min": 750001,
                     "max": 1000000
@@ -96,8 +90,6 @@
                 },
                 {
                   "name": "Discount Tier 5",
-                  "applicableBaseReferencePeriod": "PREVIOUS_SUBSCRIPTION_PERIOD",
-                  "applicableBase": "bills-no-taxes",
                   "applicableBaseRange": {
                     "min": 1000001
                   },
@@ -110,26 +102,24 @@
               "name": "Referred-based Discount",
               "isBundle": true,
               "bundleOp": "ALTERNATIVE_HIGHER",
+              "computationBase": "parent-price",
+              "applicableBaseReferencePeriod": "PREVIOUS_SUBSCRIPTION_PERIOD",
               "discounts": 
               [
                 {
                   "name": "Discount for referring 3 providers",
                   "applicableBase": "referred-providers-number",
-                  "applicableBaseReferencePeriod": "PREVIOUS_SUBSCRIPTION_PERIOD",
                    "applicableBaseRange": {
                         "min": 3
                     },
-                  "computationBase": "parent-price",
                   "percent": 10			
                 },
                 {
                   "name": "Discount for referred provider with sales over 100k",
                   "applicableBase": "referred-providers-transaction-volume",
-                  "applicableBaseReferencePeriod": "PREVIOUS_SUBSCRIPTION_PERIOD",
                   "applicableBaseRange": {
                     "min": 100000
                   },
-                  "computationBase": "parent-price",
                   "percent": 10
                 }
               ]
@@ -138,99 +128,58 @@
         }
       },
       {
-        "name": "Transaction-based Fee",
+        "name": "Montly revenue-sharing based on transactions",
         "type": "RECURRING_POSTPAID",
   	  	"isBundle": true,
 	  	  "bundleOp": "CUMULATIVE",
         "recurringChargePeriodLength": 1,
         "recurringChargePeriodType": "MONTH",
+        "ignorePeriod": "FIRST_3_CHARGE_PERIODS",
+        "applicableBaseReferencePeriod": "LAST_9_CHARGE_PERIODS",
+        "applicableFrom": "2025-01-01T00:00:00Z",
+        "applicableBase": "bills-no-taxes",
+        "computationBaseReferencePeriod": "CURRENT_CHARGE_PERIOD",
+        "computationBase": "bills-no-taxes",
+        "currency": "EUR",
         "prices": [
           {
             "name": "Price Tier 1",
-            "applicableBaseReferencePeriod": "LAST_9_BILLING_PERIODS",
-            "applicableFrom": "2026-01-01T00:00:00Z",
-            "applicableBase": "bills-no-taxes",
             "applicableBaseRange": {
               "min": 0,
               "max": 100000
             },
-            "amount": 0,
-            "currency": "EUR"
+            "amount": 0
           },
           {
             "name": "Price Range 2",
-            "applicableBaseReferencePeriod": "LAST_9_BILLING_PERIODS",
-            "applicableFrom": "2026-01-01T00:00:00Z",
-            "applicableBase": "bills-no-taxes",
             "applicableBaseRange": {
               "min": 100001,
               "max": 250000
             },
-            "computationBase": "bills-no-taxes",
-            "computationBaseReferencePeriod": "LAST_9_BILLING_PERIODS",
-            "computationFrom": "2026-01-01T00:00:00Z",
-            "percent": 4,
-            "discount": {
-              "name" : "Discount example for price range 2", 
-              "amount": 4000,
-              "currency": "EUR"
-            }
+            "percent": 4
           },
           {
             "name": "Price Range 3",
-            "applicableBaseReferencePeriod": "LAST_9_BILLING_PERIODS",
-            "applicableFrom": "2026-01-01T00:00:00Z",
-            "applicableBase": "bills-no-taxes",
             "applicableBaseRange": {
               "min": 250001,
               "max": 750000
             },
-            "computationBase": "bills-no-taxes",
-            "computationBaseReferencePeriod": "LAST_9_BILLING_PERIODS",
-            "computationFrom": "2026-01-01T00:00:00Z",
-            "percent": 3.5,
-            "discount": {
-              "name" : "Discount example for price range 3",
-              "amount": 8750,
-              "currency": "EUR"
-            }
+            "percent": 3.5
           },
           {
             "name": "Price Range 4",
-            "applicableBaseReferencePeriod": "LAST_9_BILLING_PERIODS",
-            "applicableBase": "bills-no-taxes",
-            "applicableFrom": "2026-01-01T00:00:00Z",
             "applicableBaseRange": {
               "min": 750001,
               "max": 1000000
             },
-            "computationBase": "bills-no-taxes",
-            "computationBaseReferencePeriod": "LAST_9_BILLING_PERIODS",
-            "computationFrom": "2026-01-01T00:00:00Z",
-            "percent": 3,
-            "discount": {
-              "name" : "Discount example for price range 4",
-              "amount": 22500,
-              "currency": "EUR"
-            }
+            "percent": 3
           },
           {
             "name": "Price Range 5",
-            "referenceapplicableBaseReferencePeriodPeriod": "LAST_9_BILLING_PERIODS",
-            "applicableBase": "bills-no-taxes",
-            "applicableFrom": "2026-01-01T00:00:00Z",
             "applicableBaseRange": {
               "min": 1000001
             },
-            "computationBase": "bills-no-taxes",
-            "computationBaseReferencePeriod": "LAST_9_BILLING_PERIODS",
-            "computationFrom": "2026-01-01T00:00:00Z",
-            "percent": 2.5,
-            "discount": {
-              "name" : "Discount example for price range 5",
-              "amount": 25000,
-              "currency": "EUR"
-            }
+            "percent": 2.5
           }
         ]
       }

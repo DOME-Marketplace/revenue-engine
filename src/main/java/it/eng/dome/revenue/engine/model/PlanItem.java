@@ -9,7 +9,7 @@ import jakarta.validation.Valid;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.PositiveOrZero;
 
-public class PlanItem {
+public abstract class PlanItem {
 
     @JsonProperty("name")
 	private String name;
@@ -196,5 +196,16 @@ public class PlanItem {
 	public void setComputationFrom(OffsetDateTime computationFrom) {
 		this.computationFrom = computationFrom;
 	}
+
+	@JsonIgnore
+	public boolean isConditional() {
+		if(this.getApplicableBase()!=null || this.getApplicableBaseRange()!=null || this.getApplicableBaseReferencePeriod()!=null || this.getApplicableFrom()!=null)
+			return true;
+		if(this.getPercent()!=null)
+			return true;
+		return false;
+	}
+
+	public abstract boolean isVariable();
 
 }
