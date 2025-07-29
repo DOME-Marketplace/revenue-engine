@@ -82,6 +82,29 @@ public class TmfDataRetriever implements InitializingBean {
         logger.debug("found " + out.size() + " bills in the specified period");
         return out;
     }
+    
+    //TODO: rename with correct name - created for BillingHistorySection of report
+    public List<AppliedCustomerBillingRate> retrieveAllBills(String relatedPartyId, TimePeriod timePeriod) throws Exception {
+        logger.debug("Retrieving all bills from TMF API between " + timePeriod.getStartDateTime() + " and " + timePeriod.getEndDateTime());
+
+        // prepare the filter: only billed bills and in the given period
+        Map<String, String> filter = new HashMap<>();
+        if(timePeriod.getStartDateTime()!=null)
+            filter.put("date.gt", timePeriod.getStartDateTime().toString());
+        if(timePeriod.getEndDateTime()!=null)
+            filter.put("date.lt", timePeriod.getEndDateTime().toString());
+        if(relatedPartyId!=null) {
+            filter.put("relatedParty", relatedPartyId);
+//            filter.put("relatedParty.role", "Seller");
+            logger.debug("Retrieving all bills for relatedParty with id: " + relatedPartyId);
+        } else {
+            logger.debug("Retrieving all bills in the specified period");
+        }
+        // retrieve bills
+        List<AppliedCustomerBillingRate> out = billApi.getAllAppliedCustomerBillingRates(null, filter);
+        logger.debug("found " + out.size() + " bills in the specified period");
+        return out;
+    }
 
     // retrieve all providers with at least one bill in the specified period
     public List<Organization> retrieveActiveSellers(TimePeriod timePeriod) throws Exception {

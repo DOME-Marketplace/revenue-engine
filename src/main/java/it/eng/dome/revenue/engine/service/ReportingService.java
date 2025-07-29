@@ -25,12 +25,16 @@ import it.eng.dome.revenue.engine.model.Subscription;
 import it.eng.dome.revenue.engine.model.SubscriptionTimeHelper;
 import it.eng.dome.revenue.engine.service.compute.PriceCalculator;
 import it.eng.dome.tmforum.tmf632.v4.ApiException;
+import it.eng.dome.tmforum.tmf678.v4.model.AppliedCustomerBillingRate;
 import it.eng.dome.tmforum.tmf678.v4.model.TimePeriod;
 
 @Service
 public class ReportingService {
     
     protected final Logger logger = LoggerFactory.getLogger(ReportingService.class);
+    
+    @Autowired
+    TmfDataRetriever tmfDataRetriever;
 
     @Autowired
     SubscriptionService subscriptionService;
@@ -57,22 +61,15 @@ public class ReportingService {
         report.add(subscriptionSection);
 
         // 2: Billing History (hardcoded)
-        report.add(new Report("Billing History", Arrays.asList(
-            new Report("Invoice INV-2025-001", Arrays.asList(
-                new Report("Status", "Paid"),
-                new Report("Issued On", "2025-01-15"),
-                new Report("Download", "Download PDF", "https://billing.dome.org/invoices/INV-2025-001")
-            )),
-            new Report("Invoice INV-2025-002", Arrays.asList(
-                new Report("Status", "Pending"),
-                new Report("Issued On", "2025-06-15"),
-                new Report("Download", "Download PDF", "https://billing.dome.org/invoices/INV-2025-002")
-            ))
-        )));
+        try {
+			report.add(getBillingHistorySection(relatedPartyId));
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 
         // 3: Revenue section (computed) 
-        List<RevenueStatement> statements = getRevenueStatements(relatedPartyId);
-        report.add(getTotalRevenueSection(statements));
+        report.add(getRevenueSection(relatedPartyId));
 
 		// 4: Referral Program Area (computed)
 		try {
@@ -96,8 +93,6 @@ public class ReportingService {
         return report;
     }
 
-
-    
     public Report getSubscriptionSection(String relatedPartyId) throws ApiException, IOException {
         Subscription subscription = subscriptionService.getSubscriptionByRelatedPartyId(relatedPartyId);
         if (subscription == null) {
@@ -125,102 +120,43 @@ public class ReportingService {
         ));
     }
     
-    public Report getReferralSection(String relatedPartyId) throws Exception {
-        logger.info("Call getReferralSection for relatedPartyId: {}", relatedPartyId);
-        
-        Subscription subscription = subscriptionService.getSubscriptionByRelatedPartyId(relatedPartyId);
-        SubscriptionTimeHelper timeHelper = new SubscriptionTimeHelper(subscription);
-        TimePeriod subscriptionPeriod = timeHelper.getSubscriptionPeriodAt(subscription.getStartDate());
-        
-        Integer referralProviders = metricsRetriever.computeReferralsProvidersNumber(
-            subscription.getBuyerId(), 
-            subscriptionPeriod
-        );
+    public Report getBillingHistorySection(String relatedPartyId) throws Exception {
+        TimePeriod tp = new TimePeriod();
+        String subscriptionId = subscriptionService.getSubscriptionIdByRelatedPartyId(relatedPartyId);
+        Subscription subscription = subscriptionService.getSubscriptionById(subscriptionId);
+        tp.setStartDateTime(subscription.getStartDate());
+        tp.setEndDateTime(OffsetDateTime.now());
+		
+        List<AppliedCustomerBillingRate> acbrList = tmfDataRetriever.retrieveAllBills(relatedPartyId, tp);
 
-        List<RevenueStatement> statements = getRevenueStatements(relatedPartyId);
-        
-        List<RevenueItem> referralDiscounts = extractReferralDiscounts(statements);
-        
-        String discountEarned = calculateTotalDiscountEarned(referralDiscounts);
-        
-        
-        return new Report("Referral Program Area", Arrays.asList(
-            new Report("Referred Providers", referralProviders != null ? referralProviders.toString() : "0"),
-            new Report("Reward Earned", discountEarned)));
-    }
+        if (acbrList.isEmpty()) {
+            return new Report("Billing History", "No billing data available");
+        }
 
-    private List<RevenueItem> extractReferralDiscounts(List<RevenueStatement> statements) {
-        List<RevenueItem> discounts = new ArrayList<>();
-        
-        if (statements == null) return discounts;
-
-        for (RevenueStatement statement : statements) {
-            for (RevenueItem item : statement.getRevenueItems()) {
-                // Search recursively through all nested items
-                findNestedReferralDiscounts(item, discounts);
+        List<Report> invoiceReports = new ArrayList<>();
+        for (AppliedCustomerBillingRate acbr : acbrList) {
+            List<Report> details = new ArrayList<>();
+            boolean isPaid = Boolean.TRUE.equals(acbr.getIsBilled()) && acbr.getBill() != null;
+            details.add(new Report("Status", isPaid ? "Paid" : "Pending"));
+            details.add(new Report("Issued On", acbr.getDate() != null ? acbr.getDate().toString() : "-"));
+//            if (acbr.getHref() != null) {
+//                String link = "https://billing.dome.org/acbr/" + acbr.getHref(); // oppure dove ospiti il PDF
+//                details.add(new Report("Download", "Download PDF", link));
+//            }
+            if(acbr.getBill() != null) {
+            	invoiceReports.add(new Report("Invoice " + acbr.getBill().getId(), details));
+            }
+            else {
+            	invoiceReports.add(new Report("ACBR " + acbr.getId(), details));
             }
         }
-        return discounts;
+
+        return new Report("Billing History", invoiceReports);
     }
 
-    private void findNestedReferralDiscounts(RevenueItem item, List<RevenueItem> discounts) {
-        if (item == null) return;
-        
-        // Check if current item is a referral discount
-        if (isReferralDiscount(item)) {
-            discounts.add(item);
-        }
-        
-        // Recursively check nested items
-        if (item.getItems() != null) {
-            for (RevenueItem subItem : item.getItems()) {
-                findNestedReferralDiscounts(subItem, discounts);
-            }
-        }
-    }
-
-    private boolean isReferralDiscount(RevenueItem item) {
-        return item != null && 
-               item.getName() != null && 
-               (item.getName().toLowerCase().contains("referr") || 
-                item.getName().toLowerCase().contains("discount")) &&
-               item.getValue() != null && 
-               item.getValue() < 0; // Only negative values (actual discounts)
-    }
-
-    private String calculateTotalDiscountEarned(List<RevenueItem> discountItems) {
-        double total = discountItems.stream()
-            .filter(Objects::nonNull)
-            .mapToDouble(item -> Math.abs(item.getValue()))
-            .sum();
-        
-        return format(total) + " EUR";
-    }
-
-
-
-    public List<RevenueStatement> getRevenueStatements(String relatedPartyId) throws ApiException, IOException {
-        logger.info("Call getRevenueStatements with relatedPartyId: {}", relatedPartyId);
-                
-        
-            String subscriptionId = subscriptionService.getSubscriptionIdByRelatedPartyId(relatedPartyId);
-            logger.info("Get subscriptionId: {}", subscriptionId);
-
-            // prepare output
-            List<RevenueStatement> statements = new ArrayList<>();
-
-            try {
-				statements = statementsService.getStatementsForSubscription(subscriptionId);
-			} catch (Exception e) {
-				e.printStackTrace();
-			}
-            
-            return statements;
-            
-    }
-    
-    
-    public Report getTotalRevenueSection(List<RevenueStatement> statements) {
+    public Report getRevenueSection(String relatedPartyId) throws ApiException, IOException {
+    	List<RevenueStatement> statements = getRevenueStatements(relatedPartyId);
+    	
         if (statements == null || statements.isEmpty()) {
             return new Report("Revenue Volume Monitoring", "No revenue data available");
         }
@@ -278,6 +214,75 @@ public class ReportingService {
         return new Report("Revenue Volume Monitoring", items);
     }
 
+    public Report getReferralSection(String relatedPartyId) throws Exception {        
+        Subscription subscription = subscriptionService.getSubscriptionByRelatedPartyId(relatedPartyId);
+        SubscriptionTimeHelper timeHelper = new SubscriptionTimeHelper(subscription);
+        TimePeriod subscriptionPeriod = timeHelper.getSubscriptionPeriodAt(subscription.getStartDate());
+        
+        Integer referralProviders = metricsRetriever.computeReferralsProvidersNumber(
+            subscription.getBuyerId(), 
+            subscriptionPeriod
+        );
+
+        List<RevenueStatement> statements = getRevenueStatements(relatedPartyId);
+        
+        List<RevenueItem> referralDiscounts = extractReferralDiscounts(statements);
+        
+        String discountEarned = calculateTotalDiscountEarned(referralDiscounts);
+        
+        return new Report("Referral Program Area", Arrays.asList(
+            new Report("Referred Providers", referralProviders != null ? referralProviders.toString() : "0"),
+            new Report("Reward Earned", discountEarned)));
+    }
+
+    private List<RevenueItem> extractReferralDiscounts(List<RevenueStatement> statements) {
+        List<RevenueItem> discounts = new ArrayList<>();
+        
+        if (statements == null) return discounts;
+
+        for (RevenueStatement statement : statements) {
+            for (RevenueItem item : statement.getRevenueItems()) {
+                // Search recursively through all nested items
+                findNestedReferralDiscounts(item, discounts);
+            }
+        }
+        return discounts;
+    }
+
+    private void findNestedReferralDiscounts(RevenueItem item, List<RevenueItem> discounts) {
+        if (item == null) return;
+        
+        // Check if current item is a referral discount
+        if (isReferralDiscount(item)) {
+            discounts.add(item);
+        }
+        
+        // Recursively check nested items
+        if (item.getItems() != null) {
+            for (RevenueItem subItem : item.getItems()) {
+                findNestedReferralDiscounts(subItem, discounts);
+            }
+        }
+    }
+
+    private boolean isReferralDiscount(RevenueItem item) {
+        return item != null && 
+               item.getName() != null && 
+               (item.getName().toLowerCase().contains("referr") || 
+                item.getName().toLowerCase().contains("discount")) &&
+               item.getValue() != null && 
+               item.getValue() < 0; // Only negative values (actual discounts)
+    }
+
+    private String calculateTotalDiscountEarned(List<RevenueItem> discountItems) {
+        double total = discountItems.stream()
+            .filter(Objects::nonNull)
+            .mapToDouble(item -> Math.abs(item.getValue()))
+            .sum();
+        
+        return format(total) + " EUR";
+    }
+
     private String extractRevenueSharePercentage(RevenueItem item) {
         if (item == null) return "N/A";
         
@@ -297,40 +302,92 @@ public class ReportingService {
         
         return "N/A";
     }
-    
-//    public Reporting getTotalRevenueSection(List<RevenueStatement> statements) {
-//        if (statements == null || statements.isEmpty()) {
-//            return new Reporting("Revenue Summary", "No revenue data available");
-//        }
-//
-//        List<Reporting> totalRevenueItems = new ArrayList<>();
-//
-//        for (RevenueStatement rs : statements) {
-//            // FIXME: (PF) now that items are an array, returing the first item (to let it compile)
-//            RevenueItem root = rs.getRevenueItems().get(0);
-//            if (root == null) continue;
-//
-//            String currency = root.getCurrency() != null ? root.getCurrency() + " " : "";
-//            TimePeriod period = rs.getPeriod();
-//            OffsetDateTime startDateTime = period.getStartDateTime();
-//            OffsetDateTime endDateTime = period.getEndDateTime();
-//            String periodLabel = String.format("%s to %s",
-//                startDateTime != null ? startDateTime.toLocalDate() : "?",
-//                endDateTime != null ? endDateTime.toLocalDate() : "?"
-//            );
-//
-//            double periodTotal = root.getOverallValue();
-//            
-//            String label = String.format("Total Revenue for %s", periodLabel);
-//            totalRevenueItems.add(new Reporting(label, currency + format(periodTotal)));
-//        }
-//
-//        return new Reporting("Revenue Volume Monitoring", totalRevenueItems);
-//    }
+
+    public List<RevenueStatement> getRevenueStatements(String relatedPartyId) throws ApiException, IOException {
+        logger.info("Call getRevenueStatements with relatedPartyId: {}", relatedPartyId);
+                
+        
+            String subscriptionId = subscriptionService.getSubscriptionIdByRelatedPartyId(relatedPartyId);
+            logger.info("Get subscriptionId: {}", subscriptionId);
+
+            // prepare output
+            List<RevenueStatement> statements = new ArrayList<>();
+
+            try {
+				statements = statementsService.getStatementsForSubscription(subscriptionId);
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+            
+            return statements;
+            
+    }
 
     private String format(Double value) {
         if (value == null) return "-";
         return String.format("%,.2f", value);
     }
     
+//  public Reporting getTotalRevenueSection(List<RevenueStatement> statements) {
+//      if (statements == null || statements.isEmpty()) {
+//          return new Reporting("Revenue Summary", "No revenue data available");
+//      }
+//
+//      List<Reporting> totalRevenueItems = new ArrayList<>();
+//
+//      for (RevenueStatement rs : statements) {
+//          // FIXME: (PF) now that items are an array, returing the first item (to let it compile)
+//          RevenueItem root = rs.getRevenueItems().get(0);
+//          if (root == null) continue;
+//
+//          String currency = root.getCurrency() != null ? root.getCurrency() + " " : "";
+//          TimePeriod period = rs.getPeriod();
+//          OffsetDateTime startDateTime = period.getStartDateTime();
+//          OffsetDateTime endDateTime = period.getEndDateTime();
+//          String periodLabel = String.format("%s to %s",
+//              startDateTime != null ? startDateTime.toLocalDate() : "?",
+//              endDateTime != null ? endDateTime.toLocalDate() : "?"
+//          );
+//
+//          double periodTotal = root.getOverallValue();
+//          
+//          String label = String.format("Total Revenue for %s", periodLabel);
+//          totalRevenueItems.add(new Reporting(label, currency + format(periodTotal)));
+//      }
+//
+//      return new Reporting("Revenue Volume Monitoring", totalRevenueItems);
+//  }
+  
+//  public Report getBillingHistorySection(String relatedPartyId) throws Exception {
+//      String subscriptionId = subscriptionService.getSubscriptionIdByRelatedPartyId(relatedPartyId);
+//      List<RevenueStatement> statements = statementsService.getStatementsForSubscription(subscriptionId);
+//      
+//		List<AppliedCustomerBillingRate> acbrList = new ArrayList<>();
+//		for (RevenueStatement statement : statements) {
+//		    AppliedCustomerBillingRate acbr = revenueService.buildACBR(statement);
+//		    if (acbr != null) {
+//		        acbrList.add(acbr);
+//		    }
+//		}
+//
+//      if (acbrList.isEmpty()) {
+//          return new Report("Billing History", "No billing data available");
+//      }
+//
+//      List<Report> invoiceReports = new ArrayList<>();
+//      for (AppliedCustomerBillingRate acbr : acbrList) {
+//          List<Report> details = new ArrayList<>();
+//          boolean isPaid = Boolean.TRUE.equals(acbr.getIsBilled()) && acbr.getBill() != null;
+//          details.add(new Report("Status", isPaid ? "Paid" : "Pending"));
+//          details.add(new Report("Issued On", acbr.getDate() != null ? acbr.getDate().toString() : "-"));
+////          if (acbr.getHref() != null) {
+////              String link = "https://billing.dome.org/acbr/" + acbr.getHref(); // oppure dove ospiti il PDF
+////              details.add(new Report("Download", "Download PDF", link));
+////          }
+//          invoiceReports.add(new Report("ACBR " + acbr.getId(), details));
+//      }
+//
+//      return new Report("Billing History", invoiceReports);
+//  }
+  
 }
