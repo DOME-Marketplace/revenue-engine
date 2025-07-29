@@ -69,7 +69,7 @@ public class TmfDataRetriever implements InitializingBean {
             filter.put("date.lt", timePeriod.getEndDateTime().toString());
         if(sellerId!=null) {
             filter.put("relatedParty", sellerId);
-//            filter.put("relatedParty.role", "Seller");
+            filter.put("relatedParty.role", "Seller");
             logger.debug("Retrieving bills for seller with id: " + sellerId);
         } else {
             logger.debug("Retrieving all bills in the specified period");

@@ -10,7 +10,10 @@ public class WebConfig implements WebMvcConfigurer {
 
     @Override
     public void configurePathMatch(PathMatchConfigurer configurer) {
-    	configurer.setPatternParser(new PathPatternParser());
+        PathPatternParser patternParser = new PathPatternParser();
+        patternParser.setMatchOptionalTrailingSeparator(true); // <-- for path with / and without /
+        configurer.setPatternParser(patternParser);
     }
+
 }
 
