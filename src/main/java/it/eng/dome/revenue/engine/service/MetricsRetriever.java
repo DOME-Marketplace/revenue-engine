@@ -21,7 +21,7 @@ public class MetricsRetriever implements InitializingBean {
     private final Logger logger = LoggerFactory.getLogger(MetricsRetriever.class);
 
     @Autowired
-    private TmfDataRetriever tmfDataRetriever;
+    private TmfCachedDataRetriever tmfDataRetriever;
 
     @Override
     public void afterPropertiesSet() throws Exception {

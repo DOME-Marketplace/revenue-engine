@@ -83,7 +83,8 @@ public class TmfDataRetriever implements InitializingBean {
         return out;
     }
     
-    //TODO: rename with correct name - created for BillingHistorySection of report
+    // TODO: rename with correct name - created for BillingHistorySection of report
+    // FIXME: what's the difference with the above one?
     public List<AppliedCustomerBillingRate> retrieveAllBills(String relatedPartyId, TimePeriod timePeriod) throws Exception {
         logger.debug("Retrieving all bills from TMF API between " + timePeriod.getStartDateTime() + " and " + timePeriod.getEndDateTime());
 
