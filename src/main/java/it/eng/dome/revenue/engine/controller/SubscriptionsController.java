@@ -81,7 +81,7 @@ public class SubscriptionsController {
         }
     }    
 
-    @GetMapping("{subscriptionId}/statements/itemsonly/")
+    @GetMapping("{subscriptionId}/statements/itemsonly")
     public ResponseEntity<List<RevenueItem>> statementItems(@PathVariable String subscriptionId) {    	
         try {
             return ResponseEntity.ok(this.statementsService.getItemsForSubscription(subscriptionId));
@@ -91,7 +91,7 @@ public class SubscriptionsController {
         }
     }
 
-    @GetMapping("{subscriptionId}/bills/")
+    @GetMapping("{subscriptionId}/bills")
     public ResponseEntity<List<SimpleBill>> getBillPeriods(@PathVariable String subscriptionId) {    	   
         try {
             return ResponseEntity.ok(this.billsService.getSubscriptionBills(subscriptionId));
