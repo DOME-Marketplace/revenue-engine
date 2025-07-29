@@ -11,8 +11,10 @@ import java.util.regex.Pattern;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import it.eng.dome.revenue.engine.model.comparator.TimePeriodComparator;
 import it.eng.dome.tmforum.tmf678.v4.model.TimePeriod;
 
+/*
 class TimePeriodComparator implements Comparator<TimePeriod> {
 
     @Override
@@ -25,6 +27,7 @@ class TimePeriodComparator implements Comparator<TimePeriod> {
 
     }
 }
+*/
 
 public class SubscriptionTimeHelper {
 
@@ -105,7 +108,7 @@ public class SubscriptionTimeHelper {
             } else {
                 // iterate over the charge periods, until reaching the current time
                 // or a year in the future
-                OffsetDateTime stopAt = OffsetDateTime.now();
+                OffsetDateTime stopAt = OffsetDateTime.now().plusYears(1).plusMonths(1);
                 while(!start.isAfter(stopAt)) {
                     OffsetDateTime end = this.rollChargePeriod(start, price, 1);
                     TimePeriod tp = new TimePeriod();

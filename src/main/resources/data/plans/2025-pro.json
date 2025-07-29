@@ -41,12 +41,21 @@
         "recurringChargePeriodType": "YEAR"
       },
       {
-        "name": "Weekly postpaid fee (for dev purposes only)",
+        "name": "25-days postpaid fee (for dev purposes only)",
         "type": "RECURRING_POSTPAID",
-        "amount": 3.5,
+        "amount": 30,
+        "currency": "EUR",
+        "recurringChargePeriodLength": 25,
+        "recurringChargePeriodType": "DAY",
+        "percent": 5
+      },
+      {
+        "name": "Monthly postpaid fee (for dev purposes only)",
+        "type": "RECURRING_POSTPAID",
+        "amount": 13.5,
         "currency": "EUR",
         "recurringChargePeriodLength": 1,
-        "recurringChargePeriodType": "WEEK"
+        "recurringChargePeriodType": "MONTH"
       },
       {
         "name": "Recurring Yearly Fee",

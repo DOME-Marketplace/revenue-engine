@@ -64,7 +64,7 @@ public class RevenueItem {
     }
 
     public Double getValue() {
-        return value;
+        return (value!=null ? value : 0);
     }
 
     public void setValue(Double value) {

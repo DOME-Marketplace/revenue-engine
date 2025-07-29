@@ -74,4 +74,15 @@ public class RevenueStatement {
         this.setRevenueItems(newItems);
     }
 
+    @JsonProperty("estimated")
+    public Boolean isEstimated() {
+        if(this.revenueItems!=null) {
+            for(RevenueItem i:revenueItems) {
+                if(i.isEstimated())
+                    return true;
+            }
+        }
+        return false;
+    }
+
 }
