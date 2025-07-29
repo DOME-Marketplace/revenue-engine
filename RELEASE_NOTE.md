@@ -2,6 +2,16 @@
  
 **Release Notes** of the *Revenue Engine* software:
  
+### <code>1.2.1</code> :calendar: 29/07/2025
+**Bug Fixing**
+General bug fixing and minor optimizations
+Second operational version of the reporting **dashboard** featuring:
+  - Subscription plan overview
+  - Revenue summary
+**Improvements**
+  - Discount earned
+
+
 ### <code>1.2.0</code> :calendar: 25/07/2025
 **Feature**
 * Aligned with `[2.1.0, 2.2.0)` version of `Brokerage Utils`.
