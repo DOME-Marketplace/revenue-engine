@@ -132,7 +132,6 @@ public class ReportingService {
         SubscriptionTimeHelper timeHelper = new SubscriptionTimeHelper(subscription);
         TimePeriod subscriptionPeriod = timeHelper.getSubscriptionPeriodAt(subscription.getStartDate());
         
-        // 1. Get referral data from metrics
         Integer referralProviders = metricsRetriever.computeReferralsProvidersNumber(
             subscription.getBuyerId(), 
             subscriptionPeriod
@@ -144,10 +143,10 @@ public class ReportingService {
         
         String discountEarned = calculateTotalDiscountEarned(referralDiscounts);
         
+        
         return new Report("Referral Program Area", Arrays.asList(
-            new Report("Referred Providers", referralProviders.toString()),
-            new Report("Discount Earned", discountEarned)
-        ));
+            new Report("Referred Providers", referralProviders != null ? referralProviders.toString() : "0"),
+            new Report("Reward Earned", discountEarned)));
     }
 
     private List<RevenueItem> extractReferralDiscounts(List<RevenueStatement> statements) {
@@ -157,36 +156,47 @@ public class ReportingService {
 
         for (RevenueStatement statement : statements) {
             for (RevenueItem item : statement.getRevenueItems()) {
-                if (isReferralDiscount(item)) {
-                    discounts.add(item);
-                }
-                // Check nested items
-                if (item.getItems() != null) {
-                    for (RevenueItem subItem : item.getItems()) {
-                        if (isReferralDiscount(subItem)) {
-                            discounts.add(subItem);
-                        }
-                    }
-                }
+                // Search recursively through all nested items
+                findNestedReferralDiscounts(item, discounts);
             }
         }
         return discounts;
     }
 
+    private void findNestedReferralDiscounts(RevenueItem item, List<RevenueItem> discounts) {
+        if (item == null) return;
+        
+        // Check if current item is a referral discount
+        if (isReferralDiscount(item)) {
+            discounts.add(item);
+        }
+        
+        // Recursively check nested items
+        if (item.getItems() != null) {
+            for (RevenueItem subItem : item.getItems()) {
+                findNestedReferralDiscounts(subItem, discounts);
+            }
+        }
+    }
+
     private boolean isReferralDiscount(RevenueItem item) {
         return item != null && 
-               ((item.getValue() != null && item.getValue() < 0) || 
-               (item.getName() != null && item.getName().toLowerCase().contains("referral")));
+               item.getName() != null && 
+               (item.getName().toLowerCase().contains("referr") || 
+                item.getName().toLowerCase().contains("discount")) &&
+               item.getValue() != null && 
+               item.getValue() < 0; // Only negative values (actual discounts)
     }
 
     private String calculateTotalDiscountEarned(List<RevenueItem> discountItems) {
         double total = discountItems.stream()
-            .filter(item -> item.getValue() != null)
+            .filter(Objects::nonNull)
             .mapToDouble(item -> Math.abs(item.getValue()))
             .sum();
         
         return format(total) + " EUR";
     }
+
 
 
     public List<RevenueStatement> getRevenueStatements(String relatedPartyId) throws ApiException, IOException {
@@ -218,6 +228,7 @@ public class ReportingService {
         LocalDate today = OffsetDateTime.now().toLocalDate();
         Report monthly = null;
         Report yearly = null;
+        Report tier = null;
 
         for (RevenueStatement rs : statements) {
             RevenueItem root = rs.getRevenueItems() != null && !rs.getRevenueItems().isEmpty()
@@ -237,15 +248,16 @@ public class ReportingService {
             String currency = root.getCurrency() != null ? root.getCurrency() + " " : "";
 
             boolean containsToday = !today.isBefore(startDate) && today.isBefore(endDate);
-            
+            String revenueSharePercentage = extractRevenueSharePercentage(root);
+
             // Check if the period is within the current month or year
             // FIXME: this is a bit of a hack(ONLY FOR CURRENT MONTH AND YEAR), but it works for now
             if (containsToday && (duration < 32 && duration >= 28)) {
                 
-                monthly = new Report(
-                    String.format("Current Monthly Revenue: "),
-                    currency + format(value)
-                );
+                monthly = new Report("Current Monthly Revenue: ", currency + format(value));
+                tier = new Report("Current Tier: ", revenueSharePercentage + " commission");
+
+                
             } else if (startDate.getMonth() == today.getMonth()
                     && startDate.getYear() == today.getYear()
                     && duration >= 364 && duration <= 366) {
@@ -259,11 +271,33 @@ public class ReportingService {
 
         List<Report> items = new ArrayList<>();
         if (monthly != null) items.add(monthly);
+        if (tier != null) items.add(tier);
         if (yearly != null) items.add(yearly);
+        
 
         return new Report("Revenue Volume Monitoring", items);
     }
 
+    private String extractRevenueSharePercentage(RevenueItem item) {
+        if (item == null) return "N/A";
+        
+        if (item.getName() != null && item.getName().contains("% revenue share")) {
+            return item.getName().split("%")[0] + "%";
+        }
+        
+        // Cerca negli items annidati
+        if (item.getItems() != null) {
+            for (RevenueItem subItem : item.getItems()) {
+                String percentage = extractRevenueSharePercentage(subItem);
+                if (!percentage.equals("N/A")) {
+                    return percentage;
+                }
+            }
+        }
+        
+        return "N/A";
+    }
+    
 //    public Reporting getTotalRevenueSection(List<RevenueStatement> statements) {
 //        if (statements == null || statements.isEmpty()) {
 //            return new Reporting("Revenue Summary", "No revenue data available");
@@ -296,7 +330,7 @@ public class ReportingService {
 
     private String format(Double value) {
         if (value == null) return "-";
-        return String.format("%,.2f", value).replace(',', 'X').replace('.', ',').replace('X', '.');
+        return String.format("%,.2f", value);
     }
     
 }
