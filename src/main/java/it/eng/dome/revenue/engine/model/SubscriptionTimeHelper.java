@@ -1,7 +1,6 @@
 package it.eng.dome.revenue.engine.model;
 
 import java.time.OffsetDateTime;
-import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -13,21 +12,6 @@ import org.slf4j.LoggerFactory;
 
 import it.eng.dome.revenue.engine.model.comparator.TimePeriodComparator;
 import it.eng.dome.tmforum.tmf678.v4.model.TimePeriod;
-
-/*
-class TimePeriodComparator implements Comparator<TimePeriod> {
-
-    @Override
-    public int compare(TimePeriod o1, TimePeriod o2) {
-        int result = o1.getStartDateTime().compareTo(o2.getStartDateTime());
-        if (result != 0)
-            return result;  // Compare by start date    
-        return o1.getEndDateTime().compareTo(o2.getEndDateTime());
-
-
-    }
-}
-*/
 
 public class SubscriptionTimeHelper {
 

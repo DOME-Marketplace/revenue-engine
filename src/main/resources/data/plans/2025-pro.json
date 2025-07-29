@@ -12,8 +12,8 @@
   "renewalTermLength": 1,
   "renewalTermPeriodType": "YEAR",
 
-  "billingPeriodLength": "1",
-  "billingPeriodType": "MONTH",
+  "billingPeriodLength": "2",
+  "billingPeriodType": "WEEK",
   "billingPeriodEnd": "LAST_DAY_OF_CALENDAR_MONTH", "comment": "alternative values are COMPUTED_DAY, NEXT_FRIDAY, NEXT_MONDAY, 15_OF_CALENDAR_MONTH, ...",
 
   "agreements": [
@@ -39,15 +39,6 @@
         "currency": "EUR",
         "recurringChargePeriodLength": 1,
         "recurringChargePeriodType": "YEAR"
-      },
-      {
-        "name": "25-days postpaid fee (for dev purposes only)",
-        "type": "RECURRING_POSTPAID",
-        "amount": 30,
-        "currency": "EUR",
-        "recurringChargePeriodLength": 25,
-        "recurringChargePeriodType": "DAY",
-        "percent": 5
       },
       {
         "name": "Monthly postpaid fee (for dev purposes only)",
