@@ -28,12 +28,6 @@
     "bundleOp": "CUMULATIVE",
     "prices": [
       {
-        "name": "Initial Subscription Fee",
-        "type": "ONE_TIME_PREPAID",
-        "amount": 5000,
-        "currency": "EUR"
-      },
-      {
         "name": "Recurring Yearly Fee",
         "type": "RECURRING_PREPAID",
         "amount": 5000,

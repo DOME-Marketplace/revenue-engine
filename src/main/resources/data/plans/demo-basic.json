@@ -26,12 +26,6 @@
     "currency": "EUR",
     "bundleOp": "CUMULATIVE",
     "prices": [
-      {
-		"name": "One-time Activation Fee",
-        "type": "ONE_TIME_PREPAID",
-        "amount": 5000,
-        "currency": "EUR"
-      },
 	  {
 	    "name": "End-of-period yearly fee (for dev purposes only)",
 	    "type": "RECURRING_POSTPAID",
