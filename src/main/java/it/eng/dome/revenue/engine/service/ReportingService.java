@@ -21,11 +21,11 @@ import it.eng.dome.revenue.engine.model.Plan;
 import it.eng.dome.revenue.engine.model.Report;
 import it.eng.dome.revenue.engine.model.RevenueItem;
 import it.eng.dome.revenue.engine.model.RevenueStatement;
+import it.eng.dome.revenue.engine.model.SimpleBill;
 import it.eng.dome.revenue.engine.model.Subscription;
 import it.eng.dome.revenue.engine.model.SubscriptionTimeHelper;
 import it.eng.dome.revenue.engine.service.compute.PriceCalculator;
 import it.eng.dome.tmforum.tmf632.v4.ApiException;
-import it.eng.dome.tmforum.tmf678.v4.model.AppliedCustomerBillingRate;
 import it.eng.dome.tmforum.tmf678.v4.model.TimePeriod;
 
 @Service
@@ -50,6 +50,9 @@ public class ReportingService {
 
     @Autowired
     StatementsService statementsService;
+    
+    @Autowired
+    private BillsService billsService;
     
     public List<Report> getDashboardReport(String relatedPartyId) throws ApiException, IOException {
         logger.info("Call getDashboardReport for relatedPartyId: {}", relatedPartyId);
@@ -121,38 +124,85 @@ public class ReportingService {
     }
     
     public Report getBillingHistorySection(String relatedPartyId) throws Exception {
-        TimePeriod tp = new TimePeriod();
         String subscriptionId = subscriptionService.getSubscriptionIdByRelatedPartyId(relatedPartyId);
-        Subscription subscription = subscriptionService.getSubscriptionById(subscriptionId);
-        tp.setStartDateTime(subscription.getStartDate());
-        tp.setEndDateTime(OffsetDateTime.now());
-		
-        List<AppliedCustomerBillingRate> acbrList = tmfDataRetriever.retrieveBills(relatedPartyId, tp, null);
+        List<SimpleBill> bills = billsService.getSubscriptionBills(subscriptionId);
 
-        if (acbrList.isEmpty()) {
+        if (bills == null || bills.isEmpty()) {
             return new Report("Billing History", "No billing data available");
         }
 
         List<Report> invoiceReports = new ArrayList<>();
-        for (AppliedCustomerBillingRate acbr : acbrList) {
+
+        for (SimpleBill bill : bills) {
+            TimePeriod period = bill.getPeriod();
+            if (period == null || period.getEndDateTime() == null) continue;
+
+            // Skip future bills
+            if (period.getEndDateTime().isAfter(OffsetDateTime.now())) continue;
+
+            boolean isPaid = true; // Since it's in the past, consider it paid
+
             List<Report> details = new ArrayList<>();
-            boolean isPaid = Boolean.TRUE.equals(acbr.getIsBilled()) && acbr.getBill() != null;
             details.add(new Report("Status", isPaid ? "Paid" : "Pending"));
-            details.add(new Report("Issued On", acbr.getDate() != null ? acbr.getDate().toString() : "-"));
-//            if (acbr.getHref() != null) {
-//                String link = "https://billing.dome.org/acbr/" + acbr.getHref(); // oppure dove ospiti il PDF
-//                details.add(new Report("Download", "Download PDF", link));
-//            }
-            if(acbr.getBill() != null) {
-            	invoiceReports.add(new Report("Invoice " + acbr.getBill().getId(), details));
-            }
-            else {
-            	invoiceReports.add(new Report("ACBR " + acbr.getId(), details));
-            }
+
+            String periodText = String.format("%s - %s",
+                period.getStartDateTime() != null ? period.getStartDateTime().toLocalDate() : "-",
+                period.getEndDateTime() != null ? period.getEndDateTime().toLocalDate() : "-"
+            );
+            details.add(new Report("Period", periodText));
+
+            Double amount = bill.getAmount() != null ? bill.getAmount() : 0.0;
+            details.add(new Report("Amount", String.format("%.2f EUR", amount)));
+
+            // Uncomment if you want to show estimate status
+            // if (Boolean.TRUE.equals(bill.isEstimated())) {
+            //     details.add(new Report("Note", "Estimated bill"));
+            // }
+
+            invoiceReports.add(new Report("Invoice - " + period.getStartDateTime().toLocalDate(), details));
+        }
+
+        if (invoiceReports.isEmpty()) {
+            return new Report("Billing History", "No billing data available");
         }
 
         return new Report("Billing History", invoiceReports);
     }
+
+    
+//    public Report getBillingHistorySection(String relatedPartyId) throws Exception {
+//        TimePeriod tp = new TimePeriod();
+//        String subscriptionId = subscriptionService.getSubscriptionIdByRelatedPartyId(relatedPartyId);
+//        Subscription subscription = subscriptionService.getSubscriptionById(subscriptionId);
+//        tp.setStartDateTime(subscription.getStartDate());
+//        tp.setEndDateTime(OffsetDateTime.now());
+//		
+//        List<AppliedCustomerBillingRate> acbrList = tmfDataRetriever.retrieveBills(relatedPartyId, tp, null);
+//
+//        if (acbrList.isEmpty()) {
+//            return new Report("Billing History", "No billing data available");
+//        }
+//
+//        List<Report> invoiceReports = new ArrayList<>();
+//        for (AppliedCustomerBillingRate acbr : acbrList) {
+//            List<Report> details = new ArrayList<>();
+//            boolean isPaid = Boolean.TRUE.equals(acbr.getIsBilled()) && acbr.getBill() != null;
+//            details.add(new Report("Status", isPaid ? "Paid" : "Pending"));
+//            details.add(new Report("Issued On", acbr.getDate() != null ? acbr.getDate().toString() : "-"));
+////            if (acbr.getHref() != null) {
+////                String link = "https://billing.dome.org/acbr/" + acbr.getHref(); // oppure dove ospiti il PDF
+////                details.add(new Report("Download", "Download PDF", link));
+////            }
+//            if(acbr.getBill() != null) {
+//            	invoiceReports.add(new Report("Invoice " + acbr.getBill().getId(), details));
+//            }
+//            else {
+//            	invoiceReports.add(new Report("ACBR " + acbr.getId(), details));
+//            }
+//        }
+//
+//        return new Report("Billing History", invoiceReports);
+//    }
 
     public Report getRevenueSection(String relatedPartyId) throws ApiException, IOException {
     	List<RevenueStatement> statements = getRevenueStatements(relatedPartyId);
@@ -356,38 +406,6 @@ public class ReportingService {
 //      }
 //
 //      return new Reporting("Revenue Volume Monitoring", totalRevenueItems);
-//  }
-  
-//  public Report getBillingHistorySection(String relatedPartyId) throws Exception {
-//      String subscriptionId = subscriptionService.getSubscriptionIdByRelatedPartyId(relatedPartyId);
-//      List<RevenueStatement> statements = statementsService.getStatementsForSubscription(subscriptionId);
-//      
-//		List<AppliedCustomerBillingRate> acbrList = new ArrayList<>();
-//		for (RevenueStatement statement : statements) {
-//		    AppliedCustomerBillingRate acbr = revenueService.buildACBR(statement);
-//		    if (acbr != null) {
-//		        acbrList.add(acbr);
-//		    }
-//		}
-//
-//      if (acbrList.isEmpty()) {
-//          return new Report("Billing History", "No billing data available");
-//      }
-//
-//      List<Report> invoiceReports = new ArrayList<>();
-//      for (AppliedCustomerBillingRate acbr : acbrList) {
-//          List<Report> details = new ArrayList<>();
-//          boolean isPaid = Boolean.TRUE.equals(acbr.getIsBilled()) && acbr.getBill() != null;
-//          details.add(new Report("Status", isPaid ? "Paid" : "Pending"));
-//          details.add(new Report("Issued On", acbr.getDate() != null ? acbr.getDate().toString() : "-"));
-////          if (acbr.getHref() != null) {
-////              String link = "https://billing.dome.org/acbr/" + acbr.getHref(); // oppure dove ospiti il PDF
-////              details.add(new Report("Download", "Download PDF", link));
-////          }
-//          invoiceReports.add(new Report("ACBR " + acbr.getId(), details));
-//      }
-//
-//      return new Report("Billing History", invoiceReports);
 //  }
   
 }
