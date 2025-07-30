@@ -1,6 +1,7 @@
 package it.eng.dome.revenue.engine.service;
 
 import java.io.IOException;
+import java.text.NumberFormat;
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.time.temporal.ChronoUnit;
@@ -8,6 +9,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Locale;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -59,11 +61,11 @@ public class ReportingService {
         
         List<Report> report = new ArrayList<>();
 
-        // 1: My Subscription Plan
+        // My Subscription Plan
         Report subscriptionSection = getSubscriptionSection(relatedPartyId);
         report.add(subscriptionSection);
 
-        // 2: Billing History (hardcoded)
+        // Billing History
         try {
 			report.add(getBillingHistorySection(relatedPartyId));
 		} catch (Exception e) {
@@ -71,23 +73,26 @@ public class ReportingService {
 			e.printStackTrace();
 		}
 
-        // 3: Revenue section (computed) 
+        // Revenue section
         report.add(getRevenueSection(relatedPartyId));
+        
+        // Bill Previsioning section 
+        report.add(getPrevisioningSection(relatedPartyId));
 
-		// 4: Referral Program Area (computed)
+		// Referral Program Area (computed)
 		try {
 			report.add(getReferralSection(relatedPartyId));
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
 
-//        // 5: Change Request (hardcoded)
+        // Change Request (hardcoded)
 //        report.add(new Reporting("Plan Change Request", Arrays.asList(
 //            new Reporting("Status", "Pending Review"),
 //            new Reporting("Requested Changing", "Basic to Advanced")
 //        )));
 
-        // 6: Support (hardcoded)
+        // Support (hardcoded)
         report.add(new Report("Support",Arrays.asList(
             new Report("Email", "support@dome-marketplace.org"),
             new Report("Help Center", "Visit Support Portal", "https://www.dome-helpcenter.org")
@@ -125,50 +130,59 @@ public class ReportingService {
     
     public Report getBillingHistorySection(String relatedPartyId) throws Exception {
         String subscriptionId = subscriptionService.getSubscriptionIdByRelatedPartyId(relatedPartyId);
-        List<SimpleBill> bills = billsService.getSubscriptionBills(subscriptionId);
 
-        if (bills == null || bills.isEmpty()) {
+        // retrieve Subscription
+        Subscription subscription = subscriptionService.getSubscriptionById(subscriptionId);
+        if (subscription == null || subscription.getStartDate() == null) {
+            logger.warn("Subscription not found or missing start date for id: {}", subscriptionId);
+            return new Report("Billing History", "No billing data available");
+        }
+        
+        // create a TimePeriod filter from subscription start to now
+        TimePeriod period = new TimePeriod();
+        period.setStartDateTime(subscription.getStartDate());
+        period.setEndDateTime(OffsetDateTime.now());
+        
+        // retrieve only past bills (Paid)
+        List<SimpleBill> paidBills = billsService.getFilteredBills(subscriptionId, period, null);
+        
+        if (paidBills == null || paidBills.isEmpty()) {
             return new Report("Billing History", "No billing data available");
         }
 
+        // build the report entries
         List<Report> invoiceReports = new ArrayList<>();
 
-        for (SimpleBill bill : bills) {
-            TimePeriod period = bill.getPeriod();
-            if (period == null || period.getEndDateTime() == null) continue;
-
-            // Skip future bills
-            if (period.getEndDateTime().isAfter(OffsetDateTime.now())) continue;
-
-            boolean isPaid = true; // Since it's in the past, consider it paid
+        for (SimpleBill bill : paidBills) {
+            TimePeriod billPeriod = bill.getPeriod();
+            if (billPeriod == null || billPeriod.getEndDateTime() == null) continue;
 
             List<Report> details = new ArrayList<>();
-            details.add(new Report("Status", isPaid ? "Paid" : "Pending"));
+            details.add(new Report("Status", "Paid"));
 
-            String periodText = String.format("%s - %s",
-                period.getStartDateTime() != null ? period.getStartDateTime().toLocalDate() : "-",
-                period.getEndDateTime() != null ? period.getEndDateTime().toLocalDate() : "-"
+            String periodText = String.format(
+                "%s - %s",
+                billPeriod.getStartDateTime() != null ? billPeriod.getStartDateTime().toLocalDate() : "-",
+                billPeriod.getEndDateTime() != null ? billPeriod.getEndDateTime().toLocalDate() : "-"
             );
             details.add(new Report("Period", periodText));
 
             Double amount = bill.getAmount() != null ? bill.getAmount() : 0.0;
             details.add(new Report("Amount", String.format("%.2f EUR", amount)));
 
-            // Uncomment if you want to show estimate status
+            // include estimation status if needed
             // if (Boolean.TRUE.equals(bill.isEstimated())) {
             //     details.add(new Report("Note", "Estimated bill"));
             // }
 
-            invoiceReports.add(new Report("Invoice - " + period.getStartDateTime().toLocalDate(), details));
-        }
+            String label = "Invoice - " +
+                (billPeriod.getStartDateTime() != null ? billPeriod.getStartDateTime().toLocalDate() : "Unknown");
 
-        if (invoiceReports.isEmpty()) {
-            return new Report("Billing History", "No billing data available");
+            invoiceReports.add(new Report(label, details));
         }
 
         return new Report("Billing History", invoiceReports);
     }
-
     
 //    public Report getBillingHistorySection(String relatedPartyId) throws Exception {
 //        TimePeriod tp = new TimePeriod();
@@ -262,6 +276,81 @@ public class ReportingService {
         
 
         return new Report("Revenue Volume Monitoring", items);
+    }
+    
+    public Report getPrevisioningSection(String relatedPartyId) {
+        String subscriptionId;
+        try {
+            subscriptionId = subscriptionService.getSubscriptionIdByRelatedPartyId(relatedPartyId);
+        } catch (Exception e) {
+            logger.error("Failed to retrieve subscriptionId for relatedPartyId: {}", relatedPartyId, e);
+            return new Report(
+                "Bills Provisioning",
+                List.of(new Report("Error", "Unable to retrieve subscription information"))
+            );
+        }
+        
+        // Define time period for future bills (start from now)
+        TimePeriod futurePeriod = new TimePeriod();
+        futurePeriod.setStartDateTime(OffsetDateTime.now()); // Only future bills
+        
+        // Define time period for the current month
+        OffsetDateTime now = OffsetDateTime.now();
+        OffsetDateTime startOfMonth = now.withDayOfMonth(1).withHour(0).withMinute(0).withSecond(0).withNano(0);
+        OffsetDateTime endOfMonth = startOfMonth.plusMonths(1).minusNanos(1);
+        TimePeriod currentMonthPeriod = new TimePeriod();
+        currentMonthPeriod.setStartDateTime(startOfMonth);
+        currentMonthPeriod.setEndDateTime(endOfMonth);
+        logger.info("PERIODOOOO AJJSJS" + currentMonthPeriod);
+        
+        // Retrieve future confirmed (not estimated) and future estimated bills
+        List<SimpleBill> futureConfirmed = billsService.getFilteredBills(subscriptionId, futurePeriod, false);
+        List<SimpleBill> futureEstimated = billsService.getFilteredBills(subscriptionId, futurePeriod, true);
+
+        //retrieve monthly estimated bills
+        List<SimpleBill> monthlyEstimated = billsService.getFilteredBills(subscriptionId, currentMonthPeriod, null);
+        
+        // Compute totals of monthly confirmed and estimated bills
+        double monthlyEstimatedTotal = 0.0;
+        for (SimpleBill bill : monthlyEstimated) {
+        	monthlyEstimatedTotal  += bill.getAmount() != null ? bill.getAmount() : 0.0;
+        }
+        
+        // Compute totals of future confirmed and estimated bills
+        double confirmedTotal = 0.0;
+        for (SimpleBill bill : futureConfirmed) {
+            confirmedTotal += bill.getAmount() != null ? bill.getAmount() : 0.0;
+        }
+
+        double estimatedTotal = 0.0;
+        for (SimpleBill bill : futureEstimated) {
+            estimatedTotal += bill.getAmount() != null ? bill.getAmount() : 0.0;
+        }
+
+        // Create a formatter for EUR currency localized to Italy
+        NumberFormat euroFormat = NumberFormat.getCurrencyInstance(Locale.ITALY);
+
+        // Format the totals
+        String monthlyEstimatedText = euroFormat.format(monthlyEstimatedTotal);
+        String confirmedText = euroFormat.format(confirmedTotal);
+        String estimatedText = euroFormat.format(estimatedTotal);
+
+        // Build the report items
+        List<Report> items = new ArrayList<>();
+        if (monthlyEstimatedTotal > 0) {
+            items.add(new Report("Monthly Estimated Bills Volume", monthlyEstimatedText));
+        }
+        if (confirmedTotal > 0) {
+            items.add(new Report("Future Confirmed (Not Estimated) Bills Volume", confirmedText));
+        }
+        if (estimatedTotal > 0) {
+            items.add(new Report("Future Estimated Bills Volume", estimatedText));
+        }
+        if (items.isEmpty()) {
+            items.add(new Report("Info", "No future bills available."));
+        }
+
+        return new Report("Bills Provisioning", items);
     }
 
     public Report getReferralSection(String relatedPartyId) throws Exception {        
