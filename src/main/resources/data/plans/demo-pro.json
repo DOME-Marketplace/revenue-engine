@@ -1,0 +1,144 @@
+{
+  "id": "urn:ngsi-ld:plan:52761it5-3d4q-2321-p009-44bro198re0p",
+  "name": "DEMO-PRO",
+  "description": "Standard access and features, Dome Foundation Membership, Advanced Reporting & Analytics, Advanced Marketing Promotion",
+  "validFor": {
+    "startDateTime": "2025-01-01T00:00:00Z",
+    "endDateTime": "2025-12-31T23:59:59Z"
+  },
+  "lifecycleStatus": "launched",
+  "contractDurationLength": 1,
+  "contractDurationPeriodType": "YEAR",
+  "renewalTermLength": 1,
+  "renewalTermPeriodType": "YEAR",
+
+  "billingPeriodLength": "2",
+  "billingPeriodType": "WEEK",
+  "billingPeriodEnd": "LAST_DAY_OF_CALENDAR_MONTH", "comment": "alternative values are COMPUTED_DAY, NEXT_FRIDAY, NEXT_MONDAY, 15_OF_CALENDAR_MONTH, ...",
+
+  "agreements": [
+    "Annual subscription with renewal. Providers can receive up to 80% discount based on the sales volume from the previous year",
+    "Referral bonus: an extra 10% discount on next year's fee for bringing 3 new providers or if a referred provider reaches 100k+ in sales"
+  ],
+  "price": {
+    "name": "DEMO-PRO Plan price components (2025)",
+    "isBundle": true,
+    "currency": "EUR",
+    "bundleOp": "CUMULATIVE",
+    "prices": [
+      {
+        "name": "One-time Activation Fee",
+        "type": "ONE_TIME_PREPAID",
+        "amount": 8000,
+        "currency": "EUR"
+      },
+      {
+        "name": "End-of-period yearly fee (for dev purposes only)",
+        "type": "RECURRING_POSTPAID",
+        "amount": 2550,
+        "currency": "EUR",
+        "recurringChargePeriodLength": 1,
+        "recurringChargePeriodType": "YEAR"
+      },
+      {
+        "name": "Recurring Yearly Fee",
+        "type": "RECURRING_PREPAID",
+        "amount": 8000,
+        "currency": "EUR",
+        "recurringChargePeriodLength": 1,
+        "recurringChargePeriodType": "YEAR",
+        "discount": {
+          "name": "Discount on yearly fee based on previous years sales and referrals",
+          "isBundle": true,
+          "bundleOp": "CUMULATIVE",
+          "discounts": [
+            {
+              "name": "Discount based on previous year's sales",
+              "isBundle": true,
+              "bundleOp": "ALTERNATIVE_HIGHER",
+              "applicableBaseReferencePeriod": "PREVIOUS_SUBSCRIPTION_PERIOD",
+              "applicableBase": "bills-no-taxes",
+              "computationBase": "parent-price",
+              "discounts": [
+                {
+                  "name": "No discount for sales up to 100k",
+                  "applicableBaseRange": {
+                    "min": 0,
+                    "max": 100000
+                  },
+                  "percent": 0
+                },
+                {
+                  "name": "15% Discount for sales higher than 100k",
+                  "applicableBaseRange": {
+                    "min": 100000.01
+                  },
+                  "percent": 15
+                }                
+              ]
+            },
+            {
+              "name": "Referred-based Discount",
+              "isBundle": true,
+              "bundleOp": "ALTERNATIVE_HIGHER",
+              "applicableBaseReferencePeriod": "PREVIOUS_SUBSCRIPTION_PERIOD",
+              "discounts": 
+              [
+                {
+				          "name": "Discount for referring 3 providers",
+                  "applicableBase": "referred-providers-number",
+				          "applicableBaseRange": {
+                    "min": 3
+                  },
+                  "computationBase": "parent-price",
+                  "percent": 10
+                },
+                {
+				          "name": "Discount for referred provider with sales over 100k",
+                  "applicableBase": "referred-providers-transaction-volume",
+                  "applicableBaseRange": {
+                    "min": 100000
+                  },
+                  "computationBase": "parent-price",
+                  "percent": 10
+                }
+              ]
+            }
+          ]
+        }
+      },
+      {
+        "name": "Montly revenue-sharing based on transactions",
+        "type": "RECURRING_POSTPAID",
+  	  	"isBundle": true,
+	  	  "bundleOp": "CUMULATIVE",
+        "recurringChargePeriodLength": 1,
+        "recurringChargePeriodType": "MONTH",
+        "ignorePeriod": "FIRST_3_CHARGE_PERIODS",
+        "applicableBaseReferencePeriod": "LAST_9_CHARGE_PERIODS",
+        "applicableFrom": "2025-01-01T00:00:00Z",
+        "applicableBase": "bills-no-taxes",
+        "computationBaseReferencePeriod": "CURRENT_CHARGE_PERIOD",
+        "computationBase": "bills-no-taxes",
+        "currency": "EUR",
+        "prices": [
+          {
+            "name": "Nothing to be shared with DOME for transactions below 100k",
+            "applicableBaseRange": {
+              "min": 0,
+              "max": 100000
+            },
+            "percent": 0
+          },
+          {
+            "name": "4% revenue share for transactions higher than 100k in the last 9 charge periods",
+            "applicableBaseRange": {
+              "min": 100000.01
+            },
+            "percent": 4
+          }
+        ]
+      }
+    ]
+  }
+}
