@@ -147,7 +147,7 @@ public class PriceCalculator {
 
         TimePeriod tp = getTimePeriod(price, timePeriod.getStartDateTime().plusSeconds(1));
 
-        if(!tp.getStartDateTime().equals(timePeriod.getStartDateTime()) || !tp.getEndDateTime().equals(timePeriod.getEndDateTime())) {
+        if(tp==null || !tp.getStartDateTime().equals(timePeriod.getStartDateTime()) || !tp.getEndDateTime().equals(timePeriod.getEndDateTime())) {
             logger.debug("Time period mismatch for price {}: PRICE TP {} - {}. Skipping this price.", price.getName(), tp.getStartDateTime(), tp.getEndDateTime());
             return null;
         }
