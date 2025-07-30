@@ -127,7 +127,7 @@ public class ReportingService {
         tp.setStartDateTime(subscription.getStartDate());
         tp.setEndDateTime(OffsetDateTime.now());
 		
-        List<AppliedCustomerBillingRate> acbrList = tmfDataRetriever.retrieveAllBills(relatedPartyId, tp);
+        List<AppliedCustomerBillingRate> acbrList = tmfDataRetriever.retrieveBills(relatedPartyId, tp, null);
 
         if (acbrList.isEmpty()) {
             return new Report("Billing History", "No billing data available");
