@@ -7,6 +7,7 @@
 - Added following sections in Report:
 	- `BillingHistory`
 	- `Discount earned`
+	- `Bill Previsioning`
   
 **Bug Fixing**
 - General bug fixing and minor optimizations of the reporting **dashboard** featuring:

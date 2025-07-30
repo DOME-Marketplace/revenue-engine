@@ -67,11 +67,11 @@ public class TmfCachedDataRetriever extends TmfDataRetriever {
     }
 
     @Override
-    public List<AppliedCustomerBillingRate> retrieveBills(String sellerId, TimePeriod timePeriod) throws Exception {
-        String key = sellerId + timePeriod.toString();
+    public List<AppliedCustomerBillingRate> retrieveBills(String sellerId, TimePeriod timePeriod, Boolean isBilled) throws Exception {
+        String key = sellerId + timePeriod.toString() + isBilled.toString();
         if (!this.acbrCache.containsKey(key)) {
             logger.debug("Cache MISS for acbr " + key);
-            List<AppliedCustomerBillingRate> acbrs = super.retrieveBills(sellerId, timePeriod);
+            List<AppliedCustomerBillingRate> acbrs = super.retrieveBills(sellerId, timePeriod, isBilled);
             this.acbrCache.put(key, new ACBRList(acbrs));
         }
         return this.acbrCache.get(key).getItems();

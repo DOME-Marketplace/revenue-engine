@@ -1,6 +1,7 @@
 package it.eng.dome.revenue.engine.service;
 
 import java.io.IOException;
+import java.text.NumberFormat;
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.time.temporal.ChronoUnit;
@@ -8,6 +9,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Locale;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -21,11 +23,11 @@ import it.eng.dome.revenue.engine.model.Plan;
 import it.eng.dome.revenue.engine.model.Report;
 import it.eng.dome.revenue.engine.model.RevenueItem;
 import it.eng.dome.revenue.engine.model.RevenueStatement;
+import it.eng.dome.revenue.engine.model.SimpleBill;
 import it.eng.dome.revenue.engine.model.Subscription;
 import it.eng.dome.revenue.engine.model.SubscriptionTimeHelper;
 import it.eng.dome.revenue.engine.service.compute.PriceCalculator;
 import it.eng.dome.tmforum.tmf632.v4.ApiException;
-import it.eng.dome.tmforum.tmf678.v4.model.AppliedCustomerBillingRate;
 import it.eng.dome.tmforum.tmf678.v4.model.TimePeriod;
 
 @Service
@@ -51,16 +53,19 @@ public class ReportingService {
     @Autowired
     StatementsService statementsService;
     
+    @Autowired
+    private BillsService billsService;
+    
     public List<Report> getDashboardReport(String relatedPartyId) throws ApiException, IOException {
         logger.info("Call getDashboardReport for relatedPartyId: {}", relatedPartyId);
         
         List<Report> report = new ArrayList<>();
 
-        // 1: My Subscription Plan
+        // My Subscription Plan
         Report subscriptionSection = getSubscriptionSection(relatedPartyId);
         report.add(subscriptionSection);
 
-        // 2: Billing History (hardcoded)
+        // Billing History
         try {
 			report.add(getBillingHistorySection(relatedPartyId));
 		} catch (Exception e) {
@@ -68,23 +73,26 @@ public class ReportingService {
 			e.printStackTrace();
 		}
 
-        // 3: Revenue section (computed) 
+        // Revenue section
         report.add(getRevenueSection(relatedPartyId));
+        
+        // Bill Previsioning section 
+        report.add(getPrevisioningSection(relatedPartyId));
 
-		// 4: Referral Program Area (computed)
+		// Referral Program Area (computed)
 		try {
 			report.add(getReferralSection(relatedPartyId));
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
 
-//        // 5: Change Request (hardcoded)
+        // Change Request (hardcoded)
 //        report.add(new Reporting("Plan Change Request", Arrays.asList(
 //            new Reporting("Status", "Pending Review"),
 //            new Reporting("Requested Changing", "Basic to Advanced")
 //        )));
 
-        // 6: Support (hardcoded)
+        // Support (hardcoded)
         report.add(new Report("Support",Arrays.asList(
             new Report("Email", "support@dome-marketplace.org"),
             new Report("Help Center", "Visit Support Portal", "https://www.dome-helpcenter.org")
@@ -121,38 +129,94 @@ public class ReportingService {
     }
     
     public Report getBillingHistorySection(String relatedPartyId) throws Exception {
-        TimePeriod tp = new TimePeriod();
         String subscriptionId = subscriptionService.getSubscriptionIdByRelatedPartyId(relatedPartyId);
-        Subscription subscription = subscriptionService.getSubscriptionById(subscriptionId);
-        tp.setStartDateTime(subscription.getStartDate());
-        tp.setEndDateTime(OffsetDateTime.now());
-		
-        List<AppliedCustomerBillingRate> acbrList = tmfDataRetriever.retrieveAllBills(relatedPartyId, tp);
 
-        if (acbrList.isEmpty()) {
+        // retrieve Subscription
+        Subscription subscription = subscriptionService.getSubscriptionById(subscriptionId);
+        if (subscription == null || subscription.getStartDate() == null) {
+            logger.warn("Subscription not found or missing start date for id: {}", subscriptionId);
+            return new Report("Billing History", "No billing data available");
+        }
+        
+        // create a TimePeriod filter from subscription start to now
+        TimePeriod period = new TimePeriod();
+        period.setStartDateTime(subscription.getStartDate());
+        period.setEndDateTime(OffsetDateTime.now());
+        
+        // retrieve only past bills (Paid)
+        List<SimpleBill> paidBills = billsService.getFilteredBills(subscriptionId, period, null);
+        
+        if (paidBills == null || paidBills.isEmpty()) {
             return new Report("Billing History", "No billing data available");
         }
 
+        // build the report entries
         List<Report> invoiceReports = new ArrayList<>();
-        for (AppliedCustomerBillingRate acbr : acbrList) {
+
+        for (SimpleBill bill : paidBills) {
+            TimePeriod billPeriod = bill.getPeriod();
+            if (billPeriod == null || billPeriod.getEndDateTime() == null) continue;
+
             List<Report> details = new ArrayList<>();
-            boolean isPaid = Boolean.TRUE.equals(acbr.getIsBilled()) && acbr.getBill() != null;
-            details.add(new Report("Status", isPaid ? "Paid" : "Pending"));
-            details.add(new Report("Issued On", acbr.getDate() != null ? acbr.getDate().toString() : "-"));
-//            if (acbr.getHref() != null) {
-//                String link = "https://billing.dome.org/acbr/" + acbr.getHref(); // oppure dove ospiti il PDF
-//                details.add(new Report("Download", "Download PDF", link));
-//            }
-            if(acbr.getBill() != null) {
-            	invoiceReports.add(new Report("Invoice " + acbr.getBill().getId(), details));
-            }
-            else {
-            	invoiceReports.add(new Report("ACBR " + acbr.getId(), details));
-            }
+            details.add(new Report("Status", "Paid"));
+
+            String periodText = String.format(
+                "%s - %s",
+                billPeriod.getStartDateTime() != null ? billPeriod.getStartDateTime().toLocalDate() : "-",
+                billPeriod.getEndDateTime() != null ? billPeriod.getEndDateTime().toLocalDate() : "-"
+            );
+            details.add(new Report("Period", periodText));
+
+            Double amount = bill.getAmount() != null ? bill.getAmount() : 0.0;
+            details.add(new Report("Amount", String.format("%.2f EUR", amount)));
+
+            // include estimation status if needed
+            // if (Boolean.TRUE.equals(bill.isEstimated())) {
+            //     details.add(new Report("Note", "Estimated bill"));
+            // }
+
+            String label = "Invoice - " +
+                (billPeriod.getStartDateTime() != null ? billPeriod.getStartDateTime().toLocalDate() : "Unknown");
+
+            invoiceReports.add(new Report(label, details));
         }
 
         return new Report("Billing History", invoiceReports);
     }
+    
+//    public Report getBillingHistorySection(String relatedPartyId) throws Exception {
+//        TimePeriod tp = new TimePeriod();
+//        String subscriptionId = subscriptionService.getSubscriptionIdByRelatedPartyId(relatedPartyId);
+//        Subscription subscription = subscriptionService.getSubscriptionById(subscriptionId);
+//        tp.setStartDateTime(subscription.getStartDate());
+//        tp.setEndDateTime(OffsetDateTime.now());
+//		
+//        List<AppliedCustomerBillingRate> acbrList = tmfDataRetriever.retrieveBills(relatedPartyId, tp, null);
+//
+//        if (acbrList.isEmpty()) {
+//            return new Report("Billing History", "No billing data available");
+//        }
+//
+//        List<Report> invoiceReports = new ArrayList<>();
+//        for (AppliedCustomerBillingRate acbr : acbrList) {
+//            List<Report> details = new ArrayList<>();
+//            boolean isPaid = Boolean.TRUE.equals(acbr.getIsBilled()) && acbr.getBill() != null;
+//            details.add(new Report("Status", isPaid ? "Paid" : "Pending"));
+//            details.add(new Report("Issued On", acbr.getDate() != null ? acbr.getDate().toString() : "-"));
+////            if (acbr.getHref() != null) {
+////                String link = "https://billing.dome.org/acbr/" + acbr.getHref(); // oppure dove ospiti il PDF
+////                details.add(new Report("Download", "Download PDF", link));
+////            }
+//            if(acbr.getBill() != null) {
+//            	invoiceReports.add(new Report("Invoice " + acbr.getBill().getId(), details));
+//            }
+//            else {
+//            	invoiceReports.add(new Report("ACBR " + acbr.getId(), details));
+//            }
+//        }
+//
+//        return new Report("Billing History", invoiceReports);
+//    }
 
     public Report getRevenueSection(String relatedPartyId) throws ApiException, IOException {
     	List<RevenueStatement> statements = getRevenueStatements(relatedPartyId);
@@ -212,6 +276,81 @@ public class ReportingService {
         
 
         return new Report("Revenue Volume Monitoring", items);
+    }
+    
+    public Report getPrevisioningSection(String relatedPartyId) {
+        String subscriptionId;
+        try {
+            subscriptionId = subscriptionService.getSubscriptionIdByRelatedPartyId(relatedPartyId);
+        } catch (Exception e) {
+            logger.error("Failed to retrieve subscriptionId for relatedPartyId: {}", relatedPartyId, e);
+            return new Report(
+                "Bills Provisioning",
+                List.of(new Report("Error", "Unable to retrieve subscription information"))
+            );
+        }
+        
+        // Define time period for future bills (start from now)
+        TimePeriod futurePeriod = new TimePeriod();
+        futurePeriod.setStartDateTime(OffsetDateTime.now()); // Only future bills
+        
+        // Define time period for the current month
+        OffsetDateTime now = OffsetDateTime.now();
+        OffsetDateTime startOfMonth = now.withDayOfMonth(1).withHour(0).withMinute(0).withSecond(0).withNano(0);
+        OffsetDateTime endOfMonth = startOfMonth.plusMonths(1).minusNanos(1);
+        TimePeriod currentMonthPeriod = new TimePeriod();
+        currentMonthPeriod.setStartDateTime(startOfMonth);
+        currentMonthPeriod.setEndDateTime(endOfMonth);
+        logger.info("PERIODOOOO AJJSJS" + currentMonthPeriod);
+        
+        // Retrieve future confirmed (not estimated) and future estimated bills
+        List<SimpleBill> futureConfirmed = billsService.getFilteredBills(subscriptionId, futurePeriod, false);
+        List<SimpleBill> futureEstimated = billsService.getFilteredBills(subscriptionId, futurePeriod, true);
+
+        //retrieve monthly estimated bills
+        List<SimpleBill> monthlyEstimated = billsService.getFilteredBills(subscriptionId, currentMonthPeriod, null);
+        
+        // Compute totals of monthly confirmed and estimated bills
+        double monthlyEstimatedTotal = 0.0;
+        for (SimpleBill bill : monthlyEstimated) {
+        	monthlyEstimatedTotal  += bill.getAmount() != null ? bill.getAmount() : 0.0;
+        }
+        
+        // Compute totals of future confirmed and estimated bills
+        double confirmedTotal = 0.0;
+        for (SimpleBill bill : futureConfirmed) {
+            confirmedTotal += bill.getAmount() != null ? bill.getAmount() : 0.0;
+        }
+
+        double estimatedTotal = 0.0;
+        for (SimpleBill bill : futureEstimated) {
+            estimatedTotal += bill.getAmount() != null ? bill.getAmount() : 0.0;
+        }
+
+        // Create a formatter for EUR currency localized to Italy
+        NumberFormat euroFormat = NumberFormat.getCurrencyInstance(Locale.ITALY);
+
+        // Format the totals
+        String monthlyEstimatedText = euroFormat.format(monthlyEstimatedTotal);
+        String confirmedText = euroFormat.format(confirmedTotal);
+        String estimatedText = euroFormat.format(estimatedTotal);
+
+        // Build the report items
+        List<Report> items = new ArrayList<>();
+        if (monthlyEstimatedTotal > 0) {
+            items.add(new Report("Monthly Estimated Bills Volume", monthlyEstimatedText));
+        }
+        if (confirmedTotal > 0) {
+            items.add(new Report("Future Confirmed (Not Estimated) Bills Volume", confirmedText));
+        }
+        if (estimatedTotal > 0) {
+            items.add(new Report("Future Estimated Bills Volume", estimatedText));
+        }
+        if (items.isEmpty()) {
+            items.add(new Report("Info", "No future bills available."));
+        }
+
+        return new Report("Bills Provisioning", items);
     }
 
     public Report getReferralSection(String relatedPartyId) throws Exception {        
@@ -356,38 +495,6 @@ public class ReportingService {
 //      }
 //
 //      return new Reporting("Revenue Volume Monitoring", totalRevenueItems);
-//  }
-  
-//  public Report getBillingHistorySection(String relatedPartyId) throws Exception {
-//      String subscriptionId = subscriptionService.getSubscriptionIdByRelatedPartyId(relatedPartyId);
-//      List<RevenueStatement> statements = statementsService.getStatementsForSubscription(subscriptionId);
-//      
-//		List<AppliedCustomerBillingRate> acbrList = new ArrayList<>();
-//		for (RevenueStatement statement : statements) {
-//		    AppliedCustomerBillingRate acbr = revenueService.buildACBR(statement);
-//		    if (acbr != null) {
-//		        acbrList.add(acbr);
-//		    }
-//		}
-//
-//      if (acbrList.isEmpty()) {
-//          return new Report("Billing History", "No billing data available");
-//      }
-//
-//      List<Report> invoiceReports = new ArrayList<>();
-//      for (AppliedCustomerBillingRate acbr : acbrList) {
-//          List<Report> details = new ArrayList<>();
-//          boolean isPaid = Boolean.TRUE.equals(acbr.getIsBilled()) && acbr.getBill() != null;
-//          details.add(new Report("Status", isPaid ? "Paid" : "Pending"));
-//          details.add(new Report("Issued On", acbr.getDate() != null ? acbr.getDate().toString() : "-"));
-////          if (acbr.getHref() != null) {
-////              String link = "https://billing.dome.org/acbr/" + acbr.getHref(); // oppure dove ospiti il PDF
-////              details.add(new Report("Download", "Download PDF", link));
-////          }
-//          invoiceReports.add(new Report("ACBR " + acbr.getId(), details));
-//      }
-//
-//      return new Report("Billing History", invoiceReports);
 //  }
   
 }
