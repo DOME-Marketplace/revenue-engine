@@ -110,6 +110,9 @@ public class SubscriptionService implements InitializingBean {
 		party.setRole("Buyer");
 		List<RelatedParty> relatedParties = new ArrayList<>();
 		relatedParties.add(party);
+		// 1.3 also embed the DOME operator
+		relatedParties.add(this.getFakeDomeOperatorParty());
+
 		subscription.setRelatedParties(relatedParties);
 
 		// 2 status and start date
@@ -120,6 +123,15 @@ public class SubscriptionService implements InitializingBean {
 
 		return subscription;
 	}
+
+	private RelatedParty getFakeDomeOperatorParty() {
+		RelatedParty dome = new RelatedParty();
+		dome.setId("urn:ngsi-ld:organization:24d2ea66-0cd4-4396-a8b5-ea5fd8bf2bdd");
+		dome.setName("The DOME Operator");
+		dome.setRole("Seller");
+		return dome;
+	}
+
 
 
 	public List<Subscription> getAllSubscriptions() throws ApiException, IOException {
@@ -214,8 +226,6 @@ public class SubscriptionService implements InitializingBean {
 	        throw new RuntimeException("Unable to load subscriptions for planId: " + id, e);
 	    }
 	}
-	
-	
 	
 	// === GET SUBSCRIPTION ID BY RELATED PARTY ID ===
 	public String getSubscriptionIdByRelatedPartyId(String relatedPartyId) throws IOException, ApiException {

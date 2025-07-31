@@ -1,5 +1,6 @@
 package it.eng.dome.revenue.engine.model;
 
+import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -93,6 +94,10 @@ public class SimpleBill {
             }
         }
         return false;
+    }
+
+    public OffsetDateTime getBillTime() {
+        return this.period.getEndDateTime().plusDays(3);
     }
 
 }

@@ -187,7 +187,7 @@ public class SubscriptionTimeHelper {
         OffsetDateTime start = this.subscription.getStartDate();
         while(!start.isAfter(time)) {
             OffsetDateTime end = this.rollChargePeriod(start, price, 1);
-            logger.debug("Checking period: " + start + " - " + end);
+//            logger.debug("Checking period: " + start + " - " + end);
             if(!time.isBefore(start) && time.isBefore(end)) {
             	TimePeriod tp = new TimePeriod();
             	tp.setStartDateTime(start);
