@@ -1,8 +1,6 @@
 package it.eng.dome.revenue.engine.service;
 
-import java.time.OffsetDateTime;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
@@ -56,52 +54,52 @@ public class BillsService implements InitializingBean {
         }
     }
     
-    public List<SimpleBill> getFilteredBills(String subscriptionId, TimePeriod timePeriodFilter, Boolean estimated) {
-        List<SimpleBill> allBills;
-
-        try {
-            // Retrieve all bills associated with the given subscription
-            allBills = this.getSubscriptionBills(subscriptionId);
-        } catch (Exception e) {
-            // Log the error and return an empty list if something goes wrong
-            logger.error("Failed to retrieve bills for subscriptionId: {}", subscriptionId, e);
-            return Collections.emptyList(); // fallback: empty list
-        }
-
-        List<SimpleBill> filteredBills = new ArrayList<>();
-        for (SimpleBill bill : allBills) {
-            TimePeriod billPeriod = bill.getPeriod();
-            logger.info("Bill with period: {}", billPeriod);
-
-            // Skip malformed bills that are missing period data
-            if (billPeriod == null || billPeriod.getEndDateTime() == null) {
-                logger.warn("Skipping bill with missing or invalid period: {}", bill);
-                continue;
-            }
-
-            OffsetDateTime billEnd = billPeriod.getEndDateTime();
-
-            // Check if the bill falls within the given time period filter
-            boolean timeMatch = true;
-            if (timePeriodFilter != null) {
-                OffsetDateTime start = timePeriodFilter.getStartDateTime();
-                OffsetDateTime end = timePeriodFilter.getEndDateTime();
-
-                // Match bills that end within the range [start, end]
-                timeMatch = (start == null || !billEnd.isBefore(start)) &&
-                            (end == null || !billEnd.isAfter(end));
-            }
-
-            // Check if the bill matches the estimated filter
-            boolean estimateMatch = (estimated == null) || estimated.equals(bill.isEstimated());
-
-            if (timeMatch && estimateMatch) {
-                filteredBills.add(bill);
-            }
-        }
-
-        return filteredBills;
-    }
+//    public List<SimpleBill> getFilteredBills(String subscriptionId, TimePeriod timePeriodFilter, Boolean estimated) {
+//        List<SimpleBill> allBills;
+//
+//        try {
+//            // Retrieve all bills associated with the given subscription
+//            allBills = this.getSubscriptionBills(subscriptionId);
+//        } catch (Exception e) {
+//            // Log the error and return an empty list if something goes wrong
+//            logger.error("Failed to retrieve bills for subscriptionId: {}", subscriptionId, e);
+//            return Collections.emptyList(); // fallback: empty list
+//        }
+//
+//        List<SimpleBill> filteredBills = new ArrayList<>();
+//        for (SimpleBill bill : allBills) {
+//            TimePeriod billPeriod = bill.getPeriod();
+//            logger.info("Bill with period: {}", billPeriod);
+//
+//            // Skip malformed bills that are missing period data
+//            if (billPeriod == null || billPeriod.getEndDateTime() == null) {
+//                logger.warn("Skipping bill with missing or invalid period: {}", bill);
+//                continue;
+//            }
+//
+//            OffsetDateTime billEnd = billPeriod.getEndDateTime();
+//
+//            // Check if the bill falls within the given time period filter
+//            boolean timeMatch = true;
+//            if (timePeriodFilter != null) {
+//                OffsetDateTime start = timePeriodFilter.getStartDateTime();
+//                OffsetDateTime end = timePeriodFilter.getEndDateTime();
+//
+//                // Match bills that end within the range [start, end]
+//                timeMatch = (start == null || !billEnd.isBefore(start)) &&
+//                            (end == null || !billEnd.isAfter(end));
+//            }
+//
+//            // Check if the bill matches the estimated filter
+//            boolean estimateMatch = (estimated == null) || estimated.equals(bill.isEstimated());
+//
+//            if (timeMatch && estimateMatch) {
+//                filteredBills.add(bill);
+//            }
+//        }
+//
+//        return filteredBills;
+//    }
     
 }
        
