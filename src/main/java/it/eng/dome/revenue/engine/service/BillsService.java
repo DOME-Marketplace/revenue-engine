@@ -33,6 +33,20 @@ public class BillsService implements InitializingBean {
     }
 
 
+    public SimpleBill getBill(String billId) throws Exception {
+        // FIXME: temporary... until we have proper persistence
+        // extract the subscription id
+        String subscriptionId = "urn:ngsi-ld:subscription:"+billId.substring(23, 23+36+1+36);
+        logger.debug("Subscription id is: " + subscriptionId);
+
+        // iterate over bills for that subscription, until found
+        for(SimpleBill bill: this.getSubscriptionBills(subscriptionId)) {
+            if(billId.equals(bill.getId()))
+                return bill;
+        }
+        return null;
+    }
+
     public List<SimpleBill> getSubscriptionBills(String subscriptionId) throws Exception {    	   
         try {
             Set<SimpleBill> bills = new TreeSet<>(new SimpleBillComparator());
@@ -41,6 +55,7 @@ public class BillsService implements InitializingBean {
             for(TimePeriod tp: this.statementsService.getBillPeriods(subscriptionId)) {
                 SimpleBill bill = new SimpleBill();
                 bill.setRelatedParties(subscription.getRelatedParties());
+                bill.setSubscriptionId(subscription.getId());
                 bill.setPeriod(tp);
                 for(RevenueItem item:items) {
                     bill.addRevenueItem(item);
