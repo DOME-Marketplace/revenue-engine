@@ -18,6 +18,8 @@ import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 
 import it.eng.dome.revenue.engine.model.Plan;
+import it.eng.dome.revenue.engine.service.validation.PlanValidationReport;
+import it.eng.dome.revenue.engine.service.validation.PlanValidator;
 
 @Service
 public class PlanService {
@@ -81,5 +83,10 @@ public class PlanService {
             .findFirst()
             .orElseThrow(() -> new IOException("Plan not found with ID: " + id));
     }
-    
+
+    public PlanValidationReport validatePlan(String planId) throws IOException {
+        Plan plan = this.findPlanById(planId);
+        return new PlanValidator().validate(plan);
+    }
+
 }

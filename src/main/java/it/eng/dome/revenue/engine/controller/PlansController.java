@@ -17,6 +17,7 @@ import it.eng.dome.revenue.engine.model.Plan;
 import it.eng.dome.revenue.engine.model.Subscription;
 import it.eng.dome.revenue.engine.service.PlanService;
 import it.eng.dome.revenue.engine.service.SubscriptionService;
+import it.eng.dome.revenue.engine.service.validation.PlanValidationReport;
 
 @RestController
 @RequestMapping("/revenue/plans")
@@ -66,5 +67,16 @@ public class PlansController {
         }
         return ResponseEntity.ok(subscriptions);
     }
-    
+
+    @GetMapping("/{planId}/validate")
+    public ResponseEntity<PlanValidationReport> validatePlan(@PathVariable String planId) {
+        try {
+            PlanValidationReport report = subscriptionPlanService.validatePlan(planId);
+            return ResponseEntity.ok(report);
+        } catch (IOException e) {
+        	logger.error("Error: {}", e.getMessage());
+            return ResponseEntity.notFound().build(); 
+        }
+    }
+
 }
