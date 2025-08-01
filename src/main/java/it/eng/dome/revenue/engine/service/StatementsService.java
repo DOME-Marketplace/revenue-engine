@@ -83,7 +83,8 @@ public class StatementsService implements InitializingBean {
     /*
      * Returns a sorted list of RevenueStatements
      */
-    public List<RevenueStatement> getStatementsForSubscription(String subscriptionId) throws Exception {    	
+    public List<RevenueStatement> getStatementsForSubscription(String subscriptionId) throws Exception {    
+		logger.info("Call to getStatementsForSubscription: {}", subscriptionId);
         try {
 
             // prepare output
@@ -91,7 +92,6 @@ public class StatementsService implements InitializingBean {
 
             // retrieve the subscription by id
             Subscription sub = subscriptionService.getSubscriptionById(subscriptionId);
-            logger.info("Subscription: {}", sub);
 
             // retrive the plan for the subscription
             Plan plan = this.planService.findPlanById(sub.getPlan().getId());
@@ -117,8 +117,8 @@ public class StatementsService implements InitializingBean {
 
             return new ArrayList<>(statements);
         } catch (Exception e) {
-           logger.error(e.getMessage(), e);
-           throw(e);
+            logger.error("Failed to generate statements for subscription {}: {}", subscriptionId, e.getMessage(), e);
+            throw e;
         }
     }    
 

@@ -41,10 +41,10 @@ public class BillsService implements InitializingBean {
 
 
     public SimpleBill getBill(String billId) throws Exception {
+    	logger.debug("getBill: {}", billId);
         // FIXME: temporary... until we have proper persistence
         // extract the subscription id
         String subscriptionId = "urn:ngsi-ld:subscription:"+billId.substring(23, 23+36+1+36);
-        logger.debug("Subscription id is: " + subscriptionId);
 
         // iterate over bills for that subscription, until found
         for(SimpleBill bill: this.getSubscriptionBills(subscriptionId)) {
@@ -54,7 +54,8 @@ public class BillsService implements InitializingBean {
         return null;
     }
 
-    public List<SimpleBill> getSubscriptionBills(String subscriptionId) throws Exception {    	   
+    public List<SimpleBill> getSubscriptionBills(String subscriptionId) throws Exception {    
+    	logger.debug("getSubscriptionBills: {}", subscriptionId);
         try {
             Set<SimpleBill> bills = new TreeSet<>(new SimpleBillComparator());
             Subscription subscription = this.subscriptionService.getSubscriptionById(subscriptionId);
@@ -71,8 +72,8 @@ public class BillsService implements InitializingBean {
             }
             return new ArrayList<>(bills);
         } catch (Exception e) {
-           logger.error(e.getMessage(), e);
-           throw(e);
+        	logger.error("Error retrieving subscription bills for ID {}: {}", subscriptionId, e.getMessage(), e);
+            throw e;
         }
     }
     

@@ -69,10 +69,10 @@ public class SubscriptionService implements InitializingBean {
 	*/
 
 	public Subscription getSubscriptionById(String id) throws ApiException, IOException {
-		logger.debug("Retrieving subscription by id: {}", id);
+		logger.info("Retrieving subscription by id: {}", id);
 		// 1. check the id is in the right format
 		if (id == null || id.isEmpty() || id.length()!=98) {
-			logger.info("malformed subscription id: " + id);
+			logger.error("malformed subscription id: " + id);
 			return null;
 		}
 		String organisationId = "urn:ngsi-ld:organization:"+id.substring(25, 61);
@@ -157,7 +157,6 @@ public class SubscriptionService implements InitializingBean {
 			logger.debug("Subscription id: {}", subscriptionId);
 			
 			Subscription subscription = this.createSubscription(subscriptionId, o, plan);
-			logger.info("Adding subsription to list");
 			subscriptions.add(subscription);
 		}
 		
@@ -215,14 +214,12 @@ public class SubscriptionService implements InitializingBean {
 
 
 	public List<Subscription> getByPlanId(String id) {
-		logger.debug("Retrieving subscriptions by plan id: {}", id);
+	    logger.debug("Retrieving subscriptions by plan id: {}", id);
 	    try {
 	        return this.getAllSubscriptions().stream()
 	                .filter(sub -> sub.getPlan() != null && id.equals(sub.getPlan().getId()))
 	                .collect(Collectors.toList());
-	    } catch (IOException e) {
-	        throw new RuntimeException("Unable to load subscriptions for planId: " + id, e);
-	    } catch (ApiException e) {
+	    } catch (IOException | ApiException e) {
 	        throw new RuntimeException("Unable to load subscriptions for planId: " + id, e);
 	    }
 	}
