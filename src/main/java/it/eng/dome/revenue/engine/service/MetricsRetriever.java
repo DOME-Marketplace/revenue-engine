@@ -21,7 +21,7 @@ public class MetricsRetriever implements InitializingBean {
     private final Logger logger = LoggerFactory.getLogger(MetricsRetriever.class);
 
     @Autowired
-    private TmfDataRetriever tmfDataRetriever;
+    private TmfCachedDataRetriever tmfDataRetriever;
 
     @Override
     public void afterPropertiesSet() throws Exception {
@@ -34,8 +34,8 @@ public class MetricsRetriever implements InitializingBean {
     public Double computeBillsNoTaxes(String sellerId, TimePeriod timePeriod) throws Exception {
     	logger.info("Compute bills-no-taxes");
     	
-    	// retrieve all seller invoices in the period
-        List<AppliedCustomerBillingRate> bills = tmfDataRetriever.retrieveBills(sellerId, timePeriod);
+    	// retrieve all seller billed invoices in the period
+        List<AppliedCustomerBillingRate> bills = tmfDataRetriever.retrieveBills(sellerId, timePeriod, true);
 
         // sum taxExcludedAmount.value
         double totalAmountNoTaxes = 0.0;

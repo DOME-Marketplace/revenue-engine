@@ -1,7 +1,6 @@
 package it.eng.dome.revenue.engine.model;
 
 import java.time.OffsetDateTime;
-import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -11,20 +10,8 @@ import java.util.regex.Pattern;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import it.eng.dome.revenue.engine.model.comparator.TimePeriodComparator;
 import it.eng.dome.tmforum.tmf678.v4.model.TimePeriod;
-
-class TimePeriodComparator implements Comparator<TimePeriod> {
-
-    @Override
-    public int compare(TimePeriod o1, TimePeriod o2) {
-        int result = o1.getStartDateTime().compareTo(o2.getStartDateTime());
-        if (result != 0)
-            return result;  // Compare by start date    
-        return o1.getEndDateTime().compareTo(o2.getEndDateTime());
-
-
-    }
-}
 
 public class SubscriptionTimeHelper {
 
@@ -51,19 +38,38 @@ public class SubscriptionTimeHelper {
 
     public Set<TimePeriod> getBillingTimePeriods() {
         Set<TimePeriod> billingPeriodTimes = new TreeSet<>(new TimePeriodComparator());       
-        if(this.subscription != null && this.subscription.getPlan() != null && this.subscription.getPlan().getPrice() != null) {
+        if(this.subscription != null && this.subscription.getPlan() != null) {
             OffsetDateTime start = this.subscription.getStartDate();
+            // build a preview for the next 1 year
             OffsetDateTime stopAt = OffsetDateTime.now().plusYears(1);
             while(!start.isAfter(stopAt)) {
-                OffsetDateTime end = start.plusMonths(this.subscription.getPlan().getBillingPeriodLength());
+                OffsetDateTime end = this.rollBillPeriod(start, 1);
                 TimePeriod tp = new TimePeriod();
                 tp.setStartDateTime(start);
-                tp.setEndDateTime(end);
+                // apply the modifier, if any.
+                end = this.applyModifier(end, this.subscription.getPlan().getBillingPeriodEnd());
+                tp.setEndDateTime(end.minusSeconds(1));
                 billingPeriodTimes.add(tp);
                 start = end;
             }
         }
         return billingPeriodTimes;
+    }
+
+    private OffsetDateTime applyModifier(OffsetDateTime time, String modifier) {
+        if(time==null || modifier==null)
+            return time;
+        if("LAST_DAY_OF_CALENDAR_MONTH".equals(modifier)) {
+            // go to the start of current month
+            OffsetDateTime modifiedTime = OffsetDateTime.of(time.getYear(), time.getMonthValue(), 1, 0, 0, 0, 0, time.getOffset());
+            // advance one month
+            modifiedTime = modifiedTime.plusMonths(1);
+            return modifiedTime;
+        } else {
+            logger.warn("unknown modifier {}. Returning unchanged time");
+            return time;
+        }
+
     }
 
     private Set<TimePeriod> getChargePeriodTimes(Price price) {
@@ -86,7 +92,7 @@ public class SubscriptionTimeHelper {
             } else {
                 // iterate over the charge periods, until reaching the current time
                 // or a year in the future
-                OffsetDateTime stopAt = OffsetDateTime.now();
+                OffsetDateTime stopAt = OffsetDateTime.now().plusYears(1).plusMonths(1);
                 while(!start.isAfter(stopAt)) {
                     OffsetDateTime end = this.rollChargePeriod(start, price, 1);
                     TimePeriod tp = new TimePeriod();
@@ -133,7 +139,7 @@ public class SubscriptionTimeHelper {
         return this.getSubscriptionPeriodByOffset(time, -1);
     }
 
-        // compute the previous subscription period wrt given time
+    // compute the previous subscription period wrt given time
     public TimePeriod getNextSubscriptionPeriod(OffsetDateTime time) {
         return this.getSubscriptionPeriodByOffset(time, 1);
     }
@@ -141,7 +147,7 @@ public class SubscriptionTimeHelper {
     public TimePeriod getCustomPeriod(OffsetDateTime time, Price price, String keyword) {
         // if the keyword is null or empty, return null
         if(keyword != null && !keyword.isEmpty()) {
-            Pattern p = Pattern.compile("^(LAST|PREVIOUS)_(\\d+)_BILLING_PERIODS$");
+            Pattern p = Pattern.compile("^(LAST|PREVIOUS)_(\\d+)_CHARGE_PERIODS$");
             var matcher = p.matcher(keyword);
             if(matcher.matches()) {
                 Integer howManyPeriods = Integer.parseInt(matcher.group(2));
@@ -181,7 +187,6 @@ public class SubscriptionTimeHelper {
         OffsetDateTime start = this.subscription.getStartDate();
         while(!start.isAfter(time)) {
             OffsetDateTime end = this.rollChargePeriod(start, price, 1);
-            logger.debug("Checking period: " + start + " - " + end);
             if(!time.isBefore(start) && time.isBefore(end)) {
             	TimePeriod tp = new TimePeriod();
             	tp.setStartDateTime(start);
@@ -232,6 +237,7 @@ public class SubscriptionTimeHelper {
                 throw new IllegalArgumentException("Unknown RecurringPeriod type: " + pType);
         }
     }
+
     private OffsetDateTime rollChargePeriod(OffsetDateTime time, Price price, int howManyPeriods) {
         // retrive subscriptino length unit
         RecurringPeriod pType = price.getRecurringChargePeriodType();
@@ -255,6 +261,31 @@ public class SubscriptionTimeHelper {
                 throw new IllegalArgumentException("Unknown RecurringPeriod type: " + pType);
         }
     }
+
+    private OffsetDateTime rollBillPeriod(OffsetDateTime time, int howManyPeriods) {
+        // retrive subscriptino length unit
+        RecurringPeriod pType = this.subscription.getPlan().getBillingPeriodType();
+        // retrieve subscription length
+        Integer pLength = this.subscription.getPlan().getBillingPeriodLength();
+        // ensure the two above are set
+        if(pType == null || pLength == null) {
+            throw new IllegalArgumentException("Subscription does not have a valid recurring billing period type or length");
+        }
+        // increase according to pType and pLength and howManyPeriods
+        switch(pType) {
+            case DAY:
+                return time.plusDays(pLength * howManyPeriods);
+            case WEEK:
+                return time.plusWeeks(pLength * howManyPeriods);
+            case MONTH:
+                return time.plusMonths(pLength * howManyPeriods);
+            case YEAR:
+                return time.plusYears(pLength * howManyPeriods);
+            default:
+                throw new IllegalArgumentException("Unknown RecurringPeriod type: " + pType);
+        }
+    }
+
 
     public static void main(String[] args) throws Exception{
 

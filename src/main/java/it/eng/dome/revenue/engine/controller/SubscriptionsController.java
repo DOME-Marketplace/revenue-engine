@@ -1,7 +1,6 @@
 package it.eng.dome.revenue.engine.controller;
 
 import java.util.List;
-import java.util.Set;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -15,25 +14,28 @@ import org.springframework.web.bind.annotation.RestController;
 
 import it.eng.dome.revenue.engine.model.RevenueItem;
 import it.eng.dome.revenue.engine.model.RevenueStatement;
+import it.eng.dome.revenue.engine.model.SimpleBill;
 import it.eng.dome.revenue.engine.model.Subscription;
+import it.eng.dome.revenue.engine.service.BillsService;
 import it.eng.dome.revenue.engine.service.StatementsService;
 import it.eng.dome.revenue.engine.service.SubscriptionService;
 import it.eng.dome.revenue.engine.service.TmfDataRetriever;
-import it.eng.dome.tmforum.tmf678.v4.model.TimePeriod;
-
+import it.eng.dome.tmforum.tmf678.v4.model.CustomerBill;
 
 @RestController
-//@RequiredArgsConstructor
 @RequestMapping("revenue/subscriptions")
 public class SubscriptionsController {
     
-	protected final Logger logger = LoggerFactory.getLogger(StatementsController.class);
+	protected final Logger logger = LoggerFactory.getLogger(SubscriptionsController.class);
 
 	@Autowired
 	private SubscriptionService subscriptionService;
 
     @Autowired
 	private StatementsService statementsService;
+
+    @Autowired
+	private BillsService billsService;
 
 	@Autowired
 	TmfDataRetriever tmfDataRetriever;
@@ -78,7 +80,7 @@ public class SubscriptionsController {
         }
     }    
 
-    @GetMapping("{subscriptionId}/statements/itemsonly/")
+    @GetMapping("{subscriptionId}/statements/itemsonly")
     public ResponseEntity<List<RevenueItem>> statementItems(@PathVariable String subscriptionId) {    	
         try {
             return ResponseEntity.ok(this.statementsService.getItemsForSubscription(subscriptionId));
@@ -89,13 +91,31 @@ public class SubscriptionsController {
     }
 
     @GetMapping("{subscriptionId}/bills")
-    public ResponseEntity<Set<TimePeriod>> getBillPeriods(@PathVariable String subscriptionId) {    	   
+    public ResponseEntity<List<SimpleBill>> getBillPeriods(@PathVariable String subscriptionId) {    	   
         try {
-            return ResponseEntity.ok(this.statementsService.getBillPeriods(subscriptionId));
+            return ResponseEntity.ok(this.billsService.getSubscriptionBills(subscriptionId));
         } catch (Exception e) {
            logger.error(e.getMessage(), e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
-    }    
+    }
+    
+    @GetMapping("{subscriptionId}/customerBills")
+    public ResponseEntity<List<CustomerBill>> getCustomerBills(@PathVariable String subscriptionId) {
+        List<SimpleBill> simpleBills;
+        try {
+            simpleBills = billsService.getSubscriptionBills(subscriptionId);
+        } catch (Exception e) {
+            // Log the error and return 500 Internal Server Error
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+
+        List<CustomerBill> customerBills = simpleBills.stream()
+                .map(billsService::buildCB)
+                .toList();
+
+        return ResponseEntity.ok(customerBills);
+    }
 
 }

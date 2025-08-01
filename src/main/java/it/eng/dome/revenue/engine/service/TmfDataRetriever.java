@@ -53,33 +53,39 @@ public class TmfDataRetriever implements InitializingBean {
 
     public TmfDataRetriever() {
     }
-
-    // retrieve all bills in the specified period, optionally filtered by sellerId
-    // if sellerId is null, all bills in the period are retrieved
-    public List<AppliedCustomerBillingRate> retrieveBills(String sellerId, TimePeriod timePeriod) throws Exception {
-
+    
+	// Retrieve all bills in the specified period, optionally filtered by relatedPartyId and billing status
+	// If relatedPartyId is null, all bills in the period are retrieved
+	// If isBilled is null, the billed filter is not applied
+	// If isSeller is true, filters by relatedParty.role = "Seller"
+    public List<AppliedCustomerBillingRate> retrieveBills(String sellerId, TimePeriod timePeriod, Boolean isBilled) throws Exception {
         logger.debug("Retrieving bills from TMF API between " + timePeriod.getStartDateTime() + " and " + timePeriod.getEndDateTime());
 
-        // prepare the filter: only billed bills and in the given period
         Map<String, String> filter = new HashMap<>();
-        filter.put("isBilled", "true");
-        if(timePeriod.getStartDateTime()!=null)
+
+        // Add isBilled filter if specified
+        if (isBilled != null) {
+            filter.put("isBilled", isBilled.toString());
+        }
+
+        // Add time period filters if available
+        if (timePeriod.getStartDateTime() != null) {
             filter.put("date.gt", timePeriod.getStartDateTime().toString());
-        if(timePeriod.getEndDateTime()!=null)
+        }
+        if (timePeriod.getEndDateTime() != null) {
             filter.put("date.lt", timePeriod.getEndDateTime().toString());
-        if(sellerId!=null) {
+        }
+
+        if (sellerId != null) {
             filter.put("relatedParty", sellerId);
-//            filter.put("relatedParty.role", "Seller");
+            filter.put("relatedParty.role", "Seller");
             logger.debug("Retrieving bills for seller with id: " + sellerId);
         } else {
             logger.debug("Retrieving all bills in the specified period");
         }
 
-        // retrieve bills
-//        List<AppliedCustomerBillingRate> out = billApi.listAppliedCustomerBillingRate(null, null, 1000, filter);
         List<AppliedCustomerBillingRate> out = billApi.getAllAppliedCustomerBillingRates(null, filter);
-
-        logger.debug("found " + out.size() + " bills in the specified period");
+        logger.debug("Found " + out.size() + " bills in the specified period");
         return out;
     }
 
@@ -103,7 +109,7 @@ public class TmfDataRetriever implements InitializingBean {
             filter.put("date.lt", timePeriod.getEndDateTime().toString());
 
         // retrieve bills and extract seller ids
-        List<AppliedCustomerBillingRate> bills = this.retrieveBills(null, timePeriod);
+        List<AppliedCustomerBillingRate> bills = this.retrieveBills(null, timePeriod, true);
         for(AppliedCustomerBillingRate acbr: bills) {
             if(acbr==null || acbr.getRelatedParty()==null)
                 continue;
@@ -202,7 +208,7 @@ public class TmfDataRetriever implements InitializingBean {
         TimePeriod timePeriod = new TimePeriod();
         timePeriod.setStartDateTime(from);
         timePeriod.setEndDateTime(to);
-        return this.retrieveBills(sellerId, timePeriod);
+        return this.retrieveBills(sellerId, timePeriod, true);
     }
 
     public List<AppliedCustomerBillingRate> retrieveBillsInLastMonth() throws Exception {
@@ -211,7 +217,7 @@ public class TmfDataRetriever implements InitializingBean {
         TimePeriod timePeriod = new TimePeriod();
         timePeriod.setStartDateTime(from);
         timePeriod.setEndDateTime(to);
-        return this.retrieveBills(null, timePeriod);
+        return this.retrieveBills(null, timePeriod, true);
     }
     
     public BillingAccountRef retrieveBillingAccountByRelatedPartyId(String relatedPartyId) {
@@ -236,10 +242,8 @@ public class TmfDataRetriever implements InitializingBean {
                 return null;
             }
 
-            // Supponiamo che ci interessi il primo (o unico) account
             BillingAccount first = billAccs.get(0);
 
-            // Mappa su BillingAccountRef
             BillingAccountRef ref = new BillingAccountRef();
             ref.setId(first.getId());
             URI hrefURI = first.getHref();

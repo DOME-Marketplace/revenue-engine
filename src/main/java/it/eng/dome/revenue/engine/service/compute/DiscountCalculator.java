@@ -178,7 +178,7 @@ public class DiscountCalculator {
         if (discount.getApplicableBase() != null && !discount.getApplicableBase().isEmpty()) {
             try {
                 applicableValue = metricsRetriever.computeValueForKey(discount.getApplicableBase(), buyerId, tp);
-                logger.info("Applicable value computed: {} in tp: {}", applicableValue, tp);
+                logger.info("Applicable value computed: {} in tp: {} - {}", applicableValue, tp.getStartDateTime(), tp.getEndDateTime());
             } catch (Exception e) {
                 logger.error("Error getting applicable value: {}", e.getMessage(), e);
             }

@@ -14,7 +14,7 @@
 
 	<groupId>it.eng.dome.revenue</groupId>
 	<artifactId>engine</artifactId>
-	<version>1.2.0</version>
+	<version>1.2.1</version>
 	<name>Revenue Engine</name>
 	<description>Revenue Engine for DOME project</description>
 
@@ -39,6 +39,12 @@
 			<scope>test</scope>
 		</dependency>
 		
+		<!-- Caching -->
+		<dependency>
+			<groupId>org.ehcache</groupId>
+			<artifactId>ehcache</artifactId>
+		</dependency>
+
 		<!-- Brokerage Utils dependencies -->
 		<dependency>
 			<groupId>it.eng.dome.brokerage</groupId>
@@ -137,5 +143,17 @@
 			</plugin>
 		</plugins>
 	</build>
+	
+	<profiles>
+	    <profile>
+	        <id>generate-rest-apis</id>
+	        <activation>
+	            <activeByDefault>false</activeByDefault>
+	        </activation>
+	        <properties>
+	            <spring-boot.run.arguments>--rest_api_docs.generate_md=true</spring-boot.run.arguments>
+	        </properties>
+	    </profile>
+	</profiles>
 
 </project>

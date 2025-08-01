@@ -40,31 +40,12 @@ public class Plan {
 
 	private Integer billingPeriodLength; // es. 1
 	private RecurringPeriod billingPeriodType;
+	private String billingPeriodEnd;
 
 	private List<String> agreements;
 
 	public Plan() {
 	}
-
-	/*
-	public Plan(String id, String name, String description, @Valid @NotNull TimePeriod validFor,
-			String lifecycleStatus, @Valid @NotNull Price price, @Positive Integer contractDurationLength,
-			RecurringPeriod contractDurationPeriodType, @Positive Integer renewalTermLength,
-			RecurringPeriod renewalTermPeriodType, RecurringPeriod billingPeriod, List<String> agreements) {
-		this.id = id;
-		this.name = name;
-		this.description = description;
-		this.validFor = validFor;
-		this.lifecycleStatus = lifecycleStatus;
-		this.price = price;
-		this.contractDurationLength = contractDurationLength;
-		this.contractDurationPeriodType = contractDurationPeriodType;
-		this.renewalTermLength = renewalTermLength;
-		this.renewalTermPeriodType = renewalTermPeriodType;
-		this.billingPeriod = billingPeriod;
-		this.agreements = agreements;
-	}
-	*/
 
 	public String getId() {
 		return id;
@@ -176,7 +157,15 @@ public class Plan {
 		planRef.setName(this.getName());
 		return planRef;
 	}
-	
+
+	public String getBillingPeriodEnd() {
+		return billingPeriodEnd;
+	}
+
+	public void setBillingPeriodEnd(String billingPeriodEnd) {
+		this.billingPeriodEnd = billingPeriodEnd;
+	}
+
 	@Override
 	public String toString() {
 		return "SubscriptionPlan [id=" + id + ", name=" + name + ", description=" + description + ", validFor="
