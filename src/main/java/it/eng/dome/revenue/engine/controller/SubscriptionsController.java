@@ -25,7 +25,7 @@ import it.eng.dome.revenue.engine.service.TmfDataRetriever;
 @RequestMapping("revenue/subscriptions")
 public class SubscriptionsController {
     
-	protected final Logger logger = LoggerFactory.getLogger(StatementsController.class);
+	protected final Logger logger = LoggerFactory.getLogger(SubscriptionsController.class);
 
 	@Autowired
 	private SubscriptionService subscriptionService;
