@@ -46,7 +46,7 @@ public class PlanService {
     public List<Plan> loadAllPlans() throws IOException {
 
     	//FIXME - replace to get dynamic contents 
-    	logger.info("Loading all plans from files ... ");
+    	logger.debug("Loading all plans from files ... ");
         
         PathMatchingResourcePatternResolver resolver = new PathMatchingResourcePatternResolver();
         Resource[] resources = resolver.getResources("classpath:data/plans/*.json");

@@ -233,7 +233,6 @@ public class PriceCalculator {
 
 	private Double computePrice(Price price, String buyerId, TimePeriod tp) {
 		Double applicableValue = getApplicableValue(price, buyerId, tp);
-		logger.info("Applicable value: {}, for price: {}, in tp: {} - {}", applicableValue, price.getName(), tp.getStartDateTime(),tp.getEndDateTime());
 
 		if (applicableValue == null) {
 			// if not exists an applicable or an computation then we had only amount price
@@ -242,6 +241,8 @@ public class PriceCalculator {
 
 		// if value in range then computation
 		if (price.getApplicableBaseRange().inRange(applicableValue)) {
+			logger.info("Applicable value: {}, for price: {}, in tp: {} - {}", applicableValue, price.getName(), tp.getStartDateTime(),tp.getEndDateTime());
+
 			return getComputationValue(price, buyerId, tp);
 		} else {
 			return null;

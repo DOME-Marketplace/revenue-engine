@@ -84,7 +84,7 @@ public class StatementsService implements InitializingBean {
      * Returns a sorted list of RevenueStatements
      */
     public List<RevenueStatement> getStatementsForSubscription(String subscriptionId) throws Exception {    
-		logger.info("getStatementsForSubscription: {}", subscriptionId);
+		logger.info("Call to getStatementsForSubscription: {}", subscriptionId);
         try {
 
             // prepare output

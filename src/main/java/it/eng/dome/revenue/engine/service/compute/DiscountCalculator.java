@@ -128,6 +128,8 @@ public class DiscountCalculator {
 
         // if value in range then computation 
         if (discount.getApplicableBaseRange() != null && discount.getApplicableBaseRange().inRange(applicableValue)) {
+            logger.info("Applicable value computed: {} in tp: {} - {}", applicableValue, tp.getStartDateTime(), tp.getEndDateTime());
+
             return getComputationValue(discount, buyerId, tp, amount);
         } else if (discount.getApplicableBaseRange() == null) {
             // No range specified, proceed with computation
@@ -175,7 +177,6 @@ public class DiscountCalculator {
         if (discount.getApplicableBase() != null && !discount.getApplicableBase().isEmpty()) {
             try {
                 applicableValue = metricsRetriever.computeValueForKey(discount.getApplicableBase(), buyerId, tp);
-                logger.info("Applicable value computed: {} in tp: {} - {}", applicableValue, tp.getStartDateTime(), tp.getEndDateTime());
             } catch (Exception e) {
                 logger.error("Error getting applicable value: {}", e.getMessage(), e);
             }
