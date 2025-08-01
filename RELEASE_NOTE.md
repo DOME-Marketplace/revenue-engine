@@ -2,17 +2,17 @@
  
 **Release Notes** of the *Revenue Engine* software:
  
-### <code>1.2.1</code> :calendar: 29/07/2025
+### <code>1.2.1</code> :calendar: 01/08/2025
 **Feature**
 - Added following sections in Report:
-	- `BillingHistory`
-	- `Discount earned`
-	- `Bill Previsioning`
+	- `BillingHistory`.
+	- `Discount earned`.
+	- `Bill Previsioning`.
   
 **Bug Fixing**
 - General bug fixing and minor optimizations of the reporting **dashboard** featuring:
-	- `Subscription plan` overview
-	- `Revenue` section
+	- `Subscription plan` overview.
+	- `Revenue` section.
 
 **Improvements**
 * Generate automatic `REST_APIs.md` file from **Swagger APIs** using the `generate-rest-apis` profile.

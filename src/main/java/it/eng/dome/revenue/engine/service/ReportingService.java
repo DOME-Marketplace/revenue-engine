@@ -79,7 +79,7 @@ public class ReportingService {
 		try {
 			report.add(getReferralSection(relatedPartyId));
 		} catch (Exception e) {
-			e.printStackTrace();
+			logger.error("Error: {}", e.getMessage());
 		}
 
         // Change Request (hardcoded)
@@ -477,8 +477,8 @@ public class ReportingService {
         if (item.getItems() != null) {
             for (RevenueItem subItem : item.getItems()) {
                 String percentage = extractRevenueSharePercentage(subItem);
-                if (!percentage.equals("N/A")) {
-                    return percentage;
+                if (!("N/A".equals(percentage))) {
+                	return percentage;
                 }
             }
         }
@@ -499,7 +499,7 @@ public class ReportingService {
             try {
 				statements = statementsService.getStatementsForSubscription(subscriptionId);
 			} catch (Exception e) {
-				e.printStackTrace();
+				logger.error("Error: {}", e.getMessage());	
 			}
             
             return statements;
