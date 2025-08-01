@@ -231,10 +231,8 @@ public class TmfDataRetriever implements InitializingBean {
         try {
             // filter
             Map<String, String> filter = new HashMap<>();
-//            filter.put("relatedParty.id", URLEncoder.encode(relatedPartyId, StandardCharsets.UTF_8));
             filter.put("relatedParty.id", relatedPartyId);
 
-//            List<BillingAccount> billAccs = accountApi.getAllBillingAccounts(null, null, 1000, filter);
             List<BillingAccount> billAccs = accountApi.getAllBillingAccounts(null, filter);
             
             if (billAccs == null || billAccs.isEmpty()) {
