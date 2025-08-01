@@ -57,7 +57,7 @@ public class PlansController {
     }
     
     @GetMapping("/{planId}/subscriptions")
-    public ResponseEntity<List<Subscription>> getSubscriptionsByPlanId(@PathVariable("planId") String planId) {
+    public ResponseEntity<List<Subscription>> getSubscriptionsByPlanId(@PathVariable String planId) {
     	logger.info("Request subscriptions for planId: {}", planId);
     	
         List<Subscription> subscriptions = subscriptionService.getByPlanId(planId);

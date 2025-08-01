@@ -1,7 +1,6 @@
 package it.eng.dome.revenue.engine.controller;
 
 import java.util.List;
-import java.util.Set;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -15,87 +14,105 @@ import org.springframework.web.bind.annotation.RestController;
 
 import it.eng.dome.revenue.engine.model.RevenueItem;
 import it.eng.dome.revenue.engine.model.RevenueStatement;
+import it.eng.dome.revenue.engine.model.SimpleBill;
 import it.eng.dome.revenue.engine.model.Subscription;
+import it.eng.dome.revenue.engine.service.BillsService;
 import it.eng.dome.revenue.engine.service.StatementsService;
 import it.eng.dome.revenue.engine.service.SubscriptionService;
 import it.eng.dome.revenue.engine.service.TmfDataRetriever;
-import it.eng.dome.tmforum.tmf678.v4.model.TimePeriod;
-
+import it.eng.dome.tmforum.tmf678.v4.model.CustomerBill;
 
 @RestController
-//@RequiredArgsConstructor
 @RequestMapping("revenue/subscriptions")
 public class SubscriptionsController {
-    
-	protected final Logger logger = LoggerFactory.getLogger(StatementsController.class);
+
+	protected final Logger logger = LoggerFactory.getLogger(SubscriptionsController.class);
 
 	@Autowired
 	private SubscriptionService subscriptionService;
 
-    @Autowired
+	@Autowired
 	private StatementsService statementsService;
+
+	@Autowired
+	private BillsService billsService;
 
 	@Autowired
 	TmfDataRetriever tmfDataRetriever;
 
-    public SubscriptionsController() {
-    }
+	public SubscriptionsController() {
+	}
 
-    @GetMapping("")
-    public ResponseEntity<List<Subscription>> getAllSubscriptions() {
-        try {
-            List<Subscription> subscriptions = subscriptionService.getAllSubscriptions();
-            return ResponseEntity.ok(subscriptions);
-        } catch (Exception e) {
-            logger.error(e.getMessage(), e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
-        }
-    }
+	@GetMapping("")
+	public ResponseEntity<List<Subscription>> getAllSubscriptions() {
+		try {
+			List<Subscription> subscriptions = subscriptionService.getAllSubscriptions();
+			return ResponseEntity.ok(subscriptions);
+		} catch (Exception e) {
+			logger.error(e.getMessage(), e);
+			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+		}
+	}
 
-    @GetMapping("/{subscriptionId}")
-    public ResponseEntity<Subscription> getSubscription(@PathVariable String subscriptionId) {
-        try {
-            Subscription subscription = subscriptionService.getSubscriptionById(subscriptionId);
-            if (subscription == null) {
-                return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
-            }
-            else {
-                return ResponseEntity.ok(subscription);
-            }
-        } catch (Exception e) {
-            logger.error(e.getMessage(), e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
-        }
-    }
+	@GetMapping("/{subscriptionId}")
+	public ResponseEntity<Subscription> getSubscription(@PathVariable String subscriptionId) {
+		try {
+			Subscription subscription = subscriptionService.getSubscriptionById(subscriptionId);
+			if (subscription == null) {
+				return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+			} else {
+				return ResponseEntity.ok(subscription);
+			}
+		} catch (Exception e) {
+			logger.error(e.getMessage(), e);
+			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+		}
+	}
 
-    @GetMapping("{subscriptionId}/statements")
-    public ResponseEntity<List<RevenueStatement>> statementCalculator(@PathVariable String subscriptionId) {    	   
-        try {
-            return ResponseEntity.ok(this.statementsService.getStatementsForSubscription(subscriptionId));
-        } catch (Exception e) {
-           logger.error(e.getMessage(), e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
-        }
-    }    
+	@GetMapping("{subscriptionId}/statements")
+	public ResponseEntity<List<RevenueStatement>> statementCalculator(@PathVariable String subscriptionId) {
+		try {
+			return ResponseEntity.ok(this.statementsService.getStatementsForSubscription(subscriptionId));
+		} catch (Exception e) {
+			logger.error(e.getMessage(), e);
+			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+		}
+	}
 
-    @GetMapping("{subscriptionId}/statements/itemsonly/")
-    public ResponseEntity<List<RevenueItem>> statementItems(@PathVariable String subscriptionId) {    	
-        try {
-            return ResponseEntity.ok(this.statementsService.getItemsForSubscription(subscriptionId));
-        } catch (Exception e) {
-           logger.error(e.getMessage(), e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
-        }
-    }
+	@GetMapping("{subscriptionId}/statements/itemsonly")
+	public ResponseEntity<List<RevenueItem>> statementItems(@PathVariable String subscriptionId) {
+		try {
+			return ResponseEntity.ok(this.statementsService.getItemsForSubscription(subscriptionId));
+		} catch (Exception e) {
+			logger.error(e.getMessage(), e);
+			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+		}
+	}
 
-    @GetMapping("{subscriptionId}/bills")
-    public ResponseEntity<Set<TimePeriod>> getBillPeriods(@PathVariable String subscriptionId) {    	   
-        try {
-            return ResponseEntity.ok(this.statementsService.getBillPeriods(subscriptionId));
-        } catch (Exception e) {
-           logger.error(e.getMessage(), e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
-        }
-    }    
+	@GetMapping("{subscriptionId}/bills")
+	public ResponseEntity<List<SimpleBill>> getBillPeriods(@PathVariable String subscriptionId) {
+		try {
+			return ResponseEntity.ok(this.billsService.getSubscriptionBills(subscriptionId));
+		} catch (Exception e) {
+			logger.error(e.getMessage(), e);
+			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+		}
+	}
+
+	@GetMapping("{subscriptionId}/customerBills")
+	public ResponseEntity<List<CustomerBill>> getCustomerBills(@PathVariable String subscriptionId) {
+		List<SimpleBill> simpleBills;
+		try {
+			simpleBills = billsService.getSubscriptionBills(subscriptionId);
+		} catch (Exception e) {
+			// Log the error and return 500 Internal Server Error
+			logger.error("Error: {}", e.getMessage());
+			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+		}
+
+		List<CustomerBill> customerBills = simpleBills.stream().map(billsService::buildCB).toList();
+
+		return ResponseEntity.ok(customerBills);
+	}
 
 }

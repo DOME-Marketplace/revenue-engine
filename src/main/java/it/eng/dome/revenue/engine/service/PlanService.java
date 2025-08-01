@@ -36,13 +36,17 @@ public class PlanService {
  
 
 
-    // === GET ALL ===
+    /*	 * Loads all plans from JSON files located in the classpath under data/plans/
+	 * 
+	 * @return List of Plan objects
+	 * @throws IOException if there is an error reading the files
+	 */
 
     
     public List<Plan> loadAllPlans() throws IOException {
 
     	//FIXME - replace to get dynamic contents 
-    	logger.info("Loading all plans from files ... ");
+    	logger.debug("Loading all plans from files ... ");
         
         PathMatchingResourcePatternResolver resolver = new PathMatchingResourcePatternResolver();
         Resource[] resources = resolver.getResources("classpath:data/plans/*.json");
@@ -50,19 +54,27 @@ public class PlanService {
         List<Plan> plans = new ArrayList<>();
         
         for (Resource resource : resources) {
-        	logger.info("Loading: {} ", resource.getFilename());
+        	logger.debug("Loading: {} ", resource.getFilename());
             try (InputStream is = resource.getInputStream()) {
                 Plan plan = mapper.readValue(is, Plan.class);
                 plans.add(plan);
             }
         }
         
-        logger.info("Number of files json read: {}", plans.size());
+        logger.debug("Number of files json read: {}", plans.size());
         return plans;
     }
     
-    // === GET BY ID ===
+    /**
+	 * Finds a plan by its ID.
+	 * 
+	 * @param id The ID of the plan to find.
+	 * @return The Plan object if found.
+	 * @throws IOException if there is an error reading the files or if the plan is not found.
+	 */
+    
     public Plan findPlanById(String id) throws IOException {
+    	logger.info("Finding plan by ID: {}", id);
         List<Plan> plans = loadAllPlans();
         return plans.stream()
             .filter(plan -> plan.getId().equals(id))  

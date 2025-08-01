@@ -1,7 +1,7 @@
 {
-  "id": "urn:ngsi-ld:plan:02645de3-8c7y-1276-a344-00rfl123aq1n",
-  "name": "BASIC",
-  "description": "Standard access and features, Dome Foundation Membership, Basic Reporting & Analytics, Basic Marketing Promotion",
+  "id": "urn:ngsi-ld:plan:52761it5-3d4q-2321-p009-44bro198re0p",
+  "name": "DEMO-PRO",
+  "description": "Standard access and features, Dome Foundation Membership, Advanced Reporting & Analytics, Advanced Marketing Promotion",
   "validFor": {
     "startDateTime": "2025-01-01T00:00:00Z",
     "endDateTime": "2025-12-31T23:59:59Z"
@@ -11,26 +11,33 @@
   "contractDurationPeriodType": "YEAR",
   "renewalTermLength": 1,
   "renewalTermPeriodType": "YEAR",
-  "billingPeriod": "YEAR",
-  "agreements": [
-    "Annual subscription with renewal. Providers can receive up to 80% discount based on the sales volume from the previous year",
-    "Referral bonus: an extra 10% discount on next year's fee for bringing 3 new providers or if a referred provider reaches 100k+ in sales"
-  ],
 
   "billingPeriodLength": "2",
   "billingPeriodType": "WEEK",
   "billingPeriodEnd": "LAST_DAY_OF_CALENDAR_MONTH", "comment": "alternative values are COMPUTED_DAY, NEXT_FRIDAY, NEXT_MONDAY, 15_OF_CALENDAR_MONTH, ...",
 
+  "agreements": [
+    "Annual subscription with renewal. Providers can receive up to 80% discount based on the sales volume from the previous year",
+    "Referral bonus: an extra 10% discount on next year's fee for bringing 3 new providers or if a referred provider reaches 100k+ in sales"
+  ],
   "price": {
-    "name": "BASIC Plan price components (2025)",
+    "name": "DEMO-PRO Plan price components (2025)",
     "isBundle": true,
     "currency": "EUR",
     "bundleOp": "CUMULATIVE",
     "prices": [
       {
+        "name": "End-of-period yearly fee (for dev purposes only)",
+        "type": "RECURRING_POSTPAID",
+        "amount": 2550,
+        "currency": "EUR",
+        "recurringChargePeriodLength": 1,
+        "recurringChargePeriodType": "YEAR"
+      },
+      {
         "name": "Recurring Yearly Fee",
         "type": "RECURRING_PREPAID",
-        "amount": 5000,
+        "amount": 8000,
         "currency": "EUR",
         "recurringChargePeriodLength": 1,
         "recurringChargePeriodType": "YEAR",
@@ -45,75 +52,48 @@
               "bundleOp": "ALTERNATIVE_HIGHER",
               "applicableBaseReferencePeriod": "PREVIOUS_SUBSCRIPTION_PERIOD",
               "applicableBase": "bills-no-taxes",
+              "computationBase": "parent-price",
               "discounts": [
                 {
-                  "name": "Discount Tier 1",
+                  "name": "No discount for sales up to 100k",
                   "applicableBaseRange": {
                     "min": 0,
                     "max": 100000
                   },
-                  "computationBase": "parent-price",
                   "percent": 0
                 },
                 {
-                  "name": "Discount Tier 2",
+                  "name": "15% Discount for sales higher than 100k",
                   "applicableBaseRange": {
-                    "min": 100001,
-                    "max": 250000
+                    "min": 100000.01
                   },
-                  "computationBase": "parent-price",
                   "percent": 15
-                },
-                {
-                  "name": "Discount Tier 3",
-                  "applicableBaseRange": {
-                    "min": 250001,
-                    "max": 750000
-                  },
-                  "computationBase": "parent-price",
-                  "percent": 30
-                },
-                {
-                  "name": "Discount Tier 4",
-                  "applicableBaseRange": {
-                    "min": 750001,
-                    "max": 1000000
-                  },
-                  "computationBase": "parent-price",
-                  "percent": 50
-                },
-                {
-                  "name": "Discount Tier 5",
-                  "applicableBaseRange": {
-                    "min": 1000001
-                  },
-                  "computationBase": "parent-price",
-                  "percent": 80
-                }
+                }                
               ]
             },
             {
               "name": "Referred-based Discount",
               "isBundle": true,
               "bundleOp": "ALTERNATIVE_HIGHER",
-              "computationBase": "parent-price",
               "applicableBaseReferencePeriod": "PREVIOUS_SUBSCRIPTION_PERIOD",
               "discounts": 
               [
                 {
-                  "name": "Discount for referring 3 providers",
+				          "name": "Discount for referring 3 providers",
                   "applicableBase": "referred-providers-number",
-                   "applicableBaseRange": {
-                        "min": 3
-                    },
-                  "percent": 10			
+				          "applicableBaseRange": {
+                    "min": 3
+                  },
+                  "computationBase": "parent-price",
+                  "percent": 10
                 },
                 {
-                  "name": "Discount for referred provider with sales over 100k",
+				          "name": "Discount for referred provider with sales over 100k",
                   "applicableBase": "referred-providers-transaction-volume",
                   "applicableBaseRange": {
                     "min": 100000
                   },
+                  "computationBase": "parent-price",
                   "percent": 10
                 }
               ]
@@ -137,43 +117,19 @@
         "currency": "EUR",
         "prices": [
           {
-            "name": "Price Tier 1",
+            "name": "Nothing to be shared with DOME for transactions below 100k",
             "applicableBaseRange": {
               "min": 0,
               "max": 100000
             },
-            "amount": 0
+            "percent": 0
           },
           {
-            "name": "Price Range 2",
+            "name": "4% revenue share for transactions higher than 100k in the last 9 charge periods",
             "applicableBaseRange": {
-              "min": 100001,
-              "max": 250000
+              "min": 100000.01
             },
             "percent": 4
-          },
-          {
-            "name": "Price Range 3",
-            "applicableBaseRange": {
-              "min": 250001,
-              "max": 750000
-            },
-            "percent": 3.5
-          },
-          {
-            "name": "Price Range 4",
-            "applicableBaseRange": {
-              "min": 750001,
-              "max": 1000000
-            },
-            "percent": 3
-          },
-          {
-            "name": "Price Range 5",
-            "applicableBaseRange": {
-              "min": 1000001
-            },
-            "percent": 2.5
           }
         ]
       }

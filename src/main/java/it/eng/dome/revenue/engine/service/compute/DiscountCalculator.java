@@ -48,7 +48,7 @@ public class DiscountCalculator {
         } else {
             RevenueItem atomicDiscount = getAtomicDiscount(discount, timePeriod, amount);
             if (atomicDiscount == null) {
-                logger.info("Discount {} not applicable (atomic discount is null), skipping item creation.", discount.getName());
+                logger.debug("Discount {} not applicable (atomic discount is null), skipping item creation.", discount.getName());
                 return null;
             }
             return atomicDiscount;
@@ -91,7 +91,7 @@ public class DiscountCalculator {
         Double amountValue = this.computeDiscount(discount, buyerId, tp, amount);
 
         if (amountValue == null || amountValue == 0.0) {
-            logger.info("Atomic discount for {} is null or zero, returning null", discount.getName());
+            logger.debug("Atomic discount for {} is null or zero, returning null", discount.getName());
             return null;
         }
 
@@ -120,7 +120,6 @@ public class DiscountCalculator {
     private Double computeDiscount(Discount discount, String buyerId, TimePeriod tp, Double amount) {
         Double applicableValue = getApplicableValue(discount, buyerId, tp);
 
-        logger.info("applicable value computed: {}", applicableValue);
 
         if (applicableValue == null) {
             // if not exists an applicable or an computation then we had only amount discount
@@ -129,19 +128,19 @@ public class DiscountCalculator {
 
         // if value in range then computation 
         if (discount.getApplicableBaseRange() != null && discount.getApplicableBaseRange().inRange(applicableValue)) {
+            logger.info("Applicable value computed: {} in tp: {} - {}", applicableValue, tp.getStartDateTime(), tp.getEndDateTime());
+
             return getComputationValue(discount, buyerId, tp, amount);
         } else if (discount.getApplicableBaseRange() == null) {
             // No range specified, proceed with computation
             return getComputationValue(discount, buyerId, tp, amount);
         } else {
-            // when not in range
-            logger.info("Not in range {}", applicableValue);
             return null;
         }
     }
 
     private Double getComputationValue(Discount discount, String buyerId, TimePeriod tp, Double amount) {
-        logger.info("Computation of discount value");
+        logger.debug("Computation of discount value");
         // computation logic
         if (discount.getComputationBase() != null && !discount.getComputationBase().isEmpty()) {
         	 if (discount.getPercent() != null) {
@@ -150,7 +149,7 @@ public class DiscountCalculator {
 	                // Handle special case for "parent-price" computation base
 	                if ("parent-price".equals(discount.getComputationBase())) {
 	                    computationValue = amount; // Use the parent price amount
-	                    logger.info("Using parent price amount: {}", computationValue);
+	                    logger.debug("Using parent price amount: {}", computationValue);
 	                } else {
 	                    computationValue = metricsRetriever.computeValueForKey(discount.getComputationBase(), buyerId, tp);
 	                    //computationValue += 200000.00; // Simulating a base value for testing purposes
@@ -178,7 +177,6 @@ public class DiscountCalculator {
         if (discount.getApplicableBase() != null && !discount.getApplicableBase().isEmpty()) {
             try {
                 applicableValue = metricsRetriever.computeValueForKey(discount.getApplicableBase(), buyerId, tp);
-                logger.info("Applicable value computed: {} in tp: {}", applicableValue, tp);
             } catch (Exception e) {
                 logger.error("Error getting applicable value: {}", e.getMessage(), e);
             }

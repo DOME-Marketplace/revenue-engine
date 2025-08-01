@@ -7,6 +7,7 @@ import java.util.Set;
 import java.util.TreeSet;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class RevenueItem {
@@ -14,24 +15,25 @@ public class RevenueItem {
     private String name;
     private Double value;
     private String currency;
+    private Boolean estimated;
+
     private OffsetDateTime chargeTime;
     
     private List<RevenueItem> items;
 
-    public RevenueItem(String name, String currency) {
-		this.name = name;
-		this.currency = currency;
-	}
-
     public RevenueItem() {
     	this.items = new ArrayList<>();
     }
+
+    public RevenueItem(String name, String currency) {
+        this();
+		this.name = name;
+		this.currency = currency;
+	}
     
     public RevenueItem(String name, Double value, String currency) {
-        this.name = name;
+        this(name, currency);
         this.value = value; 
-        this.currency = currency;
-        this.items = new ArrayList<>();
     }
 
     public List<RevenueItem> getItems() {
@@ -46,7 +48,11 @@ public class RevenueItem {
         if(currency!=null && !currency.equals(this.currency)) {
             throw new IllegalArgumentException("Currency mismatch: " + this.currency + " vs " + currency);
         }
-        this.items.add(new RevenueItem(name, value, currency));
+        this.addRevenueItem(new RevenueItem(name, value, currency));
+    }
+
+    public void addRevenueItem(RevenueItem item) {
+        this.items.add(item);
     }
  
     public String getName() {
@@ -58,7 +64,7 @@ public class RevenueItem {
     }
 
     public Double getValue() {
-        return value;
+        return (value!=null ? value : 0);
     }
 
     public void setValue(Double value) {
@@ -113,6 +119,7 @@ public class RevenueItem {
     public RevenueItem getFilteredClone(OffsetDateTime chargeTime) {
         RevenueItem clone = new RevenueItem(this.name, this.value, this.currency);
         clone.setChargeTime(chargeTime);
+        clone.setEstimated(this.estimated);
         if (this.items != null) {
             for (RevenueItem item : this.items) {
                 if(item.getChargeTime() == null || item.getChargeTime().equals(chargeTime))
@@ -120,6 +127,21 @@ public class RevenueItem {
             }
         }
         return clone;
+    }
+
+    @JsonProperty("estimated")
+    public Boolean isEstimated() {
+        if(this.items!=null) {
+            for(RevenueItem i:items) {
+                if(i.isEstimated())
+                    return true;
+            }
+        }
+        return Boolean.TRUE.equals(this.estimated);
+    }
+
+    public void setEstimated(Boolean estimated) {
+        this.estimated = estimated;
     }
 
     /*

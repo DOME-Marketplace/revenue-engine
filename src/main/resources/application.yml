@@ -9,7 +9,7 @@ server:
 # Logging Configuration
 logging:
   level:
-    it.eng.dome: ${LOG_LEVEL:DEBUG}
+    it.eng.dome: ${LOG_LEVEL:INFO}
     org.apache.coyote.http11: ERROR
   pattern:
     console: "%d{yyyy-MM-dd HH:mm:ss} [%-5level] %logger{36} - %msg%n" 
@@ -52,3 +52,4 @@ tmforumapi:
   tmf651_agreement_management_path: tmf-api/agreementManagement/v4
   tmf666_account_management_path: tmf-api/accountManagement/v4
   tmf678_billing_path: tmf-api/customerBillManagement/v4
+ 
