@@ -14,6 +14,9 @@
 	- `Subscription plan` overview
 	- `Revenue` section
 
+**Improvements**
+* Generate automatic `REST_APIs.md` file from **Swagger APIs** using the `generate-rest-apis` profile.
+
 ### <code>1.2.0</code> :calendar: 25/07/2025
 **Feature**
 * Aligned with `[2.1.0, 2.2.0)` version of `Brokerage Utils`.

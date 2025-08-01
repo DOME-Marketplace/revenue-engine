@@ -43,7 +43,6 @@
 		<dependency>
 			<groupId>org.ehcache</groupId>
 			<artifactId>ehcache</artifactId>
-			<version>3.10.8</version>
 		</dependency>
 
 		<!-- Brokerage Utils dependencies -->
@@ -144,5 +143,17 @@
 			</plugin>
 		</plugins>
 	</build>
+	
+	<profiles>
+	    <profile>
+	        <id>generate-rest-apis</id>
+	        <activation>
+	            <activeByDefault>false</activeByDefault>
+	        </activation>
+	        <properties>
+	            <spring-boot.run.arguments>--rest_api_docs.generate_md=true</spring-boot.run.arguments>
+	        </properties>
+	    </profile>
+	</profiles>
 
 </project>
