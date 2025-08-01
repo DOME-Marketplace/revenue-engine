@@ -427,7 +427,6 @@ public class ReportingService {
 
         for (RevenueStatement statement : statements) {
             for (RevenueItem item : statement.getRevenueItems()) {
-                // Search recursively through all nested items
                 findNestedReferralDiscounts(item, discounts);
             }
         }
@@ -475,7 +474,6 @@ public class ReportingService {
             return item.getName().split("%")[0] + "%";
         }
         
-        // Cerca negli items annidati
         if (item.getItems() != null) {
             for (RevenueItem subItem : item.getItems()) {
                 String percentage = extractRevenueSharePercentage(subItem);

@@ -36,7 +36,11 @@ public class PlanService {
  
 
 
-    // === GET ALL ===
+    /*	 * Loads all plans from JSON files located in the classpath under data/plans/
+	 * 
+	 * @return List of Plan objects
+	 * @throws IOException if there is an error reading the files
+	 */
 
     
     public List<Plan> loadAllPlans() throws IOException {
@@ -61,7 +65,14 @@ public class PlanService {
         return plans;
     }
     
-    // === GET BY ID ===
+    /**
+	 * Finds a plan by its ID.
+	 * 
+	 * @param id The ID of the plan to find.
+	 * @return The Plan object if found.
+	 * @throws IOException if there is an error reading the files or if the plan is not found.
+	 */
+    
     public Plan findPlanById(String id) throws IOException {
         List<Plan> plans = loadAllPlans();
         return plans.stream()

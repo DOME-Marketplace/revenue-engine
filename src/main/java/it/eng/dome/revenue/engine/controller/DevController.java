@@ -14,6 +14,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import it.eng.dome.revenue.engine.model.RevenueStatement;
+import it.eng.dome.revenue.engine.model.SimpleBill;
+import it.eng.dome.revenue.engine.service.BillsService;
 import it.eng.dome.revenue.engine.service.PlanService;
 import it.eng.dome.revenue.engine.service.RevenueService;
 import it.eng.dome.revenue.engine.service.SubscriptionService;
@@ -21,6 +23,7 @@ import it.eng.dome.revenue.engine.service.TmfDataRetriever;
 import it.eng.dome.revenue.engine.service.compute.PriceCalculator;
 import it.eng.dome.tmforum.tmf678.v4.model.AppliedCustomerBillingRate;
 import it.eng.dome.tmforum.tmf678.v4.model.BillingAccountRef;
+import it.eng.dome.tmforum.tmf678.v4.model.CustomerBill;
 
 @RestController
 //@RequiredArgsConstructor
@@ -43,6 +46,9 @@ public class DevController {
 	
 	@Autowired
     RevenueService revenueService;
+	
+	@Autowired
+    private BillsService billsService;
 
     public DevController() {
     }
@@ -56,6 +62,20 @@ public class DevController {
             return ResponseEntity.internalServerError().build();
         }
     }
+    
+    @PostMapping("/toCb")
+    public ResponseEntity<CustomerBill> convertToCB(@RequestBody SimpleBill sb) {    	
+        CustomerBill cb = billsService.buildCB(sb);
+        return ResponseEntity.ok(cb);
+    }
+    
+    @PostMapping("/toCb/list")
+    public ResponseEntity<List<CustomerBill>> convertToCBList(@RequestBody List<SimpleBill> sbs) {
+        List<CustomerBill> cbList = sbs.stream()
+            .map(billsService::buildCB)
+            .toList();
+        return ResponseEntity.ok(cbList);
+    }   
     
     @PostMapping("/to-acbr")
     public ResponseEntity<AppliedCustomerBillingRate> convertToACBR(@RequestBody RevenueStatement revenueStatement) {    	

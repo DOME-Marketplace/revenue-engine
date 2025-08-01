@@ -53,6 +53,13 @@ public class StatementsService implements InitializingBean {
         return new ArrayList<>(items);
     }
 
+    /**
+	 * Returns a set of TimePeriods for the billing periods of the subscription
+	 * 
+	 * @param subscriptionId The ID of the subscription for which to retrieve billing periods.
+	 * @return A set of TimePeriod objects representing the billing periods.
+	 * @throws Exception If an error occurs during retrieval.
+	 */
     public Set<TimePeriod> getBillPeriods(String subscriptionId) throws Exception {
 
             // retrieve the subscription by id

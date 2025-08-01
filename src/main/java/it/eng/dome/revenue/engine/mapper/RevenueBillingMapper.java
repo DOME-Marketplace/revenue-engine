@@ -20,7 +20,7 @@ import it.eng.dome.tmforum.tmf678.v4.model.TaxItem;
 
 public class RevenueBillingMapper {
 	
-	public CustomerBill toCB(SimpleBill simpleBill, BillingAccountRef billingAccountRef) {
+	public static CustomerBill toCB(SimpleBill simpleBill, BillingAccountRef billingAccountRef) {
         CustomerBill cb = new CustomerBill();
 
         // 1. id and basic metadata
@@ -33,21 +33,21 @@ public class RevenueBillingMapper {
         cb.setBillDate(simpleBill.getBillTime());
         cb.setLastUpdate(OffsetDateTime.now());
         cb.setNextBillDate(simpleBill.getPeriod().getEndDateTime().plusMonths(1));
-        cb.setPaymentDueDate(simpleBill.getPeriod().getEndDateTime().plusDays(10));
+        cb.setPaymentDueDate(simpleBill.getPeriod().getEndDateTime().plusDays(10)); // Q: How many days after the invoice date should we set the due date?
 
         // 3. period
         cb.setBillingPeriod(simpleBill.getPeriod());
 
         // 4. amounts
-        Float totalAmount = simpleBill.getAmount().floatValue();
-        Float taxRate = 0.20f;
-        Float taxAmount = totalAmount * taxRate;
-        Float taxExcluded = totalAmount - taxAmount;
+        Float amountTaxExcluded = simpleBill.getAmount().floatValue(); // Q: Is sbAmount whitout tax?
+        Float taxRate = 0.20f; // Q: How do we set the TaxRate?
+        Float taxAmount = amountTaxExcluded * taxRate;
+        Float amountIncludedTax = amountTaxExcluded + taxAmount;
 
-        cb.setAmountDue(createMoney(totalAmount));
-        cb.setRemainingAmount(createMoney(0.0f)); // Da business logic
-        cb.setTaxIncludedAmount(createMoney(totalAmount));
-        cb.setTaxExcludedAmount(createMoney(taxExcluded));
+        cb.setAmountDue(createMoney(0.0f)); //TODO: ask Stefania
+        cb.setRemainingAmount(createMoney(0.0f)); //TODO: ask Stefania
+        cb.setTaxIncludedAmount(createMoney(amountIncludedTax));
+        cb.setTaxExcludedAmount(createMoney(amountTaxExcluded));
 
         // 5. tax
         TaxItem taxItem = new TaxItem()
@@ -72,14 +72,14 @@ public class RevenueBillingMapper {
         cb.setBillDocument(new ArrayList<>());
         cb.setPaymentMethod(null);
 
-//        // 9. Tipo e metadati TMF
+//        // 9. Type and metadata
 //        cb._type("CustomerBill");
 //        cb._baseType("CustomerBill");
 //        cb._schemaLocation("...some uri...");
         return cb;
     }
 
-	private Money createMoney(Float amount) {
+	private static Money createMoney(Float amount) {
 	    Money money = new Money();
 	    money.setUnit("EUR");
 	    money.setValue(amount);

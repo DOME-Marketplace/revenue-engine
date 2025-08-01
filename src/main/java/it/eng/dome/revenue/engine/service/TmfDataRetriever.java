@@ -242,10 +242,8 @@ public class TmfDataRetriever implements InitializingBean {
                 return null;
             }
 
-            // Supponiamo che ci interessi il primo (o unico) account
             BillingAccount first = billAccs.get(0);
 
-            // Mappa su BillingAccountRef
             BillingAccountRef ref = new BillingAccountRef();
             ref.setId(first.getId());
             URI hrefURI = first.getHref();

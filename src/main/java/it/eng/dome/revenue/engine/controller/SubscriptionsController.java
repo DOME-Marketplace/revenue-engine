@@ -20,6 +20,7 @@ import it.eng.dome.revenue.engine.service.BillsService;
 import it.eng.dome.revenue.engine.service.StatementsService;
 import it.eng.dome.revenue.engine.service.SubscriptionService;
 import it.eng.dome.revenue.engine.service.TmfDataRetriever;
+import it.eng.dome.tmforum.tmf678.v4.model.CustomerBill;
 
 @RestController
 @RequestMapping("revenue/subscriptions")
@@ -97,6 +98,24 @@ public class SubscriptionsController {
            logger.error(e.getMessage(), e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
-    }    
+    }
+    
+    @GetMapping("{subscriptionId}/customerBills")
+    public ResponseEntity<List<CustomerBill>> getCustomerBills(@PathVariable String subscriptionId) {
+        List<SimpleBill> simpleBills;
+        try {
+            simpleBills = billsService.getSubscriptionBills(subscriptionId);
+        } catch (Exception e) {
+            // Log the error and return 500 Internal Server Error
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+
+        List<CustomerBill> customerBills = simpleBills.stream()
+                .map(billsService::buildCB)
+                .toList();
+
+        return ResponseEntity.ok(customerBills);
+    }
 
 }
