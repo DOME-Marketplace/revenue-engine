@@ -72,8 +72,8 @@ public class BillsService implements InitializingBean {
             }
             return new ArrayList<>(bills);
         } catch (Exception e) {
-           logger.error(e.getMessage(), e);
-           throw(e);
+        	logger.error("Error retrieving subscription bills for ID {}: {}", subscriptionId, e.getMessage(), e);
+            throw e;
         }
     }
     

@@ -117,8 +117,8 @@ public class StatementsService implements InitializingBean {
 
             return new ArrayList<>(statements);
         } catch (Exception e) {
-           logger.error(e.getMessage(), e);
-           throw(e);
+            logger.error("Failed to generate statements for subscription {}: {}", subscriptionId, e.getMessage(), e);
+            throw e;
         }
     }    
 

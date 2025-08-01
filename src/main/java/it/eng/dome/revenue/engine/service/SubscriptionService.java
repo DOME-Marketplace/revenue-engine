@@ -214,14 +214,12 @@ public class SubscriptionService implements InitializingBean {
 
 
 	public List<Subscription> getByPlanId(String id) {
-		logger.debug("Retrieving subscriptions by plan id: {}", id);
+	    logger.debug("Retrieving subscriptions by plan id: {}", id);
 	    try {
 	        return this.getAllSubscriptions().stream()
 	                .filter(sub -> sub.getPlan() != null && id.equals(sub.getPlan().getId()))
 	                .collect(Collectors.toList());
-	    } catch (IOException e) {
-	        throw new RuntimeException("Unable to load subscriptions for planId: " + id, e);
-	    } catch (ApiException e) {
+	    } catch (IOException | ApiException e) {
 	        throw new RuntimeException("Unable to load subscriptions for planId: " + id, e);
 	    }
 	}

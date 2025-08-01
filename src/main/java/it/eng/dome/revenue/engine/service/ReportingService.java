@@ -76,11 +76,7 @@ public class ReportingService {
         report.add(getPrevisioningSection(relatedPartyId));
 
 		// Referral Program Area (computed)
-		try {
-			report.add(getReferralSection(relatedPartyId));
-		} catch (Exception e) {
-			logger.error("Error: {}", e.getMessage());
-		}
+		report.add(getReferralSection(relatedPartyId));
 
         // Change Request (hardcoded)
 //        report.add(new Reporting("Plan Change Request", Arrays.asList(
@@ -399,17 +395,39 @@ public class ReportingService {
         return new Report("Bills Provisioning", items);
     }
     
-    public Report getReferralSection(String relatedPartyId) throws Exception {        
-        Subscription subscription = subscriptionService.getSubscriptionByRelatedPartyId(relatedPartyId);
+    public Report getReferralSection(String relatedPartyId) {        
+    	Subscription subscription;
+        try {
+            subscription = subscriptionService.getSubscriptionByRelatedPartyId(relatedPartyId);
+        } catch (IOException | ApiException e) {
+            logger.error("Failed to retrieve subscription for related party {}: {}", relatedPartyId, e.getMessage(), e);
+            return new Report("Referral Program Area", List.of(
+                new Report("Referred Providers", "N/A"),
+                new Report("Reward Earned", "N/A")
+            ));
+        }
+        
         SubscriptionTimeHelper timeHelper = new SubscriptionTimeHelper(subscription);
         TimePeriod subscriptionPeriod = timeHelper.getSubscriptionPeriodAt(subscription.getStartDate());
         
-        Integer referralProviders = metricsRetriever.computeReferralsProvidersNumber(
-            subscription.getBuyerId(), 
-            subscriptionPeriod
-        );
+        Integer referralProviders;
+        try {
+            referralProviders = metricsRetriever.computeReferralsProvidersNumber(
+                subscription.getBuyerId(),
+                subscriptionPeriod
+            );
+        } catch (Exception e) {
+            logger.error("Failed to compute referral providers for buyer {}: {}", subscription.getBuyerId(), e.getMessage(), e);
+            referralProviders = 0;
+        }
 
-        List<RevenueStatement> statements = getRevenueStatements(relatedPartyId);
+        List<RevenueStatement> statements;
+        try {
+            statements = getRevenueStatements(relatedPartyId);
+        } catch (IOException | ApiException e) {
+            logger.error("Failed to retrieve revenue statements for related party {}: {}", relatedPartyId, e.getMessage(), e);
+            statements = Collections.emptyList();
+        }
         
         List<RevenueItem> referralDiscounts = extractReferralDiscounts(statements);
         
@@ -487,23 +505,22 @@ public class ReportingService {
     }
 
     public List<RevenueStatement> getRevenueStatements(String relatedPartyId) throws ApiException, IOException {
-        logger.info("Call getRevenueStatements with relatedPartyId: {}", relatedPartyId);
-                
-        
-            String subscriptionId = subscriptionService.getSubscriptionIdByRelatedPartyId(relatedPartyId);
-            logger.info("Get subscriptionId: {}", subscriptionId);
+    	logger.info("Call getRevenueStatements with relatedPartyId: {}", relatedPartyId);
 
-            // prepare output
-            List<RevenueStatement> statements = new ArrayList<>();
+        String subscriptionId = subscriptionService.getSubscriptionIdByRelatedPartyId(relatedPartyId);
+        logger.info("Retrieved subscriptionId: {}", subscriptionId);
 
-            try {
-				statements = statementsService.getStatementsForSubscription(subscriptionId);
-			} catch (Exception e) {
-				logger.error("Error: {}", e.getMessage());	
-			}
-            
-            return statements;
-            
+        try {
+            return statementsService.getStatementsForSubscription(subscriptionId);
+        } catch (ApiException | IOException e) {
+            // Propagate specific declared exceptions
+            logger.error("Error retrieving statements for subscription {}: {}", subscriptionId, e.getMessage(), e);
+            throw e;
+        } catch (Exception e) {
+            // Wrap unexpected exception in a runtime one or log and return empty if you want to fail gracefully
+            logger.error("Unexpected error retrieving statements for subscription {}: {}", subscriptionId, e.getMessage(), e);
+            throw new RuntimeException("Unexpected error retrieving statements", e);
+        }
     }
 
     private String format(Double value) {
