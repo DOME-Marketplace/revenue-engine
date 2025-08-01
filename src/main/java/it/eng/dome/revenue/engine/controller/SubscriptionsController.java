@@ -21,9 +21,7 @@ import it.eng.dome.revenue.engine.service.StatementsService;
 import it.eng.dome.revenue.engine.service.SubscriptionService;
 import it.eng.dome.revenue.engine.service.TmfDataRetriever;
 
-
 @RestController
-//@RequiredArgsConstructor
 @RequestMapping("revenue/subscriptions")
 public class SubscriptionsController {
     

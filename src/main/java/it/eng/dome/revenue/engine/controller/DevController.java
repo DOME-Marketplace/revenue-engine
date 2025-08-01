@@ -56,12 +56,9 @@ public class DevController {
             return ResponseEntity.internalServerError().build();
         }
     }
-
     
     @PostMapping("/to-acbr")
     public ResponseEntity<AppliedCustomerBillingRate> convertToACBR(@RequestBody RevenueStatement revenueStatement) {    	
-//    	//TODO: verificare quale RelatedParty prendere fra quelli presenti
-//    	BillingAccountRef billingAccountRef = tmfDataRetriever.retrieveBillingAccountByRelatedPartyId(revenueStatement.getSubscription().getRelatedParties().get(0).getId());
         AppliedCustomerBillingRate acbr = revenueService.buildACBR(revenueStatement);
         return ResponseEntity.ok(acbr);
     }
@@ -72,19 +69,6 @@ public class DevController {
             .map(revenueService::buildACBR)
             .toList();
         return ResponseEntity.ok(acbrList);
-    }
-
-//    
-//    @GetMapping("/dev/referrals/{referrerId}")
-//    public ResponseEntity<List<Organization>> getReferrals(@PathVariable String referrerId) {
-//        try {
-//            List<Organization> referrals = tmfDataRetriever.listReferralsProviders(referrerId);
-//            return ResponseEntity.ok(referrals);
-//        } catch (Exception e) {
-//            logger.error("Error in getReferrals", e);
-//            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
-//        }
-//    }
-    
+    }   
 
 }

@@ -10,9 +10,9 @@ import org.springframework.beans.factory.config.ConfigurableBeanFactory;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
 
-import it.dome.revenue.engine.mapper.RevenueBillingMapper;
 import it.eng.dome.brokerage.api.AgreementManagementApis;
 import it.eng.dome.brokerage.api.CustomerManagementApis;
+import it.eng.dome.revenue.engine.mapper.RevenueBillingMapper;
 import it.eng.dome.revenue.engine.model.RevenueStatement;
 import it.eng.dome.revenue.engine.tmf.TmfApiFactory;
 import it.eng.dome.tmforum.tmf629.v4.model.Customer;
@@ -68,7 +68,7 @@ public class RevenueService implements InitializingBean {
             rs.getSubscription().getRelatedParties().isEmpty()) {
             throw new IllegalArgumentException("Missing related party information in RevenueStatement");
         }
-
+        //TODO: check which rl to retrieve 
         String relatedPartyId = rs.getSubscription().getRelatedParties().get(0).getId();
         BillingAccountRef billingAccountRef = tmfDataRetriever.retrieveBillingAccountByRelatedPartyId(relatedPartyId);
         return RevenueBillingMapper.toACBR(rs, billingAccountRef);

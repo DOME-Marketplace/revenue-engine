@@ -139,7 +139,7 @@ public class SubscriptionTimeHelper {
         return this.getSubscriptionPeriodByOffset(time, -1);
     }
 
-        // compute the previous subscription period wrt given time
+    // compute the previous subscription period wrt given time
     public TimePeriod getNextSubscriptionPeriod(OffsetDateTime time) {
         return this.getSubscriptionPeriodByOffset(time, 1);
     }
@@ -187,7 +187,6 @@ public class SubscriptionTimeHelper {
         OffsetDateTime start = this.subscription.getStartDate();
         while(!start.isAfter(time)) {
             OffsetDateTime end = this.rollChargePeriod(start, price, 1);
-//            logger.debug("Checking period: " + start + " - " + end);
             if(!time.isBefore(start) && time.isBefore(end)) {
             	TimePeriod tp = new TimePeriod();
             	tp.setStartDateTime(start);

@@ -144,7 +144,6 @@ public class SimpleBill {
         key += this.getDescriptions();
         // include the subscription id (buyer and plan) + the bill nr
         return "urn:ngsi-ld:simplebill:" + this.subscriptionId.substring(25) + "-" + UUID.nameUUIDFromBytes(key.getBytes()).toString();
-
     }
 
 }

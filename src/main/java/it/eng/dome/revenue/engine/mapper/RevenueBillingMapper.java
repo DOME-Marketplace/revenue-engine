@@ -1,19 +1,90 @@
-package it.dome.revenue.engine.mapper;
+package it.eng.dome.revenue.engine.mapper;
 
+import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
 import it.eng.dome.revenue.engine.model.RevenueItem;
 import it.eng.dome.revenue.engine.model.RevenueStatement;
+import it.eng.dome.revenue.engine.model.SimpleBill;
 import it.eng.dome.revenue.engine.model.Subscription;
 import it.eng.dome.tmforum.tmf678.v4.model.AppliedBillingRateCharacteristic;
 import it.eng.dome.tmforum.tmf678.v4.model.AppliedCustomerBillingRate;
 import it.eng.dome.tmforum.tmf678.v4.model.BillingAccountRef;
+import it.eng.dome.tmforum.tmf678.v4.model.CustomerBill;
 import it.eng.dome.tmforum.tmf678.v4.model.Money;
 import it.eng.dome.tmforum.tmf678.v4.model.ProductRef;
+import it.eng.dome.tmforum.tmf678.v4.model.StateValue;
+import it.eng.dome.tmforum.tmf678.v4.model.TaxItem;
 
 public class RevenueBillingMapper {
+	
+	public CustomerBill toCB(SimpleBill simpleBill, BillingAccountRef billingAccountRef) {
+        CustomerBill cb = new CustomerBill();
+
+        // 1. id and basic metadata
+        String billId = simpleBill.getId();
+        cb.setId(billId);
+        cb.setHref(billId);
+        cb.setBillNo(billId.substring(billId.lastIndexOf(":") + 1, billId.length()).substring(0, 6));
+
+        // 2. Date
+        cb.setBillDate(simpleBill.getBillTime());
+        cb.setLastUpdate(OffsetDateTime.now());
+        cb.setNextBillDate(simpleBill.getPeriod().getEndDateTime().plusMonths(1));
+        cb.setPaymentDueDate(simpleBill.getPeriod().getEndDateTime().plusDays(10));
+
+        // 3. period
+        cb.setBillingPeriod(simpleBill.getPeriod());
+
+        // 4. amounts
+        Float totalAmount = simpleBill.getAmount().floatValue();
+        Float taxRate = 0.20f;
+        Float taxAmount = totalAmount * taxRate;
+        Float taxExcluded = totalAmount - taxAmount;
+
+        cb.setAmountDue(createMoney(totalAmount));
+        cb.setRemainingAmount(createMoney(0.0f)); // Da business logic
+        cb.setTaxIncludedAmount(createMoney(totalAmount));
+        cb.setTaxExcludedAmount(createMoney(taxExcluded));
+
+        // 5. tax
+        TaxItem taxItem = new TaxItem()
+                .taxAmount(createMoney(taxAmount))
+                .taxCategory("VAT")
+                .taxRate(taxRate);
+        cb.setTaxItem(List.of(taxItem));
+
+        // 6. Related Party
+        cb.setRelatedParty(simpleBill.getRelatedParties());
+
+        // 7. Other default attributes
+        cb.setCategory("normal");
+        cb.setRunType("onCycle"); // onCycle or offCycle?
+        cb.setState(StateValue.NEW);
+//        cb.setEstimated(simpleBill.isEstimated());
+
+        // 8. Placeholder
+        cb.setBillingAccount(billingAccountRef);
+        cb.setFinancialAccount(null);
+        cb.setAppliedPayment(new ArrayList<>());
+        cb.setBillDocument(new ArrayList<>());
+        cb.setPaymentMethod(null);
+
+//        // 9. Tipo e metadati TMF
+//        cb._type("CustomerBill");
+//        cb._baseType("CustomerBill");
+//        cb._schemaLocation("...some uri...");
+        return cb;
+    }
+
+	private Money createMoney(Float amount) {
+	    Money money = new Money();
+	    money.setUnit("EUR");
+	    money.setValue(amount);
+	    return money;
+	}
 
     public static AppliedCustomerBillingRate toACBR(RevenueStatement rs, BillingAccountRef billingAccountRef) {
         if (rs == null) return null;
@@ -70,7 +141,6 @@ public class RevenueBillingMapper {
         return ref;
     }
 
-    
     private static void collectCharacteristics(RevenueItem item, List<AppliedBillingRateCharacteristic> collector) {
         if (item.getValue() != null) {
             AppliedBillingRateCharacteristic c = new AppliedBillingRateCharacteristic();
@@ -86,7 +156,6 @@ public class RevenueBillingMapper {
             }
         }
     }
-
 
     // TODO: Revert Mapping
 }

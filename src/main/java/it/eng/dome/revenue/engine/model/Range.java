@@ -50,7 +50,7 @@ public class Range {
     @AssertTrue(message = "The maximum value must be greater than or equal to the minimum.")
     public boolean isMaxGreaterOrEqualMin() {
         if (min == null || max == null) {
-            return true; // lascio passare la validazione NotNull o PositiveOrZero
+            return true;
         }
         return max >= min;
     }

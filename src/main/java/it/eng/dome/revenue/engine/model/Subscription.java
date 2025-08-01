@@ -27,7 +27,6 @@ public class Subscription {
 
     public Subscription() {}
 
-
     public Subscription(String id, String name, Plan plan, String status, OffsetDateTime startDate,
 			List<RelatedParty> relatedParties) {
 		this.id = id;
