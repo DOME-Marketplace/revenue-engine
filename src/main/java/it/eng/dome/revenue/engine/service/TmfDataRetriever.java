@@ -92,7 +92,7 @@ public class TmfDataRetriever implements InitializingBean {
     // retrieve all providers with at least one bill in the specified period
     public List<Organization> retrieveActiveSellers(TimePeriod timePeriod) throws Exception {
 
-        logger.debug("Retrieving active sellers from TMF API between " + timePeriod.getStartDateTime() + " and " + timePeriod.getEndDateTime());
+        logger.info("Retrieving active sellers from TMF API between " + timePeriod.getStartDateTime() + " and " + timePeriod.getEndDateTime());
 
         // id of sellers from bills
         Set<String> sellersIds = new TreeSet<>(); 

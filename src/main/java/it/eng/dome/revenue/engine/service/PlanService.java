@@ -54,14 +54,14 @@ public class PlanService {
         List<Plan> plans = new ArrayList<>();
         
         for (Resource resource : resources) {
-        	logger.info("Loading: {} ", resource.getFilename());
+        	logger.debug("Loading: {} ", resource.getFilename());
             try (InputStream is = resource.getInputStream()) {
                 Plan plan = mapper.readValue(is, Plan.class);
                 plans.add(plan);
             }
         }
         
-        logger.info("Number of files json read: {}", plans.size());
+        logger.debug("Number of files json read: {}", plans.size());
         return plans;
     }
     
@@ -74,6 +74,7 @@ public class PlanService {
 	 */
     
     public Plan findPlanById(String id) throws IOException {
+    	logger.info("Finding plan by ID: {}", id);
         List<Plan> plans = loadAllPlans();
         return plans.stream()
             .filter(plan -> plan.getId().equals(id))  

@@ -69,10 +69,10 @@ public class SubscriptionService implements InitializingBean {
 	*/
 
 	public Subscription getSubscriptionById(String id) throws ApiException, IOException {
-		logger.debug("Retrieving subscription by id: {}", id);
+		logger.info("Retrieving subscription by id: {}", id);
 		// 1. check the id is in the right format
 		if (id == null || id.isEmpty() || id.length()!=98) {
-			logger.info("malformed subscription id: " + id);
+			logger.error("malformed subscription id: " + id);
 			return null;
 		}
 		String organisationId = "urn:ngsi-ld:organization:"+id.substring(25, 61);
@@ -157,7 +157,6 @@ public class SubscriptionService implements InitializingBean {
 			logger.debug("Subscription id: {}", subscriptionId);
 			
 			Subscription subscription = this.createSubscription(subscriptionId, o, plan);
-			logger.info("Adding subsription to list");
 			subscriptions.add(subscription);
 		}
 		

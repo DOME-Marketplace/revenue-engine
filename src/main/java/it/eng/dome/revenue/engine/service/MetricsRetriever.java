@@ -32,7 +32,6 @@ public class MetricsRetriever implements InitializingBean {
     
     // implement retriever for key 'bills-no-taxes'
     public Double computeBillsNoTaxes(String sellerId, TimePeriod timePeriod) throws Exception {
-    	logger.info("Compute bills-no-taxes");
     	
     	// retrieve all seller billed invoices in the period
         List<AppliedCustomerBillingRate> bills = tmfDataRetriever.retrieveBills(sellerId, timePeriod, true);
@@ -43,7 +42,7 @@ public class MetricsRetriever implements InitializingBean {
             if (bill.getTaxExcludedAmount() != null && bill.getTaxExcludedAmount().getValue() != null) {
             	totalAmountNoTaxes += bill.getTaxExcludedAmount().getValue();
             } else {
-                logger.warn("Bill {} contains no amount. Skipping it for the revenue computation", bill.getId());
+                logger.debug("Bill {} contains no amount. Skipping it for the revenue computation", bill.getId());
            }
         }
         return totalAmountNoTaxes;
