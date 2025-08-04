@@ -46,8 +46,10 @@ public class PlanService {
 
     
     public List<Plan> loadAllPlans() throws IOException {
-    	logger.info("Fetch all plans");
-    	//FIXME - replace to get dynamic contents 
+    	logger.debug("Loading all plans");
+		
+		//FIXME - replace to get dynamic contents 
+
         
         PathMatchingResourcePatternResolver resolver = new PathMatchingResourcePatternResolver();
         Resource[] resources = resolver.getResources("classpath:data/plans/*.json");
@@ -62,7 +64,7 @@ public class PlanService {
             }
         }
         
-        logger.debug("Number of files json read: {}", plans.size());
+        logger.info("Fetch all plans, size: {}", plans.size());
         return plans;
     }
     

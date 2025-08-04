@@ -90,44 +90,58 @@ public class StatementsService implements InitializingBean {
 	 * @return A list of RevenueStatement objects representing the statements for the subscription.
 	 * @throws Exception If an error occurs during retrieval or computation of statements.
 	 */
-    public List<RevenueStatement> getStatementsForSubscription(String subscriptionId) throws Exception {    
-		logger.info("Call to getStatementsForSubscription: {}", subscriptionId);
+    public List<RevenueStatement> getStatementsForSubscription(String subscriptionId) throws Exception {
+        logger.info("Call to getStatementsForSubscription: {}", subscriptionId);
+
+        Set<RevenueStatement> statements = new TreeSet<>(new RevenueStatementTimeComparator());
+
+        Subscription sub;
         try {
+            sub = subscriptionService.getSubscriptionById(subscriptionId);
+        } catch (Exception ex) {
+            logger.error("Failed to retrieve subscription with ID {}: {}", subscriptionId, ex.getMessage(), ex);
+            throw new RuntimeException("Failed to retrieve subscription: " + subscriptionId, ex);
+        }
 
-            // prepare output
-            Set<RevenueStatement> statements = new TreeSet<>(new RevenueStatementTimeComparator());
+        Plan plan;
+        try {
+            plan = planService.findPlanById(sub.getPlan().getId());
+        } catch (Exception ex) {
+            logger.error("Failed to retrieve plan for subscription {}: {}", subscriptionId, ex.getMessage(), ex);
+            throw new RuntimeException("Failed to retrieve plan for subscription: " + subscriptionId, ex);
+        }
 
-            // retrieve the subscription by id
-            Subscription sub = subscriptionService.getSubscriptionById(subscriptionId);
+        sub.setPlan(plan);
 
-            // retrive the plan for the subscription
-            Plan plan = this.planService.findPlanById(sub.getPlan().getId());
-
-            // add the full plan to the subscription
-            sub.setPlan(plan);
-
-            // configure the price calculator
+        try {
             priceCalculator.setSubscription(sub);
 
-            // build all statements
             SubscriptionTimeHelper timeHelper = new SubscriptionTimeHelper(sub);
-            for(TimePeriod tp : timeHelper.getChargePeriodTimes()) {
-                RevenueStatement statement = priceCalculator.compute(tp);
-                if(statement!=null) {
-                    statement.clusterizeItems();
-                    statements.add(statement);
+            for (TimePeriod tp : timeHelper.getChargePeriodTimes()) {
+                try {
+                    RevenueStatement statement = priceCalculator.compute(tp);
+                    if (statement != null) {
+                        statement.clusterizeItems();
+                        statements.add(statement);
+                    }
+                } catch (Exception ex) {
+                    logger.warn("Failed to compute statement for period {} in subscription {}: {}", tp, subscriptionId, ex.getMessage(), ex);
+                    // Continue processing other periods
                 }
             }
 
-            // replace the plan with a reference
+        } catch (Exception ex) {
+            logger.error("Unexpected error while computing statements for subscription {}: {}", subscriptionId, ex.getMessage(), ex);
+            throw new RuntimeException("Error while computing statements for subscription: " + subscriptionId, ex);
+        } finally {
+            // Replace full plan with reference even in case of exception
             sub.setPlan(plan.buildRef());
-
-            return new ArrayList<>(statements);
-        } catch (Exception e) {
-            logger.error("Failed to generate statements for subscription {}: {}", subscriptionId, e.getMessage(), e);
-            throw e;
         }
-    }    
+
+        return new ArrayList<>(statements);
+    }
+
+
 
 
 }

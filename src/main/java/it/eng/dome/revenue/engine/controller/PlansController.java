@@ -51,7 +51,7 @@ public class PlansController {
             Plan plan = subscriptionPlanService.findPlanById(planId);
             return ResponseEntity.ok(plan);
         } catch (IOException e) {
-            logger.warn("Plan not found for ID {}: {}", planId, e.getMessage());
+            logger.warn(e.getMessage());
             return ResponseEntity.notFound().build();
         } catch (Exception e) {
             logger.error("Unexpected error retrieving plan {}: {}", planId, e.getMessage(), e);

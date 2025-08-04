@@ -158,7 +158,7 @@ public class ReportingService {
         }
         // check null or empty subscriptionId
         if (subscriptionId == null || subscriptionId.isEmpty()) {
-            logger.warn("Subscription ID is null or empty for Organization with ID: {}", relatedPartyId);
+            logger.warn("Subscription ID is null or not found for Organization with ID: {}", relatedPartyId);
             return new Report("Bills Provisioning", List.of(new Report("Error", "Invalid subscription ID")));
         }
 
@@ -361,7 +361,7 @@ public class ReportingService {
         }
         // check null or empty subscriptionId
         if (subscriptionId == null || subscriptionId.isEmpty()) {
-            logger.warn("Subscription ID is null or empty for Organization with ID: {}", relatedPartyId);
+            logger.warn("Subscription ID is null or not found for Organization with ID: {}", relatedPartyId);
             return new Report("Bills Provisioning", List.of(new Report("Error", "Invalid subscription ID")));
         }
 
