@@ -39,9 +39,12 @@ public class StatementsService implements InitializingBean {
     public void afterPropertiesSet() throws Exception {
     }
 
-    /*
-     * Returns a sorted list of RevenueItems
-     */
+	/**
+	 * Returns a list of RevenueItems for the subscription
+	 * @param subscriptionId
+	 * @return
+	 * @throws Exception
+	 */
     public List<RevenueItem> getItemsForSubscription(String subscriptionId) throws Exception {    	
         List<RevenueStatement> statements = this.getStatementsForSubscription(subscriptionId);
         Set<RevenueItem> items = new TreeSet<>(new RevenueItemComparator());
@@ -80,9 +83,13 @@ public class StatementsService implements InitializingBean {
             return timeHelper.getBillingTimePeriods();
         }
 
-    /*
-     * Returns a sorted list of RevenueStatements
-     */
+	/**
+	 * Retrieves all revenue statements for a given subscription ID.
+	 * 
+	 * @param subscriptionId The ID of the subscription for which to retrieve statements.
+	 * @return A list of RevenueStatement objects representing the statements for the subscription.
+	 * @throws Exception If an error occurs during retrieval or computation of statements.
+	 */
     public List<RevenueStatement> getStatementsForSubscription(String subscriptionId) throws Exception {    
 		logger.info("Call to getStatementsForSubscription: {}", subscriptionId);
         try {

@@ -26,16 +26,29 @@ public class PriceCalculator {
 
 	private Subscription subscription;
 
+	/**
+	 * Retrieves the current subscription
+	 * @return the current Subscription object
+	 */
 	public Subscription getSubscription() {
 		logger.info("Getting current subscription");
 		return subscription;
 	}
 
+	/**
+	 * Sets the subscription to be used for calculations
+	 * @param subscription the Subscription to set
+	 */
 	public void setSubscription(Subscription subscription) {
 		logger.debug("Setting new subscription: {}", subscription != null ? subscription.getId() : "null");
 		this.subscription = subscription;
 	}
 
+	/**
+	 * Computes a revenue statement for the given time period
+	 * @param period the TimePeriod for which to compute the revenue
+	 * @return RevenueStatement object or null if computation fails
+	 */
 	public RevenueStatement compute(TimePeriod period) {
 		logger.debug("Computing revenue statement for time: {}", period);
 
@@ -65,7 +78,12 @@ public class PriceCalculator {
 		return null;
 	}
 
-//    public RevenueItem compute(Price price, OffsetDateTime time) {
+	/**
+	 * Computes a revenue item for a given price and time period
+	 * @param price the Price to compute
+	 * @param timePeriod the TimePeriod for computation
+	 * @return RevenueItem or null if not applicable
+	 */
 	public RevenueItem compute(Price price, TimePeriod timePeriod) {
 		logger.debug("Computing price item: {}", price.getName());
 
@@ -102,6 +120,12 @@ public class PriceCalculator {
 		}
 	}
 
+	/**
+	 * Computes the price for a bundle of prices
+	 * @param price the bundle Price object
+	 * @param timePeriod the TimePeriod for computation
+	 * @return RevenueItem representing the bundle price
+	 */
 	private RevenueItem getBundlePrice(Price price, TimePeriod timePeriod) {
 		logger.debug("Processing bundle price with operation: {}", price.getBundleOp());
 		RevenueItem bundledRevenueItem;
@@ -127,6 +151,12 @@ public class PriceCalculator {
 
 	}
 
+	/**
+	 * Computes discount items for a price
+	 * @param price the Price object containing discount information
+	 * @param timePeriod the TimePeriod for computation
+	 * @return List of RevenueItems representing discounts
+	 */
 	private List<RevenueItem> getDiscountItems(Price price, TimePeriod timePeriod) {
 		List<RevenueItem> discountItems = new ArrayList<>();
 
@@ -139,6 +169,12 @@ public class PriceCalculator {
 		return discountItems;
 	}
 
+	/**
+	 * Computes the price for an atomic (non-bundle) price
+	 * @param price the atomic Price object
+	 * @param timePeriod the TimePeriod for computation
+	 * @return RevenueItem representing the atomic price
+	 */
 	private RevenueItem getAtomicPrice(Price price, TimePeriod timePeriod) {
 		logger.debug("Computing atomic price for: {}", price.getName());
 
@@ -170,6 +206,12 @@ public class PriceCalculator {
 		return outItem;
 	}
 
+	/**
+	 * Determines the charge time based on price type
+	 * @param timePeriod the TimePeriod for the charge
+	 * @param price the Price object
+	 * @return OffsetDateTime representing the charge time
+	 */
 	private OffsetDateTime getChargeTime(TimePeriod timePeriod, Price price) {
 		if (price.getType() == null) {
 //            logger.warn("Missing price type for price: {}. Defaulting to endTime", price.getName());
@@ -189,6 +231,12 @@ public class PriceCalculator {
 		}
 	}
 
+	/**
+	 * Gets the time period for a price calculation
+	 * @param price the Price object
+	 * @param time the reference time
+	 * @return TimePeriod for the calculation
+	 */
 	private TimePeriod getTimePeriod(Price price, OffsetDateTime time) {
 		if (price == null) {
 			logger.error("Price is null, cannot determine time period");
@@ -231,6 +279,13 @@ public class PriceCalculator {
 		return tp;
 	}
 
+	/**
+	 * Computes the price amount based on applicable rules
+	 * @param price the Price object
+	 * @param buyerId the buyer identifier
+	 * @param tp the TimePeriod for computation
+	 * @return computed price amount
+	 */
 	private Double computePrice(Price price, String buyerId, TimePeriod tp) {
 		Double applicableValue = getApplicableValue(price, buyerId, tp);
 
@@ -249,6 +304,13 @@ public class PriceCalculator {
 		}
 	}
 
+	/**
+	 * Computes the value based on computation rules
+	 * @param price the Price object
+	 * @param buyerId the buyer identifier
+	 * @param tp the TimePeriod for computation
+	 * @return computed value
+	 */
 	private Double getComputationValue(Price price, String buyerId, TimePeriod tp) {
 		if (price.getComputationBase() == null || price.getComputationBase().isEmpty()) {
 			logger.debug("No computation base defined!");
@@ -304,6 +366,13 @@ public class PriceCalculator {
 		}
 	}
 
+	/**
+	 * Gets the applicable value for price computation
+	 * @param price the Price object
+	 * @param buyerId the buyer identifier
+	 * @param tp the TimePeriod for computation
+	 * @return applicable value
+	 */
 	private Double getApplicableValue(Price price, String buyerId, TimePeriod tp) {
 		if (price.getApplicableBase() == null || price.getApplicableBase().isEmpty()) {
 			return null;
@@ -342,6 +411,12 @@ public class PriceCalculator {
 		}
 	}
 
+	/**
+	 * Computes cumulative price for a bundle
+	 * @param bundlePrice the bundle Price object
+	 * @param timePeriod the TimePeriod for computation
+	 * @return RevenueItem representing the cumulative price
+	 */
 	private RevenueItem getCumulativePrice(Price bundlePrice, TimePeriod timePeriod) {
 		List<Price> childPrices = bundlePrice.getPrices();
 		logger.debug("Computing cumulative price from {} items", childPrices.size());
@@ -364,6 +439,12 @@ public class PriceCalculator {
 		return cumulativeItem;
 	}
 
+	/**
+	 * Selects the higher price from a bundle
+	 * @param bundlePrice the bundle Price object
+	 * @param timePeriod the TimePeriod for computation
+	 * @return RevenueItem representing the higher price
+	 */
 	private RevenueItem getHigherPrice(Price bundlePrice, TimePeriod timePeriod) {
 		List<Price> childPrices = bundlePrice.getPrices();
 		logger.debug("Finding higher price from {} items", childPrices.size());
@@ -394,6 +475,12 @@ public class PriceCalculator {
 		return wrapper;
 	}
 
+	/**
+	 * Selects the lower price from a bundle
+	 * @param bundlePrice the bundle Price object
+	 * @param timePeriod the TimePeriod for computation
+	 * @return RevenueItem representing the lower price
+	 */
 	private RevenueItem getLowerPrice(Price bundlePrice, TimePeriod timePeriod) {
 		List<Price> childPrices = bundlePrice.getPrices();
 		logger.debug("Finding lower price from {} items", childPrices.size());

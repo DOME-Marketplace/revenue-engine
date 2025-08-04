@@ -57,6 +57,15 @@ public class ReportingService {
     @Autowired
     private BillsService billsService;
     
+    /**
+	 * Generates a dashboard report for the given relatedPartyId.
+	 * 
+	 * @param relatedPartyId the ID of the related party
+	 * @return a list of Report objects representing the dashboard sections
+	 * @throws ApiException if there is an error retrieving data from the API
+	 * @throws IOException if there is an error reading data from files
+	 */
+    
     public List<Report> getDashboardReport(String relatedPartyId) throws ApiException, IOException {
         logger.info("Call getDashboardReport for relatedPartyId: {}", relatedPartyId);
         
@@ -93,6 +102,15 @@ public class ReportingService {
         return report;
     }
 
+    /**
+	 * Retrieves the subscription section for the given relatedPartyId.
+	 * 
+	 * @param relatedPartyId the ID of the related party
+	 * @return a Report object containing subscription details
+	 * @throws ApiException if there is an error retrieving data from the API
+	 * @throws IOException if there is an error reading data from files
+	 */
+    
     public Report getSubscriptionSection(String relatedPartyId) throws ApiException, IOException {
         Subscription subscription = subscriptionService.getSubscriptionByRelatedPartyId(relatedPartyId);
         if (subscription == null) {
@@ -119,6 +137,13 @@ public class ReportingService {
             new Report("Agreements and Discounts", agreementsText)  
         ));
     }
+    
+    /**
+	 * Retrieves the billing history section for the given relatedPartyId.
+	 * 
+	 * @param relatedPartyId the ID of the related party
+	 * @return a Report object containing billing history details
+	 */
     
     public Report getBillingHistorySection(String relatedPartyId) {
     	String subscriptionId;
@@ -244,6 +269,15 @@ public class ReportingService {
 //
 //        return new Report("Billing History", invoiceReports);
 //    }
+    
+    
+    /**	Retrieves the revenue section for the given relatedPartyId.
+	 * 
+	 * @param relatedPartyId the ID of the related party
+	 * @return a Report object containing revenue details
+	 * @throws ApiException if there is an error retrieving data from the API
+	 * @throws IOException if there is an error reading data from files
+	 */
 
     public Report getRevenueSection(String relatedPartyId) throws ApiException, IOException {
     	List<RevenueStatement> statements = getRevenueStatements(relatedPartyId);
@@ -304,6 +338,14 @@ public class ReportingService {
 
         return new Report("Revenue Volume Monitoring", items);
     }
+    
+    
+    
+     /** 
+     * This section calculates the estimated and confirmed future bills for the current month
+     * @param relatedPartyId
+     * @return
+     */
     
     public Report getPrevisioningSection(String relatedPartyId) {
         String subscriptionId;
@@ -394,6 +436,13 @@ public class ReportingService {
 
         return new Report("Bills Provisioning", items);
     }
+    
+    /**
+	 * Retrieves the referral section for the given relatedPartyId.
+	 * 
+	 * @param relatedPartyId the ID of the related party
+	 * @return a Report object containing referral details
+	 */
     
     public Report getReferralSection(String relatedPartyId) {        
     	Subscription subscription;
@@ -504,6 +553,14 @@ public class ReportingService {
         return "N/A";
     }
 
+    /**
+	 * Retrieves revenue statements for the given relatedPartyId.
+	 * 
+	 * @param relatedPartyId the ID of the related party
+	 * @return a list of RevenueStatement objects
+	 * @throws ApiException if there is an error retrieving data from the API
+	 * @throws IOException if there is an error reading data from files
+	 */
     public List<RevenueStatement> getRevenueStatements(String relatedPartyId) throws ApiException, IOException {
     	logger.info("Call getRevenueStatements with relatedPartyId: {}", relatedPartyId);
 

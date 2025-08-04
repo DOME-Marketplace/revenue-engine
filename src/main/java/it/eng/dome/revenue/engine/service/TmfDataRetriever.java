@@ -58,6 +58,16 @@ public class TmfDataRetriever implements InitializingBean {
 	// If relatedPartyId is null, all bills in the period are retrieved
 	// If isBilled is null, the billed filter is not applied
 	// If isSeller is true, filters by relatedParty.role = "Seller"
+    
+    /**
+	 * Retrieves bills from the TMF API based on the provided seller ID, time period, and billing status.
+	 *
+	 * @param sellerId The ID of the seller to filter bills by, or null to retrieve all bills.
+	 * @param timePeriod The time period within which to retrieve bills.
+	 * @param isBilled If true, retrieves only billed bills; if false, retrieves only unbilled bills; if null, retrieves all.
+	 * @return A list of AppliedCustomerBillingRate objects representing the retrieved bills.
+	 * @throws Exception If an error occurs during retrieval.
+	 */
     public List<AppliedCustomerBillingRate> retrieveBills(String sellerId, TimePeriod timePeriod, Boolean isBilled) throws Exception {
         logger.debug("Retrieving bills from TMF API between " + timePeriod.getStartDateTime() + " and " + timePeriod.getEndDateTime());
 
@@ -90,6 +100,13 @@ public class TmfDataRetriever implements InitializingBean {
     }
 
     // retrieve all providers with at least one bill in the specified period
+    /**
+	 * Retrieves active sellers from the TMF API based on the provided time period.
+	 * 
+	 * @param timePeriod The time period within which to retrieve active sellers.
+	 * @return A list of Organization objects representing the active sellers.
+	 * @throws Exception If an error occurs during retrieval.
+	 */
     public List<Organization> retrieveActiveSellers(TimePeriod timePeriod) throws Exception {
 
         logger.info("Retrieving active sellers from TMF API between " + timePeriod.getStartDateTime() + " and " + timePeriod.getEndDateTime());
@@ -138,7 +155,13 @@ public class TmfDataRetriever implements InitializingBean {
         return activeSellers;
 
     }
-
+    /**
+	 * Lists all organizations that have been referred by a specific referrer organization.
+	 *
+	 * @param referrerOrganizationId The ID of the organization that referred others.
+	 * @return A list of Organization objects representing the referred organizations.
+	 * @throws Exception If an error occurs during retrieval.
+	 */
     public List<Organization> listReferralsProviders(String referrerOrganizationId) throws Exception {
         try {
 
@@ -165,7 +188,14 @@ public class TmfDataRetriever implements InitializingBean {
             throw(e);
         }
     }
-
+    
+    /**
+	 * Retrieves the referrer organization for a given referral organization ID.
+	 *
+	 * @param referralOrganizationId The ID of the referral organization.
+	 * @return The Organization object representing the referrer, or null if not found.
+	 * @throws Exception If an error occurs during retrieval.
+	 */
     public Organization getReferrerProvider(String referralOrganizationId) throws Exception{
         try {
             // get the id of the refferrer organization, if any
@@ -193,6 +223,7 @@ public class TmfDataRetriever implements InitializingBean {
         }
     }
 
+
     public List<Organization> retrieveActiveSellersInLastMonth() throws Exception {
         OffsetDateTime to = OffsetDateTime.now();
         OffsetDateTime from = to.plusMonths(-1);
@@ -219,6 +250,12 @@ public class TmfDataRetriever implements InitializingBean {
         timePeriod.setEndDateTime(to);
         return this.retrieveBills(null, timePeriod, true);
     }
+    
+    /** * Retrieves a billing account by related party ID from the TMF API.
+	 *
+	 * @param relatedPartyId The ID of the related party to filter billing accounts by.
+	 * @return A BillingAccountRef object representing the billing account, or null if not found.
+	 */
     
     public BillingAccountRef retrieveBillingAccountByRelatedPartyId(String relatedPartyId) {
         logger.debug("Retrieving Billing Account from TMF API By RelatedParty with id: " + relatedPartyId);

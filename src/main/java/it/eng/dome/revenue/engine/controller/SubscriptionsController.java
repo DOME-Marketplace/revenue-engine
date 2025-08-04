@@ -43,6 +43,7 @@ public class SubscriptionsController {
 	public SubscriptionsController() {
 	}
 
+	
 	@GetMapping("")
 	public ResponseEntity<List<Subscription>> getAllSubscriptions() {
 		try {

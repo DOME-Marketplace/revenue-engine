@@ -39,6 +39,13 @@ public class BillsService implements InitializingBean {
     public void afterPropertiesSet() throws Exception {
     }
 
+    /**
+	 * Retrieves a bill by its ID.
+	 * 
+	 * @param billId the ID of the bill to retrieve
+	 * @return the SimpleBill object if found, null otherwise
+	 * @throws Exception if an error occurs during retrieval
+	 */
 
     public SimpleBill getBill(String billId) throws Exception {
     	logger.debug("getBill: {}", billId);
@@ -53,7 +60,13 @@ public class BillsService implements InitializingBean {
         }
         return null;
     }
-
+    
+    /** Retrieves all bills for a given subscription ID.
+	 * 
+	 * @param subscriptionId the ID of the subscription for which to retrieve bills
+	 * @return a list of SimpleBill objects representing the bills for the subscription
+	 * @throws Exception if an error occurs during retrieval
+	 */
     public List<SimpleBill> getSubscriptionBills(String subscriptionId) throws Exception {    
     	logger.debug("getSubscriptionBills: {}", subscriptionId);
         try {
@@ -76,6 +89,14 @@ public class BillsService implements InitializingBean {
             throw e;
         }
     }
+    
+    /**
+	 * Builds a CustomerBill from a SimpleBill.
+	 * 
+	 * @param sb the SimpleBill to convert
+	 * @return a CustomerBill object
+	 * @throws IllegalArgumentException if the SimpleBill is null or does not contain related party information
+	 */
     
     public CustomerBill buildCB(SimpleBill sb) {
         if (sb == null || sb.getRelatedParties() == null || sb.getRelatedParties().isEmpty()) {

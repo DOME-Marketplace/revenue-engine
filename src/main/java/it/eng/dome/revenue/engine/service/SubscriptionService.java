@@ -68,6 +68,15 @@ public class SubscriptionService implements InitializingBean {
     }
 	*/
 
+    /**
+	 * Retrieves a subscription by its ID.
+	 * 
+	 * @param id The ID of the subscription to retrieve.
+	 * @return The Subscription object if found, null otherwise.
+	 * @throws ApiException If there is an error retrieving the organization or plan.
+	 * @throws IOException If there is an error reading the plan data.
+	 */
+    
 	public Subscription getSubscriptionById(String id) throws ApiException, IOException {
 		logger.info("Retrieving subscription by id: {}", id);
 		// 1. check the id is in the right format
@@ -93,6 +102,17 @@ public class SubscriptionService implements InitializingBean {
 		return subscription;
 	}
 
+	/**
+	 * Creates a new subscription with the given ID, organization, and plan.
+	 * 
+	 * @param id The ID of the subscription to create.
+	 * @param organization The organization associated with the subscription.
+	 * @param plan The plan associated with the subscription.
+	 * @return The created Subscription object.
+	 * @throws ApiException If there is an error during API operations.
+	 * @throws IOException If there is an error reading the plan data.
+	 */
+	
 	private Subscription createSubscription(String id, Organization organization, Plan plan) throws ApiException, IOException {
 		
 		logger.debug("Creating subscription with id: {}", id);
@@ -133,7 +153,13 @@ public class SubscriptionService implements InitializingBean {
 	}
 
 
-
+	/**
+	 * Retrieves all subscriptions for all organizations.
+	 * 
+	 * @return A list of Subscription objects representing all subscriptions.
+	 * @throws ApiException If there is an error retrieving the organizations.
+	 * @throws IOException If there is an error reading the plan data.
+	 */
 	public List<Subscription> getAllSubscriptions() throws ApiException, IOException {
 		
 		logger.info("Request getAllSubscriptions");
@@ -198,8 +224,14 @@ public class SubscriptionService implements InitializingBean {
 	}
 	*/
 
-	// === GET BY PARTY ID ===
-	
+	/**
+	 * Retrieves a subscription by its related party ID.
+	 * 
+	 * @param id The ID of the related party to search for.
+	 * @return The Subscription object if found, null otherwise.
+	 * @throws IOException If there is an error reading the subscription data.
+	 * @throws ApiException If there is an error retrieving the organization.
+	 */
 	public Subscription getSubscriptionByRelatedPartyId(String id) throws IOException, ApiException {
 		logger.debug("Retrieving subscription by related party id: {}", id);
 	    return getAllSubscriptions().stream()
@@ -210,8 +242,15 @@ public class SubscriptionService implements InitializingBean {
 	            .orElse(null);
 	}
 	
-	// === GET BY PLAN ID ===
-
+	
+	/**
+	 * Retrieves all subscriptions associated with a specific plan ID.
+	 * 
+	 * @param id The ID of the plan to filter subscriptions by.
+	 * @return A list of Subscription objects that match the given plan ID.
+	 * @throws IOException If there is an error reading the subscription data.
+	 * @throws ApiException If there is an error retrieving the organization.
+	 */
 
 	public List<Subscription> getByPlanId(String id) {
 	    logger.debug("Retrieving subscriptions by plan id: {}", id);
@@ -224,7 +263,15 @@ public class SubscriptionService implements InitializingBean {
 	    }
 	}
 	
-	// === GET SUBSCRIPTION ID BY RELATED PARTY ID ===
+	/**
+	 *  Retrieves the subscription ID associated with a specific related party ID.
+	 * 
+	 * @param relatedPartyId The ID of the related party to search for.
+	 * @return The ID of the subscription if found, null otherwise.
+	 * @throws IOException If there is an error reading the subscription data.
+	 * @throws ApiException If there is an error retrieving the organization.
+	 */
+	 
 	public String getSubscriptionIdByRelatedPartyId(String relatedPartyId) throws IOException, ApiException {
 		logger.debug("Retrieving subscription id by related party id: {}", relatedPartyId);
 	    Subscription subscription = getSubscriptionByRelatedPartyId(relatedPartyId);

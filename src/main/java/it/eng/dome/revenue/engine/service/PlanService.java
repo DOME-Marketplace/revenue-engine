@@ -38,7 +38,7 @@ public class PlanService {
  
 
 
-    /*	 * Loads all plans from JSON files located in the classpath under data/plans/
+    /** Loads all plans from JSON files located in the classpath under data/plans/
 	 * 
 	 * @return List of Plan objects
 	 * @throws IOException if there is an error reading the files
