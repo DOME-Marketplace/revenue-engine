@@ -38,17 +38,31 @@ public class RevenueBillingMapper {
 
 	    List<AppliedCustomerBillingRate> acbrList = new ArrayList<>();
 	    for (RevenueItem item : sb.getRevenueItems()) {
-	        try {
-	            if (item.getOverallValue() != null && item.getOverallValue() != 0.0) { //for ignore item with value null or zero
-	                acbrList.add(toACBR(item, sb, subscription, billingAccountRef));
-	            } else {
-	            	logger.debug("Skipping RevenueItem with null or zero value: {}", item.getName());
-	            }
-	        } catch (Exception e) {
-	        	logger.error("Failed to map RevenueItem '{}' to AppliedCustomerBillingRate: {}", item.getName(), e.getMessage(), e);
-	        }
+	        collectLeafItemsAndMap(item, sb, subscription, billingAccountRef, acbrList);
 	    }
 	    return acbrList;
+	}
+	
+	private static void collectLeafItemsAndMap(RevenueItem item, SimpleBill sb, Subscription subscription, BillingAccountRef billingAccountRef, List<AppliedCustomerBillingRate> acbrList) {
+		if (item == null) return;
+		
+		// if had a son, iterate
+		if (item.getItems() != null && !item.getItems().isEmpty()) {
+			for (RevenueItem child : item.getItems()) {
+				collectLeafItemsAndMap(child, sb, subscription, billingAccountRef, acbrList);
+			}
+		} else {
+			// leaf node (without son) -> mapper in ABCR
+			try {
+//				if (item.getOverallValue() != null && item.getOverallValue() != 0.0) {
+				acbrList.add(toACBR(item, sb, subscription, billingAccountRef));
+//				} else {
+//					logger.debug("Skipping RevenueItem with null or zero value: {}", item.getName());
+//				}
+			} catch (Exception e) {
+				logger.error("Failed to map RevenueItem '{}' to AppliedCustomerBillingRate: {}", item.getName(), e.getMessage(), e);
+			}
+		}
 	}
 
 	public static AppliedCustomerBillingRate toACBR(RevenueItem item, SimpleBill sb, Subscription subscription, BillingAccountRef billingAccountRef) {
@@ -90,14 +104,6 @@ public class RevenueBillingMapper {
 	        acbr.setTaxExcludedAmount(money);
 	    } else {
 	        logger.debug("RevenueItem '{}' has no overall value set", item.getName());
-	    }
-
-	    if (item.getItems() != null) {
-	        List<AppliedBillingRateCharacteristic> characteristics = new ArrayList<>();
-	        for (RevenueItem child : item.getItems()) {
-	            collectCharacteristics(child, characteristics);
-	        }
-	        acbr.setCharacteristic(characteristics);
 	    }
 
 	    return acbr;
