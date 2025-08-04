@@ -30,22 +30,40 @@ public class DevOrganizationController {
 
     @GetMapping("{referrerOrganizationId}/referrals")
     public ResponseEntity<List<Organization>> listReferralsProviders(@PathVariable String referrerOrganizationId) {
+//        logger.info("Request received: list referrals for referrerOrganizationId {}", referrerOrganizationId);
         try {
-            return ResponseEntity.ok(tmfDataRetriever.listReferralsProviders(referrerOrganizationId));
+            List<Organization> referrals = tmfDataRetriever.listReferralsProviders(referrerOrganizationId);
+
+            if (referrals == null || referrals.isEmpty()) {
+                logger.info("No referrals found for Organization with ID {}", referrerOrganizationId);
+                return ResponseEntity.noContent().build();
+            }
+
+            return ResponseEntity.ok(referrals);
         } catch (Exception e) {
-            logger.error(e.getMessage(), e);
+            logger.error("Error retrieving referrals for Organization with ID {}: {}", referrerOrganizationId, e.getMessage(), e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
 
     @GetMapping("{referralOrganizationId}/referrer")
     public ResponseEntity<Organization> getReferrerProvider(@PathVariable String referralOrganizationId) {
+//        logger.info("Request received: get referrer for referralOrganizationId {}", referralOrganizationId);
+
         try {
-            return ResponseEntity.ok(tmfDataRetriever.getReferrerProvider(referralOrganizationId));
+            Organization referrer = tmfDataRetriever.getReferrerProvider(referralOrganizationId);
+
+            if (referrer == null) {
+                logger.info("Referrer not found for Organization with ID {}", referralOrganizationId);
+                return ResponseEntity.notFound().build();
+            }
+
+            return ResponseEntity.ok(referrer);
         } catch (Exception e) {
-            logger.error(e.getMessage(), e);
+            logger.error("Error retrieving referrer for Organization with ID {}: {}", referralOrganizationId, e.getMessage(), e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
+
 
 }

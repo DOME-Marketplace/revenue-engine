@@ -45,74 +45,109 @@ public class SubscriptionsController {
 
 	@GetMapping("")
 	public ResponseEntity<List<Subscription>> getAllSubscriptions() {
-		try {
-			List<Subscription> subscriptions = subscriptionService.getAllSubscriptions();
-			return ResponseEntity.ok(subscriptions);
-		} catch (Exception e) {
-			logger.error(e.getMessage(), e);
-			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
-		}
+//	    logger.info("Request received: get all subscriptions");
+	    try {
+	        List<Subscription> subscriptions = subscriptionService.getAllSubscriptions();
+
+	        if (subscriptions == null || subscriptions.isEmpty()) {
+	            logger.info("No subscriptions found");
+	            return ResponseEntity.noContent().build();
+	        }
+
+	        return ResponseEntity.ok(subscriptions);
+	    } catch (Exception e) {
+	        logger.error("Error retrieving subscriptions: {}", e.getMessage(), e);
+	        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+	    }
 	}
 
 	@GetMapping("/{subscriptionId}")
 	public ResponseEntity<Subscription> getSubscription(@PathVariable String subscriptionId) {
-		try {
-			Subscription subscription = subscriptionService.getSubscriptionById(subscriptionId);
-			if (subscription == null) {
-				return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
-			} else {
-				return ResponseEntity.ok(subscription);
-			}
-		} catch (Exception e) {
-			logger.error(e.getMessage(), e);
-			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
-		}
+//	    logger.info("Request received: get subscription with ID {}", subscriptionId);
+	    try {
+	        Subscription subscription = subscriptionService.getSubscriptionById(subscriptionId);
+
+	        if (subscription == null) {
+	            logger.warn("Subscription not found for ID {}", subscriptionId);
+	            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+	        }
+
+	        return ResponseEntity.ok(subscription);
+	    } catch (Exception e) {
+	        logger.error("Error retrieving subscription {}: {}", subscriptionId, e.getMessage(), e);
+	        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+	    }
 	}
 
 	@GetMapping("{subscriptionId}/statements")
 	public ResponseEntity<List<RevenueStatement>> statementCalculator(@PathVariable String subscriptionId) {
-		try {
-			return ResponseEntity.ok(this.statementsService.getStatementsForSubscription(subscriptionId));
-		} catch (Exception e) {
-			logger.error(e.getMessage(), e);
-			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
-		}
+//	    logger.info("Request received: get statements for subscription {}", subscriptionId);
+	    try {
+	        List<RevenueStatement> statements = statementsService.getStatementsForSubscription(subscriptionId);
+
+	        if (statements == null || statements.isEmpty()) {
+	            logger.info("No statements found for subscription {}", subscriptionId);
+	            return ResponseEntity.noContent().build();
+	        }
+
+	        return ResponseEntity.ok(statements);
+	    } catch (Exception e) {
+	        logger.error("Failed to retrieve statements for subscription {}: {}", subscriptionId, e.getMessage(), e);
+	        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+	    }
 	}
 
 	@GetMapping("{subscriptionId}/statements/itemsonly")
 	public ResponseEntity<List<RevenueItem>> statementItems(@PathVariable String subscriptionId) {
-		try {
-			return ResponseEntity.ok(this.statementsService.getItemsForSubscription(subscriptionId));
-		} catch (Exception e) {
-			logger.error(e.getMessage(), e);
-			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
-		}
+//	    logger.info("Request received: get revenue items only for subscription {}", subscriptionId);
+	    try {
+	        List<RevenueItem> items = statementsService.getItemsForSubscription(subscriptionId);
+
+	        if (items == null || items.isEmpty()) {
+	            logger.info("No revenue items found for subscription {}", subscriptionId);
+	            return ResponseEntity.noContent().build();
+	        }
+
+	        return ResponseEntity.ok(items);
+	    } catch (Exception e) {
+	        logger.error("Failed to retrieve revenue items for subscription {}: {}", subscriptionId, e.getMessage(), e);
+	        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+	    }
 	}
 
 	@GetMapping("{subscriptionId}/bills")
 	public ResponseEntity<List<SimpleBill>> getBillPeriods(@PathVariable String subscriptionId) {
-		try {
-			return ResponseEntity.ok(this.billsService.getSubscriptionBills(subscriptionId));
-		} catch (Exception e) {
-			logger.error(e.getMessage(), e);
-			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
-		}
+//	    logger.info("Request received: get bills for subscription {}", subscriptionId);
+	    try {
+	        List<SimpleBill> bills = billsService.getSubscriptionBills(subscriptionId);
+
+	        if (bills == null || bills.isEmpty()) {
+	            logger.info("No bills found for subscription {}", subscriptionId);
+	            return ResponseEntity.noContent().build();
+	        }
+
+	        return ResponseEntity.ok(bills);
+	    } catch (Exception e) {
+	        logger.error("Failed to retrieve bills for subscription {}: {}", subscriptionId, e.getMessage(), e);
+	        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+	    }
 	}
 
 	@GetMapping("{subscriptionId}/customerBills")
 	public ResponseEntity<List<CustomerBill>> getCustomerBills(@PathVariable String subscriptionId) {
-		List<SimpleBill> simpleBills;
-		try {
-			simpleBills = billsService.getSubscriptionBills(subscriptionId);
-		} catch (Exception e) {
-			// Log the error and return 500 Internal Server Error
-			logger.error("Error: {}", e.getMessage());
-			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
-		}
+	    logger.info("Request received: get customer bills for subscription {}", subscriptionId);
+	    List<SimpleBill> simpleBills;
+	    try {
+	        simpleBills = billsService.getSubscriptionBills(subscriptionId);
+	    } catch (Exception e) {
+	        logger.error("Failed to retrieve simple bills for subscription {}: {}", subscriptionId, e.getMessage(), e);
+	        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+	    }
 
-		List<CustomerBill> customerBills = simpleBills.stream().map(billsService::buildCB).toList();
+	    List<CustomerBill> customerBills = simpleBills.stream()
+	            .map(billsService::buildCB)
+	            .toList();
 
-		return ResponseEntity.ok(customerBills);
+	    return ResponseEntity.ok(customerBills);
 	}
-
 }
