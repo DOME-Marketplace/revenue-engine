@@ -46,9 +46,8 @@ public class PlanService {
 
     
     public List<Plan> loadAllPlans() throws IOException {
-
+    	logger.info("Fetch all plans");
     	//FIXME - replace to get dynamic contents 
-    	logger.debug("Loading all plans from files ... ");
         
         PathMatchingResourcePatternResolver resolver = new PathMatchingResourcePatternResolver();
         Resource[] resources = resolver.getResources("classpath:data/plans/*.json");
@@ -56,7 +55,7 @@ public class PlanService {
         List<Plan> plans = new ArrayList<>();
         
         for (Resource resource : resources) {
-        	logger.debug("Loading: {} ", resource.getFilename());
+        	logger.debug("Loading file: {} ", resource.getFilename());
             try (InputStream is = resource.getInputStream()) {
                 Plan plan = mapper.readValue(is, Plan.class);
                 plans.add(plan);
@@ -74,9 +73,8 @@ public class PlanService {
 	 * @return The Plan object if found.
 	 * @throws IOException if there is an error reading the files or if the plan is not found.
 	 */
-    
     public Plan findPlanById(String id) throws IOException {
-    	logger.info("Finding plan by ID: {}", id);
+    	logger.info("Fetch plan with ID {}", id);
         List<Plan> plans = loadAllPlans();
         return plans.stream()
             .filter(plan -> plan.getId().equals(id))  

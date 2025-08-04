@@ -34,8 +34,7 @@ public class PlansController {
    
     @GetMapping("")
     public ResponseEntity<List<Plan>> getAllPlans() {
-    	logger.info("Request received: fetch all plans");
-    	
+//    	logger.info("Request received: fetch all plans");    	
         try {
             List<Plan> plans = subscriptionPlanService.loadAllPlans();
             return ResponseEntity.ok(plans);
@@ -47,8 +46,7 @@ public class PlansController {
     
     @GetMapping("/{planId}")
     public ResponseEntity<Plan> getPlanById(@PathVariable String planId) {
-    	logger.info("Request received: fetch plan with ID {}", planId);
-    	
+//    	logger.info("Request received: fetch plan with ID {}", planId);
         try {
             Plan plan = subscriptionPlanService.findPlanById(planId);
             return ResponseEntity.ok(plan);
@@ -63,8 +61,7 @@ public class PlansController {
     
     @GetMapping("/{planId}/subscriptions")
     public ResponseEntity<List<Subscription>> getSubscriptionsByPlanId(@PathVariable String planId) {
-        logger.info("Request received: fetch subscriptions for planId {}", planId);
-
+//        logger.info("Request received: fetch subscriptions for planId {}", planId);
         try {
             List<Subscription> subscriptions = subscriptionService.getByPlanId(planId);
 

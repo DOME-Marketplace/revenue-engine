@@ -50,11 +50,10 @@ public class MetricsRetriever implements InitializingBean {
 
     // implement retriever for key 'referred-providers-number'
     public Integer computeReferralsProvidersNumber(String sellerId, TimePeriod timePeriod) throws Exception {
-    	// TODO: test the method when listReferredProviders will work
     	// retrieves the list of providers referenced by the seller
         List<Organization> referred = tmfDataRetriever.listReferralsProviders(sellerId);
 
-        if (referred == null) {
+        if (referred == null || referred.isEmpty()){
             return 0;
         }
         
@@ -63,27 +62,33 @@ public class MetricsRetriever implements InitializingBean {
 
     // implement retriever for key 'referred-providers-transaction-volume'
     public Double computeReferralsProvidersTransactionVolume(String sellerId, TimePeriod timePeriod) throws Exception {
-    	// TODO: test the method when listReferredProviders will work
     	// retrieve the list of providers referred by the given seller
     	List<Organization> referred = tmfDataRetriever.listReferralsProviders(sellerId);
-	    if (referred == null || referred.isEmpty()) 
+    	
+	    if (referred == null || referred.isEmpty()) { 
 	    	return 0.0;
-	    double totalTransactionVolume = 0.0;
+	    }
+	    
+	    Double totalTransactionVolume = 0.0;
+	    
 	    // iterate over each referred provider
 	    for (Organization org : referred) {
 			totalTransactionVolume += this.computeBillsNoTaxes(org.getId(), timePeriod);
 	    }
+	    
 	    return totalTransactionVolume;	    
     }
     
     // implement retriever for key 'referred-provider-max-transaction-volume'
     public Double computeReferralsProviderMaxTransactionVolume(String sellerId, TimePeriod timePeriod) throws Exception {
-    	// TODO: test the method when listReferredProviders will work
     	// retrieve the list of providers referred by the given seller
     	List<Organization> referred = tmfDataRetriever.listReferralsProviders(sellerId);
-	    if (referred == null || referred.isEmpty()) 
+	    
+    	if (referred == null || referred.isEmpty()) {
 	    	return 0.0;
-	    double maxTransactionVolume = 0.0;
+    	}
+    	
+	    Double  maxTransactionVolume = 0.0;
 	    // iterate over each referred provider	    
 	    for (Organization org : referred) {
 			maxTransactionVolume = Math.max(maxTransactionVolume, this.computeBillsNoTaxes(org.getId(), timePeriod));

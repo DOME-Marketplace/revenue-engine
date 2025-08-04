@@ -140,8 +140,9 @@ public class TmfDataRetriever implements InitializingBean {
     }
 
     public List<Organization> listReferralsProviders(String referrerOrganizationId) throws Exception {
-        try {
-
+    	logger.info("List referrals for referrerOrganizationId {}", referrerOrganizationId);
+    	try {
+    		
             // outuput, the the referred organizations
             List<Organization> referrals = new ArrayList<>();
 
@@ -167,7 +168,8 @@ public class TmfDataRetriever implements InitializingBean {
     }
 
     public Organization getReferrerProvider(String referralOrganizationId) throws Exception{
-        try {
+    	logger.info("Get referrer for Organization with ID {}", referralOrganizationId);
+    	try {
             // get the id of the refferrer organization, if any
             Organization referralOrg = orgApi.retrieveOrganization(referralOrganizationId, null);
             // retrieve the referrefer organization from the referral organization

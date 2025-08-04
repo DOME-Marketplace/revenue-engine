@@ -69,7 +69,7 @@ public class SubscriptionService implements InitializingBean {
 	*/
 
 	public Subscription getSubscriptionById(String id) throws ApiException, IOException {
-		logger.info("Retrieving subscription by id: {}", id);
+		logger.info("Fetch subscription with ID {}", id);
 		// 1. check the id is in the right format
 		if (id == null || id.isEmpty() || id.length()!=98) {
 			logger.error("malformed subscription id: " + id);
@@ -135,8 +135,7 @@ public class SubscriptionService implements InitializingBean {
 
 
 	public List<Subscription> getAllSubscriptions() throws ApiException, IOException {
-		
-		logger.info("Request getAllSubscriptions");
+		logger.info("Get all subscriptions");
 		
 		// 1. retrieve all organizations
 		List<Organization> organizations = this.orgApi.listOrganization(null, null, null, null);
@@ -214,7 +213,7 @@ public class SubscriptionService implements InitializingBean {
 
 
 	public List<Subscription> getByPlanId(String id) {
-	    logger.debug("Retrieving subscriptions by plan id: {}", id);
+	    logger.debug("Retrieving subscriptions by plan ID: {}", id);
 	    try {
 	        return this.getAllSubscriptions().stream()
 	                .filter(sub -> sub.getPlan() != null && id.equals(sub.getPlan().getId()))

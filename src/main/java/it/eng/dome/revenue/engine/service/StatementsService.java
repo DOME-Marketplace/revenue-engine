@@ -42,7 +42,8 @@ public class StatementsService implements InitializingBean {
     /*
      * Returns a sorted list of RevenueItems
      */
-    public List<RevenueItem> getItemsForSubscription(String subscriptionId) throws Exception {    	
+    public List<RevenueItem> getItemsForSubscription(String subscriptionId) throws Exception {
+	    logger.info("Retrieve revenue items only for subscription with ID {}", subscriptionId);
         List<RevenueStatement> statements = this.getStatementsForSubscription(subscriptionId);
         Set<RevenueItem> items = new TreeSet<>(new RevenueItemComparator());
         for(RevenueStatement s:statements) {
@@ -84,7 +85,7 @@ public class StatementsService implements InitializingBean {
      * Returns a sorted list of RevenueStatements
      */
     public List<RevenueStatement> getStatementsForSubscription(String subscriptionId) throws Exception {    
-		logger.info("Call to getStatementsForSubscription: {}", subscriptionId);
+    	logger.info("Retrieve statements for subscription with ID {}", subscriptionId);
         try {
 
             // prepare output
