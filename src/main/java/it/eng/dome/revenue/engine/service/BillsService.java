@@ -1,5 +1,6 @@
 package it.eng.dome.revenue.engine.service;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
@@ -16,6 +17,8 @@ import it.eng.dome.revenue.engine.model.RevenueItem;
 import it.eng.dome.revenue.engine.model.SimpleBill;
 import it.eng.dome.revenue.engine.model.Subscription;
 import it.eng.dome.revenue.engine.model.comparator.SimpleBillComparator;
+import it.eng.dome.tmforum.tmf632.v4.ApiException;
+import it.eng.dome.tmforum.tmf678.v4.model.AppliedCustomerBillingRate;
 import it.eng.dome.tmforum.tmf678.v4.model.BillingAccountRef;
 import it.eng.dome.tmforum.tmf678.v4.model.CustomerBill;
 import it.eng.dome.tmforum.tmf678.v4.model.RelatedParty;
@@ -111,5 +114,33 @@ public class BillsService implements InitializingBean {
         
         BillingAccountRef billingAccountRef = tmfDataRetriever.retrieveBillingAccountByRelatedPartyId(buyerParty.getId());
         return RevenueBillingMapper.toCB(sb, billingAccountRef);
+    }
+    
+    public List<AppliedCustomerBillingRate> buildABCRList(SimpleBill sb) {
+        if (sb == null || sb.getRelatedParties() == null || sb.getRelatedParties().isEmpty()) {
+            throw new IllegalArgumentException("Missing related party information in SimpleBill");
+        }
+        
+        Subscription subscription = null;
+        try {
+            subscription = subscriptionService.getSubscriptionById(sb.getSubscriptionId());
+        } catch (ApiException e) {
+            logger.error("API error while retrieving subscription ID {}: {}", sb.getSubscriptionId(), e.getMessage(), e);
+        } catch (IOException e) {
+            logger.error("IO error while retrieving subscription ID {}: {}", sb.getSubscriptionId(), e.getMessage(), e);
+        }
+        
+        if (subscription == null) {
+            logger.warn("No subscription found for ID: {}", sb.getSubscriptionId());
+        }
+        
+        // Retrieve the related party with role = "Buyer"
+        RelatedParty buyerParty = sb.getRelatedParties().stream()
+            .filter(rp -> "Buyer".equalsIgnoreCase(rp.getRole()))
+            .findFirst()
+            .orElseThrow(() -> new IllegalArgumentException("No related party with role 'Buyer' found"));
+        
+        BillingAccountRef billingAccountRef = tmfDataRetriever.retrieveBillingAccountByRelatedPartyId(buyerParty.getId());
+        return RevenueBillingMapper.toACBRList(sb, subscription, billingAccountRef);
     }
 }

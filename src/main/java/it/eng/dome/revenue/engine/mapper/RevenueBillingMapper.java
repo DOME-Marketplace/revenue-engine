@@ -2,13 +2,22 @@ package it.eng.dome.revenue.engine.mapper;
 
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import it.eng.dome.revenue.engine.model.Plan;
 import it.eng.dome.revenue.engine.model.RevenueItem;
 import it.eng.dome.revenue.engine.model.RevenueStatement;
 import it.eng.dome.revenue.engine.model.SimpleBill;
 import it.eng.dome.revenue.engine.model.Subscription;
+import it.eng.dome.tmforum.tmf620.v4.model.ProductOffering;
+import it.eng.dome.tmforum.tmf620.v4.model.ProductOfferingTerm;
+import it.eng.dome.tmforum.tmf620.v4.model.ProductSpecificationRef;
+import it.eng.dome.tmforum.tmf620.v4.model.TimePeriod;
 import it.eng.dome.tmforum.tmf678.v4.model.AppliedBillingRateCharacteristic;
 import it.eng.dome.tmforum.tmf678.v4.model.AppliedCustomerBillingRate;
 import it.eng.dome.tmforum.tmf678.v4.model.BillingAccountRef;
@@ -20,8 +29,90 @@ import it.eng.dome.tmforum.tmf678.v4.model.TaxItem;
 
 public class RevenueBillingMapper {
 	
+	private static final Logger logger = LoggerFactory.getLogger(RevenueBillingMapper.class);
+	
+	public static List<AppliedCustomerBillingRate> toACBRList(SimpleBill sb, Subscription subscription, BillingAccountRef billingAccountRef) {
+	    if (sb == null || sb.getRevenueItems() == null || sb.getRevenueItems().isEmpty()) {
+	        return Collections.emptyList();
+	    }
+
+	    List<AppliedCustomerBillingRate> acbrList = new ArrayList<>();
+	    for (RevenueItem item : sb.getRevenueItems()) {
+	        try {
+	            if (item.getOverallValue() != null && item.getOverallValue() != 0.0) { //for ignore item with value null or zero
+	                acbrList.add(toACBR(item, sb, subscription, billingAccountRef));
+	            } else {
+	            	logger.debug("Skipping RevenueItem with null or zero value: {}", item.getName());
+	            }
+	        } catch (Exception e) {
+	        	logger.error("Failed to map RevenueItem '{}' to AppliedCustomerBillingRate: {}", item.getName(), e.getMessage(), e);
+	        }
+	    }
+	    return acbrList;
+	}
+
+	public static AppliedCustomerBillingRate toACBR(RevenueItem item, SimpleBill sb, Subscription subscription, BillingAccountRef billingAccountRef) {
+	    if (item == null) {
+	    	logger.warn("Cannot map to AppliedCustomerBillingRate: RevenueItem is null");
+	    	return null;
+	    }
+	    
+	    if (sb == null || sb.getPeriod() == null) {
+	        throw new IllegalArgumentException("SimpleBill or its period must not be null");
+	    }
+
+	    AppliedCustomerBillingRate acbr = new AppliedCustomerBillingRate();
+	    acbr.setId(UUID.randomUUID().toString());
+	    acbr.setHref(acbr.getId());
+	    acbr.setName("Applied Customer Billing Rate of " + item.getName());
+	    acbr.setDescription("Applied Customer Billing Rate of " 
+	        + (subscription != null ? subscription.getName() : "") 
+	        + " for period " + sb.getPeriod().getStartDateTime() + " - " + sb.getPeriod().getEndDateTime());
+	    acbr.setDate(subscription != null ? subscription.getStartDate() : sb.getPeriod().getStartDateTime());
+	    acbr.setIsBilled(false);
+	    acbr.setType(null);
+	    acbr.setPeriodCoverage(sb.getPeriod());
+	    acbr.setBill(null);
+
+	    acbr.setProduct(subscription != null ? toProductRef(subscription) : null);
+	    acbr.setBillingAccount(billingAccountRef);
+
+	    if (subscription != null && subscription.getRelatedParties() != null) {
+	        acbr.setRelatedParty(subscription.getRelatedParties());
+	    } else {
+	        acbr.setRelatedParty(sb.getRelatedParties());
+	    }
+
+	    if (item.getOverallValue() != null) {
+	        Money money = new Money();
+	        money.setValue(item.getOverallValue().floatValue());
+	        money.setUnit(item.getCurrency());
+	        acbr.setTaxExcludedAmount(money);
+	    } else {
+	        logger.debug("RevenueItem '{}' has no overall value set", item.getName());
+	    }
+
+	    if (item.getItems() != null) {
+	        List<AppliedBillingRateCharacteristic> characteristics = new ArrayList<>();
+	        for (RevenueItem child : item.getItems()) {
+	            collectCharacteristics(child, characteristics);
+	        }
+	        acbr.setCharacteristic(characteristics);
+	    }
+
+	    return acbr;
+	}
+	
 	public static CustomerBill toCB(SimpleBill simpleBill, BillingAccountRef billingAccountRef) {
-        CustomerBill cb = new CustomerBill();
+		if (simpleBill == null) {
+		    logger.error("toCB: simpleBill is null, cannot map to CustomerBill");
+		    throw new IllegalArgumentException("simpleBill cannot be null");
+		}
+		if (billingAccountRef == null) {
+		    logger.warn("toCB: billingAccountRef is null, CustomerBill will have null billingAccount");
+		}
+		
+		CustomerBill cb = new CustomerBill();
 
         // 1. id and basic metadata
         String billId = simpleBill.getId();
@@ -44,14 +135,14 @@ public class RevenueBillingMapper {
         Float taxAmount = amountTaxExcluded * taxRate;
         Float amountIncludedTax = amountTaxExcluded + taxAmount;
 
-        cb.setAmountDue(createMoney(0.0f)); //TODO: ask Stefania
-        cb.setRemainingAmount(createMoney(0.0f)); //TODO: ask Stefania
-        cb.setTaxIncludedAmount(createMoney(amountIncludedTax));
-        cb.setTaxExcludedAmount(createMoney(amountTaxExcluded));
+        cb.setAmountDue(createMoneyTmF678(0.0f, "EUR")); //TODO: ask Stefania
+        cb.setRemainingAmount(createMoneyTmF678(0.0f, "EUR")); //TODO: ask Stefania
+        cb.setTaxIncludedAmount(createMoneyTmF678(amountIncludedTax, "EUR"));
+        cb.setTaxExcludedAmount(createMoneyTmF678(amountTaxExcluded, "EUR"));
 
         // 5. tax
         TaxItem taxItem = new TaxItem()
-                .taxAmount(createMoney(taxAmount))
+                .taxAmount(createMoneyTmF678(taxAmount, "EUR"))
                 .taxCategory("VAT")
                 .taxRate(taxRate);
         cb.setTaxItem(List.of(taxItem));
@@ -79,10 +170,112 @@ public class RevenueBillingMapper {
         return cb;
     }
 
-	private static Money createMoney(Float amount) {
-	    Money money = new Money();
-	    money.setUnit("EUR");
+	public static ProductOffering toProductOffering(Plan plan) {
+		if (plan == null) {
+		    logger.error("toProductOffering: plan is null, returning null ProductOffering");
+		    return null;
+		}
+
+	    ProductOffering po = new ProductOffering();
+
+	    // Basic fields
+	    po.setId(plan.getId());
+	    po.setHref(plan.getId());
+	    po.setName(plan.getName());
+	    po.setDescription(plan.getDescription());
+	    po.setLifecycleStatus(plan.getLifecycleStatus());
+	    po.setLastUpdate(OffsetDateTime.now()); // or create a last update in plan
+	    po.setVersion("1.0"); // TODO: understand how manage this attribute
+
+	    // Time validity
+	    if (plan.getValidFor() != null) {
+	        TimePeriod validFor = new TimePeriod();
+	        validFor.setStartDateTime(plan.getValidFor().getStartDateTime());
+	        validFor.setEndDateTime(plan.getValidFor().getEndDateTime());
+	        po.setValidFor(validFor);
+	    }
+
+	    // isBundle - default to false
+	    po.setIsBundle(false); // TODO: understand how manage this attribute
+
+	    // Price
+//	    if (plan.getPrice() != null) {
+//	        ProductOfferingPrice price = new ProductOfferingPrice();
+//	        price.setName(plan.getName() + " Price");
+//	        price.setDescription("Plan price");
+//	        price.setPriceType("recurring"); // understand how manage this attribute
+//	        
+//	        // Set recurring charge period type and length
+//	        if (plan.getBillingPeriodType() != null) {
+//	            price.setRecurringChargePeriodType(plan.getBillingPeriodType().name().toLowerCase());
+//	        }
+//	        if (plan.getBillingPeriodLength() != null) {
+//	            price.setRecurringChargePeriodLength(plan.getBillingPeriodLength());
+//	        }
+//	        
+//	        price.setPrice(createMoneyTmF620(plan.getPrice().getAmount().floatValue(), "EUR"));
+//	        po.setProductOfferingPrice(List.of(price));
+//	    }
+
+	    // Product Specification reference (mock)
+	    ProductSpecificationRef psRef = new ProductSpecificationRef();
+	    psRef.setId("urn:example:product-specification:" + plan.getId()); // TODO: understand how to manage this attribute
+	    psRef.setName(plan.getName() + " Specification");
+	    psRef.setVersion("0.1"); // TODO: understand how to manage this attribute
+	    //psRef.setHref(psRef.getId());
+	    po.setProductSpecification(psRef);
+
+	    // Product Offering Terms (e.g., contract duration, renewal)
+	    List<ProductOfferingTerm> terms = new ArrayList<>();
+
+	    if (plan.getContractDurationLength() != null && plan.getContractDurationPeriodType() != null) {
+	        ProductOfferingTerm term = new ProductOfferingTerm();
+	        term.setName("Contract Duration");
+	        term.setDescription("Minimum duration of the plan");
+
+	        //OPTIONAL
+//	        TimePeriod duration = new TimePeriod();
+//	        term.setValidFor(duration);
+//
+//	        Duration contractDuration = Duration.of(plan.getContractDurationLength(),
+//	            convertToChronoUnit(plan.getContractDurationPeriodType()));
+//	        term.setDuration(contractDuration);
+
+	        terms.add(term);
+	    }
+
+	    if (!terms.isEmpty()) {
+	        po.setProductOfferingTerm(terms);
+	    }
+	    
+	    // Category mapping - if Exists
+//	    if (plan.getCategories() != null && !plan.getCategories().isEmpty()) {
+//	        List<CategoryRef> categoryRefs = plan.getCategories().stream()
+//	            .map(cat -> {
+//	                CategoryRef catRef = new CategoryRef();
+//	                catRef.setId(cat.getId());
+//	                catRef.setHref(cat.getHref());
+//	                catRef.setName(cat.getName());
+//	                return catRef;
+//	            })
+//	            .toList();
+//	        po.setCategory(categoryRefs);
+//	    }
+
+	    return po;
+	}
+
+	private static it.eng.dome.tmforum.tmf620.v4.model.Money createMoneyTmF620(Float amount, String currency) {
+	    it.eng.dome.tmforum.tmf620.v4.model.Money money = new it.eng.dome.tmforum.tmf620.v4.model.Money();
 	    money.setValue(amount);
+	    money.setUnit(currency);
+	    return money;
+	}
+
+	private static it.eng.dome.tmforum.tmf678.v4.model.Money createMoneyTmF678(Float amount, String currency) {
+	    it.eng.dome.tmforum.tmf678.v4.model.Money money = new it.eng.dome.tmforum.tmf678.v4.model.Money();
+	    money.setValue(amount);
+	    money.setUnit(currency);
 	    return money;
 	}
 
