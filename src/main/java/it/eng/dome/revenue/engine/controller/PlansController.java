@@ -34,38 +34,47 @@ public class PlansController {
    
     @GetMapping("")
     public ResponseEntity<List<Plan>> getAllPlans() {
-    	logger.info("Request all plans");
-    	
+//    	logger.info("Request received: fetch all plans");    	
         try {
             List<Plan> plans = subscriptionPlanService.loadAllPlans();
             return ResponseEntity.ok(plans);
         } catch (Exception e) {
+        	logger.error("Failed to load plans: {}", e.getMessage(), e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
     
     @GetMapping("/{planId}")
     public ResponseEntity<Plan> getPlanById(@PathVariable String planId) {
-    	logger.info("Request plan with planId: {}", planId);
-    	
+//    	logger.info("Request received: fetch plan with ID {}", planId);
         try {
             Plan plan = subscriptionPlanService.findPlanById(planId);
             return ResponseEntity.ok(plan);
         } catch (IOException e) {
-        	logger.error("Error: {}", e.getMessage());
-            return ResponseEntity.notFound().build(); 
+            logger.warn("Plan not found for ID {}: {}", planId, e.getMessage());
+            return ResponseEntity.notFound().build();
+        } catch (Exception e) {
+            logger.error("Unexpected error retrieving plan {}: {}", planId, e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
     
     @GetMapping("/{planId}/subscriptions")
     public ResponseEntity<List<Subscription>> getSubscriptionsByPlanId(@PathVariable String planId) {
-    	logger.info("Request subscriptions for planId: {}", planId);
-    	
-        List<Subscription> subscriptions = subscriptionService.getByPlanId(planId);
-        if (subscriptions == null || subscriptions.isEmpty()) {
-            return ResponseEntity.noContent().build();
+//        logger.info("Request received: fetch subscriptions for planId {}", planId);
+        try {
+            List<Subscription> subscriptions = subscriptionService.getByPlanId(planId);
+
+            if (subscriptions == null || subscriptions.isEmpty()) {
+                logger.info("No subscriptions found for paln with ID {}", planId);
+                return ResponseEntity.noContent().build();
+            }
+
+            return ResponseEntity.ok(subscriptions);
+        } catch (Exception e) {
+            logger.error("Failed to retrieve subscriptions for planId {}: {}", planId, e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
-        return ResponseEntity.ok(subscriptions);
     }
 
     @GetMapping("/{planId}/validate")
@@ -74,9 +83,13 @@ public class PlansController {
             PlanValidationReport report = subscriptionPlanService.validatePlan(planId);
             return ResponseEntity.ok(report);
         } catch (IOException e) {
-        	logger.error("Error: {}", e.getMessage());
-            return ResponseEntity.notFound().build(); 
+            logger.error("Plan not found or IO error while validating plan with ID {}: {}", planId, e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+        } catch (Exception e) {
+            logger.error("Unexpected error validating plan with ID {}: {}", planId, e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
+
 
 }

@@ -28,17 +28,22 @@ public class BillsController {
     }
 
     @GetMapping("{billId}")
-    public ResponseEntity<SimpleBill> getBillPeriods(@PathVariable String billId) {    	   
+    public ResponseEntity<SimpleBill> getBillPeriods(@PathVariable String billId) {
+//        logger.info("Request received: fetch bill with ID {}", billId);
         try {
-            SimpleBill bill = this.billsService.getBill(billId);
-            if(bill!=null)
-                return ResponseEntity.ok(this.billsService.getBill(billId));
-            else
+            SimpleBill bill = billsService.getBill(billId);
+
+            if (bill != null) {
+                return ResponseEntity.ok(bill);
+            } else {
+                logger.info("Bill not found for ID {}", billId);
                 return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+            }
+
         } catch (Exception e) {
-           logger.error(e.getMessage(), e);
+            logger.error("Failed to retrieve bill with ID {}: {}", billId, e.getMessage(), e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
-    }    
+    } 
 
 }

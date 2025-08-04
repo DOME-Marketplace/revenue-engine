@@ -67,7 +67,7 @@ public class ReportingService {
 	 */
     
     public List<Report> getDashboardReport(String relatedPartyId) throws ApiException, IOException {
-        logger.info("Call getDashboardReport for relatedPartyId: {}", relatedPartyId);
+    	logger.info("Reporting for dashboard, Organization ID = {}", relatedPartyId);
         
         List<Report> report = new ArrayList<>();
 
@@ -158,7 +158,7 @@ public class ReportingService {
         }
         // check null or empty subscriptionId
         if (subscriptionId == null || subscriptionId.isEmpty()) {
-            logger.warn("Subscription ID is null or empty for relatedPartyId: {}", relatedPartyId);
+            logger.warn("Subscription ID is null or empty for Organization with ID: {}", relatedPartyId);
             return new Report("Bills Provisioning", List.of(new Report("Error", "Invalid subscription ID")));
         }
 
@@ -167,11 +167,11 @@ public class ReportingService {
         try {
             subscription = subscriptionService.getSubscriptionById(subscriptionId);
         } catch (ApiException | IOException e) {
-            logger.error("Failed to retrieve subscription for subscriptionId: {}", subscriptionId, e);
+            logger.error("Failed to retrieve subscription for subscription with ID: {}", subscriptionId, e);
             return new Report("Billing History", "Unable to retrieve subscription information");
         }
         if (subscription == null || subscription.getStartDate() == null) {
-            logger.warn("Subscription not found or missing start date for id: {}", subscriptionId);
+            logger.warn("Subscription not found or missing start date for ID: {}", subscriptionId);
             return new Report("Billing History", "No billing data available");
         }
 
@@ -180,7 +180,7 @@ public class ReportingService {
         try {
             allBills = billsService.getSubscriptionBills(subscriptionId);
         } catch (Exception e) {
-            logger.error("Failed to retrieve bills for subscriptionId: {}", subscriptionId, e);
+            logger.error("Failed to retrieve bills for subscription with ID: {}", subscriptionId, e);
             return new Report("Billing History", "No billing data available");
         }
         
@@ -235,7 +235,7 @@ public class ReportingService {
 
         return new Report("Billing History", invoiceReports);
     }
-    
+
 //    public Report getBillingHistorySection(String relatedPartyId) throws Exception {
 //        TimePeriod tp = new TimePeriod();
 //        String subscriptionId = subscriptionService.getSubscriptionIdByRelatedPartyId(relatedPartyId);
@@ -278,6 +278,7 @@ public class ReportingService {
 	 * @throws ApiException if there is an error retrieving data from the API
 	 * @throws IOException if there is an error reading data from files
 	 */
+
 
     public Report getRevenueSection(String relatedPartyId) throws ApiException, IOException {
     	List<RevenueStatement> statements = getRevenueStatements(relatedPartyId);
@@ -352,7 +353,7 @@ public class ReportingService {
         try {
             subscriptionId = subscriptionService.getSubscriptionIdByRelatedPartyId(relatedPartyId);
         } catch (Exception e) {
-            logger.error("Failed to retrieve subscriptionId for relatedPartyId: {}", relatedPartyId, e);
+            logger.error("Failed to retrieve subscriptionId for Organization with ID: {}", relatedPartyId, e);
             return new Report(
                 "Bills Provisioning",
                 List.of(new Report("Error", "Unable to retrieve subscription information"))
@@ -360,7 +361,7 @@ public class ReportingService {
         }
         // check null or empty subscriptionId
         if (subscriptionId == null || subscriptionId.isEmpty()) {
-            logger.warn("Subscription ID is null or empty for relatedPartyId: {}", relatedPartyId);
+            logger.warn("Subscription ID is null or empty for Organization with ID: {}", relatedPartyId);
             return new Report("Bills Provisioning", List.of(new Report("Error", "Invalid subscription ID")));
         }
 
@@ -369,11 +370,8 @@ public class ReportingService {
         try {
             allBills = billsService.getSubscriptionBills(subscriptionId);
         } catch (Exception e) {
-            logger.error("Failed to retrieve bills for subscriptionId: {}", subscriptionId, e);
-            return new Report(
-                "Bills Provisioning",
-                List.of(new Report("Error", "Unable to retrieve bills"))
-            );
+            logger.error("Failed to retrieve bills for subscription with ID: {}", subscriptionId, e);
+            return new Report("Bills Provisioning", List.of(new Report("Error", "Unable to retrieve bills")));
         }
 
         // define time boundaries for the current month
@@ -474,7 +472,7 @@ public class ReportingService {
         try {
             statements = getRevenueStatements(relatedPartyId);
         } catch (IOException | ApiException e) {
-            logger.error("Failed to retrieve revenue statements for related party {}: {}", relatedPartyId, e.getMessage(), e);
+            logger.error("Failed to retrieve revenue statements for Organization with ID {}: {}", relatedPartyId, e.getMessage(), e);
             statements = Collections.emptyList();
         }
         
@@ -565,17 +563,17 @@ public class ReportingService {
     	logger.info("Call getRevenueStatements with relatedPartyId: {}", relatedPartyId);
 
         String subscriptionId = subscriptionService.getSubscriptionIdByRelatedPartyId(relatedPartyId);
-        logger.info("Retrieved subscriptionId: {}", subscriptionId);
+        logger.debug("Retrieved subscriptionId: {}", subscriptionId);
 
         try {
             return statementsService.getStatementsForSubscription(subscriptionId);
         } catch (ApiException | IOException e) {
             // Propagate specific declared exceptions
-            logger.error("Error retrieving statements for subscription {}: {}", subscriptionId, e.getMessage(), e);
+            logger.error("Error retrieving statements for subscription with ID {}: {}", subscriptionId, e.getMessage(), e);
             throw e;
         } catch (Exception e) {
             // Wrap unexpected exception in a runtime one or log and return empty if you want to fail gracefully
-            logger.error("Unexpected error retrieving statements for subscription {}: {}", subscriptionId, e.getMessage(), e);
+            logger.error("Unexpected error retrieving statements for subscription with ID {}: {}", subscriptionId, e.getMessage(), e);
             throw new RuntimeException("Unexpected error retrieving statements", e);
         }
     }
@@ -614,5 +612,4 @@ public class ReportingService {
 //
 //      return new Reporting("Revenue Volume Monitoring", totalRevenueItems);
 //  }
-  
 }
