@@ -89,7 +89,6 @@ public class RevenueProductMapper {
 	        ProductOfferingTerm term = new ProductOfferingTerm();
 	        term.setName("Contract Duration");
 	        term.setDescription("Minimum duration of the plan");
-
 	        //OPTIONAL
 //	        TimePeriod duration = new TimePeriod();
 //	        term.setValidFor(duration);
@@ -97,7 +96,6 @@ public class RevenueProductMapper {
 //	        Duration contractDuration = Duration.of(plan.getContractDurationLength(),
 //	            convertToChronoUnit(plan.getContractDurationPeriodType()));
 //	        term.setDuration(contractDuration);
-
 	        terms.add(term);
 	    }
 
@@ -206,11 +204,9 @@ public class RevenueProductMapper {
 				logger.error("Invalid URI syntax for ProductOfferingPriceRefOrValue Href with ID '{}'", price.getId(), e);
                 throw new IllegalArgumentException("Failed to create ProductOfferingPriceRefOrValue Href due to invalid URI syntax", e);
 			}
+            refOrValue.setName(price.getName());
             
-            // Set the name for the reference.
-            refOrValue.setName(price.getName()); 
-            
-            //TODO: ADD OTHER ATTR.
+            //TODO: ADD OTHER ATTR. IF IT IS NEED.
             
             finalMappedPrices.add(refOrValue);
         }
@@ -223,6 +219,7 @@ public class RevenueProductMapper {
 		money.setUnit(currency);
 		return money;
 	 }
+	
 	
 	public static Product toProduct(Subscription subscription, it.eng.dome.tmforum.tmf678.v4.model.BillingAccountRef billingAccountRef) {
 		
@@ -257,7 +254,8 @@ public class RevenueProductMapper {
 		return product;
 	}
 
-    public static List<it.eng.dome.tmforum.tmf637.v4.model.RelatedParty> convertRpTo637(
+    
+	public static List<it.eng.dome.tmforum.tmf637.v4.model.RelatedParty> convertRpTo637(
             List<it.eng.dome.tmforum.tmf678.v4.model.RelatedParty> list678) {
 
         if (list678 == null) {
@@ -281,7 +279,8 @@ public class RevenueProductMapper {
         return list637;
     }
 
-    public static it.eng.dome.tmforum.tmf637.v4.model.BillingAccountRef convertBillingAccountRefTo637(
+    
+	public static it.eng.dome.tmforum.tmf637.v4.model.BillingAccountRef convertBillingAccountRefTo637(
 			it.eng.dome.tmforum.tmf678.v4.model.BillingAccountRef billingAccountRef678) {
 
 		if (billingAccountRef678 == null) {
