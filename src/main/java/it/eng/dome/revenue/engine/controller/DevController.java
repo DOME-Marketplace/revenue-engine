@@ -15,12 +15,14 @@ import org.springframework.web.bind.annotation.RestController;
 
 import it.eng.dome.revenue.engine.model.RevenueStatement;
 import it.eng.dome.revenue.engine.model.SimpleBill;
+import it.eng.dome.revenue.engine.model.Subscription;
 import it.eng.dome.revenue.engine.service.BillsService;
 import it.eng.dome.revenue.engine.service.PlanService;
 import it.eng.dome.revenue.engine.service.RevenueService;
 import it.eng.dome.revenue.engine.service.SubscriptionService;
 import it.eng.dome.revenue.engine.service.TmfDataRetriever;
 import it.eng.dome.revenue.engine.service.compute.PriceCalculator;
+import it.eng.dome.tmforum.tmf637.v4.model.Product;
 import it.eng.dome.tmforum.tmf678.v4.model.AppliedCustomerBillingRate;
 import it.eng.dome.tmforum.tmf678.v4.model.BillingAccountRef;
 import it.eng.dome.tmforum.tmf678.v4.model.CustomerBill;
@@ -89,6 +91,17 @@ public class DevController {
             .map(revenueService::buildACBR)
             .toList();
         return ResponseEntity.ok(acbrList);
-    }   
+    }
+    
+    @PostMapping("/to-product")
+    public ResponseEntity<Product> convertToProduct(@RequestBody Subscription subscription) {
+		try {
+			Product product = subscriptionService.buildProduct(subscription);
+			return ResponseEntity.ok(product);
+		} catch (Exception e) {
+			logger.error("Error converting Subscription to Product: {}", e.getMessage(), e);
+			return ResponseEntity.internalServerError().build();
+		}
+	}
 
 }

@@ -12,12 +12,15 @@ import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import it.eng.dome.revenue.engine.mapper.RevenueProductMapper;
 import it.eng.dome.revenue.engine.model.Plan;
 import it.eng.dome.revenue.engine.model.Subscription;
 import it.eng.dome.revenue.engine.tmf.TmfApiFactory;
 import it.eng.dome.tmforum.tmf632.v4.ApiException;
 import it.eng.dome.tmforum.tmf632.v4.api.OrganizationApi;
 import it.eng.dome.tmforum.tmf632.v4.model.Organization;
+import it.eng.dome.tmforum.tmf637.v4.model.Product;
+import it.eng.dome.tmforum.tmf678.v4.model.BillingAccountRef;
 import it.eng.dome.tmforum.tmf678.v4.model.RelatedParty;
 
 @Service
@@ -33,6 +36,8 @@ public class SubscriptionService implements InitializingBean {
     // TMForum API to retrieve bills
     private OrganizationApi orgApi;
 
+    @Autowired
+    private TmfDataRetriever tmfDataRetriever;
 //	private final Path storageDir = Paths.get("src/main/resources/data/subscriptions/");
 //
 //	private final ObjectMapper mapper;
@@ -128,6 +133,7 @@ public class SubscriptionService implements InitializingBean {
 		party.setId(organization.getId());
 		party.setName(organization.getTradingName());
 		party.setRole("Buyer");
+		party.setAtReferredType("Organization");
 		List<RelatedParty> relatedParties = new ArrayList<>();
 		relatedParties.add(party);
 		// 1.3 also embed the DOME operator
@@ -149,6 +155,7 @@ public class SubscriptionService implements InitializingBean {
 		dome.setId("urn:ngsi-ld:organization:24d2ea66-0cd4-4396-a8b5-ea5fd8bf2bdd");
 		dome.setName("The DOME Operator");
 		dome.setRole("Seller");
+		dome.setAtReferredType("Organization");
 		return dome;
 	}
 
@@ -277,5 +284,20 @@ public class SubscriptionService implements InitializingBean {
 	    return subscription != null ? subscription.getId() : null;
 	}
 
+	
+    public Product buildProduct(Subscription subscription) {
+        if (subscription == null || subscription.getRelatedParties() == null || subscription.getRelatedParties().isEmpty()) {
+            throw new IllegalArgumentException("Missing related party information in Subscription");
+        }
+        
+        // Retrieve the related party with role = "Buyer"
+        RelatedParty buyerParty = subscription.getRelatedParties().stream()
+            .filter(rp -> "Buyer".equalsIgnoreCase(rp.getRole()))
+            .findFirst()
+            .orElseThrow(() -> new IllegalArgumentException("No related party with role 'Buyer' found"));
+        
+        BillingAccountRef billingAccountRef = tmfDataRetriever.retrieveBillingAccountByRelatedPartyId(buyerParty.getId());
+        return RevenueProductMapper.toProduct(subscription, billingAccountRef);
+    }
 	
 }
