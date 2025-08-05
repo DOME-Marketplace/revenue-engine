@@ -286,7 +286,7 @@ public class RevenueBillingMapper {
 	    try {
 			psRef.setHref(new URI(psRef.getId()));
 		} catch (URISyntaxException e) {
-			 logger.error("Invalid URI syntax for ProductSpecificationRef Href with ID '{}'", psId, e);
+			 logger.error("Invalid URI syntax for ProductSpecificationRef Href with ID '{}'", psRef.getId(), e);
         throw new IllegalArgumentException("Failed to create ProductSpecificationRef Href due to invalid URI syntax", e);
 		}
 	    po.setProductSpecification(psRef);
@@ -331,12 +331,12 @@ public class RevenueBillingMapper {
 	    return po;
 	}
 
-	private static it.eng.dome.tmforum.tmf620.v4.model.Money createMoneyTmF620(Float amount, String currency) {
-	    it.eng.dome.tmforum.tmf620.v4.model.Money money = new it.eng.dome.tmforum.tmf620.v4.model.Money();
-	    money.setValue(amount);
-	    money.setUnit(currency);
-	    return money;
-	}
+	// private static it.eng.dome.tmforum.tmf620.v4.model.Money createMoneyTmF620(Float amount, String currency) {
+	//     it.eng.dome.tmforum.tmf620.v4.model.Money money = new it.eng.dome.tmforum.tmf620.v4.model.Money();
+	//     money.setValue(amount);
+	//     money.setUnit(currency);
+	//     return money;
+	// }
 
 	private static it.eng.dome.tmforum.tmf678.v4.model.Money createMoneyTmF678(Float amount, String currency) {
 	    it.eng.dome.tmforum.tmf678.v4.model.Money money = new it.eng.dome.tmforum.tmf678.v4.model.Money();
