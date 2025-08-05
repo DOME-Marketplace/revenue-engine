@@ -26,6 +26,10 @@ public class RevenueProductMapper {
 	
 	private static final Logger logger = LoggerFactory.getLogger(RevenueProductMapper.class);
 	
+	/*
+	 * PLAN TO PRODUCT OFFERING
+	 */
+	
 	public static ProductOffering toProductOffering(Plan plan) {
 		if (plan == null) {
 		    logger.error("toProductOffering: plan is null, returning null ProductOffering");
@@ -40,6 +44,7 @@ public class RevenueProductMapper {
 	    po.setName(plan.getName());
 	    po.setDescription(plan.getDescription());
 	    po.setLifecycleStatus(plan.getLifecycleStatus());
+	    po.setIsBundle(false); // TODO: understand how manage this attribute
 	    po.setLastUpdate(OffsetDateTime.now()); // or create a last update in plan
 	    po.setVersion("1.0"); // TODO: understand how manage this attribute
 
@@ -50,8 +55,6 @@ public class RevenueProductMapper {
 	        po.setValidFor(validFor);
 	    }
 	    
-	    po.setIsBundle(false); // TODO: understand how manage this attribute
-
 		// reference
 
 	    // Product Offering Price mapping
@@ -59,8 +62,7 @@ public class RevenueProductMapper {
             // Use the public method to map and collect all prices from the hierarchical structure.
             List<ProductOfferingPrice> rawMappedPrices = mapAllPrices(plan.getPrice());
 
-            // Convert the list of ProductOfferingPrice to List<ProductOfferingPriceRefOrValue>
-            // using the new dedicated helper method.
+            // Convert the list of ProductOfferingPrice to List<ProductOfferingPriceRefOrValue> using the new dedicated helper method.
             List<ProductOfferingPriceRefOrValue> finalMappedPrices = toProductOfferingPriceRefOrValueList(rawMappedPrices);
             
             // Set the final list of wrapped prices to the ProductOffering.
@@ -84,7 +86,6 @@ public class RevenueProductMapper {
 
 	    // Product Offering Terms (e.g., contract duration, renewal)
 	    List<ProductOfferingTerm> terms = new ArrayList<>();
-
 	    if (plan.getContractDurationLength() != null && plan.getContractDurationPeriodType() != null) {
 	        ProductOfferingTerm term = new ProductOfferingTerm();
 	        term.setName("Contract Duration");
@@ -92,7 +93,6 @@ public class RevenueProductMapper {
 	        //OPTIONAL
 //	        TimePeriod duration = new TimePeriod();
 //	        term.setValidFor(duration);
-//
 //	        Duration contractDuration = Duration.of(plan.getContractDurationLength(),
 //	            convertToChronoUnit(plan.getContractDurationPeriodType()));
 //	        term.setDuration(contractDuration);
@@ -104,18 +104,7 @@ public class RevenueProductMapper {
 	    }
 	    
 	    // Category mapping - if Exists
-//	    if (plan.getCategories() != null && !plan.getCategories().isEmpty()) {
-//	        List<CategoryRef> categoryRefs = plan.getCategories().stream()
-//	            .map(cat -> {
-//	                CategoryRef catRef = new CategoryRef();
-//	                catRef.setId(cat.getId());
-//	                catRef.setHref(cat.getHref());
-//	                catRef.setName(cat.getName());
-//	                return catRef;
-//	            })
-//	            .toList();
-//	        po.setCategory(categoryRefs);
-//	    }
+	    // add category to plan
 
 	    return po;
 	}
@@ -219,6 +208,10 @@ public class RevenueProductMapper {
 		money.setUnit(currency);
 		return money;
 	 }
+	
+	/*
+	 * SUBSCRIPTION TO PRODUCT
+	 */
 	
 	
 	public static Product toProduct(Subscription subscription, it.eng.dome.tmforum.tmf678.v4.model.BillingAccountRef billingAccountRef) {

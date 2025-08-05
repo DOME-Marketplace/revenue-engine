@@ -13,7 +13,6 @@ import it.eng.dome.revenue.engine.model.RevenueItem;
 import it.eng.dome.revenue.engine.model.RevenueStatement;
 import it.eng.dome.revenue.engine.model.SimpleBill;
 import it.eng.dome.revenue.engine.model.Subscription;
-import it.eng.dome.tmforum.tmf678.v4.model.AppliedBillingRateCharacteristic;
 import it.eng.dome.tmforum.tmf678.v4.model.AppliedCustomerBillingRate;
 import it.eng.dome.tmforum.tmf678.v4.model.BillingAccountRef;
 import it.eng.dome.tmforum.tmf678.v4.model.CustomerBill;
@@ -25,6 +24,11 @@ import it.eng.dome.tmforum.tmf678.v4.model.TaxItem;
 public class RevenueBillingMapper {
 	
 	private static final Logger logger = LoggerFactory.getLogger(RevenueBillingMapper.class);
+	
+	/*
+	 * ITEMS OF SIMPLE BILL
+	 *  TO ABCR
+	 */
 	
 	/**
 	 * Maps a SimpleBill object to a list of AppliedCustomerBillingRate objects.
@@ -141,7 +145,11 @@ public class RevenueBillingMapper {
 
 	    return acbr;
 	}
-	
+
+	/*
+	 * SIMPLE BILL TO CUSTOMER BILL
+	 */
+
 	/**
 	 * Maps a SimpleBill object to a CustomerBill object, following the TMF678 specification.
 	 * This method populates the CustomerBill's fields such as ID, dates, billing period,
@@ -218,7 +226,18 @@ public class RevenueBillingMapper {
 	    return money;
 	}
 
-    public static AppliedCustomerBillingRate toACBR(RevenueStatement rs, BillingAccountRef billingAccountRef) {
+    public static ProductRef toProductRef(Subscription subscription) {
+        if (subscription == null) return null;
+
+        ProductRef ref = new ProductRef();
+        ref.setId(subscription.getId());
+        ref.setHref(subscription.getId()); //TODO: change this with href when sub will contains href
+        ref.setName(subscription.getName());
+      
+        return ref;
+    }
+
+	public static AppliedCustomerBillingRate toACBR(RevenueStatement rs, BillingAccountRef billingAccountRef) {
         if (rs == null) return null;
 
         //FIXME: assume get 0
@@ -250,45 +269,9 @@ public class RevenueBillingMapper {
         
         //TODO: add taxIncludedAmount
 
-        // Set characteristics (ricorsivo)
-        if (rootItem.getItems() != null) {
-            List<AppliedBillingRateCharacteristic> characteristics = new ArrayList<>();
-            for (RevenueItem item : rootItem.getItems()) {
-                collectCharacteristics(item, characteristics);
-            }
-            acbr.setCharacteristic(characteristics);
-        }
-
         return acbr;
     }
     
-    public static ProductRef toProductRef(Subscription subscription) {
-        if (subscription == null) return null;
-
-        ProductRef ref = new ProductRef();
-        ref.setId(subscription.getId());
-        ref.setHref(subscription.getId()); //TODO: change this with href when sub will contains href
-        ref.setName(subscription.getName());
-      
-        return ref;
-    }
-
-    private static void collectCharacteristics(RevenueItem item, List<AppliedBillingRateCharacteristic> collector) {
-        if (item.getValue() != null) {
-            AppliedBillingRateCharacteristic c = new AppliedBillingRateCharacteristic();
-            c.setName(item.getName());
-            c.setValue(item.getValue());
-            c.setValueType("number"); // o "decimal"
-            collector.add(c);
-        }
-
-        if (item.getItems() != null) {
-            for (RevenueItem child : item.getItems()) {
-                collectCharacteristics(child, collector);
-            }
-        }
-    }
-
     // TODO: Revert Mapping
 }
 
