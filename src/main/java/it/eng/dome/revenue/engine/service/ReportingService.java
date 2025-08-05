@@ -35,24 +35,18 @@ import it.eng.dome.tmforum.tmf678.v4.model.TimePeriod;
 public class ReportingService {
     
     protected final Logger logger = LoggerFactory.getLogger(ReportingService.class);
+
+    @Autowired
+    private SubscriptionService subscriptionService;
+
+    @Autowired
+    private PlanService planService;
     
     @Autowired
-    TmfDataRetriever tmfDataRetriever;
+    private MetricsRetriever metricsRetriever;
 
     @Autowired
-    SubscriptionService subscriptionService;
-
-    @Autowired
-    PlanService planService;
-
-    @Autowired
-    PriceCalculator priceCalculator;
-    
-    @Autowired
-    MetricsRetriever metricsRetriever;
-
-    @Autowired
-    StatementsService statementsService;
+    private StatementsService statementsService;
     
     @Autowired
     private BillsService billsService;
@@ -65,7 +59,6 @@ public class ReportingService {
 	 * @throws ApiException if there is an error retrieving data from the API
 	 * @throws IOException if there is an error reading data from files
 	 */
-    
     public List<Report> getDashboardReport(String relatedPartyId) throws ApiException, IOException {
     	logger.info("Reporting for dashboard, Organization ID = {}", relatedPartyId);
         
@@ -143,8 +136,7 @@ public class ReportingService {
 	 * 
 	 * @param relatedPartyId the ID of the related party
 	 * @return a Report object containing billing history details
-	 */
-    
+	*/
     public Report getBillingHistorySection(String relatedPartyId) {
     	String subscriptionId;
         try {
@@ -236,50 +228,13 @@ public class ReportingService {
         return new Report("Billing History", invoiceReports);
     }
 
-//    public Report getBillingHistorySection(String relatedPartyId) throws Exception {
-//        TimePeriod tp = new TimePeriod();
-//        String subscriptionId = subscriptionService.getSubscriptionIdByRelatedPartyId(relatedPartyId);
-//        Subscription subscription = subscriptionService.getSubscriptionById(subscriptionId);
-//        tp.setStartDateTime(subscription.getStartDate());
-//        tp.setEndDateTime(OffsetDateTime.now());
-//		
-//        List<AppliedCustomerBillingRate> acbrList = tmfDataRetriever.retrieveBills(relatedPartyId, tp, null);
-//
-//        if (acbrList.isEmpty()) {
-//            return new Report("Billing History", "No billing data available");
-//        }
-//
-//        List<Report> invoiceReports = new ArrayList<>();
-//        for (AppliedCustomerBillingRate acbr : acbrList) {
-//            List<Report> details = new ArrayList<>();
-//            boolean isPaid = Boolean.TRUE.equals(acbr.getIsBilled()) && acbr.getBill() != null;
-//            details.add(new Report("Status", isPaid ? "Paid" : "Pending"));
-//            details.add(new Report("Issued On", acbr.getDate() != null ? acbr.getDate().toString() : "-"));
-////            if (acbr.getHref() != null) {
-////                String link = "https://billing.dome.org/acbr/" + acbr.getHref(); // oppure dove ospiti il PDF
-////                details.add(new Report("Download", "Download PDF", link));
-////            }
-//            if(acbr.getBill() != null) {
-//            	invoiceReports.add(new Report("Invoice " + acbr.getBill().getId(), details));
-//            }
-//            else {
-//            	invoiceReports.add(new Report("ACBR " + acbr.getId(), details));
-//            }
-//        }
-//
-//        return new Report("Billing History", invoiceReports);
-//    }
-    
-    
     /**	Retrieves the revenue section for the given relatedPartyId.
 	 * 
 	 * @param relatedPartyId the ID of the related party
 	 * @return a Report object containing revenue details
 	 * @throws ApiException if there is an error retrieving data from the API
 	 * @throws IOException if there is an error reading data from files
-	 */
-
-
+	*/
     public Report getRevenueSection(String relatedPartyId) throws ApiException, IOException {
     	List<RevenueStatement> statements = getRevenueStatements(relatedPartyId);
     	
@@ -340,14 +295,11 @@ public class ReportingService {
         return new Report("Revenue Volume Monitoring", items);
     }
     
-    
-    
-     /** 
+    /** 
      * This section calculates the estimated and confirmed future bills for the current month
      * @param relatedPartyId
      * @return
-     */
-    
+    */
     public Report getPrevisioningSection(String relatedPartyId) {
         String subscriptionId;
         try {
@@ -440,8 +392,7 @@ public class ReportingService {
 	 * 
 	 * @param relatedPartyId the ID of the related party
 	 * @return a Report object containing referral details
-	 */
-    
+	*/
     public Report getReferralSection(String relatedPartyId) {        
     	Subscription subscription;
         try {

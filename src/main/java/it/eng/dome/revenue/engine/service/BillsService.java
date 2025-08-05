@@ -48,8 +48,7 @@ public class BillsService implements InitializingBean {
 	 * @param billId the ID of the bill to retrieve
 	 * @return the SimpleBill object if found, null otherwise
 	 * @throws Exception if an error occurs during retrieval
-	 */
-
+	*/
     public SimpleBill getBill(String billId) throws Exception {
     	logger.info("Fetch bill with ID {}", billId);
         // FIXME: temporary... until we have proper persistence
@@ -69,7 +68,7 @@ public class BillsService implements InitializingBean {
 	 * @param subscriptionId the ID of the subscription for which to retrieve bills
 	 * @return a list of SimpleBill objects representing the bills for the subscription
 	 * @throws Exception if an error occurs during retrieval
-	 */
+	*/
     public List<SimpleBill> getSubscriptionBills(String subscriptionId) throws Exception {    
 	    logger.info("Fetch bills for subscription with ID{}", subscriptionId);
         try {
@@ -107,10 +106,7 @@ public class BillsService implements InitializingBean {
         }
         
         // Retrieve the related party with role = "Buyer"
-        RelatedParty buyerParty = sb.getRelatedParties().stream()
-            .filter(rp -> "Buyer".equalsIgnoreCase(rp.getRole()))
-            .findFirst()
-            .orElseThrow(() -> new IllegalArgumentException("No related party with role 'Buyer' found"));
+        RelatedParty buyerParty = this.getBuyerParty(sb.getRelatedParties());
         
         BillingAccountRef billingAccountRef = tmfDataRetriever.retrieveBillingAccountByRelatedPartyId(buyerParty.getId());
         return RevenueBillingMapper.toCB(sb, billingAccountRef);
@@ -122,25 +118,28 @@ public class BillsService implements InitializingBean {
         }
         
         Subscription subscription = null;
-        try {
-            subscription = subscriptionService.getSubscriptionById(sb.getSubscriptionId());
-        } catch (ApiException e) {
-            logger.error("API error while retrieving subscription ID {}: {}", sb.getSubscriptionId(), e.getMessage(), e);
-        } catch (IOException e) {
-            logger.error("IO error while retrieving subscription ID {}: {}", sb.getSubscriptionId(), e.getMessage(), e);
-        }
-        
-        if (subscription == null) {
-            logger.warn("No subscription found for ID: {}", sb.getSubscriptionId());
-        }
+    	try {
+    		subscription = subscriptionService.getSubscriptionById(sb.getSubscriptionId());
+    	} catch (ApiException | IOException e) {
+    		logger.error("Error retrieving subscription ID {}: {}", sb.getSubscriptionId(), e.getMessage(), e);
+    		throw new IllegalStateException("Failed to retrieve subscription data", e);
+    	}
         
         // Retrieve the related party with role = "Buyer"
-        RelatedParty buyerParty = sb.getRelatedParties().stream()
-            .filter(rp -> "Buyer".equalsIgnoreCase(rp.getRole()))
-            .findFirst()
-            .orElseThrow(() -> new IllegalArgumentException("No related party with role 'Buyer' found"));
+        RelatedParty buyerParty = this.getBuyerParty(sb.getRelatedParties());
         
         BillingAccountRef billingAccountRef = tmfDataRetriever.retrieveBillingAccountByRelatedPartyId(buyerParty.getId());
         return RevenueBillingMapper.toACBRList(sb, subscription, billingAccountRef);
+    }
+    
+    private RelatedParty getBuyerParty(List<RelatedParty> relatedParties) {
+    	if (relatedParties == null || relatedParties.isEmpty()) {
+    		throw new IllegalArgumentException("Missing related party information in SimpleBill");
+    	}
+    	
+    	return relatedParties.stream()
+    			.filter(rp -> "Buyer".equalsIgnoreCase(rp.getRole()))
+    			.findFirst()
+    			.orElseThrow(() -> new IllegalArgumentException("No related party with role 'Buyer' found"));
     }
 }

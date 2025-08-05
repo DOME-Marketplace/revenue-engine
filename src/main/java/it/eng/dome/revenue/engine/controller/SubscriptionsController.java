@@ -43,7 +43,6 @@ public class SubscriptionsController {
 	public SubscriptionsController() {
 	}
 
-	
 	@GetMapping("")
 	public ResponseEntity<List<Subscription>> getAllSubscriptions() {
 //	    logger.info("Request received: get all subscriptions");

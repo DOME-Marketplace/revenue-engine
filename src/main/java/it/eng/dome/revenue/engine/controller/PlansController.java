@@ -31,7 +31,6 @@ public class PlansController {
     @Autowired
 	private SubscriptionService subscriptionService;
 
-   
     @GetMapping("")
     public ResponseEntity<List<Plan>> getAllPlans() {
 //    	logger.info("Request received: fetch all plans");    	
@@ -90,6 +89,5 @@ public class PlansController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
-
 
 }

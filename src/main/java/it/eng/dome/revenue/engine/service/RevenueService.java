@@ -69,7 +69,6 @@ public class RevenueService implements InitializingBean {
 	 * @return An AppliedCustomerBillingRate object.
 	 * @throws IllegalArgumentException if the RevenueStatement is null or does not contain related party information.
 	 */
-	
 	public AppliedCustomerBillingRate buildACBR(RevenueStatement rs) {
         if (rs == null || rs.getSubscription() == null ||
             rs.getSubscription().getRelatedParties() == null ||

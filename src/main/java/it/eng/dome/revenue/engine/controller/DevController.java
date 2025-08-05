@@ -115,10 +115,6 @@ public class DevController {
 			logger.error("Error converting Plan to ProductOffering: {}", e.getMessage(), e);
 			return ResponseEntity.internalServerError().build();
 		}
-    	
-    	
-    	
-    	
     }
 
 }

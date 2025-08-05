@@ -84,25 +84,27 @@ public class SubscriptionService implements InitializingBean {
     
 	public Subscription getSubscriptionById(String id) throws ApiException, IOException {
 		logger.info("Fetch subscription with ID {}", id);
-		// 1. check the id is in the right format
+		
+		// check the id is in the right format
 		if (id == null || id.isEmpty() || id.length()!=98) {
 			logger.error("malformed subscription id: " + id);
 			return null;
 		}
+		
 		String organisationId = "urn:ngsi-ld:organization:"+id.substring(25, 61);
 		logger.debug("Retrieved organisationId: " + organisationId);
 		String planId = "urn:ngsi-ld:plan:"+id.substring(62, 98);
 		logger.debug("Retrieved planId: " + planId);
 
-		// 2. retrieve the organization
+		// retrieve the organization
 		Organization organization = this.orgApi.retrieveOrganization(organisationId, null);
 		logger.debug("TradingName organization: {}", organization.getTradingName());
 
-		// 3. retrieve the plan
+		// retrieve the plan
 		Plan plan = new PlanService().findPlanById(planId);
 		logger.debug("Retrieved plan: " + plan);
 
-		// 4. create the subscription
+		// create the subscription
 		Subscription subscription = this.createSubscription(id, organization, plan);
 		return subscription;
 	}
@@ -116,19 +118,18 @@ public class SubscriptionService implements InitializingBean {
 	 * @return The created Subscription object.
 	 * @throws ApiException If there is an error during API operations.
 	 * @throws IOException If there is an error reading the plan data.
-	 */
-	
+	*/
 	private Subscription createSubscription(String id, Organization organization, Plan plan) throws ApiException, IOException {
 		
 		logger.debug("Creating subscription with id: {}", id);
 
-		// 1. create the subscription
+		// create the subscription
 		Subscription subscription = new Subscription();
 		subscription.setId(id);
 		subscription.setName("Subscription for " + organization.getTradingName() + " on plan " + plan.getName());
-		// 1.1 embed a plan reference
+		// embed a plan reference
 		subscription.setPlan(plan.buildRef());
-		// 1.2 embed an organisation ref
+		// embed an organisation ref
 		RelatedParty party = new RelatedParty();
 		party.setId(organization.getId());
 		party.setName(organization.getTradingName());
@@ -136,12 +137,12 @@ public class SubscriptionService implements InitializingBean {
 		party.setAtReferredType("Organization");
 		List<RelatedParty> relatedParties = new ArrayList<>();
 		relatedParties.add(party);
-		// 1.3 also embed the DOME operator
+		// also embed the DOME operator
 		relatedParties.add(this.getFakeDomeOperatorParty());
 
 		subscription.setRelatedParties(relatedParties);
 
-		// 2 status and start date
+		// status and start date
 		subscription.setStatus("active");
 		// default start time for everybody is 5 July 2025
 		OffsetDateTime startTime = OffsetDateTime.parse("2025-05-05T00:00:00+00:00");
@@ -159,7 +160,6 @@ public class SubscriptionService implements InitializingBean {
 		return dome;
 	}
 
-
 	/**
 	 * Retrieves all subscriptions for all organizations.
 	 * 
@@ -170,21 +170,21 @@ public class SubscriptionService implements InitializingBean {
 	public List<Subscription> getAllSubscriptions() throws ApiException, IOException {
 		logger.info("Get all subscriptions");
 		
-		// 1. retrieve all organizations
+		// retrieve all organizations
 		List<Organization> organizations = this.orgApi.listOrganization(null, null, null, null);
 		
 		logger.info("Number of organization found: {}", organizations.size());
 
-		// 2. build the subscription and add it to the output
+		// build the subscription and add it to the output
 		List<Subscription> subscriptions = new ArrayList<>();
 		for(Organization o:organizations) {
 			
 			logger.debug("Analysing organizationId: {}", o.getId());
 			
-			// 2.1. identify a default plan for each organization.
+			// identify a default plan for each organization.
 			Plan plan = this.getPlanForOrganization(o);
 			
-			// 2.2 create the subscription
+			// create the subscription
 			String subscriptionId = "urn:ngsi-ld:subscription:" + o.getId().substring("urn:ngsi-ld:organization:".length()) + "-" + plan.getId().substring("urn:ngsi-ld:plan:".length());
 			logger.debug("Subscription id: {}", subscriptionId);
 			
@@ -237,7 +237,7 @@ public class SubscriptionService implements InitializingBean {
 	 * @return The Subscription object if found, null otherwise.
 	 * @throws IOException If there is an error reading the subscription data.
 	 * @throws ApiException If there is an error retrieving the organization.
-	 */
+	*/
 	public Subscription getSubscriptionByRelatedPartyId(String id) throws IOException, ApiException {
 		logger.debug("Retrieving subscription by related party id: {}", id);
 	    return getAllSubscriptions().stream()
@@ -248,7 +248,6 @@ public class SubscriptionService implements InitializingBean {
 	            .orElse(null);
 	}
 	
-	
 	/**
 	 * Retrieves all subscriptions associated with a specific plan ID.
 	 * 
@@ -256,8 +255,7 @@ public class SubscriptionService implements InitializingBean {
 	 * @return A list of Subscription objects that match the given plan ID.
 	 * @throws IOException If there is an error reading the subscription data.
 	 * @throws ApiException If there is an error retrieving the organization.
-	 */
-
+	*/
 	public List<Subscription> getByPlanId(String id) {
 	    logger.debug("Retrieving subscriptions by plan ID: {}", id);
 	    try {
@@ -276,15 +274,13 @@ public class SubscriptionService implements InitializingBean {
 	 * @return The ID of the subscription if found, null otherwise.
 	 * @throws IOException If there is an error reading the subscription data.
 	 * @throws ApiException If there is an error retrieving the organization.
-	 */
-	 
+	*/
 	public String getSubscriptionIdByRelatedPartyId(String relatedPartyId) throws IOException, ApiException {
 		logger.debug("Retrieving subscription id by related party id: {}", relatedPartyId);
 	    Subscription subscription = getSubscriptionByRelatedPartyId(relatedPartyId);
 	    return subscription != null ? subscription.getId() : null;
 	}
 
-	
     public Product buildProduct(Subscription subscription) {
         if (subscription == null || subscription.getRelatedParties() == null || subscription.getRelatedParties().isEmpty()) {
             throw new IllegalArgumentException("Missing related party information in Subscription");

@@ -30,7 +30,6 @@ public class PlanService {
  
     private final ObjectMapper mapper;
 
-
     public PlanService() {
         this.mapper = new ObjectMapper()
                 .registerModule(new JavaTimeModule())        // LocalDate
@@ -38,21 +37,15 @@ public class PlanService {
                 .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
     }
  
-
-
     /** Loads all plans from JSON files located in the classpath under data/plans/
 	 * 
 	 * @return List of Plan objects
 	 * @throws IOException if there is an error reading the files
 	 */
-
-    
     public List<Plan> loadAllPlans() throws IOException {
     	logger.debug("Loading all plans");
 		
-		//FIXME - replace to get dynamic contents 
-
-        
+		//FIXME - replace to get dynamic contents
         PathMatchingResourcePatternResolver resolver = new PathMatchingResourcePatternResolver();
         Resource[] resources = resolver.getResources("classpath:data/plans/*.json");
         

@@ -140,8 +140,5 @@ public class StatementsService implements InitializingBean {
 
         return new ArrayList<>(statements);
     }
-
-
-
-
+    
 }
