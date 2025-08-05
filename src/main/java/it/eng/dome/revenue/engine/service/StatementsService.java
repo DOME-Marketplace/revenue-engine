@@ -1,6 +1,7 @@
 package it.eng.dome.revenue.engine.service;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
@@ -98,6 +99,10 @@ public class StatementsService implements InitializingBean {
         Subscription sub;
         try {
             sub = subscriptionService.getSubscriptionById(subscriptionId);
+            if (sub == null) {
+                logger.warn("Subscription is null, skipping processing.");
+                return Collections.emptyList();
+            }
         } catch (Exception ex) {
             logger.error("Failed to retrieve subscription with ID {}: {}", subscriptionId, ex.getMessage(), ex);
             throw new RuntimeException("Failed to retrieve subscription: " + subscriptionId, ex);

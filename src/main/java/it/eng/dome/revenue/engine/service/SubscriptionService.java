@@ -164,7 +164,7 @@ public class SubscriptionService implements InitializingBean {
 		logger.info("Get all subscriptions");
 		
 		// 1. retrieve all organizations
-		List<Organization> organizations = this.orgApi.listOrganization(null, null, null, null);
+		List<Organization> organizations = this.orgApi.listOrganization(null, null, 1, null);
 		
 		logger.info("Number of organization found: {}", organizations.size());
 
