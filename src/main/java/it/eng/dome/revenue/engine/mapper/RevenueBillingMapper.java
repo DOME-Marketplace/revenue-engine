@@ -1,5 +1,7 @@
 package it.eng.dome.revenue.engine.mapper;
 
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -31,6 +33,16 @@ public class RevenueBillingMapper {
 	
 	private static final Logger logger = LoggerFactory.getLogger(RevenueBillingMapper.class);
 	
+	/**
+	 * Maps a SimpleBill object to a list of AppliedCustomerBillingRate objects.
+	 * This method iterates through the revenue items of the SimpleBill,
+	 * and for each item, it recursively collects all leaf-level RevenueItems
+	 * to be converted into AppliedCustomerBillingRate objects.
+	 * @param sb The SimpleBill object containing the revenue data.
+	 * @param subscription The Subscription object related to the billing.
+	 * @param billingAccountRef The BillingAccountRef object for the billing account.
+	 * @return A List of AppliedCustomerBillingRate objects, or an empty list if the input SimpleBill is null or has no revenue items.
+	*/
 	public static List<AppliedCustomerBillingRate> toACBRList(SimpleBill sb, Subscription subscription, BillingAccountRef billingAccountRef) {
 	    if (sb == null || sb.getRevenueItems() == null || sb.getRevenueItems().isEmpty()) {
 	        return Collections.emptyList();
@@ -38,23 +50,39 @@ public class RevenueBillingMapper {
 
 	    List<AppliedCustomerBillingRate> acbrList = new ArrayList<>();
 	    for (RevenueItem item : sb.getRevenueItems()) {
+			// For each item, call a recursive helper method to find all "leaf" items and map them to AppliedCustomerBillingRate objects.
 	        collectLeafItemsAndMap(item, sb, subscription, billingAccountRef, acbrList);
 	    }
 	    return acbrList;
 	}
 	
+	/**
+	 * Recursively traverses the hierarchy of a RevenueItem to find all "leaf" nodes.
+	 * A leaf node is a RevenueItem that does not contain any child items.
+	 * Once a leaf node is found, it is mapped to an AppliedCustomerBillingRate object
+	 * and added to the provided list.
+	 *
+	 * @param item The current RevenueItem in the traversal.
+	 * @param sb The SimpleBill object from which the item originates.
+	 * @param subscription The Subscription object related to the billing.
+	 * @param billingAccountRef The BillingAccountRef for the billing account.
+	 * @param acbrList The list to which the generated AppliedCustomerBillingRate objects will be added.
+	*/
 	private static void collectLeafItemsAndMap(RevenueItem item, SimpleBill sb, Subscription subscription, BillingAccountRef billingAccountRef, List<AppliedCustomerBillingRate> acbrList) {
+		// Base case for the recursion: if the item is null, simply return.
 		if (item == null) return;
 		
 		// if had a son, iterate
 		if (item.getItems() != null && !item.getItems().isEmpty()) {
 			for (RevenueItem child : item.getItems()) {
+				// if it has children, recursively call this method for each child.
 				collectLeafItemsAndMap(child, sb, subscription, billingAccountRef, acbrList);
 			}
 		} else {
-			// leaf node (without son) -> mapper in ABCR
+			// this is a leaf node (no children). Billable item that can be mapped to an ACBR.
 			try {
 //				if (item.getOverallValue() != null && item.getOverallValue() != 0.0) {
+				// map the leaf RevenueItem to an AppliedCustomerBillingRate and add it to the list.
 				acbrList.add(toACBR(item, sb, subscription, billingAccountRef));
 //				} else {
 //					logger.debug("Skipping RevenueItem with null or zero value: {}", item.getName());
@@ -65,6 +93,18 @@ public class RevenueBillingMapper {
 		}
 	}
 
+	/**
+	 * Maps a single RevenueItem to an AppliedCustomerBillingRate (ACBR) object.
+	 * This method creates a new ACBR instance and populates its fields with data
+	 * from the provided RevenueItem, SimpleBill, Subscription, and BillingAccountRef.
+	 *
+	 * @param item The RevenueItem to be mapped. This is expected to be a "leaf" item from the bill's hierarchy.
+	 * @param sb The SimpleBill object from which the RevenueItem and other context (like the billing period) originate.
+	 * @param subscription The Subscription related to this billing rate, used to enrich the ACBR's details.
+	 * @param billingAccountRef A reference to the billing account, to be included in the ACBR.
+	 * @return A new AppliedCustomerBillingRate object populated with the provided data, or null if the input item is null.
+	 * @throws IllegalArgumentException if the SimpleBill or its period are null, as these are mandatory for the ACBR.
+	*/
 	public static AppliedCustomerBillingRate toACBR(RevenueItem item, SimpleBill sb, Subscription subscription, BillingAccountRef billingAccountRef) {
 	    if (item == null) {
 	    	logger.warn("Cannot map to AppliedCustomerBillingRate: RevenueItem is null");
@@ -75,6 +115,7 @@ public class RevenueBillingMapper {
 	        throw new IllegalArgumentException("SimpleBill or its period must not be null");
 	    }
 
+		//id and base data
 	    AppliedCustomerBillingRate acbr = new AppliedCustomerBillingRate();
 	    acbr.setId(UUID.randomUUID().toString());
 	    acbr.setHref(acbr.getId());
@@ -83,19 +124,15 @@ public class RevenueBillingMapper {
 	        + (subscription != null ? subscription.getName() : "") 
 	        + " for period " + sb.getPeriod().getStartDateTime() + " - " + sb.getPeriod().getEndDateTime());
 	    acbr.setDate(subscription != null ? subscription.getStartDate() : sb.getPeriod().getStartDateTime());
-	    acbr.setIsBilled(false);
-	    acbr.setType(null);
+	    acbr.setIsBilled(false); // can we assume that it is false at start?
+	    acbr.setType(null); // TODO: Which type ?
 	    acbr.setPeriodCoverage(sb.getPeriod());
-	    acbr.setBill(null);
 
+		//ref
+		acbr.setRelatedParty(sb.getRelatedParties());
+		acbr.setBill(null); // Should I set the reference with CB right away?
 	    acbr.setProduct(subscription != null ? toProductRef(subscription) : null);
 	    acbr.setBillingAccount(billingAccountRef);
-
-	    if (subscription != null && subscription.getRelatedParties() != null) {
-	        acbr.setRelatedParty(subscription.getRelatedParties());
-	    } else {
-	        acbr.setRelatedParty(sb.getRelatedParties());
-	    }
 
 	    if (item.getOverallValue() != null) {
 	        Money money = new Money();
@@ -106,9 +143,22 @@ public class RevenueBillingMapper {
 	        logger.debug("RevenueItem '{}' has no overall value set", item.getName());
 	    }
 
+		acbr.appliedTax(null); //??
+		acbr.setTaxIncludedAmount(null);//??
+
 	    return acbr;
 	}
 	
+	/**
+	 * Maps a SimpleBill object to a CustomerBill object, following the TMF678 specification.
+	 * This method populates the CustomerBill's fields such as ID, dates, billing period,
+	 * amounts, taxes, and related parties based on the provided SimpleBill.
+	 *
+	 * @param simpleBill The SimpleBill object containing the source data.
+	 * @param billingAccountRef A reference to the billing account associated with this bill.
+	 * @return A new CustomerBill object populated with the mapped data.
+	 * @throws IllegalArgumentException if the provided simpleBill is null.
+	*/
 	public static CustomerBill toCB(SimpleBill simpleBill, BillingAccountRef billingAccountRef) {
 		if (simpleBill == null) {
 		    logger.error("toCB: simpleBill is null, cannot map to CustomerBill");
@@ -120,62 +170,68 @@ public class RevenueBillingMapper {
 		
 		CustomerBill cb = new CustomerBill();
 
-        // 1. id and basic metadata
+        // id and basic metadata
         String billId = simpleBill.getId();
         cb.setId(billId);
         cb.setHref(billId);
         cb.setBillNo(billId.substring(billId.lastIndexOf(":") + 1, billId.length()).substring(0, 6));
-
-        // 2. Date
         cb.setBillDate(simpleBill.getBillTime());
-        cb.setLastUpdate(OffsetDateTime.now());
-        cb.setNextBillDate(simpleBill.getPeriod().getEndDateTime().plusMonths(1));
+        cb.setLastUpdate(OffsetDateTime.now()); //we can assume that the last update is now
+        cb.setNextBillDate(simpleBill.getPeriod().getEndDateTime().plusMonths(1)); //?
         cb.setPaymentDueDate(simpleBill.getPeriod().getEndDateTime().plusDays(10)); // Q: How many days after the invoice date should we set the due date?
-
-        // 3. period
         cb.setBillingPeriod(simpleBill.getPeriod());
 
-        // 4. amounts
+		// other
+		cb.setCategory("normal");
+        cb.setRunType("onCycle"); // onCycle or offCycle?
+        cb.setState(StateValue.NEW);
+
+		// amounts
         Float amountTaxExcluded = simpleBill.getAmount().floatValue(); // Q: Is sbAmount whitout tax?
         Float taxRate = 0.20f; // Q: How do we set the TaxRate?
         Float taxAmount = amountTaxExcluded * taxRate;
         Float amountIncludedTax = amountTaxExcluded + taxAmount;
-
         cb.setAmountDue(createMoneyTmF678(0.0f, "EUR")); //TODO: ask Stefania
         cb.setRemainingAmount(createMoneyTmF678(0.0f, "EUR")); //TODO: ask Stefania
         cb.setTaxIncludedAmount(createMoneyTmF678(amountIncludedTax, "EUR"));
         cb.setTaxExcludedAmount(createMoneyTmF678(amountTaxExcluded, "EUR"));
 
-        // 5. tax
+		// REF
+		cb.setRelatedParty(simpleBill.getRelatedParties());
+
         TaxItem taxItem = new TaxItem()
                 .taxAmount(createMoneyTmF678(taxAmount, "EUR"))
                 .taxCategory("VAT")
                 .taxRate(taxRate);
-        cb.setTaxItem(List.of(taxItem));
+        cb.setTaxItem(List.of(taxItem));        
 
-        // 6. Related Party
-        cb.setRelatedParty(simpleBill.getRelatedParties());
-
-        // 7. Other default attributes
-        cb.setCategory("normal");
-        cb.setRunType("onCycle"); // onCycle or offCycle?
-        cb.setState(StateValue.NEW);
-//        cb.setEstimated(simpleBill.isEstimated());
-
-        // 8. Placeholder
         cb.setBillingAccount(billingAccountRef);
         cb.setFinancialAccount(null);
         cb.setAppliedPayment(new ArrayList<>());
         cb.setBillDocument(new ArrayList<>());
         cb.setPaymentMethod(null);
 
-//        // 9. Type and metadata
-//        cb._type("CustomerBill");
-//        cb._baseType("CustomerBill");
-//        cb._schemaLocation("...some uri...");
+		// Type and metadata
+       	// cb._type("CustomerBill");
+       	// cb._baseType("CustomerBill");
+       	// cb._schemaLocation();
         return cb;
     }
 
+	/**
+	 * Maps a {@code Plan} object to a {@code ProductOffering} object, following the TMF620 specification.
+	 * This method populates the ProductOffering's fields such as ID, name, description,
+	 * lifecycle status, and a reference to its product specification.
+	 * <p>
+	 * This mapper assumes a direct correlation between the input {@code Plan} and the
+	 * output {@code ProductOffering}. It handles basic metadata, validity periods,
+	 * and sets up references to the Product Specification and Product Offering Terms.
+	 * </p>
+	 *
+	 * @param plan The {@code Plan} object containing the source data to be mapped.
+	 * @return A new {@code ProductOffering} object populated with the mapped data, or {@code null} if the input plan is null.
+	 * @throws IllegalArgumentException if the {@code href} for the Product Specification cannot be created due to an invalid URI syntax.
+	*/
 	public static ProductOffering toProductOffering(Plan plan) {
 		if (plan == null) {
 		    logger.error("toProductOffering: plan is null, returning null ProductOffering");
@@ -184,7 +240,7 @@ public class RevenueBillingMapper {
 
 	    ProductOffering po = new ProductOffering();
 
-	    // Basic fields
+	    // id and basic metadata
 	    po.setId(plan.getId());
 	    po.setHref(plan.getId());
 	    po.setName(plan.getName());
@@ -193,42 +249,46 @@ public class RevenueBillingMapper {
 	    po.setLastUpdate(OffsetDateTime.now()); // or create a last update in plan
 	    po.setVersion("1.0"); // TODO: understand how manage this attribute
 
-	    // Time validity
 	    if (plan.getValidFor() != null) {
 	        TimePeriod validFor = new TimePeriod();
 	        validFor.setStartDateTime(plan.getValidFor().getStartDateTime());
 	        validFor.setEndDateTime(plan.getValidFor().getEndDateTime());
 	        po.setValidFor(validFor);
 	    }
-
-	    // isBundle - default to false
+	    
 	    po.setIsBundle(false); // TODO: understand how manage this attribute
 
+		// ref
 	    // Price
-//	    if (plan.getPrice() != null) {
-//	        ProductOfferingPrice price = new ProductOfferingPrice();
-//	        price.setName(plan.getName() + " Price");
-//	        price.setDescription("Plan price");
-//	        price.setPriceType("recurring"); // understand how manage this attribute
-//	        
-//	        // Set recurring charge period type and length
-//	        if (plan.getBillingPeriodType() != null) {
-//	            price.setRecurringChargePeriodType(plan.getBillingPeriodType().name().toLowerCase());
-//	        }
-//	        if (plan.getBillingPeriodLength() != null) {
-//	            price.setRecurringChargePeriodLength(plan.getBillingPeriodLength());
-//	        }
-//	        
-//	        price.setPrice(createMoneyTmF620(plan.getPrice().getAmount().floatValue(), "EUR"));
-//	        po.setProductOfferingPrice(List.of(price));
-//	    }
+	    // if (plan.getPrice() != null) {
+	    //     ProductOfferingPrice price = new ProductOfferingPrice();
+	    //     price.setName(plan.getName() + " Price");
+	    //     price.setDescription("Plan price");
+	    //     price.setPriceType("recurring"); // understand how manage this attribute
+	        
+	    //     // Set recurring charge period type and length
+	    //     if (plan.getBillingPeriodType() != null) {
+	    //         price.setRecurringChargePeriodType(plan.getBillingPeriodType().name().toLowerCase());
+	    //     }
+	    //     if (plan.getBillingPeriodLength() != null) {
+	    //         price.setRecurringChargePeriodLength(plan.getBillingPeriodLength());
+	    //     }
+	        
+	    //     price.setPrice(createMoneyTmF620(plan.getPrice().getAmount().floatValue(), "EUR"));
+	    //     po.setProductOfferingPrice(List.of(price));
+	    // }
 
-	    // Product Specification reference (mock)
+	    // Product Specification reference
 	    ProductSpecificationRef psRef = new ProductSpecificationRef();
 	    psRef.setId("urn:example:product-specification:" + plan.getId()); // TODO: understand how to manage this attribute
 	    psRef.setName(plan.getName() + " Specification");
 	    psRef.setVersion("0.1"); // TODO: understand how to manage this attribute
-	    //psRef.setHref(psRef.getId());
+	    try {
+			psRef.setHref(new URI(psRef.getId()));
+		} catch (URISyntaxException e) {
+			 logger.error("Invalid URI syntax for ProductSpecificationRef Href with ID '{}'", psId, e);
+        throw new IllegalArgumentException("Failed to create ProductSpecificationRef Href due to invalid URI syntax", e);
+		}
 	    po.setProductSpecification(psRef);
 
 	    // Product Offering Terms (e.g., contract duration, renewal)
