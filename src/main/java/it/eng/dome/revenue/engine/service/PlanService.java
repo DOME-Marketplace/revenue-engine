@@ -17,9 +17,11 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 
+import it.eng.dome.revenue.engine.mapper.RevenueProductMapper;
 import it.eng.dome.revenue.engine.model.Plan;
 import it.eng.dome.revenue.engine.service.validation.PlanValidationReport;
 import it.eng.dome.revenue.engine.service.validation.PlanValidator;
+import it.eng.dome.tmforum.tmf620.v4.model.ProductOffering;
 
 @Service
 public class PlanService {
@@ -87,6 +89,10 @@ public class PlanService {
     public PlanValidationReport validatePlan(String planId) throws IOException {
         Plan plan = this.findPlanById(planId);
         return new PlanValidator().validate(plan);
+    }
+    
+    public ProductOffering buildProductOffering(Plan plan) {
+        return RevenueProductMapper.toProductOffering(plan);
     }
 
 }
