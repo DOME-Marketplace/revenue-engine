@@ -1,7 +1,5 @@
 package it.eng.dome.revenue.engine.mapper;
 
-import java.net.URI;
-import java.net.URISyntaxException;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -11,15 +9,10 @@ import java.util.UUID;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import it.eng.dome.revenue.engine.model.Plan;
 import it.eng.dome.revenue.engine.model.RevenueItem;
 import it.eng.dome.revenue.engine.model.RevenueStatement;
 import it.eng.dome.revenue.engine.model.SimpleBill;
 import it.eng.dome.revenue.engine.model.Subscription;
-import it.eng.dome.tmforum.tmf620.v4.model.ProductOffering;
-import it.eng.dome.tmforum.tmf620.v4.model.ProductOfferingTerm;
-import it.eng.dome.tmforum.tmf620.v4.model.ProductSpecificationRef;
-import it.eng.dome.tmforum.tmf620.v4.model.TimePeriod;
 import it.eng.dome.tmforum.tmf678.v4.model.AppliedBillingRateCharacteristic;
 import it.eng.dome.tmforum.tmf678.v4.model.AppliedCustomerBillingRate;
 import it.eng.dome.tmforum.tmf678.v4.model.BillingAccountRef;
@@ -218,128 +211,8 @@ public class RevenueBillingMapper {
         return cb;
     }
 
-	/**
-	 * Maps a {@code Plan} object to a {@code ProductOffering} object, following the TMF620 specification.
-	 * This method populates the ProductOffering's fields such as ID, name, description,
-	 * lifecycle status, and a reference to its product specification.
-	 * <p>
-	 * This mapper assumes a direct correlation between the input {@code Plan} and the
-	 * output {@code ProductOffering}. It handles basic metadata, validity periods,
-	 * and sets up references to the Product Specification and Product Offering Terms.
-	 * </p>
-	 *
-	 * @param plan The {@code Plan} object containing the source data to be mapped.
-	 * @return A new {@code ProductOffering} object populated with the mapped data, or {@code null} if the input plan is null.
-	 * @throws IllegalArgumentException if the {@code href} for the Product Specification cannot be created due to an invalid URI syntax.
-	*/
-	public static ProductOffering toProductOffering(Plan plan) {
-		if (plan == null) {
-		    logger.error("toProductOffering: plan is null, returning null ProductOffering");
-		    return null;
-		}
-
-	    ProductOffering po = new ProductOffering();
-
-	    // id and basic metadata
-	    po.setId(plan.getId());
-	    po.setHref(plan.getId());
-	    po.setName(plan.getName());
-	    po.setDescription(plan.getDescription());
-	    po.setLifecycleStatus(plan.getLifecycleStatus());
-	    po.setLastUpdate(OffsetDateTime.now()); // or create a last update in plan
-	    po.setVersion("1.0"); // TODO: understand how manage this attribute
-
-	    if (plan.getValidFor() != null) {
-	        TimePeriod validFor = new TimePeriod();
-	        validFor.setStartDateTime(plan.getValidFor().getStartDateTime());
-	        validFor.setEndDateTime(plan.getValidFor().getEndDateTime());
-	        po.setValidFor(validFor);
-	    }
-	    
-	    po.setIsBundle(false); // TODO: understand how manage this attribute
-
-		// ref
-	    // Price
-	    // if (plan.getPrice() != null) {
-	    //     ProductOfferingPrice price = new ProductOfferingPrice();
-	    //     price.setName(plan.getName() + " Price");
-	    //     price.setDescription("Plan price");
-	    //     price.setPriceType("recurring"); // understand how manage this attribute
-	        
-	    //     // Set recurring charge period type and length
-	    //     if (plan.getBillingPeriodType() != null) {
-	    //         price.setRecurringChargePeriodType(plan.getBillingPeriodType().name().toLowerCase());
-	    //     }
-	    //     if (plan.getBillingPeriodLength() != null) {
-	    //         price.setRecurringChargePeriodLength(plan.getBillingPeriodLength());
-	    //     }
-	        
-	    //     price.setPrice(createMoneyTmF620(plan.getPrice().getAmount().floatValue(), "EUR"));
-	    //     po.setProductOfferingPrice(List.of(price));
-	    // }
-
-	    // Product Specification reference
-	    ProductSpecificationRef psRef = new ProductSpecificationRef();
-	    psRef.setId("urn:example:product-specification:" + plan.getId()); // TODO: understand how to manage this attribute
-	    psRef.setName(plan.getName() + " Specification");
-	    psRef.setVersion("0.1"); // TODO: understand how to manage this attribute
-	    try {
-			psRef.setHref(new URI(psRef.getId()));
-		} catch (URISyntaxException e) {
-			 logger.error("Invalid URI syntax for ProductSpecificationRef Href with ID '{}'", psRef.getId(), e);
-        throw new IllegalArgumentException("Failed to create ProductSpecificationRef Href due to invalid URI syntax", e);
-		}
-	    po.setProductSpecification(psRef);
-
-	    // Product Offering Terms (e.g., contract duration, renewal)
-	    List<ProductOfferingTerm> terms = new ArrayList<>();
-
-	    if (plan.getContractDurationLength() != null && plan.getContractDurationPeriodType() != null) {
-	        ProductOfferingTerm term = new ProductOfferingTerm();
-	        term.setName("Contract Duration");
-	        term.setDescription("Minimum duration of the plan");
-
-	        //OPTIONAL
-//	        TimePeriod duration = new TimePeriod();
-//	        term.setValidFor(duration);
-//
-//	        Duration contractDuration = Duration.of(plan.getContractDurationLength(),
-//	            convertToChronoUnit(plan.getContractDurationPeriodType()));
-//	        term.setDuration(contractDuration);
-
-	        terms.add(term);
-	    }
-
-	    if (!terms.isEmpty()) {
-	        po.setProductOfferingTerm(terms);
-	    }
-	    
-	    // Category mapping - if Exists
-//	    if (plan.getCategories() != null && !plan.getCategories().isEmpty()) {
-//	        List<CategoryRef> categoryRefs = plan.getCategories().stream()
-//	            .map(cat -> {
-//	                CategoryRef catRef = new CategoryRef();
-//	                catRef.setId(cat.getId());
-//	                catRef.setHref(cat.getHref());
-//	                catRef.setName(cat.getName());
-//	                return catRef;
-//	            })
-//	            .toList();
-//	        po.setCategory(categoryRefs);
-//	    }
-
-	    return po;
-	}
-
-	// private static it.eng.dome.tmforum.tmf620.v4.model.Money createMoneyTmF620(Float amount, String currency) {
-	//     it.eng.dome.tmforum.tmf620.v4.model.Money money = new it.eng.dome.tmforum.tmf620.v4.model.Money();
-	//     money.setValue(amount);
-	//     money.setUnit(currency);
-	//     return money;
-	// }
-
-	private static it.eng.dome.tmforum.tmf678.v4.model.Money createMoneyTmF678(Float amount, String currency) {
-	    it.eng.dome.tmforum.tmf678.v4.model.Money money = new it.eng.dome.tmforum.tmf678.v4.model.Money();
+	private static Money createMoneyTmF678(Float amount, String currency) {
+	    Money money = new Money();
 	    money.setValue(amount);
 	    money.setUnit(currency);
 	    return money;
