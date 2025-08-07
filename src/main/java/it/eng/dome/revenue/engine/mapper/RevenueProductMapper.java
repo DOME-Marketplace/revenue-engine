@@ -45,6 +45,8 @@ public class RevenueProductMapper {
 	    po.setDescription(plan.getDescription());
 	    po.setLifecycleStatus(plan.getLifecycleStatus());
 	    po.setIsBundle(false); // TODO: understand how manage this attribute
+	    // if true, it will have other productOffering inside
+	    // must fill productOffering relationship
 	    po.setLastUpdate(OffsetDateTime.now()); // or create a last update in plan
 	    po.setVersion("1.0"); // TODO: understand how manage this attribute
 
@@ -71,7 +73,7 @@ public class RevenueProductMapper {
             }
         }
 
-	    // Product Specification reference
+	    // Product Specification reference (MUSTTT)
 	    ProductSpecificationRef psRef = new ProductSpecificationRef();
 	    psRef.setId("urn:example:product-specification:" + plan.getId()); // TODO: understand how to manage this attribute
 	    psRef.setName(plan.getName() + " Specification");
@@ -224,25 +226,30 @@ public class RevenueProductMapper {
 		product.setName(subscription.getName());
 		product.setDescription("Product for " + subscription.getName());
 		product.setHref(subscription.getId());
-		product.setIsBundle(false); // ??
-		product.isCustomerVisible(false); // ??
-		product.orderDate(OffsetDateTime.now()); // ??
-		product.startDate(subscription.getStartDate()); // ??
+		product.setIsBundle(false);
+//		product.isCustomerVisible(false);
+		product.orderDate(subscription.getStartDate()); //TODO: understand if it's different then start date
+		product.startDate(subscription.getStartDate());
 		product.terminationDate(subscription.getStartDate().plusYears(1)); // ??
-		product.setStatus(ProductStatusType.ACTIVE); // ??
-		product.setProductSerialNumber(subscription.getId()); //??
+		product.setStatus(ProductStatusType.ACTIVE);
+//		product.setProductSerialNumber(subscription.getId()); //??
 		
 		// reference to the product
-		
-		product.setRelatedParty(convertRpTo637(subscription.getRelatedParties()));
-		
+		product.setRelatedParty(convertRpTo637(subscription.getRelatedParties()));		
 		product.setBillingAccount(convertBillingAccountRefTo637(billingAccountRef));
 		
-		// productCharacteristics ??
+		// productCharacteristics ?
+		// for example, authorization for payment with card - understand how to set this
+		// not necessary by default
 		
 		// productOffering ??
 		
-		// productPrice ?? (is the same of the (plan? ProductOffering?))
+		// productPrice ?? (is the same of the (plan/ProductOffering?))
+		// must be a ref to ProductOfferingPrice
+		
+		//productSpecificationRef
+		// must be a ref to ProductOffering's Specification if necessary
+		
 		
 		return product;
 	}

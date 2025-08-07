@@ -19,7 +19,6 @@ import it.eng.dome.tmforum.tmf678.v4.model.CustomerBill;
 import it.eng.dome.tmforum.tmf678.v4.model.Money;
 import it.eng.dome.tmforum.tmf678.v4.model.ProductRef;
 import it.eng.dome.tmforum.tmf678.v4.model.StateValue;
-import it.eng.dome.tmforum.tmf678.v4.model.TaxItem;
 
 public class RevenueBillingMapper {
 	
@@ -120,14 +119,15 @@ public class RevenueBillingMapper {
 	    acbr.setDescription("Applied Customer Billing Rate of " 
 	        + (subscription != null ? subscription.getName() : "") 
 	        + " for period " + sb.getPeriod().getStartDateTime() + " - " + sb.getPeriod().getEndDateTime());
-	    acbr.setDate(subscription != null ? subscription.getStartDate() : sb.getPeriod().getStartDateTime());
+	    acbr.setDate(sb.getBillTime());
 	    acbr.setIsBilled(false); // can we assume that it is false at start?
-	    acbr.setType(null); // TODO: Which type ?
+	    acbr.setType(null); // TODO: fetch by Item (add to Item)
 	    acbr.setPeriodCoverage(sb.getPeriod());
 
 		//ref
 		acbr.setRelatedParty(sb.getRelatedParties());
 		acbr.setBill(null); // Should I set the reference with CB right away?
+		// TODO: understand how to manage this 
 	    acbr.setProduct(subscription != null ? toProductRef(subscription) : null);
 	    acbr.setBillingAccount(billingAccountRef);
 
@@ -140,8 +140,8 @@ public class RevenueBillingMapper {
 	        logger.debug("RevenueItem '{}' has no overall value set", item.getName());
 	    }
 
-		acbr.appliedTax(null); //??
-		acbr.setTaxIncludedAmount(null);//??
+		acbr.appliedTax(null); // from invoice
+		acbr.setTaxIncludedAmount(null); //from invoice
 
 	    return acbr;
 	}
@@ -175,7 +175,7 @@ public class RevenueBillingMapper {
         String billId = simpleBill.getId();
         cb.setId(billId);
         cb.setHref(billId);
-        cb.setBillNo(billId.substring(billId.lastIndexOf(":") + 1, billId.length()).substring(0, 6));
+//        cb.setBillNo(billId.substring(billId.lastIndexOf(":") + 1, billId.length()).substring(0, 6));
         cb.setBillDate(simpleBill.getBillTime());
         cb.setLastUpdate(OffsetDateTime.now()); //we can assume that the last update is now
         cb.setNextBillDate(simpleBill.getPeriod().getEndDateTime().plusMonths(1)); //?
@@ -183,8 +183,8 @@ public class RevenueBillingMapper {
         cb.setBillingPeriod(simpleBill.getPeriod());
 
 		// other
-		cb.setCategory("normal");
-        cb.setRunType("onCycle"); // onCycle or offCycle?
+//		cb.setCategory("normal");
+//        cb.setRunType("onCycle"); // onCycle or offCycle?
         cb.setState(StateValue.NEW);
 
 		// amounts
@@ -192,25 +192,25 @@ public class RevenueBillingMapper {
         Float taxRate = 0.20f; // Q: How do we set the TaxRate?
         Float taxAmount = amountTaxExcluded * taxRate;
         Float amountIncludedTax = amountTaxExcluded + taxAmount;
-        cb.setAmountDue(createMoneyTmF678(0.0f, "EUR")); //TODO: ask Stefania
-        cb.setRemainingAmount(createMoneyTmF678(0.0f, "EUR")); //TODO: ask Stefania
+        cb.setAmountDue(createMoneyTmF678(amountIncludedTax, "EUR"));
+        cb.setRemainingAmount(createMoneyTmF678(amountIncludedTax, "EUR"));
         cb.setTaxIncludedAmount(createMoneyTmF678(amountIncludedTax, "EUR"));
         cb.setTaxExcludedAmount(createMoneyTmF678(amountTaxExcluded, "EUR"));
 
 		// REF
 		cb.setRelatedParty(simpleBill.getRelatedParties());
+		cb.setBillingAccount(billingAccountRef);
+		cb.setAppliedPayment(new ArrayList<>());
+		
+//        TaxItem taxItem = new TaxItem()
+//                .taxAmount(createMoneyTmF678(taxAmount, "EUR"))
+//                .taxCategory("VAT")
+//                .taxRate(taxRate);
+//        cb.setTaxItem(List.of(taxItem));        
 
-        TaxItem taxItem = new TaxItem()
-                .taxAmount(createMoneyTmF678(taxAmount, "EUR"))
-                .taxCategory("VAT")
-                .taxRate(taxRate);
-        cb.setTaxItem(List.of(taxItem));        
-
-        cb.setBillingAccount(billingAccountRef);
-        cb.setFinancialAccount(null);
-        cb.setAppliedPayment(new ArrayList<>());
-        cb.setBillDocument(new ArrayList<>());
-        cb.setPaymentMethod(null);
+//        cb.setFinancialAccount(null);
+//        cb.setBillDocument(new ArrayList<>());
+//        cb.setPaymentMethod(null);
 
 		// Type and metadata
        	// cb._type("CustomerBill");
