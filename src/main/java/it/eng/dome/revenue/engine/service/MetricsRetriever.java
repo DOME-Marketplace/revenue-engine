@@ -52,30 +52,32 @@ public class MetricsRetriever implements InitializingBean {
     public Integer computeReferralsProvidersNumber(String sellerId, TimePeriod timePeriod) throws Exception {
     	// retrieves the list of providers referenced by the seller
         List<Organization> referred = tmfDataRetriever.listReferralsProviders(sellerId);
+        
+        Integer size = 0;
 
-        if (referred == null || referred.isEmpty()){
-            return 0;
+        if (referred != null && !referred.isEmpty()){
+        	size = referred.size();
         }
         
-        return referred.size();
+        logger.info("Number of referred providers: {}", size);
+        return size;
     }
 
     // implement retriever for key 'referred-providers-transaction-volume'
     public Double computeReferralsProvidersTransactionVolume(String sellerId, TimePeriod timePeriod) throws Exception {
     	// retrieve the list of providers referred by the given seller
     	List<Organization> referred = tmfDataRetriever.listReferralsProviders(sellerId);
+    	Double totalTransactionVolume = 0.0;
     	
 	    if (referred == null || referred.isEmpty()) { 
-	    	return 0.0;
+	    	return totalTransactionVolume;
 	    }
-	    
-	    Double totalTransactionVolume = 0.0;
-	    
+
 	    // iterate over each referred provider
 	    for (Organization org : referred) {
 			totalTransactionVolume += this.computeBillsNoTaxes(org.getId(), timePeriod);
 	    }
-	    
+	    logger.info("Total transaction volume for referred providers: {}", totalTransactionVolume);
 	    return totalTransactionVolume;	    
     }
     
@@ -84,11 +86,11 @@ public class MetricsRetriever implements InitializingBean {
     	// retrieve the list of providers referred by the given seller
     	List<Organization> referred = tmfDataRetriever.listReferralsProviders(sellerId);
 	    
-    	if (referred == null || referred.isEmpty()) {
-	    	return 0.0;
-    	}
-    	
 	    Double  maxTransactionVolume = 0.0;
+	    
+    	if (referred == null || referred.isEmpty()) {
+	    	return maxTransactionVolume;
+    	}
 	    // iterate over each referred provider	    
 	    for (Organization org : referred) {
 			maxTransactionVolume = Math.max(maxTransactionVolume, this.computeBillsNoTaxes(org.getId(), timePeriod));
