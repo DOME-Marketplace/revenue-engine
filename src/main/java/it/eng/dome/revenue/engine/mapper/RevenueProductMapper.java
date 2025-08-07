@@ -26,6 +26,52 @@ public class RevenueProductMapper {
 	
 	private static final Logger logger = LoggerFactory.getLogger(RevenueProductMapper.class);
 	
+	
+    public static ProductOffering fromPlanToProductOffering(Plan plan) {
+        try {
+            ProductOffering offering = new ProductOffering();
+            offering.setId("urn:tmf:product-offering:" + plan.getId());
+            offering.setHref("urn:tmf:product-offering:" + plan.getId());
+            offering.setName(plan.getName() + " Offering");
+            offering.setDescription(plan.getDescription());
+            offering.setLifecycleStatus(plan.getLifecycleStatus());
+            offering.setIsBundle(false);
+
+            ProductSpecificationRef specRef = new ProductSpecificationRef();
+            specRef.setId(plan.getId());
+            specRef.setName(plan.getName() + " Plan Specification");
+            specRef.setHref(new URI(plan.getId()));
+            specRef.setAtType("PlanSpecRef");
+            specRef.setVersion("1.0");
+
+            offering.setProductSpecification(specRef);
+
+            if (plan.getValidFor() != null) {
+                ProductOfferingTerm term = new ProductOfferingTerm();
+                term.setName(plan.getName());
+                term.setDescription(plan.getDescription());
+                term.setValidFor(convertTPto620(plan.getValidFor()));
+                offering.setProductOfferingTerm(List.of(term));
+            }
+
+            return offering;
+
+        } catch (Exception e) {
+            logger.error("Error converting Plan to ProductOffering: {}", plan.getId(), e);
+            throw new RuntimeException("Mapping Plan to ProductOffering failed", e);
+        }
+    }
+
+    private static it.eng.dome.tmforum.tmf620.v4.model.TimePeriod convertTPto620(it.eng.dome.tmforum.tmf678.v4.model.TimePeriod source) {
+        if (source == null) return null;
+
+        it.eng.dome.tmforum.tmf620.v4.model.TimePeriod target = new it.eng.dome.tmforum.tmf620.v4.model.TimePeriod();
+        target.setStartDateTime(source.getStartDateTime());
+        target.setEndDateTime(source.getEndDateTime());
+        return target;
+    }
+	
+	
 	/*
 	 * PLAN TO PRODUCT OFFERING
 	 */

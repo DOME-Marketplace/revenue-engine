@@ -48,7 +48,9 @@ public class SubscriptionService implements InitializingBean {
 //				.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
 //		new PlanService();
 //	}
-
+    @Autowired
+    private PlanService planService;
+    
     @Override
     public void afterPropertiesSet() throws Exception {
         this.orgApi = new OrganizationApi(tmfApiFactory.getTMF632PartyManagementApiClient());
@@ -101,7 +103,7 @@ public class SubscriptionService implements InitializingBean {
 		logger.debug("TradingName organization: {}", organization.getTradingName());
 
 		// retrieve the plan
-		Plan plan = new PlanService().findPlanById(planId);
+		Plan plan = planService.findPlanById(planId);
 		logger.debug("Retrieved plan: " + plan);
 
 		// create the subscription
@@ -201,10 +203,10 @@ public class SubscriptionService implements InitializingBean {
 		Character c = organization.getId().charAt(25);
 		if(Character.isDigit(c)) {
 			// basic
-			return new PlanService().findPlanById("urn:ngsi-ld:plan:02645de3-8c7y-1276-a344-00rfl123aq1n");
+			return planService.findPlanById("urn:ngsi-ld:plan:02645de3-8c7y-1276-a344-00rfl123aq1n");
 		} else {
 			// pro
-			return new PlanService().findPlanById("urn:ngsi-ld:plan:52761it5-3d4q-2321-p009-44bro198re0p");
+			return planService.findPlanById("urn:ngsi-ld:plan:52761it5-3d4q-2321-p009-44bro198re0p");
 		}
 	}
 

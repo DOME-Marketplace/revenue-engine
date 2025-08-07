@@ -44,14 +44,11 @@ public class PlansController {
     }
     
     @GetMapping("/{planId}")
-    public ResponseEntity<Plan> getPlanById(@PathVariable String planId) {
+    public ResponseEntity<Plan> getPlanById(@PathVariable String planId) throws IOException {
 //    	logger.info("Request received: fetch plan with ID {}", planId);
         try {
             Plan plan = subscriptionPlanService.findPlanById(planId);
             return ResponseEntity.ok(plan);
-        } catch (IOException e) {
-            logger.warn(e.getMessage());
-            return ResponseEntity.notFound().build();
         } catch (Exception e) {
             logger.error("Unexpected error retrieving plan {}: {}", planId, e.getMessage(), e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
@@ -77,13 +74,10 @@ public class PlansController {
     }
 
     @GetMapping("/{planId}/validate")
-    public ResponseEntity<PlanValidationReport> validatePlan(@PathVariable String planId) {
+    public ResponseEntity<PlanValidationReport> validatePlan(@PathVariable String planId) throws IOException {
         try {
             PlanValidationReport report = subscriptionPlanService.validatePlan(planId);
             return ResponseEntity.ok(report);
-        } catch (IOException e) {
-            logger.error("Plan not found or IO error while validating plan with ID {}: {}", planId, e.getMessage(), e);
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
         } catch (Exception e) {
             logger.error("Unexpected error validating plan with ID {}: {}", planId, e.getMessage(), e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();

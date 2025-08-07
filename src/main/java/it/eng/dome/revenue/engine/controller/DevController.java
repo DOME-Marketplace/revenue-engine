@@ -53,6 +53,9 @@ public class DevController {
 	
 	@Autowired
     private BillsService billsService;
+	
+	@Autowired
+	private PlanService planService;
 
     public DevController() {
     }
@@ -116,5 +119,11 @@ public class DevController {
 			return ResponseEntity.internalServerError().build();
 		}
     }
+       
+	@GetMapping("/to-product-offering/{planId}")
+	public ResponseEntity<ProductOffering> testPlanToOffering(@PathVariable String planId) {
+		ProductOffering offering = planService.buildProductOffering(planService.findPlanById(planId));
+		return ResponseEntity.ok(offering);
+	}
 
 }

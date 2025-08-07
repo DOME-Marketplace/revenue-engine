@@ -64,6 +64,7 @@ public class TmfCachedDataRetriever extends TmfDataRetriever {
                 .withExpiry(ExpiryPolicyBuilder.timeToLiveExpiration(Duration.ofHours(1)))
                 .build();
         this.acbrCache = this.cacheManager.createCache("acbrCache", cconfig1);
+        logger.info("Cache 'acbrCache' initialized with size 1000 and TTL of 1 hour");
     }
 
     /*
