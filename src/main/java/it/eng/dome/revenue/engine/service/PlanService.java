@@ -45,6 +45,10 @@ public class PlanService {
     private final CacheManager cacheManager;
     private final Cache<String, Plan> planCache;
 
+    /**
+     * Constructs the PlanService, initializing the ObjectMapper, loading the list of plan file names,
+     * and setting up the EHCache for plan caching.
+     */
     public PlanService() {
         this.mapper = new ObjectMapper()
                 .registerModule(new JavaTimeModule())
@@ -64,6 +68,11 @@ public class PlanService {
         logger.info("Initialized EHCache for PlanService with TTL 1 hour");
     }
 
+    /**
+     * Fetches the list of plan file names once from the GitHub repository using the GitHub API.
+     *
+     * @return an unmodifiable list of plan file names
+     */
     private List<String> fetchPlanFileNamesOnce() {
         try {
             URL url = new URL(GITHUB_API_URL);
@@ -90,11 +99,16 @@ public class PlanService {
                 logger.error("GitHub API responded with status: {}", conn.getResponseCode());
             }
         } catch (IOException e) {
-            logger.error("Failed to fetch plan files from GitHub: {}", e.getMessage());
+            logger.error("Failed to fetch plan files from GitHub", e);
         }
         return Collections.emptyList();
     }
 
+    /**
+     * Loads all available plans from the remote repository.
+     *
+     * @return a list of all successfully loaded Plan objects
+     */
     public List<Plan> loadAllPlans() {
         logger.info("Loading all plans from {} files", planFileNames.size());
         List<Plan> plans = new ArrayList<>();
@@ -106,7 +120,7 @@ public class PlanService {
                     plans.add(plan);
                 }
             } catch (Exception e) {
-                logger.error("Failed to load plan from {}: {}", fileName, e.getMessage());
+                logger.error("Failed to load plan from {}", fileName, e);
             }
         }
 
@@ -114,6 +128,12 @@ public class PlanService {
         return plans;
     }
 
+    /**
+     * Finds a plan by its unique ID. Uses cache if available.
+     *
+     * @param planId the ID of the plan to search for
+     * @return the matching Plan, or null if not found
+     */
     public Plan findPlanById(String planId) {
         if (planId == null || planId.isBlank()) {
             logger.error("Plan ID cannot be null or empty");
@@ -135,7 +155,7 @@ public class PlanService {
                     return plan;
                 }
             } catch (Exception e) {
-                logger.error("Error while searching for plan {} in file {}: {}", planId, fileName, e.getMessage());
+                logger.error("Error while searching for plan {} in file {}", planId, fileName, e);
             }
         }
 
@@ -143,6 +163,13 @@ public class PlanService {
         return null;
     }
 
+    /**
+     * Loads a plan JSON file from the GitHub raw URL and parses it into a Plan object.
+     *
+     * @param fileName the name of the plan JSON file
+     * @return the parsed Plan object
+     * @throws IOException if an error occurs while loading or parsing the file
+     */
     private Plan loadPlanFromUrl(String fileName) throws IOException {
         URL planUrl = new URL(PLAN_REPO_RAW_URL + fileName);
         try (InputStream is = planUrl.openStream()) {
@@ -152,15 +179,32 @@ public class PlanService {
         }
     }
 
+    /**
+     * Returns the list of available plan file names.
+     *
+     * @return an unmodifiable list of plan file names
+     */
     public List<String> getPlanFileNames() {
         return planFileNames;
     }
 
+    /**
+     * Validates a plan identified by its ID.
+     *
+     * @param planId the ID of the plan to validate
+     * @return a PlanValidationReport containing validation results
+     */
     public PlanValidationReport validatePlan(String planId) {
         Plan plan = findPlanById(planId);
         return new PlanValidator().validate(plan);
     }
 
+    /**
+     * Converts a Plan into a TMForum-compliant ProductOffering.
+     *
+     * @param plan the Plan to convert
+     * @return the corresponding ProductOffering
+     */
     public ProductOffering buildProductOffering(Plan plan) {
         return RevenueProductMapper.fromPlanToProductOffering(plan);
     }
