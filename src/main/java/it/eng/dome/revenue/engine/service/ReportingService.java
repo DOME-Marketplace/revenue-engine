@@ -2,6 +2,7 @@ package it.eng.dome.revenue.engine.service;
 
 import java.io.IOException;
 import java.text.NumberFormat;
+import java.time.Duration;
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.time.temporal.ChronoUnit;
@@ -15,6 +16,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
+import org.ehcache.Cache;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -27,7 +29,6 @@ import it.eng.dome.revenue.engine.model.RevenueStatement;
 import it.eng.dome.revenue.engine.model.SimpleBill;
 import it.eng.dome.revenue.engine.model.Subscription;
 import it.eng.dome.revenue.engine.model.SubscriptionTimeHelper;
-import it.eng.dome.revenue.engine.service.compute.PriceCalculator;
 import it.eng.dome.tmforum.tmf632.v4.ApiException;
 import it.eng.dome.tmforum.tmf678.v4.model.TimePeriod;
 
@@ -51,17 +52,35 @@ public class ReportingService {
     @Autowired
     private BillsService billsService;
     
+    private final Cache<String, List<Report>> reportCache;
+    
+    public ReportingService(CacheService cacheService) {
+        this.reportCache = cacheService.getOrCreateCache(
+            "reportCache",
+            String.class,
+            (Class<List<Report>>)(Class<?>)List.class,
+            Duration.ofHours(1)
+        );
+    }
+
     /**
-	 * Generates a dashboard report for the given relatedPartyId.
-	 * 
-	 * @param relatedPartyId the ID of the related party
-	 * @return a list of Report objects representing the dashboard sections
-	 * @throws ApiException if there is an error retrieving data from the API
-	 * @throws IOException if there is an error reading data from files
-	 */
+     * Retrieves the complete dashboard report for a given organization, using cache to avoid repeated computations.
+     *
+     * @param relatedPartyId the organization ID
+     * @return a list of Report sections for the dashboard
+     * @throws ApiException if an API call fails
+     * @throws IOException if a file or network access fails
+     */
     public List<Report> getDashboardReport(String relatedPartyId) throws ApiException, IOException {
-    	logger.info("Reporting for dashboard, Organization ID = {}", relatedPartyId);
-        
+        logger.info("Reporting for dashboard, Organization ID = {}", relatedPartyId);
+
+        // Try to get the report from cache first
+        List<Report> cachedReport = reportCache.get(relatedPartyId);
+        if (cachedReport != null) {
+            logger.info("Returning cached dashboard report for organization {}", relatedPartyId);
+            return cachedReport;
+        }
+
         List<Report> report = new ArrayList<>();
 
         // My Subscription Plan
@@ -73,27 +92,25 @@ public class ReportingService {
 
         // Revenue section
         report.add(getRevenueSection(relatedPartyId));
-        
+
         // Bill Previsioning section 
         report.add(getPrevisioningSection(relatedPartyId));
 
-		// Referral Program Area (computed)
-		report.add(getReferralSection(relatedPartyId));
-
-        // Change Request (hardcoded)
-//        report.add(new Reporting("Plan Change Request", Arrays.asList(
-//            new Reporting("Status", "Pending Review"),
-//            new Reporting("Requested Changing", "Basic to Advanced")
-//        )));
+        // Referral Program Area (computed)
+        report.add(getReferralSection(relatedPartyId));
 
         // Support (hardcoded)
-        report.add(new Report("Support",Arrays.asList(
+        report.add(new Report("Support", Arrays.asList(
             new Report("Email", "support@dome-marketplace.org"),
             new Report("Help Center", "Visit Support Portal", "https://www.dome-helpcenter.org")
         )));
 
+        // Store in cache before returning
+        reportCache.put(relatedPartyId, report);
+
         return report;
     }
+
 
     /**
 	 * Retrieves the subscription section for the given relatedPartyId.
