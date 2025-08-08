@@ -1,5 +1,6 @@
 package it.eng.dome.revenue.engine.controller;
 
+import java.io.IOException;
 import java.util.List;
 
 import org.slf4j.Logger;
@@ -121,7 +122,7 @@ public class DevController {
     }
        
 	@GetMapping("/to-product-offering/{planId}")
-	public ResponseEntity<ProductOffering> testPlanToOffering(@PathVariable String planId) {
+	public ResponseEntity<ProductOffering> testPlanToOffering(@PathVariable String planId) throws IOException {
 		ProductOffering offering = planService.buildProductOffering(planService.findPlanById(planId));
 		return ResponseEntity.ok(offering);
 	}

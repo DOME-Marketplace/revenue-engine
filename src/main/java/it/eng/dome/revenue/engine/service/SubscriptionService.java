@@ -1,11 +1,13 @@
 package it.eng.dome.revenue.engine.service;
 
 import java.io.IOException;
+import java.time.Duration;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import org.ehcache.Cache;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.InitializingBean;
@@ -49,7 +51,18 @@ public class SubscriptionService implements InitializingBean {
 //		new PlanService();
 //	}
     @Autowired
-    private PlanService planService;
+    private PlanService planService;    
+	
+    private Cache<String, List<Subscription>> subscriptionCache;
+   
+	public SubscriptionService(CacheService cacheService) {
+        subscriptionCache = cacheService.getOrCreateCache(
+                "subscriptionCache",
+                String.class,
+                (Class<List<Subscription>>)(Class<?>)List.class,
+                Duration.ofMinutes(30)
+            );
+    }
     
     @Override
     public void afterPropertiesSet() throws Exception {
@@ -86,7 +99,7 @@ public class SubscriptionService implements InitializingBean {
     
 	public Subscription getSubscriptionById(String id) throws ApiException, IOException {
 		logger.info("Fetch subscription with ID {}", id);
-		
+
 		// check the id is in the right format
 		if (id == null || id.isEmpty() || id.length()!=98) {
 			logger.error("malformed subscription id: " + id);
@@ -108,6 +121,7 @@ public class SubscriptionService implements InitializingBean {
 
 		// create the subscription
 		Subscription subscription = this.createSubscription(id, organization, plan);
+			
 		return subscription;
 	}
 
@@ -169,8 +183,18 @@ public class SubscriptionService implements InitializingBean {
 	 * @throws ApiException If there is an error retrieving the organizations.
 	 * @throws IOException If there is an error reading the plan data.
 	 */
+	
+	
 	public List<Subscription> getAllSubscriptions() throws ApiException, IOException {
 		logger.info("Get all subscriptions");
+		// check the cache first
+		if (subscriptionCache != null) {
+			List<Subscription> cachedSubscriptions = subscriptionCache.get("all_subscriptions");
+			if (cachedSubscriptions != null && !cachedSubscriptions.isEmpty()) {
+				logger.info("Found {} subscriptions in cache", cachedSubscriptions.size());
+				return cachedSubscriptions;
+			}
+		}
 		
 		// retrieve all organizations
 		List<Organization> organizations = this.orgApi.listOrganization(null, null, null, null);
@@ -191,10 +215,18 @@ public class SubscriptionService implements InitializingBean {
 			logger.debug("Subscription id: {}", subscriptionId);
 			
 			Subscription subscription = this.createSubscription(subscriptionId, o, plan);
+			
 			subscriptions.add(subscription);
 		}
 		
 		logger.info("Subscriptions size: {}", subscriptions.size());
+		// cache the subscriptions
+		if (subscriptionCache != null) {
+			subscriptionCache.put("all_subscriptions", subscriptions);
+			logger.info("Cached {} subscriptions", subscriptions.size());
+		} else {
+			logger.warn("No cache available, subscriptions will not be cached");
+		}
 		
 		return subscriptions;
 	}

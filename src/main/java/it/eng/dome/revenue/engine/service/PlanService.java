@@ -43,7 +43,7 @@ public class PlanService {
 
     private final ObjectMapper mapper;
     private final List<String> planFileNames;
-    private final Cache<String, Plan> planCache;
+    private final Cache<String, List<Plan>> planCache;
 
     /**
      * Constructs the PlanService and initializes the plan cache and file list.
@@ -55,12 +55,13 @@ public class PlanService {
                 .registerModule(new JavaTimeModule())
                 .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
                 .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
+        
 
         this.planFileNames = Collections.unmodifiableList(fetchPlanFileNamesOnce());
         this.planCache = cacheService.getOrCreateCache(
 				"planCache",
 				String.class,
-				Plan.class,
+				(Class<List<Plan>>)(Class<?>)List.class,
 				Duration.ofHours(1)
 		);
 
@@ -76,7 +77,15 @@ public class PlanService {
      */
     public List<Plan> loadAllPlans() {
         logger.info("Loading all plans from {} files", planFileNames.size());
+        
+        List<Plan> cachedPlans = planCache.get("all_plans");
+        if (cachedPlans != null) {
+            logger.info("Retrived all plans from cache");
+            return cachedPlans;
+        }
+        
         List<Plan> plans = new ArrayList<>();
+        
 
         for (String fileName : planFileNames) {
             try {
@@ -92,24 +101,22 @@ public class PlanService {
                     logger.warn("Plan loaded from '{}' has no ID, skipping", fileName);
                     continue;
                 }
-
-                // Check cache
-                Plan cached = planCache.get(planId);
-                if (cached != null) {
-                    logger.debug("Loaded plan {} from cache", planId);
-                    plans.add(cached);
-                } else {
-                    logger.debug("Loaded plan {} from file and caching it", planId);
-                    plans.add(plan);
-                    planCache.put(planId, plan);
-                }
-
+                
+                plans.add(plan);
+                
+              
             } catch (IOException e) {
-                logger.error("Failed to load plan from file '{}'", fileName, e);
-            }
+				logger.error("Error while loading plan from file '{}': {}", fileName, e.getMessage());
+				continue;
+			}
+
         }
 
         logger.info("Successfully loaded {} plans", plans.size());
+        
+        //store all loaded plans in the cache        
+        planCache.put("all_plans", plans);
+
         return plans;
     }
 
@@ -121,33 +128,16 @@ public class PlanService {
      * @param planId the ID of the plan
      * @return the matching Plan object, or null if not found
      */
-    public Plan findPlanById(String planId) {
-        if (planId == null || planId.isBlank()) {
-            logger.warn("Plan ID is null or empty");
-            return null;
+    public Plan findPlanById(String id) throws IOException {
+        if (id == null || id.isEmpty()) {
+            throw new IllegalArgumentException("Plan ID cannot be null or empty");
         }
 
-        Plan cached = planCache.get(planId);
-        if (cached != null) {
-            logger.info("Plan with ID '{}' retrieved from cache", planId);
-            return cached;
-        }
-
-        for (String fileName : planFileNames) {
-            try {
-                Plan plan = loadPlanFromUrl(fileName);
-                if (plan != null && planId.equals(plan.getId())) {
-                    planCache.put(planId, plan);
-                    logger.info("Plan with ID '{}' loaded and cached from file '{}'", planId, fileName);
-                    return plan;
-                }
-            } catch (IOException e) {
-                logger.warn("Error while loading plan '{}' from file '{}'", planId, fileName, e);
-            }
-        }
-
-        logger.warn("Plan with ID '{}' not found", planId);
-        return null;
+        logger.info("Fetching plan with ID {}", id);
+        return loadAllPlans().stream()
+            .filter(plan -> plan.getId().equals(id))
+            .findFirst()
+            .orElseThrow(() -> new IOException("Plan not found with ID: " + id));
     }
 
     /**
@@ -165,7 +155,7 @@ public class PlanService {
      * @param planId the ID of the plan
      * @return a PlanValidationReport with validation results
      */
-    public PlanValidationReport validatePlan(String planId) {
+    public PlanValidationReport validatePlan(String planId) throws IOException {
         Plan plan = findPlanById(planId);
         return new PlanValidator().validate(plan);
     }
