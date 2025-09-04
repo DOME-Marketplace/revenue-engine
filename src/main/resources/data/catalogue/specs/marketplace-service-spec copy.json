@@ -1,0 +1,24 @@
+{
+    "id": "urn:ngsi-ld:service-specification:89d6bddb-7805-4042-a60a-030ef09ed816",
+    "href": "urn:ngsi-ld:service-specification:89d6bddb-7805-4042-a60a-030ef09ed816",
+    "description": "Onboarding & Certification Check: Getting started is simple and fully supported. Providers are guided through a step-by-step onboarding process with the help of a comprehensive guide and hands-on support from our team. From initial registration to service configuration, we ensure a smooth and efficient experience. Upon completion of onboarding and successful issuance of your DOME Verifiable Credentials, we are happy to welcome you in your DOME-Verified Digital Trust era! Account Management: Manage your provider account with ease through a streamlined, user-friendly dashboard designed to simplify everyday tasks — from updating service details to tracking key performance indicators. Federated marketplaces can also integrate and manage their presence using DOME infrastructure, ensuring consistent governance, trust, and interoperability across connected environments. Customer Support: The customer support is focused on solving any kind of need of the portal user in relation to the DOME Ecosystem. We are here for you 24/7 through an online help system as well as a chatbot service trained to answer your DOME questions in your native language! Services Listing: Providers benefit from unlimited service listings, with intuitive tools to easily publish, update, and manage their offerings through a centralized interface. There are no restrictions on the number of services you can list, allowing you to showcase your full portfolio and reach a broader audience.ì In addition, listed services can be made available across a federation of interconnected marketplaces, significantly expanding your visibility and market reach within a trusted and compliant European ecosystem. Reporting and Analytics: Users benefit from a personalized dashboard providing 24/7 access to key performance metrics, including number of visits, average session duration, user actions, sales data, traffic sources, bounce rate, and geographic origin of visits. For providers with the Advanced package contract, the dashboard also includes enhanced financial reporting and performance benchmarking in relation to other marketplace providers.",
+    "isBundle": false,
+    "lastUpdate": "2025-09-04T11:59:59.407991090Z",
+    "lifecycleStatus": "Active",
+    "name": "DOME Marketplace Services",
+    "version": "1",
+    "relatedParty": [
+        {
+            "id": "urn:ngsi-ld:organization:95fdc12e-6889-4f08-8ff8-296b10e8e781",
+            "href": "urn:ngsi-ld:organization:95fdc12e-6889-4f08-8ff8-296b10e8e781",
+            "@referredType": "organization",
+            "role": "Seller"
+        },
+        {
+            "id": "urn:ngsi-ld:organization:95fdc12e-6889-4f08-8ff8-296b10e8e781",
+            "href": "urn:ngsi-ld:organization:95fdc12e-6889-4f08-8ff8-296b10e8e781",
+            "@referredType": "organization",
+            "role": "SellerOperator"
+        }
+    ]
+}

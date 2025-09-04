@@ -1,0 +1,32 @@
+{
+  "id": "urn:ngsi-ld:product-offering:5a4bab89-9f7c-498b-bde8-f70324488b4f",
+  "href": "urn:ngsi-ld:product-offering:5a4bab89-9f7c-498b-bde8-f70324488b4f",
+  "description": "Basic Membership Offering for 2025",
+  "isBundle": false,
+  "lifecycleStatus": "Launched",
+  "name": "Basic Membership Offering for 2025",
+  "version": "1",
+  "bundledProductOffering": [],
+  "category": [
+  ],
+  "place": [
+    
+  ],
+  "productOfferingPrice": [
+    {
+      "id": "urn:ngsi-ld:product-offering-price:91a5b7f3-afb1-427c-bed1-85332ee1448d",
+      "href": "urn:ngsi-ld:product-offering-price:91a5b7f3-afb1-427c-bed1-85332ee1448d",
+      "name": "Plan"
+    }
+  ],
+  "productOfferingTerm": [
+  ],
+  "productSpecification": {
+    "id": "urn:ngsi-ld:product-specification:10ebf2c1-fe79-4191-81a3-b58207307c5a",
+    "href": "urn:ngsi-ld:product-specification:10ebf2c1-fe79-4191-81a3-b58207307c5a",
+    "name": "Basic Plan 2025 product specification"
+  },
+  "validFor": {
+    "startDateTime": "2025-06-01T00:00:00.000Z"
+  }
+}

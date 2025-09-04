@@ -1,0 +1,13 @@
+{
+  "id": "urn:ngsi-ld:product-offering-price:91a5b7f3-afb1-427c-bed1-85332ee1448d",
+  "href": "urn:ngsi-ld:product-offering-price:91a5b7f3-afb1-427c-bed1-85332ee1448d",
+  "name": "Basic 2025 price",
+  "description": "Price for regular providers. 8k upfront. Discounts for previous year performance.\n https://raw.githubusercontent.com/DOME-Marketplace/revenue-engine/refs/heads/main/src/main/resources/data/plans/2025-basic.json",
+  "lastUpdate": "2024-07-02T15:56:06.039220427Z",
+  "lifecycleStatus": "Active",
+  "priceType": "custom",
+  "price": {},
+  "validFor": {
+    "startDateTime": "2025-06-01T00:00:00.000Z"
+  }
+}

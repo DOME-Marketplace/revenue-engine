@@ -140,6 +140,17 @@ public class PlanService {
             .orElseThrow(() -> new IOException("Plan not found with ID: " + id));
     }
 
+    public Plan findPlanByOfferingId(String offeringId) throws IOException {
+        if (offeringId == null || offeringId.isEmpty()) {
+            throw new IllegalArgumentException("Offering ID cannot be null or empty");
+        }
+
+        logger.info("Fetching plan with from offering {}", offeringId);
+        // TODO: retrieve offering, retrieve price, read description, download json from github, build a "Plan" object.
+        return null;
+    }
+
+
     /**
      * Returns the list of JSON plan filenames discovered from GitHub.
      *

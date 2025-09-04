@@ -1,0 +1,23 @@
+{
+    "id": "urn:ngsi-ld:service-specification:f70f5f90-14d2-4442-a459-dae184f233e4",
+    "href": "urn:ngsi-ld:service-specification:f70f5f90-14d2-4442-a459-dae184f233e4",
+    "description": "Promotional Posts (LinkedIn/X) -  2/year.",
+    "isBundle": false,
+    "lifecycleStatus": "Active",
+    "name": "Marketing Promotion - Basic",
+    "version": "1",
+    "relatedParty": [
+        {
+            "id": "urn:ngsi-ld:organization:95fdc12e-6889-4f08-8ff8-296b10e8e781",
+            "href": "urn:ngsi-ld:organization:95fdc12e-6889-4f08-8ff8-296b10e8e781",
+            "@referredType": "organization",
+            "role": "Seller"
+        },
+        {
+            "id": "urn:ngsi-ld:organization:95fdc12e-6889-4f08-8ff8-296b10e8e781",
+            "href": "urn:ngsi-ld:organization:95fdc12e-6889-4f08-8ff8-296b10e8e781",
+            "@referredType": "organization",
+            "role": "SellerOperator"
+        }
+    ]
+}

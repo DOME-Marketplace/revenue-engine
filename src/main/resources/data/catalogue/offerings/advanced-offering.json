@@ -1,0 +1,32 @@
+{
+  "id": "urn:ngsi-ld:product-offering:4308a1de-7361-4863-8458-dbcc5f7023ac",
+  "href": "urn:ngsi-ld:product-offering:4308a1de-7361-4863-8458-dbcc5f7023ac",
+  "description": "Advanced Membership Offering for 2025",
+  "name": "Advanced Membership Offering for 2025",
+  "isBundle": false,
+  "lifecycleStatus": "Launched",
+  "version": "1",
+  "bundledProductOffering": [],
+  "category": [
+  ],
+  "place": [
+    
+  ],
+  "productOfferingPrice": [
+    {
+      "id": "urn:ngsi-ld:product-offering-price:0253d786-a05f-46b2-94c7-c5e5654b330f",
+      "href": "urn:ngsi-ld:product-offering-price:0253d786-a05f-46b2-94c7-c5e5654b330f",
+      "name": "Price plan for Advanced package"
+    }
+  ],
+  "productOfferingTerm": [
+  ],
+  "productSpecification": {
+    "id": "urn:ngsi-ld:product-specification:2532e67f-0a84-4aed-b31f-7654984daac9",
+    "href": "urn:ngsi-ld:product-specification:2532e67f-0a84-4aed-b31f-7654984daac9",
+    "name": "Advanced package"
+  },
+  "validFor": {
+    "startDateTime": "2025-06-01T00:00:00.000Z"
+  }
+}
