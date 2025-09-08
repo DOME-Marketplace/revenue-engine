@@ -128,33 +128,6 @@ public class DevController {
             .toList();
         return ResponseEntity.ok(acbrList);
     }
-    
-    @PostMapping("/to-product")
-    public ResponseEntity<Product> convertToProduct(@RequestBody Subscription subscription) {
-		try {
-			Product product = subscriptionService.buildProduct(subscription);
-			return ResponseEntity.ok(product);
-		} catch (Exception e) {
-			logger.error("Error converting Subscription to Product: {}", e.getMessage(), e);
-			return ResponseEntity.internalServerError().build();
-		}
-	}
-    
-    @PostMapping("/to-product-offering")
-    public ResponseEntity<ProductOffering> convertToProductOffering(@RequestBody Plan plan) {
-    	try {
-    		ProductOffering productOffering = subscriptionPlanService.buildProductOffering(plan);
-			return ResponseEntity.ok(productOffering);
-		} catch (Exception e) {
-			logger.error("Error converting Plan to ProductOffering: {}", e.getMessage(), e);
-			return ResponseEntity.internalServerError().build();
-		}
-    }
-       
-	@GetMapping("/to-product-offering/{planId}")
-	public ResponseEntity<ProductOffering> testPlanToOffering(@PathVariable String planId) throws IOException {
-		ProductOffering offering = planService.buildProductOffering(planService.findPlanById(planId));
-		return ResponseEntity.ok(offering);
-	}
+
 
 }
