@@ -61,6 +61,16 @@ public class DevController {
     public DevController() {
     }
     
+    @GetMapping("/Offering/{offeringId}")
+    public ResponseEntity<Plan> getPlanByPoId(@PathVariable String offeringId) {
+        try {
+            Plan plan = planService.findPlanByOfferingId(offeringId);
+            return ResponseEntity.ok(plan);
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().build();
+        }
+    } 
+    
     @GetMapping("/billingAccount/{relatedPartyId}")
     public ResponseEntity<BillingAccountRef> getBillingAccountByRelatedParty(@PathVariable String relatedPartyId) {
         try {

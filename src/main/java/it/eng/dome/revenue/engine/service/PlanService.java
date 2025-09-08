@@ -8,10 +8,14 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.ehcache.Cache;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.InitializingBean;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import com.fasterxml.jackson.databind.DeserializationFeature;
@@ -20,20 +24,33 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 
+import it.eng.dome.brokerage.api.ProductOfferingApis;
+import it.eng.dome.brokerage.api.ProductOfferingPriceApis;
 import it.eng.dome.revenue.engine.mapper.RevenueProductMapper;
 import it.eng.dome.revenue.engine.model.Plan;
 import it.eng.dome.revenue.engine.service.validation.PlanValidationReport;
 import it.eng.dome.revenue.engine.service.validation.PlanValidator;
+import it.eng.dome.revenue.engine.tmf.TmfApiFactory;
 import it.eng.dome.tmforum.tmf620.v4.model.ProductOffering;
+import it.eng.dome.tmforum.tmf620.v4.model.ProductOfferingPrice;
+import it.eng.dome.tmforum.tmf620.v4.model.ProductOfferingPriceRefOrValue;
 
 /**
  * Service responsible for loading and caching revenue engine plans defined as external JSON files.
  * Plans are retrieved from a GitHub repository and cached in memory using a shared CacheService.
  */
 @Service
-public class PlanService {
+public class PlanService implements InitializingBean{
 
     private static final Logger logger = LoggerFactory.getLogger(PlanService.class);
+    
+    @Autowired
+    // Factory for TMF APIss
+    private TmfApiFactory tmfApiFactory;
+    
+    private ProductOfferingApis productOfferingApis;
+    
+    private ProductOfferingPriceApis popApis;
 
     private static final String GITHUB_API_URL =
             "https://api.github.com/repos/DOME-Marketplace/revenue-engine/contents/src/main/resources/data/plans?ref=develop";
@@ -66,6 +83,15 @@ public class PlanService {
 		);
 
         logger.info("Initialized PlanService with {} plan files and cache TTL of 1 hour", planFileNames.size());
+    }
+    
+    @Override
+    public void afterPropertiesSet() throws Exception {
+        this.productOfferingApis = new ProductOfferingApis(tmfApiFactory.getTMF620ProductCatalogManagementApiClient());
+        this.popApis = new ProductOfferingPriceApis(tmfApiFactory.getTMF620ProductCatalogManagementApiClient()
+        );
+
+        logger.info("PlanService initialized with productOfferingApis and productOfferingPriceApis");
     }
 
     /**
@@ -120,8 +146,6 @@ public class PlanService {
         return plans;
     }
 
-
-
     /**
      * Retrieves a specific plan by its ID. Uses the internal cache if available.
      *
@@ -140,16 +164,75 @@ public class PlanService {
             .orElseThrow(() -> new IOException("Plan not found with ID: " + id));
     }
 
+    public Plan findPlanByProductId(String offeringId) throws IOException {
+    	return null;
+    }
+    
     public Plan findPlanByOfferingId(String offeringId) throws IOException {
         if (offeringId == null || offeringId.isEmpty()) {
             throw new IllegalArgumentException("Offering ID cannot be null or empty");
         }
 
-        logger.info("Fetching plan with from offering {}", offeringId);
+        logger.info("Fetching plan from offering id: {}", offeringId);
         // TODO: retrieve offering, retrieve price, read description, download json from github, build a "Plan" object.
-        return null;
-    }
+        
+        // ProductOffering
+        ProductOffering po = productOfferingApis.getProductOffering(offeringId, null);
+        
+        // ProductOfferingPrice
+        if (po.getProductOfferingPrice() == null || po.getProductOfferingPrice().isEmpty()) {
+            logger.error("ProductOffering id={} has no ProductOfferingPrice", offeringId);
+            return null;
+        }
 
+        ProductOfferingPriceRefOrValue popRef = po.getProductOfferingPrice().get(0); 
+        
+        if (popRef == null) {
+            logger.error("No ProductOfferingPrice named 'Plan' found in offering id={}", offeringId);
+            return null;
+        }
+        if (popRef.getId() == null || popRef.getId().isEmpty()) {
+            logger.error("ProductOfferingPriceRefOrValue has null/empty id in offering id={}", offeringId);
+            return null;
+        }
+        
+        ProductOfferingPrice pop = popApis.getProductOfferingPrice(popRef.getId(), null);
+        if (pop == null) {
+            logger.error("ProductOfferingPrice not found for id={}", popRef.getId());
+            return null;
+        }
+        logger.info("Fetched ProductOfferingPrice with id: {}", pop.getId());
+        
+
+        // Description for plan link
+        String description = pop.getDescription();
+        if (description == null || description.isEmpty()) {
+            logger.error("ProductOfferingPrice id={} has no description", popRef.getId());
+            return null;
+        }
+        
+        String link = null;
+        Pattern pattern = Pattern.compile("https?://\\S+");
+        Matcher matcher = pattern.matcher(description);
+        if (matcher.find()) {
+            link = matcher.group();
+        }
+        if (link == null || link.isEmpty()) {
+            logger.error("No link found in description of ProductOfferingPrice id={}", popRef.getId());
+            return null;
+        }
+        logger.info("Plan link from description: {}", link);
+
+        // Plan
+        Plan plan = this.loadPlanFromLink(link);
+        if (plan == null) {
+            logger.error("Failed to load Plan from link={}", link);
+            return null;
+        }
+
+        logger.info("Plan loaded for offeringId: {}", offeringId);
+        return plan;
+    }
 
     /**
      * Returns the list of JSON plan filenames discovered from GitHub.
@@ -193,6 +276,15 @@ public class PlanService {
         try (InputStream is = planUrl.openStream()) {
             Plan plan = mapper.readValue(is, Plan.class);
             logger.debug("Loaded plan '{}' with ID '{}'", fileName, plan.getId());
+            return plan;
+        }
+    }
+    
+    private Plan loadPlanFromLink(String link) throws IOException {
+        URL planUrl = new URL(link);
+        try (InputStream is = planUrl.openStream()) {
+            Plan plan = mapper.readValue(is, Plan.class);
+            logger.debug("Loaded plan '{}' with ID '{}'", link, plan.getId());
             return plan;
         }
     }
