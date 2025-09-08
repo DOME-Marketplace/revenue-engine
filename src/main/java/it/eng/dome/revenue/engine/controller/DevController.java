@@ -61,6 +61,26 @@ public class DevController {
     public DevController() {
     }
     
+    @GetMapping("/to-subscription/{productId}")
+    public ResponseEntity<Subscription> getSubscriptionByProductId(@PathVariable String productId) {
+		try {
+			Subscription subscription = subscriptionService.getSubscriptionByProductId(productId);
+			return ResponseEntity.ok(subscription);
+		} catch (Exception e) {
+			return ResponseEntity.internalServerError().build();
+		}
+	}
+    
+    @GetMapping("/to-subscriptions")
+    public ResponseEntity<List<Subscription>> getSubscriptionsByProducts() {
+		try {
+			List<Subscription> subscriptions = subscriptionService.getAllSubscriptionsByProducts();
+			return ResponseEntity.ok(subscriptions);
+		} catch (Exception e) {
+			return ResponseEntity.internalServerError().build();
+		}
+	}
+    
     @GetMapping("/Offering/{offeringId}")
     public ResponseEntity<Plan> getPlanByPoId(@PathVariable String offeringId) {
         try {
