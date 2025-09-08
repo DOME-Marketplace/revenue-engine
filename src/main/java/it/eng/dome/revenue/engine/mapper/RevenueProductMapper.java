@@ -20,6 +20,7 @@ import it.eng.dome.tmforum.tmf620.v4.model.ProductOfferingTerm;
 import it.eng.dome.tmforum.tmf620.v4.model.ProductSpecificationRef;
 import it.eng.dome.tmforum.tmf620.v4.model.TimePeriod;
 import it.eng.dome.tmforum.tmf637.v4.model.Product;
+import it.eng.dome.tmforum.tmf637.v4.model.ProductOfferingRef;
 import it.eng.dome.tmforum.tmf637.v4.model.ProductStatusType;
 
 public class RevenueProductMapper {
@@ -299,7 +300,6 @@ public class RevenueProductMapper {
 		
 		return product;
 	}
-
     
 	public static List<it.eng.dome.tmforum.tmf637.v4.model.RelatedParty> convertRpTo637(
             List<it.eng.dome.tmforum.tmf678.v4.model.RelatedParty> list678) {
@@ -339,5 +339,74 @@ public class RevenueProductMapper {
 		billingAccountRef637.setName(billingAccountRef678.getName());
 
 		return billingAccountRef637;
+	}
+	
+	/*
+	 * PRODUCT TO SUBSCRIPTION
+	 */
+	public static Subscription toSubscription(Product product) {
+		
+		logger.debug("Converting Product to Subscription: {}", product.getId());
+		
+		Subscription sub = new Subscription();
+		
+		sub.setId(product.getId());
+		sub.setName(product.getName());
+//		sub.setHref(product.getHref());
+		product.setIsBundle(false);
+//		product.isCustomerVisible(false);
+		sub.setStartDate(product.getStartDate());
+		sub.setStatus(product.getStatus().toString()); //convert status
+//		product.setProductSerialNumber(subscription.getId()); //??
+		
+		// reference to the product
+		sub.setRelatedParties(convertRpTo678(product.getRelatedParty()));	 //covert 637 to 678	
+		
+		// productCharacteristics ?
+		// for example, authorization for payment with card - understand how to set this
+		// not necessary by default
+		
+		// productOffering ?? //PLAN
+		Plan plan = new Plan();
+		ProductOfferingRef por = product.getProductOffering();
+		plan.setId(por.getId());
+		plan.setName(por.getName());
+		sub.setPlan(plan);
+		
+		// productPrice ?? (is the same of the (plan/ProductOffering?))
+		// must be a ref to ProductOfferingPrice
+		
+		//productSpecificationRef
+		// must be a ref to ProductOffering's Specification if necessary
+		
+		
+		return sub;
+	}
+
+	public static List<it.eng.dome.tmforum.tmf678.v4.model.RelatedParty> convertRpTo678(List<it.eng.dome.tmforum.tmf637.v4.model.RelatedParty> list637) {
+	
+	    if (list637 == null) {
+	        return null;
+	    }
+	
+	    List<it.eng.dome.tmforum.tmf678.v4.model.RelatedParty> list678 = new ArrayList<>();
+	
+	    for (it.eng.dome.tmforum.tmf637.v4.model.RelatedParty rp637 : list637) {
+	        it.eng.dome.tmforum.tmf678.v4.model.RelatedParty rp678 = new it.eng.dome.tmforum.tmf678.v4.model.RelatedParty();
+	
+	        rp678.setId(rp637.getId());
+	        try {
+				rp678.setHref(new URI(rp637.getId()));
+			} catch (URISyntaxException e) {
+				logger.warn("Invalid URI for RelatedParty id={} -> {}", rp637.getId(), e.getMessage());
+			}
+	        rp678.setName(rp637.getName());
+	        rp678.setRole(rp637.getRole());
+	        rp678.setAtReferredType(rp637.getAtReferredType()); // ??
+	
+	        list678.add(rp678);
+	    }
+	
+	    return list678;
 	}
 }

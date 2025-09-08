@@ -14,6 +14,7 @@ import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import it.eng.dome.brokerage.api.ProductApis;
 import it.eng.dome.revenue.engine.mapper.RevenueProductMapper;
 import it.eng.dome.revenue.engine.model.Plan;
 import it.eng.dome.revenue.engine.model.Subscription;
@@ -37,6 +38,9 @@ public class SubscriptionService implements InitializingBean {
 
     // TMForum API to retrieve bills
     private OrganizationApi orgApi;
+    
+    // API to retrieve product
+    private ProductApis productApis;
 
     @Autowired
     private TmfDataRetriever tmfDataRetriever;
@@ -67,26 +71,37 @@ public class SubscriptionService implements InitializingBean {
     @Override
     public void afterPropertiesSet() throws Exception {
         this.orgApi = new OrganizationApi(tmfApiFactory.getTMF632PartyManagementApiClient());
+        productApis = new ProductApis(tmfApiFactory.getTMF637ProductInventoryApiClient());
         logger.info("SubscriptionService initialized with orgApi");
     }
 	
-	/*
-	 * Temporary solution.
-	 * For each organisation, assume the subscription of a Basic 2025 plan.
-	 * The id of the subscription is the concatenation of the organisation and the plan.
-	 */
+    public Subscription getSubscriptionByProductId(String productId) {
+    	
+    	 if (productId == null || productId.isEmpty()) {
+             throw new IllegalArgumentException("Product ID cannot be null or empty");
+         }
 
+         logger.info("Fetching subscription from product id: {}", productId);
+         
+         Product prod = productApis.getProduct(productId, null);
 
-    // === GET BY Id===
-	/*
-	@Deprecated
-    public Subscription getBySubscriptionId(String id) throws IOException {
-        return loadAllFromStorage().stream()
-                .filter(sub -> sub.getId() != null && sub.getId().equals(id))
-                .findFirst()
-                .orElse(null);
+         return RevenueProductMapper.toSubscription(prod);
     }
-	*/
+    
+    public List<Subscription> getAllSubscriptionsByProducts() {
+    	logger.info("Fetching subscriptions from products");
+        
+    	//TODO: check how to filter product of a sub
+        List<Product> prods = productApis.getAllProducts(null, null);
+        
+        List<Subscription> subs = new ArrayList<>();
+        
+        for (Product prod : prods) {
+			subs.add(RevenueProductMapper.toSubscription(prod));
+		}
+
+        return subs;
+    }
 
     /**
 	 * Retrieves a subscription by its ID.
