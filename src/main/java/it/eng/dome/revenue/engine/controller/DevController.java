@@ -1,6 +1,5 @@
 package it.eng.dome.revenue.engine.controller;
 
-import java.io.IOException;
 import java.util.List;
 
 import org.slf4j.Logger;
@@ -24,8 +23,6 @@ import it.eng.dome.revenue.engine.service.RevenueService;
 import it.eng.dome.revenue.engine.service.SubscriptionService;
 import it.eng.dome.revenue.engine.service.TmfDataRetriever;
 import it.eng.dome.revenue.engine.service.compute.PriceCalculator;
-import it.eng.dome.tmforum.tmf620.v4.model.ProductOffering;
-import it.eng.dome.tmforum.tmf637.v4.model.Product;
 import it.eng.dome.tmforum.tmf678.v4.model.AppliedCustomerBillingRate;
 import it.eng.dome.tmforum.tmf678.v4.model.BillingAccountRef;
 import it.eng.dome.tmforum.tmf678.v4.model.CustomerBill;
@@ -60,26 +57,7 @@ public class DevController {
 
     public DevController() {
     }
-    
-    @GetMapping("/to-subscription/{productId}")
-    public ResponseEntity<Subscription> getSubscriptionByProductId(@PathVariable String productId) {
-		try {
-			Subscription subscription = subscriptionService.getSubscriptionByProductId(productId);
-			return ResponseEntity.ok(subscription);
-		} catch (Exception e) {
-			return ResponseEntity.internalServerError().build();
-		}
-	}
-    
-    @GetMapping("/to-subscriptions")
-    public ResponseEntity<List<Subscription>> getSubscriptionsByProducts() {
-		try {
-			List<Subscription> subscriptions = subscriptionService.getAllSubscriptionsByProducts();
-			return ResponseEntity.ok(subscriptions);
-		} catch (Exception e) {
-			return ResponseEntity.internalServerError().build();
-		}
-	}
+
     
     @GetMapping("/Offering/{offeringId}")
     public ResponseEntity<Plan> getPlanByPoId(@PathVariable String offeringId) {
