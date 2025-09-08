@@ -35,7 +35,7 @@ public class PlansController {
     public ResponseEntity<List<Plan>> getAllPlans() {
 //    	logger.info("Request received: fetch all plans");    	
         try {
-            List<Plan> plans = subscriptionPlanService.loadAllPlans();
+            List<Plan> plans = subscriptionPlanService.getAllPlansByOfferings();
             return ResponseEntity.ok(plans);
         } catch (Exception e) {
         	logger.error("Failed to load plans: {}", e.getMessage(), e);
@@ -47,7 +47,7 @@ public class PlansController {
     public ResponseEntity<Plan> getPlanById(@PathVariable String planId) throws IOException {
 //    	logger.info("Request received: fetch plan with ID {}", planId);
         try {
-            Plan plan = subscriptionPlanService.findPlanById(planId);
+            Plan plan = subscriptionPlanService.findPlanByOfferingId(planId);
             return ResponseEntity.ok(plan);
         } catch (Exception e) {
             logger.error("Unexpected error retrieving plan {}: {}", planId, e.getMessage(), e);
@@ -62,7 +62,7 @@ public class PlansController {
             List<Subscription> subscriptions = subscriptionService.getByPlanId(planId);
 
             if (subscriptions == null || subscriptions.isEmpty()) {
-                logger.info("No subscriptions found for paln with ID {}", planId);
+                logger.info("No subscriptions found for plan with ID {}", planId);
                 return ResponseEntity.noContent().build();
             }
 

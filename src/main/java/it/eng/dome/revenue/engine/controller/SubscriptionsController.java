@@ -47,7 +47,7 @@ public class SubscriptionsController {
 	public ResponseEntity<List<Subscription>> getAllSubscriptions() {
 //	    logger.info("Request received: get all subscriptions");
 	    try {
-	        List<Subscription> subscriptions = subscriptionService.getAllSubscriptions();
+	        List<Subscription> subscriptions = subscriptionService.getAllSubscriptionsByProducts();
 
 	        if (subscriptions == null || subscriptions.isEmpty()) {
 	            logger.info("No subscriptions found");
@@ -65,7 +65,7 @@ public class SubscriptionsController {
 	public ResponseEntity<Subscription> getSubscription(@PathVariable String subscriptionId) {
 //	    logger.info("Request received: get subscription with ID {}", subscriptionId);
 	    try {
-	        Subscription subscription = subscriptionService.getSubscriptionById(subscriptionId);
+	        Subscription subscription = subscriptionService.getSubscriptionByProductId(subscriptionId);
 
 	        if (subscription == null) {
 	            logger.warn("Subscription not found for ID {}", subscriptionId);
