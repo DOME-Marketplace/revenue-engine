@@ -34,6 +34,9 @@ public final class TmfApiFactory implements InitializingBean {
     
     @Value("${tmforumapi.tmf_port}")
     public String tmfPort;
+    
+    @Value( "${tmforumapi.tmf620_product_catalog_management_path}" )
+	private String tmf620ProductCatalogManagementPath;
 	
     @Value( "${tmforumapi.tmf629_customer_management_path}" )
 	private String tmf629CustomerManagementPath;
@@ -53,6 +56,7 @@ public final class TmfApiFactory implements InitializingBean {
 	@Value( "${tmforumapi.tmf678_billing_path}" )
 	private String tmf678CustomerBillPath;
 	
+	private it.eng.dome.tmforum.tmf620.v4.ApiClient apiClientTmf620;
 	private it.eng.dome.tmforum.tmf629.v4.ApiClient apiClientTmf629;
 	private it.eng.dome.tmforum.tmf632.v4.ApiClient apiClientTmf632;
 	private it.eng.dome.tmforum.tmf637.v4.ApiClient apiClientTmf637;
@@ -60,7 +64,22 @@ public final class TmfApiFactory implements InitializingBean {
 	private it.eng.dome.tmforum.tmf666.v4.ApiClient apiClientTmf666;
 	private it.eng.dome.tmforum.tmf678.v4.ApiClient apiClientTmf678;
 	
-
+	public it.eng.dome.tmforum.tmf620.v4.ApiClient getTMF620ProductCatalogManagementApiClient() {	
+		if (apiClientTmf620 == null) {
+			apiClientTmf620  = it.eng.dome.tmforum.tmf620.v4.Configuration.getDefaultApiClient();
+			
+			String basePath = tmfEndpoint;
+			if (!tmfEnvoy) { // no envoy specific path
+				basePath += TMF_ENDPOINT_CONCAT_PATH + "product-catalog" + "." + tmfNamespace + "." + tmfPostfix + ":" + tmfPort;
+			}
+			
+			apiClientTmf620.setBasePath(basePath + "/" + tmf620ProductCatalogManagementPath);
+			log.debug("Invoke Product Catalog API at endpoint: " + apiClientTmf620.getBasePath());
+		}
+		
+		return apiClientTmf620;
+	}
+	
 	public it.eng.dome.tmforum.tmf629.v4.ApiClient getTMF629CustomerManagementApiClient() {	
 		if (apiClientTmf629 == null) {
 			apiClientTmf629  = it.eng.dome.tmforum.tmf629.v4.Configuration.getDefaultApiClient();
@@ -168,7 +187,9 @@ public final class TmfApiFactory implements InitializingBean {
 			log.info("No apiProxy set for TMForum APIs. You have to access on specific software via paths at tmf_port {}", tmfPort);	
 		}
 		
+		
 		Assert.state(!StringUtils.isBlank(tmfEndpoint), "Revenue Engine not properly configured. tmf620_catalog_base property has no value.");
+		Assert.state(!StringUtils.isBlank(tmf620ProductCatalogManagementPath), "Revenue Engine not properly configured. tmf620_product_catalog_management_path property has no value.");
 		Assert.state(!StringUtils.isBlank(tmf629CustomerManagementPath), "Revenue Engine not properly configured. tmf629_customer_management_path property has no value.");
 		Assert.state(!StringUtils.isBlank(tmf632PartyManagementPath), "Revenue Engine not properly configured. tmf632_party_management_path property has no value.");
 		Assert.state(!StringUtils.isBlank(tmf637ProductInventoryPath), "Revenue Engine not properly configured. tmf637_inventory_path property has no value.");
@@ -178,6 +199,10 @@ public final class TmfApiFactory implements InitializingBean {
 			
 		if (tmfEndpoint.endsWith("/")) {
 			tmfEndpoint = UrlPathUtils.removeFinalSlash(tmfEndpoint);		
+		}
+		
+		if (tmf620ProductCatalogManagementPath.startsWith("/")) {
+			tmf620ProductCatalogManagementPath = UrlPathUtils.removeInitialSlash(tmf620ProductCatalogManagementPath);
 		}
 		
 		if (tmf629CustomerManagementPath.startsWith("/")) {

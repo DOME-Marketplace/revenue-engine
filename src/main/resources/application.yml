@@ -46,6 +46,7 @@ tmforumapi:
   tmf_port:  ${TMF_PORT:8080}
    
 #  tmf_endpoint: http://localhost:8100
+  tmf620_product_catalog_management_path: tmf-api/productCatalogManagement/v4
   tmf629_customer_management_path: tmf-api/customerManagement/v4
   tmf632_party_management_path: tmf-api/party/v4
   tmf637_inventory_path: tmf-api/productInventory/v4
