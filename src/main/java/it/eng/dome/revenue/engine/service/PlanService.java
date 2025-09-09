@@ -2,7 +2,6 @@ package it.eng.dome.revenue.engine.service;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.HttpURLConnection;
 import java.net.URL;
 import java.time.Duration;
 import java.util.ArrayList;
@@ -19,14 +18,12 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 
 import it.eng.dome.brokerage.api.ProductOfferingApis;
 import it.eng.dome.brokerage.api.ProductOfferingPriceApis;
-import it.eng.dome.revenue.engine.mapper.RevenueProductMapper;
 import it.eng.dome.revenue.engine.model.Plan;
 import it.eng.dome.revenue.engine.service.validation.PlanValidationReport;
 import it.eng.dome.revenue.engine.service.validation.PlanValidator;
@@ -52,14 +49,14 @@ public class PlanService implements InitializingBean{
     
     private ProductOfferingPriceApis popApis;
 
-    private static final String GITHUB_API_URL =
-            "https://api.github.com/repos/DOME-Marketplace/revenue-engine/contents/src/main/resources/data/plans?ref=develop";
-
-    private static final String PLAN_REPO_RAW_URL =
-            "https://raw.githubusercontent.com/DOME-Marketplace/revenue-engine/develop/src/main/resources/data/plans/";
+//    private static final String GITHUB_API_URL =
+//            "https://api.github.com/repos/DOME-Marketplace/revenue-engine/contents/src/main/resources/data/plans?ref=develop";
+//
+//    private static final String PLAN_REPO_RAW_URL =
+//            "https://raw.githubusercontent.com/DOME-Marketplace/revenue-engine/develop/src/main/resources/data/plans/";
 
     private final ObjectMapper mapper;
-    private final List<String> planFileNames;
+    private final List<Plan> plansForCache;
     private final Cache<String, List<Plan>> planCache;
 
     /**
@@ -73,8 +70,7 @@ public class PlanService implements InitializingBean{
                 .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
                 .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
         
-
-        this.planFileNames = Collections.unmodifiableList(fetchPlanFileNamesOnce());
+        this.plansForCache = new ArrayList<Plan>();
         this.planCache = cacheService.getOrCreateCache(
 				"planCache",
 				String.class,
@@ -82,7 +78,7 @@ public class PlanService implements InitializingBean{
 				Duration.ofHours(1)
 		);
 
-        logger.info("Initialized PlanService with {} plan files and cache TTL of 1 hour", planFileNames.size());
+        logger.info("Initialized PlanService with {} plan files and cache TTL of 1 hour", plansForCache.size());
     }
     
     @Override
@@ -93,82 +89,31 @@ public class PlanService implements InitializingBean{
 
         logger.info("PlanService initialized with productOfferingApis and productOfferingPriceApis");
     }
-
-    /**
-     * Loads all plans from the configured file names.
-     * If a plan is already cached (by its plan ID), it is reused.
-     * Otherwise, it is loaded from file and added to the cache.
-     *
-     * @return the list of all loaded Plan objects
-     */
-    public List<Plan> loadAllPlans() {
-        logger.info("Loading all plans from {} files", planFileNames.size());
-        
-        List<Plan> cachedPlans = planCache.get("all_plans");
-        if (cachedPlans != null) {
-            logger.info("Retrived all plans from cache");
-            return cachedPlans;
-        }
+    
+    // retrieve all plans by offerings
+    public List<Plan> getAllPlansByOfferings() {
+		List<Plan> cachedPlans = planCache.get("all_plans");
+		if (cachedPlans != null) {
+			logger.info("Retrived all plans from cache");
+			return cachedPlans;
+		}
+    	
+    	//TODO: understand how to filter only plan offering
+        List<ProductOffering> pos = productOfferingApis.getAllProductOfferings(null, null);
         
         List<Plan> plans = new ArrayList<>();
+        for (ProductOffering productOffering : pos) {
+			plans.add(findPlanByOfferingId(productOffering.getId()));
+		}
         
-
-        for (String fileName : planFileNames) {
-            try {
-                // Load plan from file
-                Plan plan = loadPlanFromUrl(fileName);
-                if (plan == null) {
-                    logger.warn("Plan from file '{}' is null, skipping", fileName);
-                    continue;
-                }
-
-                String planId = plan.getId();
-                if (planId == null || planId.isBlank()) {
-                    logger.warn("Plan loaded from '{}' has no ID, skipping", fileName);
-                    continue;
-                }
-                
-                plans.add(plan);
-                
-              
-            } catch (IOException e) {
-				logger.error("Error while loading plan from file '{}': {}", fileName, e.getMessage());
-				continue;
-			}
-
-        }
-
-        logger.info("Successfully loaded {} plans", plans.size());
+		//store all loaded plans in the cache        
+		planCache.put("all_plans", plans);
         
-        //store all loaded plans in the cache        
-        planCache.put("all_plans", plans);
-
-        return plans;
-    }
-
-    /**
-     * Retrieves a specific plan by its ID. Uses the internal cache if available.
-     *
-     * @param planId the ID of the plan
-     * @return the matching Plan object, or null if not found
-     */
-    public Plan findPlanById(String id) throws IOException {
-        if (id == null || id.isEmpty()) {
-            throw new IllegalArgumentException("Plan ID cannot be null or empty");
-        }
-
-        logger.info("Fetching plan with ID {}", id);
-        return loadAllPlans().stream()
-            .filter(plan -> plan.getId().equals(id))
-            .findFirst()
-            .orElseThrow(() -> new IOException("Plan not found with ID: " + id));
-    }
-
-    public Plan findPlanByProductId(String offeringId) throws IOException {
-    	return null;
+    	return plans;
     }
     
-    public Plan findPlanByOfferingId(String offeringId) throws IOException {
+    // retrieve a plan by offering id
+    public Plan findPlanByOfferingId(String offeringId) {
         if (offeringId == null || offeringId.isEmpty()) {
             throw new IllegalArgumentException("Offering ID cannot be null or empty");
         }
@@ -224,62 +169,17 @@ public class PlanService implements InitializingBean{
         logger.info("Plan link from description: {}", link);
 
         // Plan
-        Plan plan = this.loadPlanFromLink(link);
-        if (plan == null) {
-            logger.error("Failed to load Plan from link={}", link);
-            return null;
-        }
+        Plan plan = new Plan();
+		try {
+			plan = this.loadPlanFromLink(link);
+		} catch (IOException e) {
+			logger.error("Failed to load Plan from link={}", link);
+		}
 
         logger.info("Plan loaded for offeringId: {}", offeringId);
         return plan;
     }
 
-    /**
-     * Returns the list of JSON plan filenames discovered from GitHub.
-     *
-     * @return list of JSON file names
-     */
-    public List<String> getPlanFileNames() {
-        return planFileNames;
-    }
-
-    /**
-     * Validates the plan corresponding to the given ID.
-     *
-     * @param planId the ID of the plan
-     * @return a PlanValidationReport with validation results
-     */
-    public PlanValidationReport validatePlan(String planId) throws IOException {
-        Plan plan = findPlanById(planId);
-        return new PlanValidator().validate(plan);
-    }
-
-    /**
-     * Converts a Plan into a TMForum ProductOffering structure.
-     *
-     * @param plan the Plan object
-     * @return a TMF-compliant ProductOffering
-     */
-    public ProductOffering buildProductOffering(Plan plan) {
-        return RevenueProductMapper.fromPlanToProductOffering(plan);
-    }
-
-    /**
-     * Loads and parses a plan from the raw GitHub URL.
-     *
-     * @param fileName the file name of the plan (e.g., "basic.json")
-     * @return the parsed Plan object, or null if loading fails
-     * @throws IOException if the plan cannot be read
-     */
-    private Plan loadPlanFromUrl(String fileName) throws IOException {
-        URL planUrl = new URL(PLAN_REPO_RAW_URL + fileName);
-        try (InputStream is = planUrl.openStream()) {
-            Plan plan = mapper.readValue(is, Plan.class);
-            logger.debug("Loaded plan '{}' with ID '{}'", fileName, plan.getId());
-            return plan;
-        }
-    }
-    
     private Plan loadPlanFromLink(String link) throws IOException {
         URL planUrl = new URL(link);
         try (InputStream is = planUrl.openStream()) {
@@ -290,41 +190,158 @@ public class PlanService implements InitializingBean{
     }
 
     /**
+     * Validates the plan corresponding to the offering ID.
+     *
+     * @param offeringId the ID of the offering
+     * @return a PlanValidationReport with validation results
+     */
+    public PlanValidationReport validatePlan(String offeringId) throws IOException {
+        Plan plan = findPlanByOfferingId(offeringId);
+        return new PlanValidator().validate(plan);
+    }
+    
+    /**
+     * Loads all plans from the configured file names.
+     * If a plan is already cached (by its plan ID), it is reused.
+     * Otherwise, it is loaded from file and added to the cache.
+     *
+     * @return the list of all loaded Plan objects
+     */
+//    public List<Plan> loadAllPlans() {
+//        logger.info("Loading all plans from {} files", planFileNames.size());
+//        
+//        List<Plan> cachedPlans = planCache.get("all_plans");
+//        if (cachedPlans != null) {
+//            logger.info("Retrived all plans from cache");
+//            return cachedPlans;
+//        }
+//        
+//        List<Plan> plans = new ArrayList<>();
+//        
+//
+//        for (String fileName : planFileNames) {
+//            try {
+//                // Load plan from file
+//                Plan plan = loadPlanFromUrl(fileName);
+//                if (plan == null) {
+//                    logger.warn("Plan from file '{}' is null, skipping", fileName);
+//                    continue;
+//                }
+//
+//                String planId = plan.getId();
+//                if (planId == null || planId.isBlank()) {
+//                    logger.warn("Plan loaded from '{}' has no ID, skipping", fileName);
+//                    continue;
+//                }
+//                
+//                plans.add(plan);
+//                
+//              
+//            } catch (IOException e) {
+//				logger.error("Error while loading plan from file '{}': {}", fileName, e.getMessage());
+//				continue;
+//			}
+//
+//        }
+//
+//        logger.info("Successfully loaded {} plans", plans.size());
+//        
+//        //store all loaded plans in the cache        
+//        planCache.put("all_plans", plans);
+//
+//        return plans;
+//    }
+    
+    /**
+     * Returns the list of JSON plan filenames discovered from GitHub.
+     *
+     * @return list of JSON file names
+     */
+//    public List<String> getPlanFileNames() {
+//        return planFileNames;
+//    }
+    
+    /**
+     * Retrieves a specific plan by its ID. Uses the internal cache if available.
+     *
+     * @param planId the ID of the plan
+     * @return the matching Plan object, or null if not found
+     */
+//    public Plan findPlanById(String id) throws IOException {
+//        if (id == null || id.isEmpty()) {
+//            throw new IllegalArgumentException("Plan ID cannot be null or empty");
+//        }
+//
+//        logger.info("Fetching plan with ID {}", id);
+//        return loadAllPlans().stream()
+//            .filter(plan -> plan.getId().equals(id))
+//            .findFirst()
+//            .orElseThrow(() -> new IOException("Plan not found with ID: " + id));
+//    }
+    
+    /**
+     * Validates the plan corresponding to the given ID.
+     *
+     * @param planId the ID of the plan
+     * @return a PlanValidationReport with validation results
+     */
+//    public PlanValidationReport validatePlan(String planId) throws IOException {
+//        Plan plan = findPlanById(planId);
+//        return new PlanValidator().validate(plan);
+//    }
+    
+    /**
+     * Loads and parses a plan from the raw GitHub URL.
+     *
+     * @param fileName the file name of the plan (e.g., "basic.json")
+     * @return the parsed Plan object, or null if loading fails
+     * @throws IOException if the plan cannot be read
+     */
+//    private Plan loadPlanFromUrl(String fileName) throws IOException {
+//        URL planUrl = new URL(PLAN_REPO_RAW_URL + fileName);
+//        try (InputStream is = planUrl.openStream()) {
+//            Plan plan = mapper.readValue(is, Plan.class);
+//            logger.debug("Loaded plan '{}' with ID '{}'", fileName, plan.getId());
+//            return plan;
+//        }
+//    }
+    
+    /**
      * Fetches the list of available plan filenames from GitHub (only once).
      *
      * @return a list of JSON plan filenames
      */
-    private List<String> fetchPlanFileNamesOnce() {
-        try {
-            URL url = new URL(GITHUB_API_URL);
-            HttpURLConnection conn = (HttpURLConnection) url.openConnection();
-            conn.setRequestMethod("GET");
-            conn.setRequestProperty("Accept", "application/vnd.github.v3+json");
-
-            int status = conn.getResponseCode();
-            if (status == HttpURLConnection.HTTP_OK) {
-                try (InputStream is = conn.getInputStream()) {
-                    JsonNode filesNode = mapper.readTree(is);
-                    List<String> files = new ArrayList<>();
-
-                    for (JsonNode fileNode : filesNode) {
-                        String fileName = fileNode.get("name").asText();
-                        if (fileName.endsWith(".json")) {
-                            files.add(fileName);
-                            logger.debug("Discovered plan file '{}'", fileName);
-                        }
-                    }
-                    
-                    logger.info("Fetched {} plan files from GitHub", files.size());
-                    return files;
-                }
-            } else {
-                logger.error("GitHub API returned status {}", status);
-            }
-        } catch (IOException e) {
-            logger.error("Error fetching plan file list from GitHub", e);
-        }
-
-        return Collections.emptyList();
-    }
+//    private List<String> fetchPlanFileNamesOnce() {
+//        try {
+//            URL url = new URL(GITHUB_API_URL);
+//            HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+//            conn.setRequestMethod("GET");
+//            conn.setRequestProperty("Accept", "application/vnd.github.v3+json");
+//
+//            int status = conn.getResponseCode();
+//            if (status == HttpURLConnection.HTTP_OK) {
+//                try (InputStream is = conn.getInputStream()) {
+//                    JsonNode filesNode = mapper.readTree(is);
+//                    List<String> files = new ArrayList<>();
+//
+//                    for (JsonNode fileNode : filesNode) {
+//                        String fileName = fileNode.get("name").asText();
+//                        if (fileName.endsWith(".json")) {
+//                            files.add(fileName);
+//                            logger.debug("Discovered plan file '{}'", fileName);
+//                        }
+//                    }
+//                    
+//                    logger.info("Fetched {} plan files from GitHub", files.size());
+//                    return files;
+//                }
+//            } else {
+//                logger.error("GitHub API returned status {}", status);
+//            }
+//        } catch (IOException e) {
+//            logger.error("Error fetching plan file list from GitHub", e);
+//        }
+//
+//        return Collections.emptyList();
+//    }
 }

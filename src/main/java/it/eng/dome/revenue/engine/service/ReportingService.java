@@ -131,7 +131,7 @@ public class ReportingService {
         String startDate = subscription.getStartDate() != null ? subscription.getStartDate().toString() : "Unknown Start Date";
         String renewalDate = subscription.getStartDate() != null ? subscription.getStartDate().plusYears(1).toString() : "Unknown Renewal Date";
         
-        Plan plan = planService.findPlanById(subscription.getPlan().getId());
+        Plan plan = planService.findPlanByOfferingId(subscription.getPlan().getId());
         
         String agreementsText = Optional.ofNullable(plan.getAgreements())
                 .orElse(Collections.emptyList())
@@ -172,13 +172,8 @@ public class ReportingService {
         }
 
         // retrieve Subscription
-        Subscription subscription;
-        try {
-            subscription = subscriptionService.getSubscriptionById(subscriptionId);
-        } catch (ApiException | IOException e) {
-            logger.error("Failed to retrieve subscription for subscription with ID: {}", subscriptionId, e);
-            return new Report("Billing History", "Unable to retrieve subscription information");
-        }
+        Subscription subscription = subscriptionService.getSubscriptionByProductId(subscriptionId);
+        
         if (subscription == null || subscription.getStartDate() == null) {
             logger.warn("Subscription not found or missing start date for ID: {}", subscriptionId);
             return new Report("Billing History", "No billing data available");

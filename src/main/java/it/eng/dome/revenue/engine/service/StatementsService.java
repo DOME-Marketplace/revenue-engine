@@ -81,10 +81,10 @@ public class StatementsService implements InitializingBean {
     public Set<TimePeriod> getBillPeriods(String subscriptionId) throws Exception {
 
             // retrieve the subscription by id
-            Subscription sub = subscriptionService.getSubscriptionById(subscriptionId);
+            Subscription sub = subscriptionService.getSubscriptionByProductId(subscriptionId);
 
             // retrive the plan for the subscription
-            Plan plan = this.planService.findPlanById(sub.getPlan().getId());
+            Plan plan = this.planService.findPlanByOfferingId(sub.getPlan().getId());
 
             // add the full plan to the subscription
             sub.setPlan(plan);
@@ -119,7 +119,7 @@ public class StatementsService implements InitializingBean {
 
         Subscription sub;
         try {
-            sub = subscriptionService.getSubscriptionById(subscriptionId);
+            sub = subscriptionService.getSubscriptionByProductId(subscriptionId);
         } catch (Exception ex) {
             logger.error("Failed to retrieve subscription with ID {}: {}", subscriptionId, ex.getMessage(), ex);
             throw new RuntimeException("Failed to retrieve subscription: " + subscriptionId, ex);
@@ -127,7 +127,7 @@ public class StatementsService implements InitializingBean {
 
         Plan plan;
         try {
-            plan = planService.findPlanById(sub.getPlan().getId());
+            plan = planService.findPlanByOfferingId(sub.getPlan().getId());
         } catch (Exception ex) {
             logger.error("Failed to retrieve plan for subscription {}: {}", subscriptionId, ex.getMessage(), ex);
             throw new RuntimeException("Failed to retrieve plan for subscription: " + subscriptionId, ex);

@@ -1,6 +1,5 @@
 package it.eng.dome.revenue.engine.service;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
@@ -17,7 +16,6 @@ import it.eng.dome.revenue.engine.model.RevenueItem;
 import it.eng.dome.revenue.engine.model.SimpleBill;
 import it.eng.dome.revenue.engine.model.Subscription;
 import it.eng.dome.revenue.engine.model.comparator.SimpleBillComparator;
-import it.eng.dome.tmforum.tmf632.v4.ApiException;
 import it.eng.dome.tmforum.tmf678.v4.model.AppliedCustomerBillingRate;
 import it.eng.dome.tmforum.tmf678.v4.model.BillingAccountRef;
 import it.eng.dome.tmforum.tmf678.v4.model.CustomerBill;
@@ -73,7 +71,7 @@ public class BillsService implements InitializingBean {
 	    logger.info("Fetch bills for subscription with ID{}", subscriptionId);
         try {
             Set<SimpleBill> bills = new TreeSet<>(new SimpleBillComparator());
-            Subscription subscription = this.subscriptionService.getSubscriptionById(subscriptionId);
+            Subscription subscription = this.subscriptionService.getSubscriptionByProductId(subscriptionId);
             List<RevenueItem> items = this.statementsService.getItemsForSubscription(subscriptionId);
             for(TimePeriod tp: this.statementsService.getBillPeriods(subscriptionId)) {
                 SimpleBill bill = new SimpleBill();
@@ -117,13 +115,7 @@ public class BillsService implements InitializingBean {
             throw new IllegalArgumentException("Missing related party information in SimpleBill");
         }
         
-        Subscription subscription = null;
-    	try {
-    		subscription = subscriptionService.getSubscriptionById(sb.getSubscriptionId());
-    	} catch (ApiException | IOException e) {
-    		logger.error("Error retrieving subscription ID {}: {}", sb.getSubscriptionId(), e.getMessage(), e);
-    		throw new IllegalStateException("Failed to retrieve subscription data", e);
-    	}
+        Subscription subscription = subscriptionService.getSubscriptionByProductId(sb.getSubscriptionId());
         
         // Retrieve the related party with role = "Buyer"
         RelatedParty buyerParty = this.getBuyerParty(sb.getRelatedParties());
