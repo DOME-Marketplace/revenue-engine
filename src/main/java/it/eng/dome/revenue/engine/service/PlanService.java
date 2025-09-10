@@ -118,23 +118,14 @@ public class PlanService implements InitializingBean{
     }
     
     public Plan getPlanById(String planId) {
-    	// part after plan:
-        String ids = planId.substring(planId.lastIndexOf("plan:") + 5);
 
-        // split segments UUID
-        String[] parts = ids.split("-");
-        int n = parts.length;
-
-        // offeringId: first 5 segments
-        String offeringId = String.join("-", Arrays.copyOfRange(parts, 0, 5));
-        // offeringPriceId: other 5 segments
-        String offeringPriceId = String.join("-", Arrays.copyOfRange(parts, 5, n));
-
-        // add prefix
-        offeringId = "urn:ngsi-ld:product-offering:" + offeringId;
-        offeringPriceId = "urn:ngsi-ld:product-offering-price:" + offeringPriceId;
- 
-        return findPlan(offeringId, offeringPriceId);
+        // FIXME: make this unpack more robust.
+        int offeringStart = planId.indexOf("urn:ngsi-ld:product-offering");
+        int priceStart = planId.indexOf("urn:ngsi-ld:product-offering-price");
+        String offeringId = planId.substring(offeringStart, priceStart);
+        String offeringPriceId = planId.substring(priceStart);
+        
+        return this.findPlan(offeringId, offeringPriceId);
     }
 
     public Plan findPlan(String offeringId, String offeringPriceId) {
@@ -152,7 +143,10 @@ public class PlanService implements InitializingBean{
         String link = extractLinkFromDescription(pop.getDescription());
 
         try {
-			return loadPlanFromLink(link);
+            Plan plan = this.loadPlanFromLink(link);
+            plan.setId("urn:ngsi-ld:plan:"+offeringId+pop.getId());
+            plan.setLifecycleStatus(po.getLifecycleStatus());
+            return plan;
 		} catch (IOException e) {
 			logger.error("Failed to load Plan from link={}", link, e);
             return null;
@@ -212,7 +206,7 @@ public class PlanService implements InitializingBean{
                     continue;
                 }
 
-                plan.setId("urn:ngsi-ld:" + offeringId + "-" + pop.getId());
+                plan.setId("urn:ngsi-ld:plan:" + offeringId + pop.getId());
 
                 plans.add(plan);
                 logger.info("Plan loaded for offeringId={}, priceId={}", offeringId, pop.getId());

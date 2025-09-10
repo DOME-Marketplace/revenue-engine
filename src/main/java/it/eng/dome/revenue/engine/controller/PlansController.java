@@ -1,6 +1,7 @@
 package it.eng.dome.revenue.engine.controller;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 
 import org.slf4j.Logger;
@@ -63,7 +64,7 @@ public class PlansController {
 
             if (subscriptions == null || subscriptions.isEmpty()) {
                 logger.info("No subscriptions found for plan with ID {}", planId);
-                return ResponseEntity.noContent().build();
+                return ResponseEntity.ok(new ArrayList<>());
             }
 
             return ResponseEntity.ok(subscriptions);

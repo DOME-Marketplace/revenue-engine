@@ -341,10 +341,9 @@ public class RevenueProductMapper {
 		}
 
 		// finally the plan
-		// TODO: use the PlanService to retrieve the plan for the given offering and price
-		// FIXME: temporarily building a plan here
 		Plan plan = new Plan();
-		plan.setId("urn:ngsi-ld:plan:"+offeringId+"-"+productOfferingPriceId);
+		// FIXME: use a clever packing of ids
+		plan.setId("urn:ngsi-ld:plan:"+offeringId+productOfferingPriceId);
 		sub.setPlan(plan);
 
 		/*
