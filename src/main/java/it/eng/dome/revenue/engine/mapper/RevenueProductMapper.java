@@ -21,7 +21,9 @@ import it.eng.dome.tmforum.tmf620.v4.model.ProductOfferingTerm;
 import it.eng.dome.tmforum.tmf620.v4.model.ProductSpecificationRef;
 import it.eng.dome.tmforum.tmf620.v4.model.TimePeriod;
 import it.eng.dome.tmforum.tmf637.v4.model.Product;
+import it.eng.dome.tmforum.tmf637.v4.model.ProductOfferingPriceRef;
 import it.eng.dome.tmforum.tmf637.v4.model.ProductOfferingRef;
+import it.eng.dome.tmforum.tmf637.v4.model.ProductPrice;
 import it.eng.dome.tmforum.tmf637.v4.model.ProductStatusType;
 
 public class RevenueProductMapper {
@@ -294,44 +296,64 @@ public class RevenueProductMapper {
     
     
 	
+
 	/*
 	 * PRODUCT TO SUBSCRIPTION
 	 */
 	public static Subscription toSubscription(Product product) {
 		
-		logger.debug("Converting Product to Subscription: {}", product.getId());
+		logger.debug("Converting Product {} to Subscription", product.getId());
 		
 		Subscription sub = new Subscription();
 		
+		// general metadata
 		sub.setId(product.getId());
 		sub.setName(product.getName());
-//		sub.setHref(product.getHref());
-		product.setIsBundle(false);
-//		product.isCustomerVisible(false);
 		sub.setStartDate(product.getStartDate());
 		sub.setStatus(product.getStatus().toString()); //convert status
-//		product.setProductSerialNumber(subscription.getId()); //??
 		
-		// reference to the product
-		sub.setRelatedParties(Converter.convertRpTo678(product.getRelatedParty()));	 //covert 637 to 678	
-		
-		// productCharacteristics ?
-		// for example, authorization for payment with card - understand how to set this
-		// not necessary by default
-		
-		// productOffering ?? //PLAN
+		// related parties
+		sub.setRelatedParties(Converter.convertRpTo678(product.getRelatedParty()));
+				
+		// the product offering
+		String offeringId = null;
+		ProductOfferingRef offeringRef = product.getProductOffering();
+		if(offeringRef!=null)
+			offeringId = offeringRef.getId();
+		if(offeringId==null || offeringId.isBlank()) {
+			logger.warn("No productOfferingId for product {}" ,product.getId());
+			return null;
+		}
+
+		// product offering price
+		String productOfferingPriceId = null;
+		List<ProductPrice> prices = product.getProductPrice();
+		if(prices!=null && !prices.isEmpty()) {
+			// ASSUMPTION: considering only the first price
+			ProductOfferingPriceRef pop = prices.get(0).getProductOfferingPrice();
+			if(pop!=null) {
+				productOfferingPriceId = pop.getId();
+			}
+		}
+		if(productOfferingPriceId==null || productOfferingPriceId.isBlank()) {
+			logger.warn("No productOfferingPriceId for product {}" ,product.getId());
+			return null;
+		}
+
+		// finally the plan
+		// TODO: use the PlanService to retrieve the plan for the given offering and price
+		// FIXME: temporarily building a plan here
 		Plan plan = new Plan();
 		ProductOfferingRef por = product.getProductOffering();
 		plan.setId(por.getId());
 		plan.setName(por.getName());
 		sub.setPlan(plan);
-		
-		// productPrice ?? (is the same of the (plan/ProductOffering?))
-		// must be a ref to ProductOfferingPrice
-		
-		//productSpecificationRef
-		// must be a ref to ProductOffering's Specification if necessary
-		
+
+		if(plan == null) {
+			logger.error("No plan can be retrieved for offering {} and price {}" , offeringId, productOfferingPriceId);
+			return null;
+
+		}
 		
 		return sub;
 	}
