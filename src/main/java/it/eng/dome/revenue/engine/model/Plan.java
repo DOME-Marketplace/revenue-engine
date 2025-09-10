@@ -23,6 +23,10 @@ public class Plan {
 
 	// the status of the plan (active, retired, launched, ...)
 	private String lifecycleStatus;
+	
+	private String offeringId;
+	
+	private String offeringPriceId;
 
 	// a list of prices for this subscription plan
 	@Valid
@@ -85,6 +89,22 @@ public class Plan {
 
 	public void setLifecycleStatus(String lifecycleStatus) {
 		this.lifecycleStatus = lifecycleStatus;
+	}
+	
+	public String getOfferingId() {
+		return offeringId;
+	}
+
+	public void setOfferingId(String offeringId) {
+		this.offeringId = offeringId;
+	}
+
+	public String getOfferingPriceId() {
+		return offeringPriceId;
+	}
+
+	public void setOfferingPriceId(String offeringPriceId) {
+		this.offeringPriceId = offeringPriceId;
 	}
 
 	public Price getPrice() {
