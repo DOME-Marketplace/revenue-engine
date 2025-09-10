@@ -5,6 +5,7 @@ import java.io.InputStream;
 import java.net.URL;
 import java.time.Duration;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.regex.Matcher;
@@ -102,82 +103,137 @@ public class PlanService implements InitializingBean{
         List<ProductOffering> pos = productOfferingApis.getAllProductOfferings(null, null);
         
         List<Plan> plans = new ArrayList<>();
-        for (ProductOffering productOffering : pos) {
-			plans.add(findPlanByOfferingId(productOffering.getId()));
-		}
-        
-		//store all loaded plans in the cache        
-		planCache.put("all_plans", plans);
-        
-    	return plans;
+        for (ProductOffering po : pos) {
+            List<Plan> planList = findPlans(po.getId());
+            if (planList != null && !planList.isEmpty()) {
+                plans.addAll(planList);
+            }
+        }
+
+        // store in cache
+        planCache.put("all_plans", plans);
+        logger.info("Loaded {} plans and stored in cache", plans.size());
+
+        return plans;
     }
     
-    // retrieve a plan by offering id
-    public Plan findPlanByOfferingId(String offeringId) {
+    public Plan getPlanById(String planId) {
+    	// part after plan:
+        String ids = planId.substring(planId.lastIndexOf("plan:") + 5);
+
+        // split segments UUID
+        String[] parts = ids.split("-");
+        int n = parts.length;
+
+        // offeringId: first 5 segments
+        String offeringId = String.join("-", Arrays.copyOfRange(parts, 0, 5));
+        // offeringPriceId: other 5 segments
+        String offeringPriceId = String.join("-", Arrays.copyOfRange(parts, 5, n));
+
+        // add prefix
+        offeringId = "urn:ngsi-ld:product-offering:" + offeringId;
+        offeringPriceId = "urn:ngsi-ld:product-offering-price:" + offeringPriceId;
+ 
+        return findPlan(offeringId, offeringPriceId);
+    }
+
+    public Plan findPlan(String offeringId, String offeringPriceId) {
+    	if (offeringId == null || offeringId.isEmpty()) {
+            throw new IllegalArgumentException("Offering ID cannot be null or empty");
+        }
+        logger.info("Fetching plan for offering id: {}", offeringId);
+
+        ProductOffering po = productOfferingApis.getProductOffering(offeringId, null);
+        if (po == null) {
+            throw new IllegalStateException("ProductOffering not found for id=" + offeringId);
+        }
+        
+        ProductOfferingPrice pop = fetchProductOfferingPriceById(po, offeringPriceId);
+        String link = extractLinkFromDescription(pop.getDescription());
+
+        try {
+			return loadPlanFromLink(link);
+		} catch (IOException e) {
+			logger.error("Failed to load Plan from link={}", link, e);
+            return null;
+		}
+    }
+
+    private ProductOfferingPrice fetchProductOfferingPriceById(ProductOffering po, String offeringPriceId) {
+    	if (po.getProductOfferingPrice() == null || po.getProductOfferingPrice().isEmpty()) {
+            throw new IllegalStateException("ProductOffering has no ProductOfferingPrice");
+        }
+
+        for (ProductOfferingPriceRefOrValue ref : po.getProductOfferingPrice()) {
+            if (ref.getId().equals(offeringPriceId)) {
+                ProductOfferingPrice pop = popApis.getProductOfferingPrice(ref.getId(), null);
+                if (pop == null) {
+                    throw new IllegalStateException("ProductOfferingPrice not found for id=" + ref.getId());
+                }
+                return pop;
+            }
+        }
+
+        throw new IllegalStateException("ProductOfferingPrice id not found: " + offeringPriceId);
+    }
+ 
+    public List<Plan> findPlans(String offeringId) {
         if (offeringId == null || offeringId.isEmpty()) {
             throw new IllegalArgumentException("Offering ID cannot be null or empty");
         }
+        logger.info("Fetching plans for offering id: {}", offeringId);
 
-        logger.info("Fetching plan from offering id: {}", offeringId);
-        // TODO: retrieve offering, retrieve price, read description, download json from github, build a "Plan" object.
-        
-        // ProductOffering
         ProductOffering po = productOfferingApis.getProductOffering(offeringId, null);
-        
-        // ProductOfferingPrice
+        if (po == null) {
+            throw new IllegalStateException("ProductOffering not found for id=" + offeringId);
+        }
+
         if (po.getProductOfferingPrice() == null || po.getProductOfferingPrice().isEmpty()) {
             logger.error("ProductOffering id={} has no ProductOfferingPrice", offeringId);
-            return null;
+            return Collections.emptyList();
         }
 
-        ProductOfferingPriceRefOrValue popRef = po.getProductOfferingPrice().get(0); 
-        
-        if (popRef == null) {
-            logger.error("No ProductOfferingPrice named 'Plan' found in offering id={}", offeringId);
-            return null;
-        }
-        if (popRef.getId() == null || popRef.getId().isEmpty()) {
-            logger.error("ProductOfferingPriceRefOrValue has null/empty id in offering id={}", offeringId);
-            return null;
-        }
-        
-        ProductOfferingPrice pop = popApis.getProductOfferingPrice(popRef.getId(), null);
-        if (pop == null) {
-            logger.error("ProductOfferingPrice not found for id={}", popRef.getId());
-            return null;
-        }
-        logger.info("Fetched ProductOfferingPrice with id: {}", pop.getId());
-        
+        List<Plan> plans = new ArrayList<>();
 
-        // Description for plan link
-        String description = pop.getDescription();
+        for (ProductOfferingPriceRefOrValue popRef : po.getProductOfferingPrice()) {
+            ProductOfferingPrice pop = popApis.getProductOfferingPrice(popRef.getId(), null);
+            if (pop == null) {
+                logger.error("ProductOfferingPrice not found for id={}", popRef.getId());
+                continue; //
+            }
+
+            try {
+                String link = extractLinkFromDescription(pop.getDescription());
+                Plan plan;
+                try {
+                    plan = loadPlanFromLink(link);
+                } catch (IOException e) {
+                    logger.error("Failed to load Plan from link={}", link, e);
+                    continue;
+                }
+
+                plans.add(plan);
+                logger.info("Plan loaded for offeringId={}, priceId={}", offeringId, pop.getId());
+            } catch (IllegalStateException e) {
+                logger.error("Skipping ProductOfferingPrice id={} due to error: {}", popRef.getId(), e.getMessage());
+            }
+        }
+
+        return plans;
+    }
+    
+    private String extractLinkFromDescription(String description) {
         if (description == null || description.isEmpty()) {
-            logger.error("ProductOfferingPrice id={} has no description", popRef.getId());
-            return null;
+            throw new IllegalStateException("Description is null or empty");
         }
-        
-        String link = null;
+
         Pattern pattern = Pattern.compile("https?://\\S+");
         Matcher matcher = pattern.matcher(description);
         if (matcher.find()) {
-            link = matcher.group();
+            return matcher.group();
         }
-        if (link == null || link.isEmpty()) {
-            logger.error("No link found in description of ProductOfferingPrice id={}", popRef.getId());
-            return null;
-        }
-        logger.info("Plan link from description: {}", link);
 
-        // Plan
-        Plan plan = new Plan();
-		try {
-			plan = this.loadPlanFromLink(link);
-		} catch (IOException e) {
-			logger.error("Failed to load Plan from link={}", link);
-		}
-
-        logger.info("Plan loaded for offeringId: {}", offeringId);
-        return plan;
+        throw new IllegalStateException("No link found in description");
     }
 
     private Plan loadPlanFromLink(String link) throws IOException {
@@ -195,10 +251,10 @@ public class PlanService implements InitializingBean{
      * @param offeringId the ID of the offering
      * @return a PlanValidationReport with validation results
      */
-    public PlanValidationReport validatePlan(String offeringId) throws IOException {
-        Plan plan = findPlanByOfferingId(offeringId);
-        return new PlanValidator().validate(plan);
-    }
+//    public PlanValidationReport validatePlan(String offeringId) throws IOException {
+//        Plan plan = findPlanByOfferingId(offeringId);
+//        return new PlanValidator().validate(plan);
+//    }
     
     /**
      * Loads all plans from the configured file names.
