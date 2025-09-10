@@ -131,7 +131,7 @@ public class ReportingService {
         String startDate = subscription.getStartDate() != null ? subscription.getStartDate().toString() : "Unknown Start Date";
         String renewalDate = subscription.getStartDate() != null ? subscription.getStartDate().plusYears(1).toString() : "Unknown Renewal Date";
         
-        Plan plan = planService.findPlanByOfferingId(subscription.getPlan().getId());
+        Plan plan = planService.getPlanById(subscription.getPlan().getId());
         
         String agreementsText = Optional.ofNullable(plan.getAgreements())
                 .orElse(Collections.emptyList())

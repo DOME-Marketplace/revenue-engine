@@ -212,6 +212,8 @@ public class PlanService implements InitializingBean{
                     continue;
                 }
 
+                plan.setId("urn:ngsi-ld:" + offeringId + "-" + pop.getId());
+
                 plans.add(plan);
                 logger.info("Plan loaded for offeringId={}, priceId={}", offeringId, pop.getId());
             } catch (IllegalStateException e) {
@@ -251,10 +253,10 @@ public class PlanService implements InitializingBean{
      * @param offeringId the ID of the offering
      * @return a PlanValidationReport with validation results
      */
-//    public PlanValidationReport validatePlan(String offeringId) throws IOException {
-//        Plan plan = findPlanByOfferingId(offeringId);
-//        return new PlanValidator().validate(plan);
-//    }
+    public PlanValidationReport validatePlan(String planId) throws IOException {
+        Plan plan = getPlanById(planId);
+        return new PlanValidator().validate(plan);
+    }
     
     /**
      * Loads all plans from the configured file names.

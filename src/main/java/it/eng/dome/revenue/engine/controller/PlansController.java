@@ -47,7 +47,7 @@ public class PlansController {
     public ResponseEntity<Plan> getPlanById(@PathVariable String planId) throws IOException {
 //    	logger.info("Request received: fetch plan with ID {}", planId);
         try {
-            Plan plan = subscriptionPlanService.findPlanByOfferingId(planId);
+            Plan plan = subscriptionPlanService.getPlanById(planId);
             return ResponseEntity.ok(plan);
         } catch (Exception e) {
             logger.error("Unexpected error retrieving plan {}: {}", planId, e.getMessage(), e);

@@ -58,7 +58,7 @@ public class DevController {
     public DevController() {
     }
 
-    
+    /* PF 10 Sep commented out
     @GetMapping("/Offering/{offeringId}")
     public ResponseEntity<Plan> getPlanByPoId(@PathVariable String offeringId) {
         try {
@@ -68,6 +68,7 @@ public class DevController {
             return ResponseEntity.internalServerError().build();
         }
     } 
+         */
     
     @GetMapping("/billingAccount/{relatedPartyId}")
     public ResponseEntity<BillingAccountRef> getBillingAccountByRelatedParty(@PathVariable String relatedPartyId) {

@@ -84,7 +84,7 @@ public class StatementsService implements InitializingBean {
             Subscription sub = subscriptionService.getSubscriptionByProductId(subscriptionId);
 
             // retrive the plan for the subscription
-            Plan plan = this.planService.findPlanByOfferingId(sub.getPlan().getId());
+            Plan plan = this.planService.getPlanById(sub.getPlan().getId());
 
             // add the full plan to the subscription
             sub.setPlan(plan);
@@ -127,7 +127,7 @@ public class StatementsService implements InitializingBean {
 
         Plan plan;
         try {
-            plan = planService.findPlanByOfferingId(sub.getPlan().getId());
+            plan = planService.getPlanById(sub.getPlan().getId());
         } catch (Exception ex) {
             logger.error("Failed to retrieve plan for subscription {}: {}", subscriptionId, ex.getMessage(), ex);
             throw new RuntimeException("Failed to retrieve plan for subscription: " + subscriptionId, ex);

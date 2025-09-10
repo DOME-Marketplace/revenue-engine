@@ -344,19 +344,40 @@ public class RevenueProductMapper {
 		// TODO: use the PlanService to retrieve the plan for the given offering and price
 		// FIXME: temporarily building a plan here
 		Plan plan = new Plan();
-		ProductOfferingRef por = product.getProductOffering();
-		plan.setId(por.getId());
-		plan.setName(por.getName());
+		plan.setId("urn:ngsi-ld:plan:"+offeringId+"-"+productOfferingPriceId);
 		sub.setPlan(plan);
 
+		/*
 		if(plan == null) {
 			logger.error("No plan can be retrieved for offering {} and price {}" , offeringId, productOfferingPriceId);
 			return null;
 
 		}
+		*/
 		
 		return sub;
 	}
+
+	/*
+	private static String pack(String prefix, String... ids) {
+		String packed = prefix;
+		for(String id: ids) {
+			packed+="id";
+		}
+		return packed;
+	}
+
+	private static List<String> unpack(String packedId) {
+		// extract the prefix (urn:ngsi-ld:plan:) ... until found a digit
+		String s = new String("Str87uyuy232");
+		Matcher matcher = Pattern.compile("[\\d+]").matcher(packedId);
+		while(matcher.find()) {
+			matcher.find();
+			int i = Integer.valueOf(matcher.group());
+		}
+	}
+		*/
+
 
 
 }
