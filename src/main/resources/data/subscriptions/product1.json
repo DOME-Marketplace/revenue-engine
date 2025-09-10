@@ -1,36 +1,40 @@
-  {
-    "id": "urn:ngsi-ld:product:34c6acaf-e895-4747-b371-6410d05e6a73",
-    "href": "urn:ngsi-ld:product:34c6acaf-e895-4747-b371-6410d05e6a73",
-    "name": "ENG subscription for Advanced 2025",
-    "billingAccount": {
-      "id": "urn:ngsi-ld:billing-account:b62afbb3-0991-4c3d-85be-d96f95c55435",
-      "href": "urn:ngsi-ld:billing-account:b62afbb3-0991-4c3d-85be-d96f95c55435"
-    },
-    "productCharacteristic": [],
-    "productOffering": {
-      "id": "urn:ngsi-ld:product-offering:98f94a51-6c8b-4778-a39b-10f3428428b7",
-      "href": "urn:ngsi-ld:product-offering:98f94a51-6c8b-4778-a39b-10f3428428b7"
-    },
-    "productPrice": [
-      {
-        "productOfferingPrice": {
-          "id": "urn:ngsi-ld:product-offering-price:0253d786-a05f-46b2-94c7-c5e5654b330f",
-          "href": "urn:ngsi-ld:product-offering-price:0253d786-a05f-46b2-94c7-c5e5654b330f"
-        }
+{
+  "id": "urn:ngsi-ld:product:34c6acaf-e895-4747-b371-6410d05e6a73",
+  "href": "urn:ngsi-ld:product:34c6acaf-e895-4747-b371-6410d05e6a73",
+  "name": "ENG subscription for Advanced 2025",
+  "startDate": "2025-01-21T01:15:39.961Z",
+  "billingAccount": {
+    "id": "urn:ngsi-ld:billing-account:b62afbb3-0991-4c3d-85be-d96f95c55435",
+    "href": "urn:ngsi-ld:billing-account:b62afbb3-0991-4c3d-85be-d96f95c55435"
+  },
+  "productCharacteristic": [],
+  "productOffering": {
+    "id": "urn:ngsi-ld:product-offering:98f94a51-6c8b-4778-a39b-10f3428428b7",
+    "href": "urn:ngsi-ld:product-offering:98f94a51-6c8b-4778-a39b-10f3428428b7"
+  },
+  "productPrice": [
+    {
+      "priceType": null,
+      "price": null,
+      "productOfferingPrice": {
+        "id": "urn:ngsi-ld:product-offering-price:0253d786-a05f-46b2-94c7-c5e5654b330f",
+        "href": "urn:ngsi-ld:product-offering-price:0253d786-a05f-46b2-94c7-c5e5654b330f"
       }
-    ],
-    "relatedParty": [
-      {
-        "id": "urn:ngsi-ld:organization:95fdc12e-6889-4f08-8ff8-296b10e8e781",
-        "href": "urn:ngsi-ld:organization:95fdc12e-6889-4f08-8ff8-296b10e8e781",
-        "role": "Seller",
-        "@referredType": "organization"
-      },
-      {
-        "id": "urn:ngsi-ld:organization:95fdc12e-6889-4f08-8ff8-296b10e8e781",
-        "href": "urn:ngsi-ld:organization:95fdc12e-6889-4f08-8ff8-296b10e8e781",
-        "role": "Buyer",
-        "@referredType": "organization"
-      }
-    ]
-  }
+    }
+  ],
+  "relatedParty": [
+    {
+      "id": "urn:ngsi-ld:organization:95fdc12e-6889-4f08-8ff8-296b10e8e781",
+      "href": "urn:ngsi-ld:organization:95fdc12e-6889-4f08-8ff8-296b10e8e781",
+      "role": "Seller",
+      "@referredType": "organization"
+    },
+    {
+      "id": "urn:ngsi-ld:organization:95fdc12e-6889-4f08-8ff8-296b10e8e781",
+      "href": "urn:ngsi-ld:organization:95fdc12e-6889-4f08-8ff8-296b10e8e781",
+      "role": "Buyer",
+      "@referredType": "organization"
+    }
+  ],
+  "status": "active"
+}
