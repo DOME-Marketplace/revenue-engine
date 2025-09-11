@@ -2,7 +2,6 @@ package it.eng.dome.revenue.engine.service;
 
 import java.io.IOException;
 import java.text.NumberFormat;
-import java.time.Duration;
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.time.temporal.ChronoUnit;
@@ -16,9 +15,9 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
-import org.ehcache.Cache;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -33,12 +32,11 @@ import it.eng.dome.revenue.engine.service.cached.CachedStatementsService;
 import it.eng.dome.tmforum.tmf632.v4.ApiException;
 import it.eng.dome.tmforum.tmf678.v4.model.TimePeriod;
 
-import it.eng.dome.revenue.engine.service.cached.CacheService;
 import it.eng.dome.revenue.engine.service.cached.CachedPlanService;
 
 
 @Service
-public class ReportingService {
+public class ReportingService implements InitializingBean {
     
     protected final Logger logger = LoggerFactory.getLogger(ReportingService.class);
 
@@ -57,15 +55,9 @@ public class ReportingService {
     @Autowired
     private BillsService billsService;
     
-    private final Cache<String, List<Report>> reportCache;
-    
-    public ReportingService(CacheService cacheService) {
-        this.reportCache = cacheService.getOrCreateCache(
-            "reportCache",
-            String.class,
-            (Class<List<Report>>)(Class<?>)List.class,
-            Duration.ofHours(1)
-        );
+    public ReportingService() {}
+
+    public void afterPropertiesSet()  {
     }
 
     /**
@@ -78,13 +70,6 @@ public class ReportingService {
      */
     public List<Report> getDashboardReport(String relatedPartyId) throws ApiException, IOException {
         logger.info("Reporting for dashboard, Organization ID = {}", relatedPartyId);
-
-        // Try to get the report from cache first
-        List<Report> cachedReport = reportCache.get(relatedPartyId);
-        if (cachedReport != null) {
-            logger.info("Returning cached dashboard report for organization {}", relatedPartyId);
-            return cachedReport;
-        }
 
         List<Report> report = new ArrayList<>();
 
@@ -109,9 +94,6 @@ public class ReportingService {
             new Report("Email", "support@dome-marketplace.org"),
             new Report("Help Center", "Visit Support Portal", "https://www.dome-helpcenter.org")
         )));
-
-        // Store in cache before returning
-        reportCache.put(relatedPartyId, report);
 
         return report;
     }
