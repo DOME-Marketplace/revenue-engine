@@ -18,7 +18,7 @@ import it.eng.dome.revenue.engine.model.RevenueStatement;
 import it.eng.dome.revenue.engine.model.SimpleBill;
 import it.eng.dome.revenue.engine.model.Subscription;
 import it.eng.dome.revenue.engine.service.BillsService;
-import it.eng.dome.revenue.engine.service.StatementsService;
+import it.eng.dome.revenue.engine.service.cached.CachedStatementsService;
 import it.eng.dome.revenue.engine.service.cached.CachedSubscriptionService;
 import it.eng.dome.revenue.engine.service.TmfDataRetriever;
 import it.eng.dome.tmforum.tmf678.v4.model.CustomerBill;
@@ -33,7 +33,7 @@ public class SubscriptionsController {
 	private CachedSubscriptionService subscriptionService;
 
 	@Autowired
-	private StatementsService statementsService;
+	private CachedStatementsService statementsService;
 
 	@Autowired
 	private BillsService billsService;

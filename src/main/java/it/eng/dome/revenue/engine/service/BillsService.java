@@ -18,6 +18,7 @@ import it.eng.dome.revenue.engine.model.RevenueItem;
 import it.eng.dome.revenue.engine.model.SimpleBill;
 import it.eng.dome.revenue.engine.model.Subscription;
 import it.eng.dome.revenue.engine.model.comparator.SimpleBillComparator;
+import it.eng.dome.revenue.engine.service.cached.CachedStatementsService;
 import it.eng.dome.revenue.engine.tmf.TmfApiFactory;
 import it.eng.dome.tmforum.tmf637.v4.model.Product;
 import it.eng.dome.tmforum.tmf678.v4.model.AppliedCustomerBillingRate;
@@ -35,7 +36,7 @@ public class BillsService implements InitializingBean {
     private TmfApiFactory tmfApiFactory;
 
     @Autowired
-	private StatementsService statementsService;
+	private CachedStatementsService statementsService;
 
     @Autowired
 	private SubscriptionService subscriptionService;

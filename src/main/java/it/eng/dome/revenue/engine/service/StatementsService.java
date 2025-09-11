@@ -1,12 +1,10 @@
 package it.eng.dome.revenue.engine.service;
 
-import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
 
-import org.ehcache.Cache;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.InitializingBean;
@@ -37,18 +35,7 @@ public class StatementsService implements InitializingBean {
     @Autowired
 	private PriceCalculator priceCalculator;
     
-
-    private Cache<String, List<RevenueStatement>> statementsCache;
-
-    
-    public StatementsService(CacheService cacheService) {
-        statementsCache = cacheService.getOrCreateCache(
-                "statementsCache",
-                String.class,
-                (Class<List<RevenueStatement>>)(Class<?>)List.class,
-                Duration.ofMinutes(30)
-            );
-    }
+    public StatementsService() {}
 
     @Override
     public void afterPropertiesSet() throws Exception {
@@ -108,13 +95,6 @@ public class StatementsService implements InitializingBean {
     public List<RevenueStatement> getStatementsForSubscription(String subscriptionId) throws Exception {
         logger.info("Call to getStatementsForSubscription: {}", subscriptionId);
 
-        // --- TRY CACHE FIRST ---
-        List<RevenueStatement> cachedStatements = statementsCache.get(subscriptionId);
-        if (cachedStatements != null) {
-            logger.info("Returning cached statements for subscription {}", subscriptionId);
-            return cachedStatements;
-        }
-
         Set<RevenueStatement> statements = new TreeSet<>(new RevenueStatementTimeComparator());
 
         Subscription sub;
@@ -161,9 +141,6 @@ public class StatementsService implements InitializingBean {
         }
 
         List<RevenueStatement> result = new ArrayList<>(statements);
-
-        // --- STORE IN CACHE ---
-        statementsCache.put(subscriptionId, result);
 
         return result;
     }

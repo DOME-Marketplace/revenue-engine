@@ -9,7 +9,7 @@ server:
 # Logging Configuration
 logging:
   level:
-    it.eng.dome: ${LOG_LEVEL:INFO}
+    it.eng.dome: ${LOG_LEVEL:DEBUG}
     org.apache.coyote.http11: ERROR
   pattern:
     console: "%d{yyyy-MM-dd HH:mm:ss} [%-5level] %logger{36} - %msg%n" 

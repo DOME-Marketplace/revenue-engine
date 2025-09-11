@@ -29,6 +29,7 @@ import it.eng.dome.revenue.engine.model.RevenueStatement;
 import it.eng.dome.revenue.engine.model.SimpleBill;
 import it.eng.dome.revenue.engine.model.Subscription;
 import it.eng.dome.revenue.engine.model.SubscriptionTimeHelper;
+import it.eng.dome.revenue.engine.service.cached.CachedStatementsService;
 import it.eng.dome.tmforum.tmf632.v4.ApiException;
 import it.eng.dome.tmforum.tmf678.v4.model.TimePeriod;
 
@@ -47,7 +48,7 @@ public class ReportingService {
     private MetricsRetriever metricsRetriever;
 
     @Autowired
-    private StatementsService statementsService;
+    private CachedStatementsService statementsService;
     
     @Autowired
     private BillsService billsService;
