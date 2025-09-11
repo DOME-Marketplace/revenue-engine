@@ -34,6 +34,7 @@ import it.eng.dome.tmforum.tmf632.v4.ApiException;
 import it.eng.dome.tmforum.tmf678.v4.model.TimePeriod;
 
 import it.eng.dome.revenue.engine.service.cached.CacheService;
+import it.eng.dome.revenue.engine.service.cached.CachedPlanService;
 
 
 @Service
@@ -45,7 +46,7 @@ public class ReportingService {
     private SubscriptionService subscriptionService;
 
     @Autowired
-    private PlanService planService;
+    private CachedPlanService planService;
     
     @Autowired
     private MetricsRetriever metricsRetriever;

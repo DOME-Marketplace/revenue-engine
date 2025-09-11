@@ -16,7 +16,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import it.eng.dome.revenue.engine.model.Plan;
 import it.eng.dome.revenue.engine.model.Subscription;
-import it.eng.dome.revenue.engine.service.PlanService;
+import it.eng.dome.revenue.engine.service.cached.CachedPlanService;
 import it.eng.dome.revenue.engine.service.cached.CachedSubscriptionService;
 import it.eng.dome.revenue.engine.service.validation.PlanValidationReport;
 
@@ -27,7 +27,7 @@ public class PlansController {
 	private static final Logger logger = LoggerFactory.getLogger(PlansController.class);
     
 	@Autowired
-    private PlanService subscriptionPlanService;
+    private CachedPlanService subscriptionPlanService;
     
     @Autowired
 	private CachedSubscriptionService subscriptionService;

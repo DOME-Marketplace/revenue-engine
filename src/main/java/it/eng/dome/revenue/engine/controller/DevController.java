@@ -17,7 +17,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import it.eng.dome.revenue.engine.model.SimpleBill;
 import it.eng.dome.revenue.engine.service.BillsService;
-import it.eng.dome.revenue.engine.service.PlanService;
+import it.eng.dome.revenue.engine.service.cached.CachedPlanService;
 import it.eng.dome.revenue.engine.service.RevenueService;
 import it.eng.dome.revenue.engine.service.TmfDataRetriever;
 import it.eng.dome.revenue.engine.service.cached.CachedSubscriptionService;
@@ -40,7 +40,7 @@ public class DevController {
 	CachedSubscriptionService subscriptionService;
 
 	@Autowired
-	PlanService subscriptionPlanService;
+	CachedPlanService subscriptionPlanService;
 	
 	@Autowired
     TmfDataRetriever tmfDataRetriever;
@@ -51,8 +51,6 @@ public class DevController {
 	@Autowired
     private BillsService billsService;
 	
-	@Autowired
-	private PlanService planService;
 
     public DevController() {
     }

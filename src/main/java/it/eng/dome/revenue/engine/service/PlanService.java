@@ -3,15 +3,12 @@ package it.eng.dome.revenue.engine.service;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
-import java.time.Duration;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import org.ehcache.Cache;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.InitializingBean;
@@ -32,8 +29,6 @@ import it.eng.dome.revenue.engine.tmf.TmfApiFactory;
 import it.eng.dome.tmforum.tmf620.v4.model.ProductOffering;
 import it.eng.dome.tmforum.tmf620.v4.model.ProductOfferingPrice;
 import it.eng.dome.tmforum.tmf620.v4.model.ProductOfferingPriceRefOrValue;
-
-import it.eng.dome.revenue.engine.service.cached.CacheService;
 
 /**
  * Service responsible for loading and caching revenue engine plans defined as external JSON files.
@@ -59,14 +54,22 @@ public class PlanService implements InitializingBean{
 //            "https://raw.githubusercontent.com/DOME-Marketplace/revenue-engine/develop/src/main/resources/data/plans/";
 
     private final ObjectMapper mapper;
-    private final List<Plan> plansForCache;
-    private final Cache<String, List<Plan>> planCache;
+//    private final List<Plan> plansForCache;
+//    private final Cache<String, List<Plan>> planCache;
 
     /**
      * Constructs the PlanService and initializes the plan cache and file list.
      *
      * @param cacheService shared cache service for creating and retrieving plan cache.
      */
+    public PlanService() {
+        this.mapper = new ObjectMapper()
+                .registerModule(new JavaTimeModule())
+                .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
+                .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
+    }
+
+    /*
     public PlanService(CacheService cacheService) {
         this.mapper = new ObjectMapper()
                 .registerModule(new JavaTimeModule())
@@ -83,6 +86,7 @@ public class PlanService implements InitializingBean{
 
         logger.info("Initialized PlanService with {} plan files and cache TTL of 1 hour", plansForCache.size());
     }
+        */
     
     @Override
     public void afterPropertiesSet() throws Exception {
@@ -95,11 +99,13 @@ public class PlanService implements InitializingBean{
     
     // retrieve all plans by offerings
     public List<Plan> getAllPlansByOfferings() {
+        /*
 		List<Plan> cachedPlans = planCache.get("all_plans");
 		if (cachedPlans != null) {
 			logger.info("Retrived all plans from cache");
 			return cachedPlans;
 		}
+        */
     	
     	//TODO: understand how to filter only plan offering
         List<ProductOffering> pos = productOfferingApis.getAllProductOfferings(null, null);
@@ -113,7 +119,7 @@ public class PlanService implements InitializingBean{
         }
 
         // store in cache
-        planCache.put("all_plans", plans);
+//        planCache.put("all_plans", plans);
         logger.info("Loaded {} plans and stored in cache", plans.size());
 
         return plans;

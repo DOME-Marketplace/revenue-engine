@@ -35,7 +35,7 @@ public class CachedSubscriptionService extends SubscriptionService {
     private void initCaches() {
         logger.info("****** " + this.cacheService);
         this.subscriptionsCache = this.cacheService.getOrCreateCache(
-				"planCache",
+				"subscriptionsCache",
 				String.class,
 				(Class<List<Subscription>>)(Class<?>)List.class,
 				Duration.ofHours(1));

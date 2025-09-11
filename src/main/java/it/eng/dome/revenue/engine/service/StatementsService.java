@@ -18,6 +18,7 @@ import it.eng.dome.revenue.engine.model.Subscription;
 import it.eng.dome.revenue.engine.model.SubscriptionTimeHelper;
 import it.eng.dome.revenue.engine.model.comparator.RevenueItemComparator;
 import it.eng.dome.revenue.engine.model.comparator.RevenueStatementTimeComparator;
+import it.eng.dome.revenue.engine.service.cached.CachedPlanService;
 import it.eng.dome.revenue.engine.service.compute.PriceCalculator;
 import it.eng.dome.tmforum.tmf678.v4.model.TimePeriod;
 
@@ -30,7 +31,7 @@ public class StatementsService implements InitializingBean {
 	private SubscriptionService subscriptionService;
 
     @Autowired
-	private PlanService planService;
+	private CachedPlanService planService;
 
     @Autowired
 	private PriceCalculator priceCalculator;
