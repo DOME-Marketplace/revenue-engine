@@ -126,12 +126,10 @@ public class ReportingService {
         if (subscription == null) {
             return new Report("Subscription", "No active subscription found for this user.");
         }
-
-        String planName = subscription.getPlan() != null ? subscription.getPlan().getName() : "Unknown Plan";
+        Plan plan = planService.getPlanById(subscription.getPlan().getId());
+        String planName = plan.getName() != null ? plan.getName() : "Unknown Plan";
         String startDate = subscription.getStartDate() != null ? subscription.getStartDate().toString() : "Unknown Start Date";
         String renewalDate = subscription.getStartDate() != null ? subscription.getStartDate().plusYears(1).toString() : "Unknown Renewal Date";
-        
-        Plan plan = planService.getPlanById(subscription.getPlan().getId());
         
         String agreementsText = Optional.ofNullable(plan.getAgreements())
                 .orElse(Collections.emptyList())
