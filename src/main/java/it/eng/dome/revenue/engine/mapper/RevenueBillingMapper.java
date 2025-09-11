@@ -173,8 +173,8 @@ public class RevenueBillingMapper {
 
         // id and basic metadata
         String billId = simpleBill.getId();
-        cb.setId(billId);
-        cb.setHref(billId);
+        cb.setId(billId.replace("urn:ngsi-ld:simplebill", "urn:ngsi-ld:customerbill"));
+//        cb.setHref(billId);
 //        cb.setBillNo(billId.substring(billId.lastIndexOf(":") + 1, billId.length()).substring(0, 6));
         cb.setBillDate(simpleBill.getBillTime());
         cb.setLastUpdate(OffsetDateTime.now()); //we can assume that the last update is now
