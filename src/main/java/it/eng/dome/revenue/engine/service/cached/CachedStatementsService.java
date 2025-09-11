@@ -4,58 +4,40 @@ import java.time.Duration;
 import java.util.List;
 
 import org.ehcache.Cache;
-import org.ehcache.CacheManager;
-import org.ehcache.config.CacheConfiguration;
-import org.ehcache.config.builders.CacheConfigurationBuilder;
-import org.ehcache.config.builders.CacheManagerBuilder;
-import org.ehcache.config.builders.ExpiryPolicyBuilder;
-import org.ehcache.config.builders.ResourcePoolsBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import it.eng.dome.revenue.engine.model.RevenueStatement;
 import it.eng.dome.revenue.engine.service.StatementsService;
-
-class RevenueStatementsList {
-
-    private List<RevenueStatement> items;
-
-    public RevenueStatementsList(List<RevenueStatement> items) {
-        this.items = items;
-    }
-
-    public List<RevenueStatement> getItems() {
-        return this.items;
-    }
-}
 
 @Service
 public class CachedStatementsService extends StatementsService {
 
     private final Logger logger = LoggerFactory.getLogger(CachedStatementsService.class);
 
-    private CacheManager cacheManager;
+    @Autowired
+    CacheService cacheService;
 
-    private Cache<String, RevenueStatementsList> statementsCache;
+    private Cache<String, List<RevenueStatement>> statementsCache;
 
     public CachedStatementsService() {
         super();
+    }
+
+    @Override
+    public void afterPropertiesSet() throws Exception {
+        super.afterPropertiesSet();
         this.initCaches();
     }
 
     private void initCaches() {
-
-        this.cacheManager = CacheManagerBuilder.newCacheManagerBuilder().build();
-        this.cacheManager.init();
-
-        // size: 200, ttl: 1 hour
-        CacheConfiguration<String, RevenueStatementsList> cconfig = CacheConfigurationBuilder
-                .newCacheConfigurationBuilder(String.class, RevenueStatementsList.class, ResourcePoolsBuilder.heap(100))
-                .withExpiry(ExpiryPolicyBuilder.timeToLiveExpiration(Duration.ofMinutes(30)))
-                .build();
-        this.statementsCache = this.cacheManager.createCache("statementsCache", cconfig);
-        logger.info("Cache 'subscriptionsCache' initialized with size 10 and TTL of 30 minutes");
+        this.statementsCache = this.cacheService.getOrCreateCache(
+				"statementsCache",
+				String.class,
+				(Class<List<RevenueStatement>>)(Class<?>)List.class,
+				Duration.ofHours(1));
     }
 
     /*
@@ -66,10 +48,10 @@ public class CachedStatementsService extends StatementsService {
         String key = subscriptionId;
         if (!this.statementsCache.containsKey(key)) {
             logger.debug("Cache MISS for subscription " + key);
-            List<RevenueStatement> subscriptions = super.getStatementsForSubscription(subscriptionId);
-            this.statementsCache.put(key, new RevenueStatementsList(subscriptions));
+            List<RevenueStatement> statements = super.getStatementsForSubscription(subscriptionId);
+            this.statementsCache.put(key, statements);
         }
-        return this.statementsCache.get(key).getItems();
+        return this.statementsCache.get(key);
     }
 
 }

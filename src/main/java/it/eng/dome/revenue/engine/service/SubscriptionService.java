@@ -35,8 +35,8 @@ public class SubscriptionService implements InitializingBean {
     
     @Override
     public void afterPropertiesSet() throws Exception {
-        productApis = new ProductApis(tmfApiFactory.getTMF637ProductInventoryApiClient());
-        logger.info("SubscriptionService initialized with orgApi");
+        this.productApis = new ProductApis(tmfApiFactory.getTMF637ProductInventoryApiClient());
+        logger.info("SubscriptionService initialized with orgApi {}", this.productApis);
     }
 	
     public Subscription getSubscriptionByProductId(String productId) {
@@ -47,7 +47,7 @@ public class SubscriptionService implements InitializingBean {
 
          logger.info("Fetching subscription from product id: {}", productId);
          
-         Product prod = productApis.getProduct(productId, null);
+         Product prod = this.productApis.getProduct(productId, null);
 
          return RevenueProductMapper.toSubscription(prod);
     }
@@ -57,6 +57,7 @@ public class SubscriptionService implements InitializingBean {
     	        
     	// TODO: check how to filter product of a sub
 		// TODO: at least filter by seller (DOME operator)
+        logger.info("Using the productAPIs {}", this.productApis);
         List<Product> prods = productApis.getAllProducts(null, null);
         
         List<Subscription> subs = new ArrayList<>();

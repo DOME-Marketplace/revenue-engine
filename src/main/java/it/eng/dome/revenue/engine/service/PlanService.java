@@ -33,6 +33,8 @@ import it.eng.dome.tmforum.tmf620.v4.model.ProductOffering;
 import it.eng.dome.tmforum.tmf620.v4.model.ProductOfferingPrice;
 import it.eng.dome.tmforum.tmf620.v4.model.ProductOfferingPriceRefOrValue;
 
+import it.eng.dome.revenue.engine.service.cached.CacheService;
+
 /**
  * Service responsible for loading and caching revenue engine plans defined as external JSON files.
  * Plans are retrieved from a GitHub repository and cached in memory using a shared CacheService.

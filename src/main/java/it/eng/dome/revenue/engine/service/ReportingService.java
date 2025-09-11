@@ -33,6 +33,9 @@ import it.eng.dome.revenue.engine.service.cached.CachedStatementsService;
 import it.eng.dome.tmforum.tmf632.v4.ApiException;
 import it.eng.dome.tmforum.tmf678.v4.model.TimePeriod;
 
+import it.eng.dome.revenue.engine.service.cached.CacheService;
+
+
 @Service
 public class ReportingService {
     

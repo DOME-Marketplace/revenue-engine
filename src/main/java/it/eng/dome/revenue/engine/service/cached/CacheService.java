@@ -1,4 +1,4 @@
-package it.eng.dome.revenue.engine.service;
+package it.eng.dome.revenue.engine.service.cached;
 
 import org.ehcache.Cache;
 import org.ehcache.CacheManager;
@@ -7,6 +7,7 @@ import org.ehcache.config.builders.CacheConfigurationBuilder;
 import org.ehcache.config.builders.CacheManagerBuilder;
 import org.ehcache.config.builders.ExpiryPolicyBuilder;
 import org.ehcache.config.builders.ResourcePoolsBuilder;
+import org.springframework.beans.factory.InitializingBean;
 import org.springframework.stereotype.Service;
 
 import java.time.Duration;
@@ -18,7 +19,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * Supports configurable TTL and multiple independent caches.
  */
 @Service
-public class CacheService {
+public class CacheService implements InitializingBean {
 
     private final CacheManager cacheManager;
 
@@ -30,6 +31,10 @@ public class CacheService {
      */
     public CacheService() {
         this.cacheManager = CacheManagerBuilder.newCacheManagerBuilder().build(true);
+    }
+
+    @Override
+    public void afterPropertiesSet() throws Exception {
     }
 
     /**
