@@ -19,7 +19,7 @@ import it.eng.dome.revenue.engine.model.SimpleBill;
 import it.eng.dome.revenue.engine.model.Subscription;
 import it.eng.dome.revenue.engine.service.BillsService;
 import it.eng.dome.revenue.engine.service.StatementsService;
-import it.eng.dome.revenue.engine.service.SubscriptionService;
+import it.eng.dome.revenue.engine.service.cached.CachedSubscriptionService;
 import it.eng.dome.revenue.engine.service.TmfDataRetriever;
 import it.eng.dome.tmforum.tmf678.v4.model.CustomerBill;
 
@@ -30,7 +30,7 @@ public class SubscriptionsController {
 	protected final Logger logger = LoggerFactory.getLogger(SubscriptionsController.class);
 
 	@Autowired
-	private SubscriptionService subscriptionService;
+	private CachedSubscriptionService subscriptionService;
 
 	@Autowired
 	private StatementsService statementsService;

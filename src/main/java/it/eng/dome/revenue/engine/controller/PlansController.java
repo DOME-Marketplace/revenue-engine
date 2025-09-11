@@ -17,7 +17,7 @@ import org.springframework.web.bind.annotation.RestController;
 import it.eng.dome.revenue.engine.model.Plan;
 import it.eng.dome.revenue.engine.model.Subscription;
 import it.eng.dome.revenue.engine.service.PlanService;
-import it.eng.dome.revenue.engine.service.SubscriptionService;
+import it.eng.dome.revenue.engine.service.cached.CachedSubscriptionService;
 import it.eng.dome.revenue.engine.service.validation.PlanValidationReport;
 
 @RestController
@@ -30,7 +30,7 @@ public class PlansController {
     private PlanService subscriptionPlanService;
     
     @Autowired
-	private SubscriptionService subscriptionService;
+	private CachedSubscriptionService subscriptionService;
 
     @GetMapping("")
     public ResponseEntity<List<Plan>> getAllPlans() {
