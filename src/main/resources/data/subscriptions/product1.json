@@ -17,8 +17,8 @@
       "priceType": null,
       "price": null,
       "productOfferingPrice": {
-        "id": "urn:ngsi-ld:product-offering-price:0253d786-a05f-46b2-94c7-c5e5654b330f",
-        "href": "urn:ngsi-ld:product-offering-price:0253d786-a05f-46b2-94c7-c5e5654b330f"
+        "id": "urn:ngsi-ld:product-offering-price:5cfc4595-2959-43c2-ada3-3924ef3ef2b0",
+        "href": "urn:ngsi-ld:product-offering-price:5cfc4595-2959-43c2-ada3-3924ef3ef2b0"
       }
     }
   ],
