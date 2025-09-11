@@ -144,9 +144,7 @@ public class PlanService implements InitializingBean{
 
         try {
             Plan plan = this.loadPlanFromLink(link);
-            plan.setId("urn:ngsi-ld:plan:"+offeringId+pop.getId());
-            plan.setLifecycleStatus(po.getLifecycleStatus());
-            return plan;
+            return this.overwritingPlanByProductOffering(plan, po, pop);
 		} catch (IOException e) {
 			logger.error("Failed to load Plan from link={}", link, e);
             return null;
@@ -205,8 +203,8 @@ public class PlanService implements InitializingBean{
                     logger.error("Failed to load Plan from link={}", link, e);
                     continue;
                 }
-
-                plan.setId("urn:ngsi-ld:plan:" + offeringId + pop.getId());
+                
+                plan = this.overwritingPlanByProductOffering(plan, po, pop);
 
                 plans.add(plan);
                 logger.info("Plan loaded for offeringId={}, priceId={}", offeringId, pop.getId());
@@ -241,6 +239,14 @@ public class PlanService implements InitializingBean{
         }
     }
 
+    private Plan overwritingPlanByProductOffering(Plan plan, ProductOffering po, ProductOfferingPrice pop) {
+    	plan.setId("urn:ngsi-ld:plan:"+po.getId()+pop.getId());
+        plan.setLifecycleStatus(po.getLifecycleStatus());
+        plan.setDescription(po.getDescription());
+        
+        return plan;
+    }
+    
     /**
      * Validates the plan corresponding to the offering ID.
      *
