@@ -1,5 +1,6 @@
 package it.eng.dome.revenue.engine.controller;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import org.slf4j.Logger;
@@ -36,7 +37,7 @@ public class DevOrganizationController {
 
             if (referrals == null || referrals.isEmpty()) {
                 logger.info("No referrals found for Organization with ID {}", referrerOrganizationId);
-                return ResponseEntity.noContent().build();
+                return ResponseEntity.ok(new ArrayList<>());
             }
 
             return ResponseEntity.ok(referrals);
