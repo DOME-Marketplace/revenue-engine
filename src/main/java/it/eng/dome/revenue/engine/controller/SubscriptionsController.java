@@ -1,5 +1,6 @@
 package it.eng.dome.revenue.engine.controller;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import org.slf4j.Logger;
@@ -87,8 +88,7 @@ public class SubscriptionsController {
 
 	        if (statements == null || statements.isEmpty()) {
 	            logger.info("No statements found for subscription {}", subscriptionId);
-				// FIXME: return an empty array instead
-	            return ResponseEntity.noContent().build();
+				return ResponseEntity.ok(new ArrayList<>());
 	        }
 
 	        return ResponseEntity.ok(statements);
@@ -106,8 +106,7 @@ public class SubscriptionsController {
 
 	        if (items == null || items.isEmpty()) {
 	            logger.info("No revenue items found for subscription {}", subscriptionId);
-				// FIXME: return an empty array instead
-	            return ResponseEntity.noContent().build();
+				return ResponseEntity.ok(new ArrayList<>());
 	        }
 
 	        return ResponseEntity.ok(items);
@@ -125,8 +124,7 @@ public class SubscriptionsController {
 
 	        if (bills == null || bills.isEmpty()) {
 	            logger.info("No bills found for subscription {}", subscriptionId);
-				// FIXME: return an empty array instead
-	            return ResponseEntity.noContent().build();
+				return ResponseEntity.ok(new ArrayList<>());
 	        }
 
 	        return ResponseEntity.ok(bills);
