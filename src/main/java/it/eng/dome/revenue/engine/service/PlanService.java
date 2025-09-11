@@ -39,23 +39,15 @@ public class PlanService implements InitializingBean{
 
     private static final Logger logger = LoggerFactory.getLogger(PlanService.class);
     
-    @Autowired
     // Factory for TMF APIss
+    @Autowired
     private TmfApiFactory tmfApiFactory;
     
     private ProductOfferingApis productOfferingApis;
     
     private ProductOfferingPriceApis popApis;
 
-//    private static final String GITHUB_API_URL =
-//            "https://api.github.com/repos/DOME-Marketplace/revenue-engine/contents/src/main/resources/data/plans?ref=develop";
-//
-//    private static final String PLAN_REPO_RAW_URL =
-//            "https://raw.githubusercontent.com/DOME-Marketplace/revenue-engine/develop/src/main/resources/data/plans/";
-
     private final ObjectMapper mapper;
-//    private final List<Plan> plansForCache;
-//    private final Cache<String, List<Plan>> planCache;
 
     /**
      * Constructs the PlanService and initializes the plan cache and file list.
@@ -68,25 +60,6 @@ public class PlanService implements InitializingBean{
                 .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
                 .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
     }
-
-    /*
-    public PlanService(CacheService cacheService) {
-        this.mapper = new ObjectMapper()
-                .registerModule(new JavaTimeModule())
-                .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
-                .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
-        
-        this.plansForCache = new ArrayList<Plan>();
-        this.planCache = cacheService.getOrCreateCache(
-				"planCache",
-				String.class,
-				(Class<List<Plan>>)(Class<?>)List.class,
-				Duration.ofHours(1)
-		);
-
-        logger.info("Initialized PlanService with {} plan files and cache TTL of 1 hour", plansForCache.size());
-    }
-        */
     
     @Override
     public void afterPropertiesSet() throws Exception {
@@ -99,13 +72,6 @@ public class PlanService implements InitializingBean{
     
     // retrieve all plans by offerings
     public List<Plan> getAllPlansByOfferings() {
-        /*
-		List<Plan> cachedPlans = planCache.get("all_plans");
-		if (cachedPlans != null) {
-			logger.info("Retrived all plans from cache");
-			return cachedPlans;
-		}
-        */
     	
     	//TODO: understand how to filter only plan offering
         List<ProductOffering> pos = productOfferingApis.getAllProductOfferings(null, null);
@@ -118,8 +84,6 @@ public class PlanService implements InitializingBean{
             }
         }
 
-        // store in cache
-//        planCache.put("all_plans", plans);
         logger.info("Loaded {} plans and stored in cache", plans.size());
 
         return plans;
