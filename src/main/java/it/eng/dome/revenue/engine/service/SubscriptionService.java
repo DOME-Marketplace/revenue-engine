@@ -83,13 +83,19 @@ public class SubscriptionService implements InitializingBean {
 			}
 		}
         
-    	//TODO: check how to filter product of a sub
+    	// TODO: check how to filter product of a sub
+		// TODO: at least filter by seller (DOME operator)
         List<Product> prods = productApis.getAllProducts(null, null);
         
         List<Subscription> subs = new ArrayList<>();
         
         for (Product prod : prods) {
-			subs.add(RevenueProductMapper.toSubscription(prod));
+			// FIXME: weak control con products to guess it's a subscription
+			if(prod.getName()!=null && prod.getName().toLowerCase().indexOf("subscription")!=-1) {
+				// FIXME: workaround for bug in tmf. Need to retrieve the product individually.
+				Product fullProduct = productApis.getProduct(prod.getId(), null);
+				subs.add(RevenueProductMapper.toSubscription(fullProduct));
+			}
 		}
         
 		// cache the subscriptions
