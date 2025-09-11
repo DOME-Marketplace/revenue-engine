@@ -11,11 +11,15 @@ import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import it.eng.dome.brokerage.api.ProductApis;
+import it.eng.dome.revenue.engine.invoicing.InvoicingService;
 import it.eng.dome.revenue.engine.mapper.RevenueBillingMapper;
 import it.eng.dome.revenue.engine.model.RevenueItem;
 import it.eng.dome.revenue.engine.model.SimpleBill;
 import it.eng.dome.revenue.engine.model.Subscription;
 import it.eng.dome.revenue.engine.model.comparator.SimpleBillComparator;
+import it.eng.dome.revenue.engine.tmf.TmfApiFactory;
+import it.eng.dome.tmforum.tmf637.v4.model.Product;
 import it.eng.dome.tmforum.tmf678.v4.model.AppliedCustomerBillingRate;
 import it.eng.dome.tmforum.tmf678.v4.model.BillingAccountRef;
 import it.eng.dome.tmforum.tmf678.v4.model.CustomerBill;
@@ -28,6 +32,9 @@ public class BillsService implements InitializingBean {
 	private final Logger logger = LoggerFactory.getLogger(BillsService.class);
 
     @Autowired
+    private TmfApiFactory tmfApiFactory;
+
+    @Autowired
 	private StatementsService statementsService;
 
     @Autowired
@@ -36,8 +43,14 @@ public class BillsService implements InitializingBean {
     @Autowired
 	private TmfDataRetriever tmfDataRetriever;
 
+    @Autowired
+	private InvoicingService invoicingService;
+
+    private ProductApis productApis;
+
     @Override
     public void afterPropertiesSet() throws Exception {
+        productApis = new ProductApis(tmfApiFactory.getTMF637ProductInventoryApiClient());
     }
 
     /**
@@ -134,4 +147,15 @@ public class BillsService implements InitializingBean {
     			.findFirst()
     			.orElseThrow(() -> new IllegalArgumentException("No related party with role 'Buyer' found"));
     }
+
+    public List<AppliedCustomerBillingRate> applyTaxes(List<AppliedCustomerBillingRate> acbrs) {
+
+        // first, retrieve the product
+        String productId = acbrs.get(0).getProduct().getId();
+        Product product = productApis.getProduct(productId, null);
+
+        // invoke the invoicing servi
+        return this.invoicingService.applyTaxees(product, acbrs);
+    }
+
 }
