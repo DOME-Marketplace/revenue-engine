@@ -17,6 +17,8 @@ public class RevenueItem {
     private String currency;
     private Boolean estimated;
 
+    private String type;
+
     private OffsetDateTime chargeTime;
     
     private List<RevenueItem> items;
@@ -120,6 +122,7 @@ public class RevenueItem {
         RevenueItem clone = new RevenueItem(this.name, this.value, this.currency);
         clone.setChargeTime(chargeTime);
         clone.setEstimated(this.estimated);
+        clone.setType(this.type);
         if (this.items != null) {
             for (RevenueItem item : this.items) {
                 if(item.getChargeTime() == null || item.getChargeTime().equals(chargeTime))
@@ -143,6 +146,15 @@ public class RevenueItem {
     public void setEstimated(Boolean estimated) {
         this.estimated = estimated;
     }
+
+    public String getType() {
+        return type;
+    }
+
+    public void setType(String type) {
+        this.type = type;
+    }
+
 
     /*
     public List<RevenueItem> clusterAccordingToChargeTime() {

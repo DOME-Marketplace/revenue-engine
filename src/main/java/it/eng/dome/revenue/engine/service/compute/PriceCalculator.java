@@ -195,6 +195,8 @@ public class PriceCalculator {
 
 		RevenueItem outItem = new RevenueItem(price.getName(), amountValue, "EUR");
 		outItem.setChargeTime(this.getChargeTime(tp, price));
+		if(price.getType()!=null)
+			outItem.setType(price.getType().toString());
 
 		// variable prices for future items lead to estimaed revenueItems
 		if (price.isVariable() && outItem.getChargeTime().isAfter(OffsetDateTime.now())) {
@@ -423,6 +425,8 @@ public class PriceCalculator {
 
 		RevenueItem cumulativeItem = new RevenueItem(bundlePrice.getName(), bundlePrice.getCurrency());
 		cumulativeItem.setItems(new ArrayList<>());
+		if(bundlePrice.getType()!=null)
+			cumulativeItem.setType(bundlePrice.getType().toString());
 
 		for (Price p : childPrices) {
 			RevenueItem childRevenueItem = this.compute(p, timePeriod);
