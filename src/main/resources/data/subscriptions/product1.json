@@ -32,6 +32,12 @@
     {
       "id": "urn:ngsi-ld:organization:95fdc12e-6889-4f08-8ff8-296b10e8e781",
       "href": "urn:ngsi-ld:organization:95fdc12e-6889-4f08-8ff8-296b10e8e781",
+      "role": "Customer",
+      "@referredType": "organization"
+    },
+    {
+      "id": "urn:ngsi-ld:organization:95fdc12e-6889-4f08-8ff8-296b10e8e781",
+      "href": "urn:ngsi-ld:organization:95fdc12e-6889-4f08-8ff8-296b10e8e781",
       "role": "Buyer",
       "@referredType": "organization"
     }
