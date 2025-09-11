@@ -10,14 +10,13 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import it.eng.dome.revenue.engine.model.RevenueItem;
-import it.eng.dome.revenue.engine.model.RevenueStatement;
 import it.eng.dome.revenue.engine.model.SimpleBill;
 import it.eng.dome.revenue.engine.model.Subscription;
 import it.eng.dome.tmforum.tmf678.v4.model.AppliedCustomerBillingRate;
+import it.eng.dome.tmforum.tmf678.v4.model.BillRef;
 import it.eng.dome.tmforum.tmf678.v4.model.BillingAccountRef;
 import it.eng.dome.tmforum.tmf678.v4.model.CustomerBill;
 import it.eng.dome.tmforum.tmf678.v4.model.Money;
-import it.eng.dome.tmforum.tmf678.v4.model.ProductRef;
 import it.eng.dome.tmforum.tmf678.v4.model.StateValue;
 
 public class RevenueBillingMapper {
@@ -113,7 +112,7 @@ public class RevenueBillingMapper {
 
 		//id and base data
 	    AppliedCustomerBillingRate acbr = new AppliedCustomerBillingRate();
-	    acbr.setId(UUID.randomUUID().toString());
+	    acbr.setId("urn:ngsi-ld:applied-customer-billing-rate:" + UUID.randomUUID().toString());
 	    acbr.setHref(acbr.getId());
 	    acbr.setName("Applied Customer Billing Rate of " + item.getName());
 	    acbr.setDescription("Applied Customer Billing Rate of " 
@@ -126,9 +125,15 @@ public class RevenueBillingMapper {
 
 		//ref
 		acbr.setRelatedParty(sb.getRelatedParties());
-		acbr.setBill(null); // Should I set the reference with CB right away?
-		// TODO: understand how to manage this 
-	    acbr.setProduct(subscription != null ? toProductRef(subscription) : null);
+		
+		// FIXME: Currently, we don't consider persistence.
+		BillRef billRef = new BillRef();
+		String billId = sb.getId();
+		billRef.setId(billId.replace("urn:ngsi-ld:simplebill", "urn:ngsi-ld:customerbill"));
+		acbr.setBill(billRef); // Should I set the reference with CB right away?
+
+	    acbr.setProduct(subscription != null ? RevenueProductMapper.toProductRef(subscription) : null);
+	    
 	    acbr.setBillingAccount(billingAccountRef);
 
 	    if (item.getOverallValue() != null) {
@@ -146,97 +151,8 @@ public class RevenueBillingMapper {
 	    return acbr;
 	}
 
-	/*
-	 * SIMPLE BILL TO CUSTOMER BILL
-	 */
-
-	/**
-	 * Maps a SimpleBill object to a CustomerBill object, following the TMF678 specification.
-	 * This method populates the CustomerBill's fields such as ID, dates, billing period,
-	 * amounts, taxes, and related parties based on the provided SimpleBill.
-	 *
-	 * @param simpleBill The SimpleBill object containing the source data.
-	 * @param billingAccountRef A reference to the billing account associated with this bill.
-	 * @return A new CustomerBill object populated with the mapped data.
-	 * @throws IllegalArgumentException if the provided simpleBill is null.
-	*/
-	public static CustomerBill toCB(SimpleBill simpleBill, BillingAccountRef billingAccountRef) {
-		if (simpleBill == null) {
-		    logger.error("toCB: simpleBill is null, cannot map to CustomerBill");
-		    throw new IllegalArgumentException("simpleBill cannot be null");
-		}
-		if (billingAccountRef == null) {
-		    logger.warn("toCB: billingAccountRef is null, CustomerBill will have null billingAccount");
-		}
-		
-		CustomerBill cb = new CustomerBill();
-
-        // id and basic metadata
-        String billId = simpleBill.getId();
-        cb.setId(billId.replace("urn:ngsi-ld:simplebill", "urn:ngsi-ld:customerbill"));
-//        cb.setHref(billId);
-//        cb.setBillNo(billId.substring(billId.lastIndexOf(":") + 1, billId.length()).substring(0, 6));
-        cb.setBillDate(simpleBill.getBillTime());
-        cb.setLastUpdate(OffsetDateTime.now()); //we can assume that the last update is now
-        cb.setNextBillDate(simpleBill.getPeriod().getEndDateTime().plusMonths(1)); //?
-        cb.setPaymentDueDate(simpleBill.getPeriod().getEndDateTime().plusDays(10)); // Q: How many days after the invoice date should we set the due date?
-        cb.setBillingPeriod(simpleBill.getPeriod());
-
-		// other
-//		cb.setCategory("normal");
-//        cb.setRunType("onCycle"); // onCycle or offCycle?
-        cb.setState(StateValue.NEW);
-
-		// amounts
-        Float amountTaxExcluded = simpleBill.getAmount().floatValue(); // Q: Is sbAmount whitout tax?
-        Float taxRate = 0.20f; // Q: How do we set the TaxRate?
-        Float taxAmount = amountTaxExcluded * taxRate;
-        Float amountIncludedTax = amountTaxExcluded + taxAmount;
-        cb.setAmountDue(createMoneyTmF678(amountIncludedTax, "EUR"));
-        cb.setRemainingAmount(createMoneyTmF678(amountIncludedTax, "EUR"));
-        cb.setTaxIncludedAmount(createMoneyTmF678(amountIncludedTax, "EUR"));
-        cb.setTaxExcludedAmount(createMoneyTmF678(amountTaxExcluded, "EUR"));
-
-		// REF
-		cb.setRelatedParty(simpleBill.getRelatedParties());
-		cb.setBillingAccount(billingAccountRef);
-		cb.setAppliedPayment(new ArrayList<>());
-		
-//        TaxItem taxItem = new TaxItem()
-//                .taxAmount(createMoneyTmF678(taxAmount, "EUR"))
-//                .taxCategory("VAT")
-//                .taxRate(taxRate);
-//        cb.setTaxItem(List.of(taxItem));        
-
-//        cb.setFinancialAccount(null);
-//        cb.setBillDocument(new ArrayList<>());
-//        cb.setPaymentMethod(null);
-
-		// Type and metadata
-       	// cb._type("CustomerBill");
-       	// cb._baseType("CustomerBill");
-       	// cb._schemaLocation();
-        return cb;
-    }
-
-	private static Money createMoneyTmF678(Float amount, String currency) {
-	    Money money = new Money();
-	    money.setValue(amount);
-	    money.setUnit(currency);
-	    return money;
-	}
-
-    public static ProductRef toProductRef(Subscription subscription) {
-        if (subscription == null) return null;
-
-        ProductRef ref = new ProductRef();
-        ref.setId(subscription.getId());
-        ref.setHref(subscription.getId()); //TODO: change this with href when sub will contains href
-        ref.setName(subscription.getName());
-      
-        return ref;
-    }
-
+	// Maps a RevenueStatement to an AppliedCustomerBillingRate (ACBR) object.
+	/* 
 	public static AppliedCustomerBillingRate toACBR(RevenueStatement rs, BillingAccountRef billingAccountRef) {
         if (rs == null) return null;
 
@@ -271,7 +187,73 @@ public class RevenueBillingMapper {
 
         return acbr;
     }
-    
-    // TODO: Revert Mapping
+*/
+	
+	/*
+	 * SIMPLE BILL TO CUSTOMER BILL
+	 */
+
+	/**
+	 * Maps a SimpleBill object to a CustomerBill object, following the TMF678 specification.
+	 * This method populates the CustomerBill's fields such as ID, dates, billing period,
+	 * amounts, taxes, and related parties based on the provided SimpleBill.
+	 *
+	 * @param simpleBill The SimpleBill object containing the source data.
+	 * @param billingAccountRef A reference to the billing account associated with this bill.
+	 * @return A new CustomerBill object populated with the mapped data.
+	 * @throws IllegalArgumentException if the provided simpleBill is null.
+	*/
+	public static CustomerBill toCB(SimpleBill simpleBill, BillingAccountRef billingAccountRef) {
+		if (simpleBill == null) {
+		    logger.error("toCB: simpleBill is null, cannot map to CustomerBill");
+		    throw new IllegalArgumentException("simpleBill cannot be null");
+		}
+		if (billingAccountRef == null) {
+		    logger.warn("toCB: billingAccountRef is null, CustomerBill will have null billingAccount");
+		}
+		
+		CustomerBill cb = new CustomerBill();
+
+        String billId = simpleBill.getId();
+        cb.setId(billId.replace("urn:ngsi-ld:simplebill", "urn:ngsi-ld:customerbill"));
+//      cb.setHref(billId);
+//      cb.setBillNo(billId.substring(billId.lastIndexOf(":") + 1, billId.length()).substring(0, 6)); // not currently in use. Ask stefania more info
+        cb.setBillDate(simpleBill.getBillTime());
+        cb.setLastUpdate(OffsetDateTime.now()); //we can assume that the last update is now
+//        cb.setNextBillDate(simpleBill.getPeriod().getEndDateTime().plusMonths(1)); //?
+//        cb.setPaymentDueDate(simpleBill.getPeriod().getEndDateTime().plusDays(10)); // Q: How many days after the invoice date should we set the due date?
+        cb.setBillingPeriod(simpleBill.getPeriod());
+//		cb.setCategory("normal"); // we don't know if they are used
+//      cb.setRunType("onCycle"); // onCycle or offCycle? we don't know if they are used
+        cb.setState(StateValue.NEW);
+
+		// amounts
+        Money taxIncludedAmount = new Money();
+        taxIncludedAmount.setUnit("EUR");
+        taxIncludedAmount.setValue(simpleBill.getAmount().floatValue());
+        cb.taxIncludedAmount(taxIncludedAmount);
+//		Float baseAmount = simpleBill.getAmount().floatValue();
+//		BillingAmountCalculator.applyAmounts(cb, baseAmount);
+
+		// REF
+		cb.setRelatedParty(simpleBill.getRelatedParties());
+		cb.setBillingAccount(billingAccountRef);
+		cb.setAppliedPayment(new ArrayList<>());
+		
+//        cb.setFinancialAccount(null);
+//        cb.setBillDocument(new ArrayList<>());
+//        cb.setPaymentMethod(null);
+        return cb;
+    }
+
+	// private static Money createMoneyTmF678(Float amount, String currency) {
+	//     Money money = new Money();
+	//     money.setValue(amount);
+	//     money.setUnit(currency);
+	//     return money;
+	// }
+
+
+
 }
 

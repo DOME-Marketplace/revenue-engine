@@ -1,5 +1,6 @@
 package it.eng.dome.revenue.engine.controller;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import org.slf4j.Logger;
@@ -9,6 +10,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -83,7 +86,7 @@ public class BillsController {
             sb = billsService.getBill(simpleBillId);
             if (sb == null) {
                 logger.info("No Simple Bill found for ID {}", simpleBillId);
-                return ResponseEntity.noContent().build();
+                return ResponseEntity.ok(new ArrayList<>());
             }
         } catch (Exception e) {
             logger.error("Failed to retrieve Simple Bill with ID {}: {}", simpleBillId, e.getMessage(), e);
@@ -91,7 +94,7 @@ public class BillsController {
         }
 
         try {
-            List<AppliedCustomerBillingRate> acbrList = billsService.buildABCRList(sb);
+            List<AppliedCustomerBillingRate> acbrList = billsService.getABCRList(sb);
             return ResponseEntity.ok(acbrList);
         } catch (IllegalArgumentException e) {
             logger.warn("Invalid Simple Bill data for ID {}: {}", simpleBillId, e.getMessage());
@@ -100,5 +103,11 @@ public class BillsController {
             logger.error("Failed to build ACBR List from Simple Bill with ID {}: {}", simpleBillId, e.getMessage(), e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
+    }
+    
+    @PostMapping("/to-acbr-list")
+    public ResponseEntity<List<AppliedCustomerBillingRate>> getABCRList (@RequestBody SimpleBill sb) {
+    	List<AppliedCustomerBillingRate> acbrList = billsService.getABCRList(sb);
+        return ResponseEntity.ok(acbrList);
     }
 }

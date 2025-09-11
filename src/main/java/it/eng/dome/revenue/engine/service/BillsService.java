@@ -124,7 +124,7 @@ public class BillsService implements InitializingBean {
         return RevenueBillingMapper.toCB(sb, billingAccountRef);
     }
     
-    public List<AppliedCustomerBillingRate> buildABCRList(SimpleBill sb) {
+    public List<AppliedCustomerBillingRate> getABCRList(SimpleBill sb) {
         if (sb == null || sb.getRelatedParties() == null || sb.getRelatedParties().isEmpty()) {
             throw new IllegalArgumentException("Missing related party information in SimpleBill");
         }
@@ -135,7 +135,12 @@ public class BillsService implements InitializingBean {
         RelatedParty buyerParty = this.getBuyerParty(sb.getRelatedParties());
         
         BillingAccountRef billingAccountRef = tmfDataRetriever.retrieveBillingAccountByRelatedPartyId(buyerParty.getId());
-        return RevenueBillingMapper.toACBRList(sb, subscription, billingAccountRef);
+        
+        List<AppliedCustomerBillingRate> acbrList = RevenueBillingMapper.toACBRList(sb, subscription, billingAccountRef);
+        
+        acbrList = this.applyTaxes(acbrList);
+        
+        return acbrList;
     }
     
     private RelatedParty getBuyerParty(List<RelatedParty> relatedParties) {

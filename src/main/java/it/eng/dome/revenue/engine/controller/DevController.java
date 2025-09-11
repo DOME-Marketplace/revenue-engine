@@ -15,13 +15,12 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import it.eng.dome.revenue.engine.model.RevenueStatement;
 import it.eng.dome.revenue.engine.model.SimpleBill;
 import it.eng.dome.revenue.engine.service.BillsService;
 import it.eng.dome.revenue.engine.service.PlanService;
 import it.eng.dome.revenue.engine.service.RevenueService;
-import it.eng.dome.revenue.engine.service.cached.CachedSubscriptionService;
 import it.eng.dome.revenue.engine.service.TmfDataRetriever;
+import it.eng.dome.revenue.engine.service.cached.CachedSubscriptionService;
 import it.eng.dome.revenue.engine.service.compute.PriceCalculator;
 import it.eng.dome.tmforum.tmf678.v4.model.AppliedCustomerBillingRate;
 import it.eng.dome.tmforum.tmf678.v4.model.BillingAccountRef;
@@ -121,7 +120,7 @@ public class DevController {
         }
 
         try {
-            List<AppliedCustomerBillingRate> acbrList = billsService.buildABCRList(sb);
+            List<AppliedCustomerBillingRate> acbrList = billsService.getABCRList(sb);
 
             // now we have the list of acbr. Extract the product
             // let's ask the billing service to enrich with taxes
@@ -164,19 +163,19 @@ public class DevController {
         return ResponseEntity.ok(cbList);
     }   
     
-    @PostMapping("/to-acbr")
-    public ResponseEntity<AppliedCustomerBillingRate> convertToACBR(@RequestBody RevenueStatement revenueStatement) {    	
-        AppliedCustomerBillingRate acbr = revenueService.buildACBR(revenueStatement);
-        return ResponseEntity.ok(acbr);
-    }
-    
-    @PostMapping("/to-acbr-list")
-    public ResponseEntity<List<AppliedCustomerBillingRate>> convertToACBRList(@RequestBody List<RevenueStatement> revenueStatements) {
-        List<AppliedCustomerBillingRate> acbrList = revenueStatements.stream()
-            .map(revenueService::buildACBR)
-            .toList();
-        return ResponseEntity.ok(acbrList);
-    }
+//    @PostMapping("/to-acbr")
+//    public ResponseEntity<AppliedCustomerBillingRate> convertToACBR(@RequestBody RevenueStatement revenueStatement) {    	
+//        AppliedCustomerBillingRate acbr = revenueService.buildACBR(revenueStatement);
+//        return ResponseEntity.ok(acbr);
+//    }
+//    
+//    @PostMapping("/to-acbr-list")
+//    public ResponseEntity<List<AppliedCustomerBillingRate>> convertToACBRList(@RequestBody List<RevenueStatement> revenueStatements) {
+//        List<AppliedCustomerBillingRate> acbrList = revenueStatements.stream()
+//            .map(revenueService::buildACBR)
+//            .toList();
+//        return ResponseEntity.ok(acbrList);
+//    }
 
 
 }

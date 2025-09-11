@@ -25,6 +25,7 @@ import it.eng.dome.tmforum.tmf637.v4.model.ProductOfferingPriceRef;
 import it.eng.dome.tmforum.tmf637.v4.model.ProductOfferingRef;
 import it.eng.dome.tmforum.tmf637.v4.model.ProductPrice;
 import it.eng.dome.tmforum.tmf637.v4.model.ProductStatusType;
+import it.eng.dome.tmforum.tmf678.v4.model.ProductRef;
 
 public class RevenueProductMapper {
 	
@@ -254,6 +255,18 @@ public class RevenueProductMapper {
 	/*
 	 * SUBSCRIPTION TO PRODUCT
 	 */
+	
+	// Used in toACBR of RevenueBillingMapper
+    public static ProductRef toProductRef(Subscription subscription) {
+        if (subscription == null) return null;
+
+        ProductRef ref = new ProductRef();
+        ref.setId(subscription.getId());
+        ref.setHref(subscription.getId()); //TODO: change this with href when sub will contains href
+        ref.setName(subscription.getName());
+      
+        return ref;
+    }
 	
 	
 	public static Product toProduct(Subscription subscription, it.eng.dome.tmforum.tmf678.v4.model.BillingAccountRef billingAccountRef) {
