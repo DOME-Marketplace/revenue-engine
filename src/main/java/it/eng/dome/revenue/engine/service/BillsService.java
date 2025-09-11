@@ -51,7 +51,7 @@ public class BillsService implements InitializingBean {
     	logger.info("Fetch bill with ID {}", billId);
         // FIXME: temporary... until we have proper persistence
         // extract the subscription id
-        String subscriptionId = "urn:ngsi-ld:subscription:"+billId.substring(23, 23+36+1+36);
+        String subscriptionId = "urn:ngsi-ld:product:"+billId.substring(23, 23+36);
 
         // iterate over bills for that subscription, until found
         for(SimpleBill bill: this.getSubscriptionBills(subscriptionId)) {

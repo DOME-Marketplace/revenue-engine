@@ -87,6 +87,7 @@ public class SubscriptionsController {
 
 	        if (statements == null || statements.isEmpty()) {
 	            logger.info("No statements found for subscription {}", subscriptionId);
+				// FIXME: return an empty array instead
 	            return ResponseEntity.noContent().build();
 	        }
 
@@ -105,6 +106,7 @@ public class SubscriptionsController {
 
 	        if (items == null || items.isEmpty()) {
 	            logger.info("No revenue items found for subscription {}", subscriptionId);
+				// FIXME: return an empty array instead
 	            return ResponseEntity.noContent().build();
 	        }
 
@@ -123,6 +125,7 @@ public class SubscriptionsController {
 
 	        if (bills == null || bills.isEmpty()) {
 	            logger.info("No bills found for subscription {}", subscriptionId);
+				// FIXME: return an empty array instead
 	            return ResponseEntity.noContent().build();
 	        }
 
