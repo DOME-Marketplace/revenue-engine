@@ -146,7 +146,7 @@ public class SubscriptionsController {
 	    }
 
 	    List<CustomerBill> customerBills = simpleBills.stream()
-	            .map(billsService::buildCB)
+	            .map(billsService::getCustomerBillBySimpleBill)
 	            .toList();
 
 	    return ResponseEntity.ok(customerBills);

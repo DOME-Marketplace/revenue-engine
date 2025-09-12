@@ -1,6 +1,5 @@
 package it.eng.dome.revenue.engine.controller;
 
-import java.util.ArrayList;
 import java.util.List;
 
 import org.slf4j.Logger;
@@ -38,7 +37,7 @@ public class BillsController {
     public ResponseEntity<SimpleBill> getBillPeriods(@PathVariable String billId) {
 //        logger.info("Request received: fetch bill with ID {}", billId);
         try {
-            SimpleBill bill = billsService.getBill(billId);
+            SimpleBill bill = billsService.getSimpleBillById(billId);
 
             if (bill != null) {
                 return ResponseEntity.ok(bill);
@@ -54,60 +53,40 @@ public class BillsController {
     } 
     
     @GetMapping("{simpleBillId}/cb")
-    public ResponseEntity<CustomerBill> getCustomerBill(@PathVariable String simpleBillId) {
-        SimpleBill sb;
-        try {
-            sb = billsService.getBill(simpleBillId);
-            if (sb == null) {
-                logger.info("No Simple Bill found for ID {}", simpleBillId);
-                return ResponseEntity.noContent().build();
-            }
-        } catch (Exception e) {
-            logger.error("Failed to retrieve Simple Bill with ID {}: {}", simpleBillId, e.getMessage(), e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+    public ResponseEntity<CustomerBill> getCustomerBillBySimpleBillId(@PathVariable String simpleBillId) {
+        CustomerBill cb = billsService.getCustomerBillBySimpleBillId(simpleBillId);
+        
+        if (cb == null) {
+            logger.info("No CustomerBill found for simpleBillId: {}", simpleBillId);
+            return ResponseEntity.notFound().build();
         }
+        
+        return ResponseEntity.ok(cb);
+    }
 
-        try {
-            CustomerBill cb = billsService.buildCB(sb);
-            return ResponseEntity.ok(cb);
-        } catch (IllegalArgumentException e) {
-            logger.warn("Invalid Simple Bill data for ID {}: {}", simpleBillId, e.getMessage());
-            return ResponseEntity.badRequest().build();
-        } catch (Exception e) {
-            logger.error("Failed to build Customer Bill from Simple Bill with ID {}: {}", simpleBillId, e.getMessage(), e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
-        }
+    // test controller (can be removed)
+    @PostMapping("/toCB")
+    public ResponseEntity<CustomerBill> getCustomerBillBySimpleBill (@RequestBody SimpleBill sb) {
+    	CustomerBill cb = billsService.getCustomerBillBySimpleBill(sb);
+        return ResponseEntity.ok(cb);
     }
     
     @GetMapping("{simpleBillId}/acbr")
-    public ResponseEntity<List<AppliedCustomerBillingRate>> getABCRList(@PathVariable String simpleBillId) {
-        SimpleBill sb;
-        try {
-            sb = billsService.getBill(simpleBillId);
-            if (sb == null) {
-                logger.info("No Simple Bill found for ID {}", simpleBillId);
-                return ResponseEntity.ok(new ArrayList<>());
-            }
-        } catch (Exception e) {
-            logger.error("Failed to retrieve Simple Bill with ID {}: {}", simpleBillId, e.getMessage(), e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+    public ResponseEntity<List<AppliedCustomerBillingRate>> getACBRsBySimpleBillId(@PathVariable String simpleBillId) {
+    	List<AppliedCustomerBillingRate> acbrs = billsService.getACBRsBySimpleBillId(simpleBillId);
+    	
+    	if (acbrs == null) {
+            logger.info("No Applied Customer Billing Rate found for simpleBillId: {}", simpleBillId);
+            return ResponseEntity.notFound().build();
         }
-
-        try {
-            List<AppliedCustomerBillingRate> acbrList = billsService.getABCRList(sb);
-            return ResponseEntity.ok(acbrList);
-        } catch (IllegalArgumentException e) {
-            logger.warn("Invalid Simple Bill data for ID {}: {}", simpleBillId, e.getMessage());
-            return ResponseEntity.badRequest().build();
-        } catch (Exception e) {
-            logger.error("Failed to build ACBR List from Simple Bill with ID {}: {}", simpleBillId, e.getMessage(), e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
-        }
+           
+    	return ResponseEntity.ok(acbrs);
     }
     
-    @PostMapping("/to-acbr-list")
-    public ResponseEntity<List<AppliedCustomerBillingRate>> getABCRList (@RequestBody SimpleBill sb) {
-    	List<AppliedCustomerBillingRate> acbrList = billsService.getABCRList(sb);
+    // test controller (can be removed)
+    @PostMapping("/acbr")
+    public ResponseEntity<List<AppliedCustomerBillingRate>> getACBRsBySimpleBill (@RequestBody SimpleBill sb) {
+    	List<AppliedCustomerBillingRate> acbrList = billsService.getACBRsBySimpleBill(sb);
         return ResponseEntity.ok(acbrList);
     }
 }

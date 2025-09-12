@@ -88,7 +88,7 @@ public class DevController {
     @GetMapping("bills/{billId}")
     public ResponseEntity<SimpleBill> getBill(@PathVariable String billId) {
         try {
-            SimpleBill bill = billsService.getBill(billId);
+            SimpleBill bill = billsService.getSimpleBillById(billId);
 
             if (bill != null) {
                 return ResponseEntity.ok(bill);
@@ -107,7 +107,7 @@ public class DevController {
     public ResponseEntity<List<AppliedCustomerBillingRate>> getABCRList(@PathVariable String simpleBillId) {
         SimpleBill sb;
         try {
-            sb = billsService.getBill(simpleBillId);
+            sb = billsService.getSimpleBillById(simpleBillId);
             if (sb == null) {
                 logger.info("No Simple Bill found for ID {}", simpleBillId);
                 return ResponseEntity.noContent().build();
@@ -118,7 +118,7 @@ public class DevController {
         }
 
         try {
-            List<AppliedCustomerBillingRate> acbrList = billsService.getABCRList(sb);
+            List<AppliedCustomerBillingRate> acbrList = billsService.getACBRsBySimpleBill(sb);
 
             // now we have the list of acbr. Extract the product
             // let's ask the billing service to enrich with taxes
@@ -136,44 +136,4 @@ public class DevController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
-
-    @GetMapping("/billingAccount/{relatedPartyId}")
-    public ResponseEntity<BillingAccountRef> getBillingAccountByRelatedParty(@PathVariable String relatedPartyId) {
-        try {
-            BillingAccountRef ref = tmfDataRetriever.retrieveBillingAccountByRelatedPartyId(relatedPartyId);
-            return ResponseEntity.ok(ref);
-        } catch (Exception e) {
-            return ResponseEntity.internalServerError().build();
-        }
-    }
-    
-    @PostMapping("/toCb")
-    public ResponseEntity<CustomerBill> convertToCB(@RequestBody SimpleBill sb) {    	
-        CustomerBill cb = billsService.buildCB(sb);
-        return ResponseEntity.ok(cb);
-    }
-    
-    @PostMapping("/toCb/list")
-    public ResponseEntity<List<CustomerBill>> convertToCBList(@RequestBody List<SimpleBill> sbs) {
-        List<CustomerBill> cbList = sbs.stream()
-            .map(billsService::buildCB)
-            .toList();
-        return ResponseEntity.ok(cbList);
-    }   
-    
-//    @PostMapping("/to-acbr")
-//    public ResponseEntity<AppliedCustomerBillingRate> convertToACBR(@RequestBody RevenueStatement revenueStatement) {    	
-//        AppliedCustomerBillingRate acbr = revenueService.buildACBR(revenueStatement);
-//        return ResponseEntity.ok(acbr);
-//    }
-//    
-//    @PostMapping("/to-acbr-list")
-//    public ResponseEntity<List<AppliedCustomerBillingRate>> convertToACBRList(@RequestBody List<RevenueStatement> revenueStatements) {
-//        List<AppliedCustomerBillingRate> acbrList = revenueStatements.stream()
-//            .map(revenueService::buildACBR)
-//            .toList();
-//        return ResponseEntity.ok(acbrList);
-//    }
-
-
 }
