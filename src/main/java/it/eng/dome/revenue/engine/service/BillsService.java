@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.UUID;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -22,6 +23,7 @@ import it.eng.dome.revenue.engine.service.cached.CachedStatementsService;
 import it.eng.dome.revenue.engine.tmf.TmfApiFactory;
 import it.eng.dome.tmforum.tmf637.v4.model.Product;
 import it.eng.dome.tmforum.tmf678.v4.model.AppliedCustomerBillingRate;
+import it.eng.dome.tmforum.tmf678.v4.model.BillRef;
 import it.eng.dome.tmforum.tmf678.v4.model.BillingAccountRef;
 import it.eng.dome.tmforum.tmf678.v4.model.CustomerBill;
 import it.eng.dome.tmforum.tmf678.v4.model.RelatedParty;
@@ -138,6 +140,8 @@ public class BillsService implements InitializingBean {
         
         List<AppliedCustomerBillingRate> acbrList = RevenueBillingMapper.toACBRList(sb, subscription, billingAccountRef);
         
+        acbrList = this.applyCustomerBillRef(acbrList);
+        
         acbrList = this.applyTaxes(acbrList);
         
         return acbrList;
@@ -162,6 +166,20 @@ public class BillsService implements InitializingBean {
 
         // invoke the invoicing servi
         return this.invoicingService.applyTaxees(product, acbrs);
+    }
+    
+    public List<AppliedCustomerBillingRate> applyCustomerBillRef(List<AppliedCustomerBillingRate> acbrs){
+		// FIXME: Currently, we don't consider persistence.
+		BillRef billRef = new BillRef();
+//		String billId = sb.getId();
+//		billRef.setId(billId.replace("urn:ngsi-ld:simplebill", "urn:ngsi-ld:customerbill"));
+		billRef.setId("urn:ngsi-ld:customerbill:" + UUID.randomUUID().toString());
+		
+		for (AppliedCustomerBillingRate acbr : acbrs) {
+			acbr.setBill(billRef);
+		}
+		
+		return acbrs;
     }
 
 }

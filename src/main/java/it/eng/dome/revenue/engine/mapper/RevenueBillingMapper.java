@@ -13,7 +13,6 @@ import it.eng.dome.revenue.engine.model.RevenueItem;
 import it.eng.dome.revenue.engine.model.SimpleBill;
 import it.eng.dome.revenue.engine.model.Subscription;
 import it.eng.dome.tmforum.tmf678.v4.model.AppliedCustomerBillingRate;
-import it.eng.dome.tmforum.tmf678.v4.model.BillRef;
 import it.eng.dome.tmforum.tmf678.v4.model.BillingAccountRef;
 import it.eng.dome.tmforum.tmf678.v4.model.CustomerBill;
 import it.eng.dome.tmforum.tmf678.v4.model.Money;
@@ -120,17 +119,13 @@ public class RevenueBillingMapper {
 	        + " for period " + sb.getPeriod().getStartDateTime() + " - " + sb.getPeriod().getEndDateTime());
 	    acbr.setDate(sb.getBillTime());
 	    acbr.setIsBilled(false); // can we assume that it is false at start?
-	    acbr.setType(null); // TODO: fetch by Item (add to Item)
+	    acbr.setType(item.getType());
 	    acbr.setPeriodCoverage(sb.getPeriod());
 
 		//ref
 		acbr.setRelatedParty(sb.getRelatedParties());
 		
-		// FIXME: Currently, we don't consider persistence.
-		BillRef billRef = new BillRef();
-		String billId = sb.getId();
-		billRef.setId(billId.replace("urn:ngsi-ld:simplebill", "urn:ngsi-ld:customerbill"));
-		acbr.setBill(billRef); // Should I set the reference with CB right away?
+		acbr.setBill(null);
 
 	    acbr.setProduct(subscription != null ? RevenueProductMapper.toProductRef(subscription) : null);
 	    
@@ -245,15 +240,5 @@ public class RevenueBillingMapper {
 //        cb.setPaymentMethod(null);
         return cb;
     }
-
-	// private static Money createMoneyTmF678(Float amount, String currency) {
-	//     Money money = new Money();
-	//     money.setValue(amount);
-	//     money.setUnit(currency);
-	//     return money;
-	// }
-
-
-
 }
 
