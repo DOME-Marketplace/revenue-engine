@@ -10,21 +10,17 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import it.eng.dome.revenue.engine.model.SimpleBill;
 import it.eng.dome.revenue.engine.service.BillsService;
-import it.eng.dome.revenue.engine.service.cached.CachedPlanService;
 import it.eng.dome.revenue.engine.service.RevenueService;
 import it.eng.dome.revenue.engine.service.TmfDataRetriever;
+import it.eng.dome.revenue.engine.service.cached.CachedPlanService;
 import it.eng.dome.revenue.engine.service.cached.CachedSubscriptionService;
 import it.eng.dome.revenue.engine.service.compute.PriceCalculator;
 import it.eng.dome.tmforum.tmf678.v4.model.AppliedCustomerBillingRate;
-import it.eng.dome.tmforum.tmf678.v4.model.BillingAccountRef;
-import it.eng.dome.tmforum.tmf678.v4.model.CustomerBill;
 
 @RestController
 //@RequiredArgsConstructor

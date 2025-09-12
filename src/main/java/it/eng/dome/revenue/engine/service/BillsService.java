@@ -159,7 +159,8 @@ public class BillsService implements InitializingBean {
 		cb.setPaymentDueDate(sb.getPeriod().getEndDateTime().plusDays(10)); // Q: How many days after the invoice date should we set the due date?
 		
 		//apply tax
-		// amounts
+		
+		// amounts logic
         Money taxIncludedAmount = new Money();
         taxIncludedAmount.setUnit("EUR");
         taxIncludedAmount.setValue(10000.0f);

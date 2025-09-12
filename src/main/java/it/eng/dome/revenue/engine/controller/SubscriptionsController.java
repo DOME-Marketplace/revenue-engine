@@ -134,21 +134,21 @@ public class SubscriptionsController {
 	    }
 	}
 
-	@GetMapping("{subscriptionId}/customerBills")
-	public ResponseEntity<List<CustomerBill>> getCustomerBills(@PathVariable String subscriptionId) {
-	    logger.info("Request received: get customer bills for subscription {}", subscriptionId);
-	    List<SimpleBill> simpleBills;
-	    try {
-	        simpleBills = billsService.getSubscriptionBills(subscriptionId);
-	    } catch (Exception e) {
-	        logger.error("Failed to retrieve simple bills for subscription {}: {}", subscriptionId, e.getMessage(), e);
-	        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
-	    }
-
-	    List<CustomerBill> customerBills = simpleBills.stream()
-	            .map(billsService::getCustomerBillBySimpleBill)
-	            .toList();
-
-	    return ResponseEntity.ok(customerBills);
-	}
+//	@GetMapping("{subscriptionId}/customerBills")
+//	public ResponseEntity<List<CustomerBill>> getCustomerBills(@PathVariable String subscriptionId) {
+//	    logger.info("Request received: get customer bills for subscription {}", subscriptionId);
+//	    List<SimpleBill> simpleBills;
+//	    try {
+//	        simpleBills = billsService.getSubscriptionBills(subscriptionId);
+//	    } catch (Exception e) {
+//	        logger.error("Failed to retrieve simple bills for subscription {}: {}", subscriptionId, e.getMessage(), e);
+//	        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+//	    }
+//
+//	    List<CustomerBill> customerBills = simpleBills.stream()
+//	            .map(billsService::getCustomerBillBySimpleBill)
+//	            .toList();
+//
+//	    return ResponseEntity.ok(customerBills);
+//	}
 }
