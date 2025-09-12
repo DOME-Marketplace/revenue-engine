@@ -63,42 +63,6 @@ public class DevController {
     } 
          */
     
-
-    @GetMapping("/subscriptions/{subscriptionId}/bills")
-	public ResponseEntity<List<SimpleBill>> getBillPeriods(@PathVariable String subscriptionId) {
-	    try {
-	        List<SimpleBill> bills = billsService.getSubscriptionBills(subscriptionId);
-
-	        if (bills == null || bills.isEmpty()) {
-	            logger.info("No bills found for subscription {}", subscriptionId);
-				return ResponseEntity.ok(new ArrayList<>());
-	        }
-
-	        return ResponseEntity.ok(bills);
-	    } catch (Exception e) {
-	        logger.error("Failed to retrieve bills for subscription {}: {}", subscriptionId, e.getMessage(), e);
-	        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
-	    }
-	}
-
-    @GetMapping("bills/{billId}")
-    public ResponseEntity<SimpleBill> getBill(@PathVariable String billId) {
-        try {
-            SimpleBill bill = billsService.getSimpleBillById(billId);
-
-            if (bill != null) {
-                return ResponseEntity.ok(bill);
-            } else {
-                logger.info("Bill not found for ID {}", billId);
-                return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
-            }
-
-        } catch (Exception e) {
-            logger.error("Failed to retrieve bill with ID {}: {}", billId, e.getMessage(), e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
-        }
-    } 
-
     @GetMapping("bills/{simpleBillId}/acbr")
     public ResponseEntity<List<AppliedCustomerBillingRate>> getABCRList(@PathVariable String simpleBillId) {
         SimpleBill sb;

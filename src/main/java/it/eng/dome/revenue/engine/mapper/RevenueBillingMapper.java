@@ -12,10 +12,12 @@ import org.slf4j.LoggerFactory;
 import it.eng.dome.revenue.engine.model.RevenueItem;
 import it.eng.dome.revenue.engine.model.SimpleBill;
 import it.eng.dome.revenue.engine.model.Subscription;
+import it.eng.dome.tmforum.tmf678.v4.model.AppliedBillingTaxRate;
 import it.eng.dome.tmforum.tmf678.v4.model.AppliedCustomerBillingRate;
 import it.eng.dome.tmforum.tmf678.v4.model.CustomerBill;
 import it.eng.dome.tmforum.tmf678.v4.model.Money;
 import it.eng.dome.tmforum.tmf678.v4.model.StateValue;
+import it.eng.dome.tmforum.tmf678.v4.model.TaxItem;
 
 public class RevenueBillingMapper {
 	
@@ -214,7 +216,7 @@ public class RevenueBillingMapper {
 
         cb.setBillingPeriod(simpleBill.getPeriod());
 //		cb.setCategory("normal"); // we don't know if they are used
-//      cb.setRunType("onCycle"); // onCycle or offCycle? we don't know if they are used
+        cb.setRunType("onCycle");
         cb.setState(StateValue.NEW);
 
 		// amounts
@@ -222,8 +224,6 @@ public class RevenueBillingMapper {
         taxExcludedAmount.setUnit("EUR");
         taxExcludedAmount.setValue(simpleBill.getAmount().floatValue());
         cb.setTaxExcludedAmount(taxExcludedAmount);
-//		Float baseAmount = simpleBill.getAmount().floatValue();
-//		BillingAmountCalculator.applyAmounts(cb, baseAmount);
 
 		// REF
 		cb.setRelatedParty(simpleBill.getRelatedParties());
@@ -235,5 +235,13 @@ public class RevenueBillingMapper {
 //        cb.setPaymentMethod(null);
         return cb;
     }
+	
+	public static TaxItem toTaxItem(AppliedBillingTaxRate abtr) {
+		TaxItem out = new TaxItem();
+		out.setTaxCategory(abtr.getTaxCategory());
+		out.setTaxRate(abtr.getTaxRate());
+		
+		return out;
+	}
 }
 

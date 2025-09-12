@@ -1,7 +1,9 @@
 package it.eng.dome.revenue.engine.service;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.UUID;
@@ -22,12 +24,14 @@ import it.eng.dome.revenue.engine.model.comparator.SimpleBillComparator;
 import it.eng.dome.revenue.engine.service.cached.CachedStatementsService;
 import it.eng.dome.revenue.engine.tmf.TmfApiFactory;
 import it.eng.dome.tmforum.tmf637.v4.model.Product;
+import it.eng.dome.tmforum.tmf678.v4.model.AppliedBillingTaxRate;
 import it.eng.dome.tmforum.tmf678.v4.model.AppliedCustomerBillingRate;
 import it.eng.dome.tmforum.tmf678.v4.model.BillRef;
 import it.eng.dome.tmforum.tmf678.v4.model.BillingAccountRef;
 import it.eng.dome.tmforum.tmf678.v4.model.CustomerBill;
 import it.eng.dome.tmforum.tmf678.v4.model.Money;
 import it.eng.dome.tmforum.tmf678.v4.model.RelatedParty;
+import it.eng.dome.tmforum.tmf678.v4.model.TaxItem;
 import it.eng.dome.tmforum.tmf678.v4.model.TimePeriod;
 
 @Service
@@ -140,54 +144,228 @@ public class BillsService implements InitializingBean {
 	 * @throws IllegalArgumentException if the SimpleBill is null or does not contain related party information
 	 */
     public CustomerBill getCustomerBillBySimpleBill(SimpleBill sb) {
-        if (sb == null || sb.getRelatedParties() == null || sb.getRelatedParties().isEmpty()) {
+    	if (sb == null) {
+            throw new IllegalArgumentException("SimpleBill cannot be null");
+        }
+        if (sb.getRelatedParties() == null || sb.getRelatedParties().isEmpty()) {
             throw new IllegalArgumentException("Missing related party information in SimpleBill");
+        }
+        if (sb.getPeriod() == null || sb.getPeriod().getEndDateTime() == null) {
+            throw new IllegalArgumentException("SimpleBill period or endDateTime is missing");
         }
         
         CustomerBill cb = RevenueBillingMapper.toCB(sb);
-        
-     	// Retrieve the related party with role = "Buyer"
-        RelatedParty buyerParty = this.getBuyerParty(sb.getRelatedParties());
-        BillingAccountRef billingAccountRef = tmfDataRetriever.retrieveBillingAccountByRelatedPartyId(buyerParty.getId());
-		if (billingAccountRef == null) {
-		    logger.warn("toCB: billingAccountRef is null, CustomerBill will have null billingAccount");
-		}
-        
-		cb.setBillingAccount(billingAccountRef);
+        if (cb == null) {
+            throw new IllegalStateException("Failed to map SimpleBill to CustomerBill");
+        }
+
+		cb.setBillingAccount(this.getBuyerBillingAccount(sb.getRelatedParties()));
         
 		cb.setNextBillDate(sb.getPeriod().getEndDateTime().plusMonths(1)); //?
 		cb.setPaymentDueDate(sb.getPeriod().getEndDateTime().plusDays(10)); // Q: How many days after the invoice date should we set the due date?
 		
 		//apply tax
-		
-		// amounts logic
-        Money taxIncludedAmount = new Money();
-        taxIncludedAmount.setUnit("EUR");
-        taxIncludedAmount.setValue(10000.0f);
-		cb.setTaxIncludedAmount(taxIncludedAmount);
-		cb.setAmountDue(taxIncludedAmount);
-		cb.setRemainingAmount(taxIncludedAmount);
+		List<AppliedCustomerBillingRate> acbrs = this.getACBRsBySimpleBill(sb);
+	
+		List<TaxItem> taxItems = this.getTaxItemListFromACBRs(acbrs);
+    	
+    	cb.setTaxItem(taxItems);
+        
+    	//amounts
+    	Money taxIncludedTaxes = this.computeTaxIncludedAmount(acbrs);
+    	if (taxIncludedTaxes == null) {
+            throw new IllegalStateException("Failed to compute tax included amount");
+        }
+        cb.setTaxIncludedAmount(taxIncludedTaxes);
+		cb.setAmountDue(taxIncludedTaxes);
+		cb.setRemainingAmount(taxIncludedTaxes);
 		
         //check null condition
         return cb;
     }
     
+    /**
+     * Extracts and aggregates TaxItem objects from a list of AppliedCustomerBillingRate.
+     * Groups results by (taxCategory + taxRate).
+     *
+     * @param acbrs list of AppliedCustomerBillingRate
+     * @return aggregated list of TaxItem
+     * @throws IllegalArgumentException if the input list is null
+     */
+    private List<TaxItem> getTaxItemListFromACBRs(List<AppliedCustomerBillingRate> acbrs) {
+        if (acbrs == null) {
+            throw new IllegalArgumentException("Input list of AppliedCustomerBillingRate cannot be null");
+        }
+
+        Map<String, TaxItem> taxItemsMap = new HashMap<>();
+
+        for (AppliedCustomerBillingRate acbr : acbrs) {
+            if (acbr == null) {
+                throw new IllegalArgumentException("AppliedCustomerBillingRate element cannot be null");
+            }
+            if (acbr.getAppliedTax() == null) {
+                continue; // no taxes applied, skip
+            }
+
+            for (AppliedBillingTaxRate abtr : acbr.getAppliedTax()) {
+                if (abtr == null) {
+                    throw new IllegalArgumentException("AppliedBillingTaxRate element cannot be null");
+                }
+
+                TaxItem newItem = this.getTaxItemFromABTR(abtr, acbr.getTaxExcludedAmount());
+
+                if (newItem == null || newItem.getTaxCategory() == null || newItem.getTaxRate() == null) {
+                    throw new IllegalArgumentException("Generated TaxItem or its key fields cannot be null");
+                }
+
+                // Unique key: taxCategory + taxRate
+                String key = newItem.getTaxCategory() + "|" + newItem.getTaxRate();
+
+                taxItemsMap.merge(key, newItem, (existing, incoming) -> {
+                    existing.setTaxAmount(sumMoney(existing.getTaxAmount(), incoming.getTaxAmount()));
+                    return existing;
+                });
+            }
+        }
+
+        return new ArrayList<>(taxItemsMap.values());
+    }
+
+    /**
+     * Adds two Money objects, ensuring that both are non-null and use the same unit.
+     * If either argument is null, an IllegalArgumentException is thrown.
+     *
+     * @param a first Money
+     * @param b second Money
+     * @return a new Money instance with the summed value
+     * @throws IllegalArgumentException if one of the arguments is null or units differ
+     */
+    private Money sumMoney(Money a, Money b) {
+        if (a == null || b == null) {
+            throw new IllegalArgumentException("Cannot sum Money: one of the arguments is null");
+        }
+
+        if (!a.getUnit().equals(b.getUnit())) {
+            throw new IllegalArgumentException(
+                "Cannot sum Money with different units: " + a.getUnit() + " vs " + b.getUnit()
+            );
+        }
+
+        Money result = new Money();
+        result.setUnit(a.getUnit());
+        result.setValue(a.getValue() + b.getValue());
+        return result;
+    }
+
+    /**
+     * Converts an AppliedBillingTaxRate into a TaxItem and calculates its taxAmount.
+     *
+     * @param abtr AppliedBillingTaxRate object (must not be null)
+     * @param taxExcludedAmount Money representing the base amount (must not be null)
+     * @return TaxItem with taxCategory, taxRate, and calculated taxAmount
+     * @throws IllegalArgumentException if any argument is null or contains invalid data
+     */
+    private TaxItem getTaxItemFromABTR(AppliedBillingTaxRate abtr, Money taxExcludedAmount) {
+    	if (abtr == null) {
+            throw new IllegalArgumentException("AppliedBillingTaxRate cannot be null");
+        }
+        if (taxExcludedAmount == null) {
+            throw new IllegalArgumentException("taxExcludedAmount cannot be null");
+        }
+        if (taxExcludedAmount.getValue() == null || taxExcludedAmount.getUnit() == null) {
+            throw new IllegalArgumentException("taxExcludedAmount must have non-null value and unit");
+        }
+        
+        // convert AppliedBillingTaxRate to TaxItem (fills taxCategory and taxRate)
+		TaxItem taxItem = RevenueBillingMapper.toTaxItem(abtr);
+		
+		// calculate tax amount
+		Float taxAmount = (taxExcludedAmount.getValue() * taxItem.getTaxRate());
+		Money taxAmountMoney = new Money();
+        taxAmountMoney.setUnit(taxExcludedAmount.getUnit());
+        taxAmountMoney.setValue(taxAmount);
+        taxItem.setTaxAmount(taxAmountMoney);
+        
+        return taxItem;
+    }
+    
+    /**
+     * Computes the total tax-included amount from a list of AppliedCustomerBillingRate.
+     * Sums the taxIncludedAmount of each rate, assuming all amounts have the same currency/unit.
+     *
+     * @param acbrs List of AppliedCustomerBillingRate (must not be null or contain null elements)
+     * @return Money object representing the total tax-included amount
+     * @throws IllegalArgumentException if the list is null, empty, or contains invalid Money objects
+     */
+    private Money computeTaxIncludedAmount(List<AppliedCustomerBillingRate> acbrs) {
+    	if (acbrs == null || acbrs.isEmpty()) {
+            throw new IllegalArgumentException("AppliedCustomerBillingRate list cannot be null or empty");
+        }
+    	
+    	Float sum = 0.0f;
+    	String unit = null;
+    	
+    	for (AppliedCustomerBillingRate acbr : acbrs) {
+    		sum = sum + acbr.getTaxIncludedAmount().getValue();
+    		if(unit == null || !unit.equals(acbr.getTaxIncludedAmount().getUnit())) {
+    			unit = acbr.getTaxIncludedAmount().getUnit();
+    		}
+		}
+    	
+    	Money m = new Money();
+    	m.setUnit(unit);;
+    	m.setValue(sum);
+    	
+    	return m;
+    }
+    
+    /**
+     * Retrieves the list of AppliedCustomerBillingRate for a given SimpleBill.
+     * Performs mapping from SimpleBill and Subscription, sets billing account reference,
+     * customer bill reference, and applies taxes.
+     *
+     * @param sb SimpleBill object (must not be null and must have related parties)
+     * @return List of AppliedCustomerBillingRate
+     * @throws IllegalArgumentException if the SimpleBill or its related parties are null/empty
+     * @throws IllegalStateException if required data (Subscription, Buyer party, etc.) cannot be retrieved
+     */
     public List<AppliedCustomerBillingRate> getACBRsBySimpleBill(SimpleBill sb) {
-        if (sb == null || sb.getRelatedParties() == null || sb.getRelatedParties().isEmpty()) {
+    	if (sb == null) {
+            throw new IllegalArgumentException("SimpleBill cannot be null");
+        }
+        if (sb.getRelatedParties() == null || sb.getRelatedParties().isEmpty()) {
             throw new IllegalArgumentException("Missing related party information in SimpleBill");
         }
         
         Subscription subscription = subscriptionService.getSubscriptionByProductId(sb.getSubscriptionId());
+        if (subscription == null) {
+            throw new IllegalStateException("Subscription not found for subscriptionId: " + sb.getSubscriptionId());
+        }
         
         List<AppliedCustomerBillingRate> acbrList = RevenueBillingMapper.toACBRList(sb, subscription);
+        if (acbrList == null) {
+            throw new IllegalStateException("Failed to map SimpleBill and Subscription to AppliedCustomerBillingRate list");
+        }
         
         // Retrieve the related party with role = "Buyer"
         RelatedParty buyerParty = this.getBuyerParty(sb.getRelatedParties());
+        if (buyerParty == null || buyerParty.getId() == null) {
+            throw new IllegalStateException("Buyer party not found or has null ID");
+        }
         acbrList = this.setBillingAccountRef(acbrList, buyerParty.getId());
+        if (acbrList == null) {
+            throw new IllegalStateException("Failed to set billing account reference on AppliedCustomerBillingRate list");
+        }
         
         acbrList = this.setCustomerBillRef(acbrList);
+        if (acbrList == null) {
+            throw new IllegalStateException("Failed to set customer bill reference on AppliedCustomerBillingRate list");
+        }
         
         acbrList = this.applyTaxes(acbrList);
+        if (acbrList == null) {
+            throw new IllegalStateException("Failed to apply taxes to AppliedCustomerBillingRate list");
+        }
         
         return acbrList;
     }
@@ -201,6 +379,18 @@ public class BillsService implements InitializingBean {
     			.filter(rp -> "Buyer".equalsIgnoreCase(rp.getRole()))
     			.findFirst()
     			.orElseThrow(() -> new IllegalArgumentException("No related party with role 'Buyer' found"));
+    }
+    
+    private BillingAccountRef getBuyerBillingAccount (List<RelatedParty> relatedParties) {
+    	// Retrieve the related party with role = "Buyer"
+        RelatedParty buyerParty = this.getBuyerParty(relatedParties);
+        
+        BillingAccountRef billingAccountRef = tmfDataRetriever.retrieveBillingAccountByRelatedPartyId(buyerParty.getId());
+		if (billingAccountRef == null) {
+		    logger.warn("toCB: billingAccountRef is null, CustomerBill will have null billingAccount");
+		}
+		
+		return billingAccountRef;
     }
 
     public List<AppliedCustomerBillingRate> applyTaxes(List<AppliedCustomerBillingRate> acbrs) {
