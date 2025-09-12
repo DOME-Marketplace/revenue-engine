@@ -13,7 +13,6 @@ import it.eng.dome.revenue.engine.model.RevenueItem;
 import it.eng.dome.revenue.engine.model.SimpleBill;
 import it.eng.dome.revenue.engine.model.Subscription;
 import it.eng.dome.tmforum.tmf678.v4.model.AppliedCustomerBillingRate;
-import it.eng.dome.tmforum.tmf678.v4.model.BillingAccountRef;
 import it.eng.dome.tmforum.tmf678.v4.model.CustomerBill;
 import it.eng.dome.tmforum.tmf678.v4.model.Money;
 import it.eng.dome.tmforum.tmf678.v4.model.StateValue;
@@ -37,7 +36,7 @@ public class RevenueBillingMapper {
 	 * @param billingAccountRef The BillingAccountRef object for the billing account.
 	 * @return A List of AppliedCustomerBillingRate objects, or an empty list if the input SimpleBill is null or has no revenue items.
 	*/
-	public static List<AppliedCustomerBillingRate> toACBRList(SimpleBill sb, Subscription subscription, BillingAccountRef billingAccountRef) {
+	public static List<AppliedCustomerBillingRate> toACBRList(SimpleBill sb, Subscription subscription) {
 	    if (sb == null || sb.getRevenueItems() == null || sb.getRevenueItems().isEmpty()) {
 	        return Collections.emptyList();
 	    }
@@ -45,7 +44,7 @@ public class RevenueBillingMapper {
 	    List<AppliedCustomerBillingRate> acbrList = new ArrayList<>();
 	    for (RevenueItem item : sb.getRevenueItems()) {
 			// For each item, call a recursive helper method to find all "leaf" items and map them to AppliedCustomerBillingRate objects.
-	        collectLeafItemsAndMap(item, sb, subscription, billingAccountRef, acbrList);
+	        collectLeafItemsAndMap(item, sb, subscription, acbrList);
 	    }
 	    return acbrList;
 	}
@@ -62,7 +61,7 @@ public class RevenueBillingMapper {
 	 * @param billingAccountRef The BillingAccountRef for the billing account.
 	 * @param acbrList The list to which the generated AppliedCustomerBillingRate objects will be added.
 	*/
-	private static void collectLeafItemsAndMap(RevenueItem item, SimpleBill sb, Subscription subscription, BillingAccountRef billingAccountRef, List<AppliedCustomerBillingRate> acbrList) {
+	private static void collectLeafItemsAndMap(RevenueItem item, SimpleBill sb, Subscription subscription, List<AppliedCustomerBillingRate> acbrList) {
 		// Base case for the recursion: if the item is null, simply return.
 		if (item == null) return;
 		
@@ -70,14 +69,14 @@ public class RevenueBillingMapper {
 		if (item.getItems() != null && !item.getItems().isEmpty()) {
 			for (RevenueItem child : item.getItems()) {
 				// if it has children, recursively call this method for each child.
-				collectLeafItemsAndMap(child, sb, subscription, billingAccountRef, acbrList);
+				collectLeafItemsAndMap(child, sb, subscription, acbrList);
 			}
 		} else {
 			// this is a leaf node (no children). Billable item that can be mapped to an ACBR.
 			try {
 //				if (item.getOverallValue() != null && item.getOverallValue() != 0.0) {
 				// map the leaf RevenueItem to an AppliedCustomerBillingRate and add it to the list.
-				acbrList.add(toACBR(item, sb, subscription, billingAccountRef));
+				acbrList.add(toACBR(item, sb, subscription));
 //				} else {
 //					logger.debug("Skipping RevenueItem with null or zero value: {}", item.getName());
 //				}
@@ -99,7 +98,7 @@ public class RevenueBillingMapper {
 	 * @return A new AppliedCustomerBillingRate object populated with the provided data, or null if the input item is null.
 	 * @throws IllegalArgumentException if the SimpleBill or its period are null, as these are mandatory for the ACBR.
 	*/
-	public static AppliedCustomerBillingRate toACBR(RevenueItem item, SimpleBill sb, Subscription subscription, BillingAccountRef billingAccountRef) {
+	public static AppliedCustomerBillingRate toACBR(RevenueItem item, SimpleBill sb, Subscription subscription) {
 	    if (item == null) {
 	    	logger.warn("Cannot map to AppliedCustomerBillingRate: RevenueItem is null");
 	    	return null;
@@ -125,11 +124,11 @@ public class RevenueBillingMapper {
 		//ref
 		acbr.setRelatedParty(sb.getRelatedParties());
 		
-		acbr.setBill(null);
+		acbr.setBill(null); //from invoice
 
 	    acbr.setProduct(subscription != null ? RevenueProductMapper.toProductRef(subscription) : null);
 	    
-	    acbr.setBillingAccount(billingAccountRef);
+	    acbr.setBillingAccount(null); // set after
 
 	    if (item.getOverallValue() != null) {
 	        Money money = new Money();
@@ -198,15 +197,12 @@ public class RevenueBillingMapper {
 	 * @return A new CustomerBill object populated with the mapped data.
 	 * @throws IllegalArgumentException if the provided simpleBill is null.
 	*/
-	public static CustomerBill toCB(SimpleBill simpleBill, BillingAccountRef billingAccountRef) {
+	public static CustomerBill toCB(SimpleBill simpleBill) {
 		if (simpleBill == null) {
 		    logger.error("toCB: simpleBill is null, cannot map to CustomerBill");
 		    throw new IllegalArgumentException("simpleBill cannot be null");
 		}
-		if (billingAccountRef == null) {
-		    logger.warn("toCB: billingAccountRef is null, CustomerBill will have null billingAccount");
-		}
-		
+
 		CustomerBill cb = new CustomerBill();
 
         String billId = simpleBill.getId();
@@ -215,24 +211,23 @@ public class RevenueBillingMapper {
 //      cb.setBillNo(billId.substring(billId.lastIndexOf(":") + 1, billId.length()).substring(0, 6)); // not currently in use. Ask stefania more info
         cb.setBillDate(simpleBill.getBillTime());
         cb.setLastUpdate(OffsetDateTime.now()); //we can assume that the last update is now
-//        cb.setNextBillDate(simpleBill.getPeriod().getEndDateTime().plusMonths(1)); //?
-//        cb.setPaymentDueDate(simpleBill.getPeriod().getEndDateTime().plusDays(10)); // Q: How many days after the invoice date should we set the due date?
+
         cb.setBillingPeriod(simpleBill.getPeriod());
 //		cb.setCategory("normal"); // we don't know if they are used
 //      cb.setRunType("onCycle"); // onCycle or offCycle? we don't know if they are used
         cb.setState(StateValue.NEW);
 
 		// amounts
-        Money taxIncludedAmount = new Money();
-        taxIncludedAmount.setUnit("EUR");
-        taxIncludedAmount.setValue(simpleBill.getAmount().floatValue());
-        cb.taxIncludedAmount(taxIncludedAmount);
+        Money taxExcludedAmount = new Money();
+        taxExcludedAmount.setUnit("EUR");
+        taxExcludedAmount.setValue(simpleBill.getAmount().floatValue());
+        cb.setTaxExcludedAmount(taxExcludedAmount);
 //		Float baseAmount = simpleBill.getAmount().floatValue();
 //		BillingAmountCalculator.applyAmounts(cb, baseAmount);
 
 		// REF
 		cb.setRelatedParty(simpleBill.getRelatedParties());
-		cb.setBillingAccount(billingAccountRef);
+		cb.setBillingAccount(null); // set after
 		cb.setAppliedPayment(new ArrayList<>());
 		
 //        cb.setFinancialAccount(null);

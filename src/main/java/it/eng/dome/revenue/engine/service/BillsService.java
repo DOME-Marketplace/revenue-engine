@@ -26,6 +26,7 @@ import it.eng.dome.tmforum.tmf678.v4.model.AppliedCustomerBillingRate;
 import it.eng.dome.tmforum.tmf678.v4.model.BillRef;
 import it.eng.dome.tmforum.tmf678.v4.model.BillingAccountRef;
 import it.eng.dome.tmforum.tmf678.v4.model.CustomerBill;
+import it.eng.dome.tmforum.tmf678.v4.model.Money;
 import it.eng.dome.tmforum.tmf678.v4.model.RelatedParty;
 import it.eng.dome.tmforum.tmf678.v4.model.TimePeriod;
 
@@ -63,7 +64,7 @@ public class BillsService implements InitializingBean {
 	 * @return the SimpleBill object if found, null otherwise
 	 * @throws Exception if an error occurs during retrieval
 	*/
-    public SimpleBill getBill(String billId) throws Exception {
+    public SimpleBill getSimpleBillById(String billId) throws Exception {
     	logger.info("Fetch bill with ID {}", billId);
         // FIXME: temporary... until we have proper persistence
         // extract the subscription id
@@ -106,6 +107,31 @@ public class BillsService implements InitializingBean {
         }
     }
     
+    public CustomerBill getCustomerBillBySimpleBillId(String simpleBillId) {
+    	SimpleBill sb = new SimpleBill();
+		try {
+			sb = this.getSimpleBillById(simpleBillId);
+		} catch (Exception e) {
+			logger.error("Failed to retrieve Simple Bill with ID {}: {}", simpleBillId, e.getMessage(), e);
+		}
+        
+        CustomerBill cb = this.getCustomerBillBySimpleBill(sb);
+        return cb;
+    }
+    
+    public List<AppliedCustomerBillingRate> getACBRsBySimpleBillId(String simpleBillId) {
+    	SimpleBill sb = new SimpleBill();
+		try {
+			sb = this.getSimpleBillById(simpleBillId);
+		} catch (Exception e) {
+			logger.error("Failed to retrieve Simple Bill with ID {}: {}", simpleBillId, e.getMessage(), e);
+		}
+		
+		List<AppliedCustomerBillingRate> acbrs = this.getACBRsBySimpleBill(sb);
+		
+		return acbrs;
+    }
+    
     /**
 	 * Builds a CustomerBill from a SimpleBill.
 	 * 
@@ -113,34 +139,52 @@ public class BillsService implements InitializingBean {
 	 * @return a CustomerBill object
 	 * @throws IllegalArgumentException if the SimpleBill is null or does not contain related party information
 	 */
-    
-    public CustomerBill buildCB(SimpleBill sb) {
+    public CustomerBill getCustomerBillBySimpleBill(SimpleBill sb) {
         if (sb == null || sb.getRelatedParties() == null || sb.getRelatedParties().isEmpty()) {
             throw new IllegalArgumentException("Missing related party information in SimpleBill");
         }
         
-        // Retrieve the related party with role = "Buyer"
-        RelatedParty buyerParty = this.getBuyerParty(sb.getRelatedParties());
+        CustomerBill cb = RevenueBillingMapper.toCB(sb);
         
+     	// Retrieve the related party with role = "Buyer"
+        RelatedParty buyerParty = this.getBuyerParty(sb.getRelatedParties());
         BillingAccountRef billingAccountRef = tmfDataRetriever.retrieveBillingAccountByRelatedPartyId(buyerParty.getId());
-        return RevenueBillingMapper.toCB(sb, billingAccountRef);
+		if (billingAccountRef == null) {
+		    logger.warn("toCB: billingAccountRef is null, CustomerBill will have null billingAccount");
+		}
+        
+		cb.setBillingAccount(billingAccountRef);
+        
+		cb.setNextBillDate(sb.getPeriod().getEndDateTime().plusMonths(1)); //?
+		cb.setPaymentDueDate(sb.getPeriod().getEndDateTime().plusDays(10)); // Q: How many days after the invoice date should we set the due date?
+		
+		//apply tax
+		// amounts
+        Money taxIncludedAmount = new Money();
+        taxIncludedAmount.setUnit("EUR");
+        taxIncludedAmount.setValue(10000.0f);
+		cb.setTaxIncludedAmount(taxIncludedAmount);
+		cb.setAmountDue(taxIncludedAmount);
+		cb.setRemainingAmount(taxIncludedAmount);
+		
+        //check null condition
+        return cb;
     }
     
-    public List<AppliedCustomerBillingRate> getABCRList(SimpleBill sb) {
+    public List<AppliedCustomerBillingRate> getACBRsBySimpleBill(SimpleBill sb) {
         if (sb == null || sb.getRelatedParties() == null || sb.getRelatedParties().isEmpty()) {
             throw new IllegalArgumentException("Missing related party information in SimpleBill");
         }
         
         Subscription subscription = subscriptionService.getSubscriptionByProductId(sb.getSubscriptionId());
         
+        List<AppliedCustomerBillingRate> acbrList = RevenueBillingMapper.toACBRList(sb, subscription);
+        
         // Retrieve the related party with role = "Buyer"
         RelatedParty buyerParty = this.getBuyerParty(sb.getRelatedParties());
+        acbrList = this.setBillingAccountRef(acbrList, buyerParty.getId());
         
-        BillingAccountRef billingAccountRef = tmfDataRetriever.retrieveBillingAccountByRelatedPartyId(buyerParty.getId());
-        
-        List<AppliedCustomerBillingRate> acbrList = RevenueBillingMapper.toACBRList(sb, subscription, billingAccountRef);
-        
-        acbrList = this.applyCustomerBillRef(acbrList);
+        acbrList = this.setCustomerBillRef(acbrList);
         
         acbrList = this.applyTaxes(acbrList);
         
@@ -168,7 +212,7 @@ public class BillsService implements InitializingBean {
         return this.invoicingService.applyTaxees(product, acbrs);
     }
     
-    public List<AppliedCustomerBillingRate> applyCustomerBillRef(List<AppliedCustomerBillingRate> acbrs){
+    public List<AppliedCustomerBillingRate> setCustomerBillRef(List<AppliedCustomerBillingRate> acbrs){
 		// FIXME: Currently, we don't consider persistence.
 		BillRef billRef = new BillRef();
 //		String billId = sb.getId();
@@ -177,6 +221,19 @@ public class BillsService implements InitializingBean {
 		
 		for (AppliedCustomerBillingRate acbr : acbrs) {
 			acbr.setBill(billRef);
+		}
+		
+		return acbrs;
+    }
+    
+    public List<AppliedCustomerBillingRate> setBillingAccountRef(List<AppliedCustomerBillingRate> acbrs, String buyerId){
+        BillingAccountRef billingAccountRef = tmfDataRetriever.retrieveBillingAccountByRelatedPartyId(buyerId);
+		if (billingAccountRef == null) {
+		    logger.warn("toCB: billingAccountRef is null, CustomerBill will have null billingAccount");
+		}
+		
+		for (AppliedCustomerBillingRate acbr : acbrs) {
+			acbr.setBillingAccount(billingAccountRef);
 		}
 		
 		return acbrs;
