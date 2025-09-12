@@ -118,6 +118,9 @@ public class RevenueItem {
         return out;
     }
 
+    /**
+     * Builds a new revenueitem only including the items (recursively) with the same chargeTime
+     */
     public RevenueItem getFilteredClone(OffsetDateTime chargeTime) {
         RevenueItem clone = new RevenueItem(this.name, this.value, this.currency);
         clone.setChargeTime(chargeTime);
@@ -148,30 +151,17 @@ public class RevenueItem {
     }
 
     public String getType() {
-        return type;
+        if(this.items!=null) {
+            for(RevenueItem i:items) {
+                if(i.getType()!=null)
+                    return i.getType();
+            }
+        }
+        return this.type;
     }
 
     public void setType(String type) {
         this.type = type;
     }
-
-
-    /*
-    public List<RevenueItem> clusterAccordingToChargeTime() {
-        List<RevenueItem> out = new ArrayList<>();
-        if(this.getItems()==null || this.getItems().isEmpty()) {
-            out.add(this);
-        } else {
-            Map<OffsetDateTime, List<RevenueItem>> clusters = new HashMap<>();
-            for(RevenueItem i:this.getItems()) {
-                List<RevenueItem> ris = i.clusterAccordingToChargeTime();
-                List<RevenueItem> cluster = clusters.get(ris.getC).clusterAccordingToChargeTime();
-                out.addAll(i.clusterAccordingToChargeTime());
-            }
-
-        }
-        return out;
-    }
-    */
 
 }

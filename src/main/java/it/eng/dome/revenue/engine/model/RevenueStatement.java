@@ -63,6 +63,10 @@ public class RevenueStatement {
         this.revenueItems.add(item);
     }
 
+    /**
+     * Replace the current set of revenueItems with a new set where each root subtree contains items with the same charge time
+     * So that it will be easier to create AppliedCustomerBillingRates
+     */
     public void clusterizeItems() {
         List<RevenueItem> newItems = new ArrayList<>();
         // replace items with filtered ones
