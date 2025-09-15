@@ -22,6 +22,7 @@ import it.eng.dome.revenue.engine.model.SimpleBill;
 import it.eng.dome.revenue.engine.model.Subscription;
 import it.eng.dome.revenue.engine.model.comparator.SimpleBillComparator;
 import it.eng.dome.revenue.engine.service.cached.CachedStatementsService;
+import it.eng.dome.revenue.engine.service.cached.TmfCachedDataRetriever;
 import it.eng.dome.revenue.engine.tmf.TmfApiFactory;
 import it.eng.dome.tmforum.tmf637.v4.model.Product;
 import it.eng.dome.tmforum.tmf678.v4.model.AppliedBillingTaxRate;
@@ -49,7 +50,7 @@ public class BillsService implements InitializingBean {
 	private SubscriptionService subscriptionService;
     
     @Autowired
-	private TmfDataRetriever tmfDataRetriever;
+	private TmfCachedDataRetriever tmfDataRetriever;
 
     @Autowired
 	private InvoicingService invoicingService;

@@ -13,9 +13,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.config.ConfigurableBeanFactory;
-import org.springframework.context.annotation.Scope;
-import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Service;
 
 import it.eng.dome.brokerage.api.AccountManagementApis;
 import it.eng.dome.brokerage.api.AppliedCustomerBillRateApis;
@@ -28,8 +26,7 @@ import it.eng.dome.tmforum.tmf678.v4.model.AppliedCustomerBillingRate;
 import it.eng.dome.tmforum.tmf678.v4.model.BillingAccountRef;
 import it.eng.dome.tmforum.tmf678.v4.model.TimePeriod;
 
-@Component(value = "tmfDataRetriever")
-@Scope(value = ConfigurableBeanFactory.SCOPE_PROTOTYPE)
+@Service
 public class TmfDataRetriever implements InitializingBean {
 
     private final Logger logger = LoggerFactory.getLogger(TmfDataRetriever.class);
@@ -43,6 +40,9 @@ public class TmfDataRetriever implements InitializingBean {
     private OrganizationApi orgApi;
     private AccountManagementApis accountApi;
 
+    public TmfDataRetriever() {
+    }
+
     @Override
     public void afterPropertiesSet() throws Exception {
         this.billApi = new AppliedCustomerBillRateApis(tmfApiFactory.getTMF678CustomerBillApiClient());
@@ -51,8 +51,6 @@ public class TmfDataRetriever implements InitializingBean {
         logger.info("TmfDataRetriever initialized with billApi and orgApi");
     }
 
-    public TmfDataRetriever() {
-    }
       
     /**
 	 * Retrieves bills from the TMF API based on the provided seller ID, time period, and billing status.

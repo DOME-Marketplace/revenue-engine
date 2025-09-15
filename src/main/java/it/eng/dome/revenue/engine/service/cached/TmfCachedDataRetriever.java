@@ -5,83 +5,77 @@ import java.util.List;
 
 
 import org.ehcache.Cache;
-import org.ehcache.CacheManager;
-import org.ehcache.config.CacheConfiguration;
-import org.ehcache.config.builders.CacheConfigurationBuilder;
-import org.ehcache.config.builders.CacheManagerBuilder;
-import org.ehcache.config.builders.ExpiryPolicyBuilder;
-import org.ehcache.config.builders.ResourcePoolsBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.config.ConfigurableBeanFactory;
-import org.springframework.context.annotation.Scope;
-import org.springframework.stereotype.Component;
-
-
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
 
 import it.eng.dome.revenue.engine.service.TmfDataRetriever;
 import it.eng.dome.tmforum.tmf678.v4.model.AppliedCustomerBillingRate;
+import it.eng.dome.tmforum.tmf678.v4.model.BillingAccountRef;
 import it.eng.dome.tmforum.tmf678.v4.model.TimePeriod;
 
-/*
- * ACBR to support caching as newCacheConfigurationBuilder in the cache constructor apparently
- * does not support complex types (i.e. List<AppliedCustomerBillingRate>).
- * So, we wrap the list inside this class.
- */
-class ACBRList {
 
-    private List<AppliedCustomerBillingRate> items;
 
-    public ACBRList(List<AppliedCustomerBillingRate> items) {
-        this.items = items;
-    }
-
-    public List<AppliedCustomerBillingRate> getItems() {
-        return this.items;
-    }
-}
-
-@Component(value = "tmfCachedDataRetriever")
-@Scope(value = ConfigurableBeanFactory.SCOPE_PROTOTYPE)
+@Service
 public class TmfCachedDataRetriever extends TmfDataRetriever {
 
     private final Logger logger = LoggerFactory.getLogger(TmfCachedDataRetriever.class);
 
-    private CacheManager cacheManager;
+    @Autowired
+    CacheService cacheService;
 
-    private Cache<String, ACBRList> acbrCache;
+    private Cache<String, List<AppliedCustomerBillingRate>> acbrCache;
+    private Cache<String, BillingAccountRef> billingAccountCache;
 
     public TmfCachedDataRetriever() {
         super();
+    }
+
+        @Override
+    public void afterPropertiesSet() throws Exception {
+        super.afterPropertiesSet();
         this.initCaches();
     }
 
     private void initCaches() {
 
-        this.cacheManager = CacheManagerBuilder.newCacheManagerBuilder().build();
-        this.cacheManager.init();
+        this.acbrCache = this.cacheService.getOrCreateCache(
+				"acbrCache",
+				String.class,
+				(Class<List<AppliedCustomerBillingRate>>)(Class<?>)List.class,
+				Duration.ofHours(1));
 
-        // size: 200, ttl: 1 hour
-        CacheConfiguration<String, ACBRList> cconfig1 = CacheConfigurationBuilder
-                .newCacheConfigurationBuilder(String.class, ACBRList.class, ResourcePoolsBuilder.heap(1000))
-                .withExpiry(ExpiryPolicyBuilder.timeToLiveExpiration(Duration.ofHours(1)))
-                .build();
-        this.acbrCache = this.cacheManager.createCache("acbrCache", cconfig1);
-        logger.info("Cache 'acbrCache' initialized with size 1000 and TTL of 1 hour");
+        this.billingAccountCache = this.cacheService.getOrCreateCache(
+				"billingAccountCache",
+				String.class,
+				BillingAccountRef.class,
+				Duration.ofHours(1));
+
+
     }
 
-    /*
-     * Retrieve bills from cache or from the parent class if not cached.
-    */
+
     @Override
     public List<AppliedCustomerBillingRate> retrieveBills(String sellerId, TimePeriod timePeriod, Boolean isBilled) throws Exception {
         String key = sellerId + timePeriod.toString() + isBilled.toString();
         if (!this.acbrCache.containsKey(key)) {
-            logger.debug("Cache MISS for acbr " + key);
+            logger.debug("Cache MISS for " + key);
             List<AppliedCustomerBillingRate> acbrs = super.retrieveBills(sellerId, timePeriod, isBilled);
-            this.acbrCache.put(key, new ACBRList(acbrs));
+            this.acbrCache.put(key, acbrs);
         }
-        return this.acbrCache.get(key).getItems();
+        return this.acbrCache.get(key);
+    }
+
+    @Override
+    public BillingAccountRef retrieveBillingAccountByRelatedPartyId(String relatedPartyId) {
+        String key = relatedPartyId;
+        if (!this.billingAccountCache.containsKey(key)) {
+            logger.debug("Cache MISS for " + key);
+            BillingAccountRef billingAccountRef = super.retrieveBillingAccountByRelatedPartyId(relatedPartyId);
+            this.billingAccountCache.put(key, billingAccountRef);
+        }
+        return this.billingAccountCache.get(key);
     }
 
 }

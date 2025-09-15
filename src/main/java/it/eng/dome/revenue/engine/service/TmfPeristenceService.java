@@ -16,6 +16,7 @@ import org.springframework.stereotype.Service;
 import it.eng.dome.brokerage.api.AppliedCustomerBillRateApis;
 import it.eng.dome.revenue.engine.model.SimpleBill;
 import it.eng.dome.revenue.engine.model.Subscription;
+import it.eng.dome.revenue.engine.service.cached.CachedSubscriptionService;
 import it.eng.dome.revenue.engine.tmf.TmfApiFactory;
 import it.eng.dome.tmforum.tmf632.v4.api.OrganizationApi;
 import it.eng.dome.tmforum.tmf632.v4.model.Organization;
@@ -23,7 +24,6 @@ import it.eng.dome.tmforum.tmf678.v4.ApiException;
 import it.eng.dome.tmforum.tmf678.v4.api.CustomerBillApi;
 import it.eng.dome.tmforum.tmf678.v4.model.AppliedCustomerBillingRate;
 import it.eng.dome.tmforum.tmf678.v4.model.AppliedCustomerBillingRateCreate;
-import it.eng.dome.tmforum.tmf678.v4.model.BillRef;
 import it.eng.dome.tmforum.tmf678.v4.model.CustomerBill;
 import it.eng.dome.tmforum.tmf678.v4.model.CustomerBillCreate;
 
@@ -47,7 +47,7 @@ public class TmfPeristenceService implements InitializingBean {
     private BillsService billService;
 
     @Autowired
-    private SubscriptionService subscriptionService;
+    private CachedSubscriptionService subscriptionService;
 
     private CustomerBillApi customerBillAPI;
 	private AppliedCustomerBillRateApis appliedCustomerBillRateApis;
