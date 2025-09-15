@@ -47,7 +47,7 @@ public class SubscriptionsController {
 	public ResponseEntity<List<Subscription>> getAllSubscriptions() {
 //	    logger.info("Request received: get all subscriptions");
 	    try {
-	        List<Subscription> subscriptions = subscriptionService.getAllSubscriptionsByProducts();
+	        List<Subscription> subscriptions = subscriptionService.getAllSubscriptions();
 
 	        if (subscriptions == null || subscriptions.isEmpty()) {
 	            logger.info("No subscriptions found");

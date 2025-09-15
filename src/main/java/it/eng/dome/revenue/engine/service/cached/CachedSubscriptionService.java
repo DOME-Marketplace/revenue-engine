@@ -45,11 +45,11 @@ public class CachedSubscriptionService extends SubscriptionService {
      * Retrieve bills from cache or from the parent class if not cached.
     */
     @Override
-    public List<Subscription> getAllSubscriptionsByProducts() {
+    public List<Subscription> getAllSubscriptions() {
         String key = "all_subscriptions";
         if (!this.subscriptionsCache.containsKey(key)) {
             logger.debug("Cache MISS for " + key);
-            List<Subscription> subscriptions = super.getAllSubscriptionsByProducts();
+            List<Subscription> subscriptions = super.getAllSubscriptions();
             this.subscriptionsCache.put(key, subscriptions);
         }
         return this.subscriptionsCache.get(key);

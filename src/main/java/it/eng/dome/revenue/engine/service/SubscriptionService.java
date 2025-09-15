@@ -2,7 +2,9 @@ package it.eng.dome.revenue.engine.service;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
@@ -17,11 +19,16 @@ import it.eng.dome.revenue.engine.model.Subscription;
 import it.eng.dome.revenue.engine.tmf.TmfApiFactory;
 import it.eng.dome.tmforum.tmf632.v4.ApiException;
 import it.eng.dome.tmforum.tmf637.v4.model.Product;
+import it.eng.dome.tmforum.tmf637.v4.model.RelatedParty;
 
 @Service
 public class SubscriptionService implements InitializingBean {
 	
 	private final Logger logger = LoggerFactory.getLogger(SubscriptionService.class);
+
+	// FIXME: make this parametric
+	private static String DOME_OPERATOR_ID = "urn:ngsi-ld:organization:a195013a-a0e4-493a-810a-b040e10da58f";
+
 
     @Autowired
     // Factory for TMF APIss
@@ -52,13 +59,13 @@ public class SubscriptionService implements InitializingBean {
          return RevenueProductMapper.toSubscription(prod);
     }
     
-    public List<Subscription> getAllSubscriptionsByProducts() {
+    public List<Subscription> getAllSubscriptions() {
     	logger.info("Fetching subscriptions from products");
     	        
-    	// TODO: check how to filter product of a sub
-		// TODO: at least filter by seller (DOME operator)
         logger.info("Using the productAPIs {}", this.productApis);
-        List<Product> prods = productApis.getAllProducts(null, null);
+		Map<String, String> filter = new HashMap<>();
+		filter.put("relatedParty.id", DOME_OPERATOR_ID);
+        List<Product> prods = productApis.getAllProducts(null, filter);
         
         List<Subscription> subs = new ArrayList<>();
         
@@ -67,7 +74,13 @@ public class SubscriptionService implements InitializingBean {
 			if(prod.getName()!=null && prod.getName().toLowerCase().indexOf("subscription")!=-1) {
 				// FIXME: workaround for bug in tmf. Need to retrieve the product individually.
 				Product fullProduct = productApis.getProduct(prod.getId(), null);
-				subs.add(RevenueProductMapper.toSubscription(fullProduct));
+				if(fullProduct.getRelatedParty()!=null) {
+					for(RelatedParty rp: fullProduct.getRelatedParty()) {
+						if(rp!=null && DOME_OPERATOR_ID.equals(rp.getId()) && "seller".equalsIgnoreCase(rp.getRole())) {
+							subs.add(RevenueProductMapper.toSubscription(fullProduct));
+						}
+					}
+				}
 			}
 		}
         
@@ -85,7 +98,7 @@ public class SubscriptionService implements InitializingBean {
 	public Subscription getSubscriptionByRelatedPartyId(String id) throws IOException, ApiException {
 		// FIXME: this only returns the first subscription!!!!
 		logger.debug("Retrieving subscription by related party id: {}", id);
-	    return getAllSubscriptionsByProducts().stream()
+	    return getAllSubscriptions().stream()
 	            .filter(subscription -> subscription.getRelatedParties() != null)
 	            .filter(subscription -> subscription.getRelatedParties().stream()
 	                    .anyMatch(party -> party != null && party.getId() != null && party.getId().equals(id)))
@@ -93,12 +106,13 @@ public class SubscriptionService implements InitializingBean {
 	            .orElse(null);
 	}
 	
-	public List<Subscription> getSubscriptionsByPartyId(String id) throws IOException, ApiException {
+	public List<Subscription> getSubscriptionsByPartyId(String id, String role) throws IOException, ApiException {
 		logger.debug("Retrieving subscription by related party id: {}", id);
-	    return getAllSubscriptionsByProducts().stream()
+	    return getAllSubscriptions().stream()
 	            .filter(subscription -> subscription.getRelatedParties() != null)
 	            .filter(subscription -> subscription.getRelatedParties().stream()
-				.anyMatch(party -> party != null && party.getId() != null && party.getId().equals(id)))
+					.anyMatch(party -> party != null && party.getId() != null && party.getId().equals(id) && party.getRole()!=null && party.getRole().equalsIgnoreCase(role)) 
+				)
 				.toList();
 	}
 
@@ -111,11 +125,13 @@ public class SubscriptionService implements InitializingBean {
 	 * @throws IOException If there is an error reading the subscription data.
 	 * @throws ApiException If there is an error retrieving the organization.
 	*/
+	/*
 	public String getSubscriptionIdByRelatedPartyId(String relatedPartyId) throws IOException, ApiException {
 		logger.debug("Retrieving subscription id by related party id: {}", relatedPartyId);
 	    Subscription subscription = getSubscriptionByRelatedPartyId(relatedPartyId);
 	    return subscription != null ? subscription.getId() : null;
 	}
+	*/
 	
 	/**
 	 * Retrieves all subscriptions associated with a specific plan ID.
@@ -125,9 +141,9 @@ public class SubscriptionService implements InitializingBean {
 	 * @throws IOException If there is an error reading the subscription data.
 	 * @throws ApiException If there is an error retrieving the organization.
 	*/
-	public List<Subscription> getByPlanId(String id) {
+	public List<Subscription> getSubscriptionsByPlanId(String id) {
 	    logger.debug("Retrieving subscriptions by plan ID: {}", id);
-        return this.getAllSubscriptionsByProducts().stream()
+        return this.getAllSubscriptions().stream()
                 .filter(sub -> sub.getPlan() != null && id.equals(sub.getPlan().getId()))
                 .collect(Collectors.toList());
 	}

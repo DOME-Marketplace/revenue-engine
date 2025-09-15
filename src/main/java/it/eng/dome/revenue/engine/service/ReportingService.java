@@ -142,7 +142,7 @@ public class ReportingService implements InitializingBean {
     public Report getBillingHistorySection(String relatedPartyId) {
     	String subscriptionId;
         try {
-            subscriptionId = subscriptionService.getSubscriptionIdByRelatedPartyId(relatedPartyId);
+            subscriptionId = subscriptionService.getSubscriptionByRelatedPartyId(relatedPartyId).getId();
         } catch (Exception e) {
             logger.error("Failed to retrieve subscriptionId for relatedPartyId: {}", relatedPartyId, e);
             return new Report(
@@ -300,7 +300,7 @@ public class ReportingService implements InitializingBean {
     public Report getPrevisioningSection(String relatedPartyId) {
         String subscriptionId;
         try {
-            subscriptionId = subscriptionService.getSubscriptionIdByRelatedPartyId(relatedPartyId);
+            subscriptionId = subscriptionService.getSubscriptionByRelatedPartyId(relatedPartyId).getId();
         } catch (Exception e) {
             logger.error("Failed to retrieve subscriptionId for Organization with ID: {}", relatedPartyId, e);
             return new Report(
@@ -510,7 +510,7 @@ public class ReportingService implements InitializingBean {
     public List<RevenueStatement> getRevenueStatements(String relatedPartyId) throws ApiException, IOException {
     	logger.info("Call getRevenueStatements with relatedPartyId: {}", relatedPartyId);
 
-        String subscriptionId = subscriptionService.getSubscriptionIdByRelatedPartyId(relatedPartyId);
+        String subscriptionId = subscriptionService.getSubscriptionByRelatedPartyId(relatedPartyId).getId();
         logger.debug("Retrieved subscriptionId: {}", subscriptionId);
 
         try {

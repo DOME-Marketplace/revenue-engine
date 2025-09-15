@@ -60,7 +60,7 @@ public class PlansController {
     public ResponseEntity<List<Subscription>> getSubscriptionsByPlanId(@PathVariable String planId) {
 //        logger.info("Request received: fetch subscriptions for planId {}", planId);
         try {
-            List<Subscription> subscriptions = subscriptionService.getByPlanId(planId);
+            List<Subscription> subscriptions = subscriptionService.getSubscriptionsByPlanId(planId);
 
             if (subscriptions == null || subscriptions.isEmpty()) {
                 logger.info("No subscriptions found for plan with ID {}", planId);

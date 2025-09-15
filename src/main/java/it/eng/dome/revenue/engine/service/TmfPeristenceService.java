@@ -1,5 +1,7 @@
 package it.eng.dome.revenue.engine.service;
 
+import java.time.OffsetDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -72,7 +74,7 @@ public class TmfPeristenceService implements InitializingBean {
         // iterate over providers in tmforum
         // FIXME: replace limit with proper paging management (while, offset check size equals limit)
         List<CustomerBill> createdCustomerBills = new ArrayList<>();
-        for(Organization organization : orgApi.listOrganization(null, null, 1000, null)) {
+        for(Organization organization : orgApi.listOrganization(null, null, null, null)) {
             createdCustomerBills.addAll(this.persistProviderRevenueBills(organization.getId()));
         }
         return createdCustomerBills;
@@ -85,7 +87,7 @@ public class TmfPeristenceService implements InitializingBean {
     public List<CustomerBill> persistProviderRevenueBills(String providerId) throws ApiException, Exception {
         // iterate over subscriptions for the given provider
         List<CustomerBill> createdCustomerBills = new ArrayList<>();
-        for(Subscription sub: this.subscriptionService.getSubscriptionsByPartyId(providerId)) {
+        for(Subscription sub: this.subscriptionService.getSubscriptionsByPartyId(providerId, "Buyer")) {
             createdCustomerBills.addAll(this.persistSubscriptionRevenueBills(sub.getId()));
         }
         return createdCustomerBills;
@@ -97,19 +99,34 @@ public class TmfPeristenceService implements InitializingBean {
         List<CustomerBill> createdCustomerBills = new ArrayList<>();
         for(SimpleBill sb: this.billService.getSubscriptionBills(subscriptionId)) {
             CustomerBill createdCustomerBill = this.persistRevenueBill(sb.getId());
-            createdCustomerBills.add(createdCustomerBill);
+            if(createdCustomerBill!=null)
+                createdCustomerBills.add(createdCustomerBill);
+            else {
+                logger.info("CB {} was not created", sb.getId());
+            }
         }
         return createdCustomerBills;
     }
 
     public CustomerBill persistRevenueBill(String simpleBillId) throws ApiException, Exception {
 
+        logger.info("PERSISTENCE - persisting simple bill {}", simpleBillId);
+
         // retrieve the cb
         CustomerBill localCb = this.billService.getCustomerBillBySimpleBillId(simpleBillId);
+
+        // FIXME: better do this check
+        OffsetDateTime boundary = OffsetDateTime.now().minusMonths(2);
+        if(localCb.getBillingPeriod().getEndDateTime().isAfter(boundary)) {
+            logger.info("Skipping CB {} because not yet consolidated... too recent or in the future", simpleBillId);
+            return null;
+        }
+
         // persiste the cb and get the id
         CustomerBill persistedCB = this.persistCustomerBill(localCb);
 
         // generate the acbrs
+        /*
         List<AppliedCustomerBillingRate> acbrs = this.billService.getACBRsBySimpleBillId(simpleBillId);
         for(AppliedCustomerBillingRate acbr: acbrs) {
             // set the reference to the cb
@@ -119,22 +136,26 @@ public class TmfPeristenceService implements InitializingBean {
             // persiste the acbr
             this.persistAppliedCustomerBillingRate(acbr);
         }
+        */
         return persistedCB;
     }
 
     public CustomerBill persistCustomerBill(CustomerBill cb) throws ApiException, Exception {
         // check if exist on tmf
+        logger.info("PERSISTENCE - look for existing CB");
         CustomerBill existingCustomerBill = this.isCbAlreadyInTMF(cb);
+        logger.info("PERSISTENCE - CB {}" , existingCustomerBill);
         // if not, persist it
         if(existingCustomerBill==null) {
             // FIXME: marking the CB so it can be easily removed during development. Remove before flight.
             cb = watermark(cb);
             // persist it
-            logger.info("PERSISTENCE: creating CB {}", cb.getId());
+            logger.info("PERSISTENCE: creating CB {}...", cb.getId());
             String id = this.appliedCustomerBillRateApis.createCustomerBill(CustomerBillCreate.fromJson(cb.toJson()));
             logger.info("PERSISTENCE: created CB with id {}", id);
             // and return a fresh copy
             return this.customerBillAPI.retrieveCustomerBill(id, null);
+//            return existingCustomerBill;
         } else {
             logger.info("Local CB {} is already on TMF with id {}", cb.getId(), existingCustomerBill.getId());
             return existingCustomerBill;
@@ -148,6 +169,8 @@ public class TmfPeristenceService implements InitializingBean {
         if(existingACBR==null) {
             // FIXME: marking the ACBR so it can be easily removed during development. Remove before flight.
             acbr = watermark(acbr);
+            // remove the reference to the bill (its to an local CB)
+            acbr.setBill(null);
             // persist it
             logger.info("PERSISTENCE: creating ACBR {}", acbr.getId());
             AppliedCustomerBillingRate createdACBR = this.appliedCustomerBillRateApis.createAppliedCustomerBillingRate(AppliedCustomerBillingRateCreate.fromJson(acbr.toJson()));
@@ -174,28 +197,35 @@ public class TmfPeristenceService implements InitializingBean {
     private CustomerBill isCbAlreadyInTMF(CustomerBill cb) throws ApiException, Exception {
 
         // prepare a filter
-        Map<String, String> filter = new HashMap<>();
-        filter.put("billingPeriod.startDateTime", cb.getBillingPeriod().getStartDateTime().toString());
+//        DateTimeFormatter fmt = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss'Z'");
+        // TODO: if working, do the same also for acbr
+//        Map<String, String> filter = new HashMap<>();
+//        filter.put("billingPeriod.startDateTime", fmt.format(cb.getBillingPeriod().getStartDateTime()));
+//        filter.put("relatedParty.id", cb.getRelatedParty().getId())
 
         // retrieve matches (shouldn't be a large set)
-        List<CustomerBill> candidates = this.customerBillAPI.listCustomerBill(null, null, 1000, filter);
+        List<CustomerBill> candidates = this.customerBillAPI.listCustomerBill(null, null, 1000, null);
+        logger.info("PERSISTENCE - FOUND {} cb matching initial criteria", candidates.size());
 
         // compare candidates with the local CustomerBill
-        List<CustomerBill> matches = new ArrayList<>();
+        List<CustomerBill> matchedCandidates = new ArrayList<>();
         for(CustomerBill candidate: candidates) {
             if(TmfPeristenceService.match(cb, candidate))
-                matches.add(candidate);
+                matchedCandidates.add(candidate);
         }
 
         // ok if there's one match. null if no match. Exception if more matches.
-        if(matches.size()==1)
-            return matches.get(0);
-        else if(matches.isEmpty())
+        if(matchedCandidates.size()==1)
+            return matchedCandidates.get(0);
+        else if(matchedCandidates.isEmpty())
             return null;
         else {
-            throw new Exception(String.format("Found {} CustomerBills already on TMF matching the given CustomerBill with local id {}", matches.size(), cb.getId()));
+            String msg = String.format("Found %d CustomerBills already on TMF matching the given CustomerBill with local id %s", matchedCandidates.size(), cb.getId());
+            logger.error(msg);
+            return matchedCandidates.get(0);
         }
     }
+
 
     private AppliedCustomerBillingRate isAcbrAlreadyInTMF(AppliedCustomerBillingRate acbr) throws ApiException, Exception {
         // prepare a filter
@@ -242,24 +272,26 @@ public class TmfPeristenceService implements InitializingBean {
     }
 
     private static Map<String, String> buildComparisonMap(CustomerBill cb) {
+        DateTimeFormatter fmt = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss'Z'");
         Map<String, String> out = new HashMap<>();
         if(cb.getBillingPeriod()!=null && cb.getBillingPeriod().getStartDateTime()!=null)
-            out.put("billingPeriod.startDateTime", cb.getBillingPeriod().getStartDateTime().toString());
+            out.put("billingPeriod.startDateTime", fmt.format(cb.getBillingPeriod().getStartDateTime()));
         if(cb.getBillingPeriod()!=null && cb.getBillingPeriod().getEndDateTime()!=null)
-            out.put("billingPeriod.endDateTime", cb.getBillingPeriod().getEndDateTime().toString());
+            out.put("billingPeriod.endDateTime", fmt.format(cb.getBillingPeriod().getEndDateTime()));
         if(cb.getTaxExcludedAmount()!=null && cb.getTaxExcludedAmount().getValue()!=null)
             out.put("taxExcludedAmount.value", cb.getTaxExcludedAmount().getValue().toString());
         return out;
     }
 
     private static Map<String, String> buildComparisonMap(AppliedCustomerBillingRate cb) {
+        DateTimeFormatter fmt = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss'Z'");
         Map<String, String> out = new HashMap<>();
         if(cb.getProduct()!=null && cb.getProduct().getId()!=null)
             out.put("product.id", cb.getProduct().getId());
         if(cb.getPeriodCoverage()!=null && cb.getPeriodCoverage().getStartDateTime()!=null)
-            out.put("periodCoverage.startDateTime", cb.getPeriodCoverage().getStartDateTime().toString());
+            out.put("periodCoverage.startDateTime", fmt.format(cb.getPeriodCoverage().getStartDateTime()));
         if(cb.getPeriodCoverage()!=null && cb.getPeriodCoverage().getEndDateTime()!=null)
-            out.put("periodCoverage.endDateTime", cb.getPeriodCoverage().getEndDateTime().toString());
+            out.put("periodCoverage.endDateTime", fmt.format(cb.getPeriodCoverage().getEndDateTime()));
         if(cb.getName()!=null)
             out.put("name", cb.getName());
         if(cb.getDescription()!=null)
