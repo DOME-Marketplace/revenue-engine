@@ -21,7 +21,6 @@ import it.eng.dome.revenue.engine.service.BillsService;
 import it.eng.dome.revenue.engine.service.cached.CachedStatementsService;
 import it.eng.dome.revenue.engine.service.cached.CachedSubscriptionService;
 import it.eng.dome.revenue.engine.service.TmfDataRetriever;
-import it.eng.dome.tmforum.tmf678.v4.model.CustomerBill;
 
 @RestController
 @RequestMapping("revenue/subscriptions")

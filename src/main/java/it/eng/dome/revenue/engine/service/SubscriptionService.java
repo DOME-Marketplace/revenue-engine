@@ -83,6 +83,7 @@ public class SubscriptionService implements InitializingBean {
 	 * @throws ApiException If there is an error retrieving the organization.
 	*/
 	public Subscription getSubscriptionByRelatedPartyId(String id) throws IOException, ApiException {
+		// FIXME: this only returns the first subscription!!!!
 		logger.debug("Retrieving subscription by related party id: {}", id);
 	    return getAllSubscriptionsByProducts().stream()
 	            .filter(subscription -> subscription.getRelatedParties() != null)
@@ -92,6 +93,16 @@ public class SubscriptionService implements InitializingBean {
 	            .orElse(null);
 	}
 	
+	public List<Subscription> getSubscriptionsByPartyId(String id) throws IOException, ApiException {
+		logger.debug("Retrieving subscription by related party id: {}", id);
+	    return getAllSubscriptionsByProducts().stream()
+	            .filter(subscription -> subscription.getRelatedParties() != null)
+	            .filter(subscription -> subscription.getRelatedParties().stream()
+				.anyMatch(party -> party != null && party.getId() != null && party.getId().equals(id)))
+				.toList();
+	}
+
+
 	/**
 	 *  Retrieves the subscription ID associated with a specific related party ID.
 	 * 

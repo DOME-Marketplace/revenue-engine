@@ -81,6 +81,7 @@ public class TmfDataRetriever implements InitializingBean {
             filter.put("date.lt", timePeriod.getEndDateTime().toString());
         }
 
+        // FIXME: be careful not to match attributes across different relatedParties
         if (sellerId != null) {
             filter.put("relatedParty", sellerId);
             filter.put("relatedParty.role", "Seller");

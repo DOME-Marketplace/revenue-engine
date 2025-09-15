@@ -168,7 +168,7 @@ public final class TmfApiFactory implements InitializingBean {
 			if (!tmfEnvoy) { // no envoy specific path
 				basePath += TMF_ENDPOINT_CONCAT_PATH + "customer-bill-management" + "." + tmfNamespace + "." + tmfPostfix + ":" + tmfPort;
 			}
-			
+
 			apiClientTmf678.setBasePath(basePath + "/" + tmf678CustomerBillPath);
 			log.debug("Invoke Customer Billing API at endpoint: " + apiClientTmf678.getBasePath());
 		}
