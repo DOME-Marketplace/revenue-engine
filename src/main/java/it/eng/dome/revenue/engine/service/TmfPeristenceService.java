@@ -27,11 +27,10 @@ import it.eng.dome.tmforum.tmf678.v4.model.CustomerBillCreate;
 
 /**
  * FIXME: Enhancemets and fixes:
- * properly manage limits
- * comparison of CB should consider also attached acbrs
- * only consider past entities (cb and acbrs)
- * only consider finalized acbrs
- * only consider active subscriptions (but be careful with last invoices... sub might not be active)
+ * [L] properly manage limits
+ * [M] comparison of CB should consider also attached acbrs
+ * [H] only consider past & consolidated entities (cb and acbrs). Filter here based on dates, state, etc...
+ * [H] only consider active subscriptions ([L] but be careful with last invoices... sub might not be active)
  */
 
 @Service
@@ -136,9 +135,6 @@ public class TmfPeristenceService implements InitializingBean {
             logger.info("PERSISTENCE: created CB with id {}", id);
             // and return a fresh copy
             return this.customerBillAPI.retrieveCustomerBill(id, null);
-
-
-
         } else {
             logger.info("Local CB {} is already on TMF with id {}", cb.getId(), existingCustomerBill.getId());
             return existingCustomerBill;

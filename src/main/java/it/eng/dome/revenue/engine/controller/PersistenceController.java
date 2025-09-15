@@ -1,6 +1,5 @@
 package it.eng.dome.revenue.engine.controller;
 
-import java.util.ArrayList;
 import java.util.List;
 
 import org.slf4j.Logger;
@@ -13,9 +12,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.bind.annotation.PathVariable;
 
-import it.eng.dome.revenue.engine.service.BillsService;
 import it.eng.dome.revenue.engine.service.TmfPeristenceService;
-import it.eng.dome.tmforum.tmf678.v4.model.AppliedCustomerBillingRate;
 import it.eng.dome.tmforum.tmf678.v4.model.CustomerBill;
 
 @RestController
