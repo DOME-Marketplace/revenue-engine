@@ -31,126 +31,91 @@ public class RevenueProductMapper {
 	
 	private static final Logger logger = LoggerFactory.getLogger(RevenueProductMapper.class);
 	
-
-    public static ProductOffering fromPlanToProductOffering(Plan plan) {
-        try {
-            ProductOffering offering = new ProductOffering();
-            offering.setId("urn:tmf:product-offering:" + plan.getId());
-            offering.setHref("urn:tmf:product-offering:" + plan.getId());
-            offering.setName(plan.getName() + " Offering");
-            offering.setDescription(plan.getDescription());
-            offering.setLifecycleStatus(plan.getLifecycleStatus());
-            offering.setIsBundle(false);
-
-            ProductSpecificationRef specRef = new ProductSpecificationRef();
-            specRef.setId(plan.getId());
-            specRef.setName(plan.getName() + " Plan Specification");
-            specRef.setHref(new URI(plan.getId()));
-            specRef.setAtType("PlanSpecRef");
-            specRef.setVersion("1.0");
-
-            offering.setProductSpecification(specRef);
-
-            if (plan.getValidFor() != null) {
-                ProductOfferingTerm term = new ProductOfferingTerm();
-                term.setName(plan.getName());
-                term.setDescription(plan.getDescription());
-                term.setValidFor(TmfConverter.convertTPto620(plan.getValidFor()));
-                offering.setProductOfferingTerm(List.of(term));
-            }
-
-            return offering;
-
-        } catch (Exception e) {
-            logger.error("Error converting Plan to ProductOffering: {}", plan.getId(), e);
-            throw new RuntimeException("Mapping Plan to ProductOffering failed", e);
-        }
-    }
-	
-	/*
+    /*
 	 * PLAN TO PRODUCT OFFERING
-	 */
+	*/
 	
-	public static ProductOffering toProductOffering(Plan plan) {
-		if (plan == null) {
-		    logger.error("toProductOffering: plan is null, returning null ProductOffering");
-		    return null;
-		}
-
-	    ProductOffering po = new ProductOffering();
-
-	    // id and basic metadata
-	    po.setId(plan.getId());
-	    po.setHref(plan.getId());
-	    po.setName(plan.getName());
-	    po.setDescription(plan.getDescription());
-	    po.setLifecycleStatus(plan.getLifecycleStatus());
-	    po.setIsBundle(false); // TODO: understand how manage this attribute
-	    // if true, it will have other productOffering inside
-	    // must fill productOffering relationship
-	    po.setLastUpdate(OffsetDateTime.now()); // or create a last update in plan
-	    po.setVersion("1.0"); // TODO: understand how manage this attribute
-
-	    if (plan.getValidFor() != null) {
-	        TimePeriod validFor = new TimePeriod();
-	        validFor.setStartDateTime(plan.getValidFor().getStartDateTime());
-	        validFor.setEndDateTime(plan.getValidFor().getEndDateTime());
-	        po.setValidFor(validFor);
-	    }
-	    
-		// reference
-
-	    // Product Offering Price mapping
-        if (plan.getPrice() != null) {
-            // Use the public method to map and collect all prices from the hierarchical structure.
-            List<ProductOfferingPrice> rawMappedPrices = mapAllPrices(plan.getPrice());
-
-            // Convert the list of ProductOfferingPrice to List<ProductOfferingPriceRefOrValue> using the new dedicated helper method.
-            List<ProductOfferingPriceRefOrValue> finalMappedPrices = toProductOfferingPriceRefOrValueList(rawMappedPrices);
-            
-            // Set the final list of wrapped prices to the ProductOffering.
-            if (!finalMappedPrices.isEmpty()) {
-                po.setProductOfferingPrice(finalMappedPrices);
-            }
-        }
-
-	    // Product Specification reference (MUSTTT)
-	    ProductSpecificationRef psRef = new ProductSpecificationRef();
-	    psRef.setId("urn:example:product-specification:" + plan.getId()); // TODO: understand how to manage this attribute
-	    psRef.setName(plan.getName() + " Specification");
-	    psRef.setVersion("0.1"); // TODO: understand how to manage this attribute
-	    try {
-			psRef.setHref(new URI(psRef.getId()));
-		} catch (URISyntaxException e) {
-			 logger.error("Invalid URI syntax for ProductSpecificationRef Href with ID '{}'", psRef.getId(), e);
-        throw new IllegalArgumentException("Failed to create ProductSpecificationRef Href due to invalid URI syntax", e);
-		}
-	    po.setProductSpecification(psRef);
-
-	    // Product Offering Terms (e.g., contract duration, renewal)
-	    List<ProductOfferingTerm> terms = new ArrayList<>();
-	    if (plan.getContractDurationLength() != null && plan.getContractDurationPeriodType() != null) {
-	        ProductOfferingTerm term = new ProductOfferingTerm();
-	        term.setName("Contract Duration");
-	        term.setDescription("Minimum duration of the plan");
-	        //OPTIONAL
-//	        TimePeriod duration = new TimePeriod();
-//	        term.setValidFor(duration);
-//	        Duration contractDuration = Duration.of(plan.getContractDurationLength(),
-//	            convertToChronoUnit(plan.getContractDurationPeriodType()));
-//	        term.setDuration(contractDuration);
-	        terms.add(term);
-	    }
-
-	    if (!terms.isEmpty()) {
-	        po.setProductOfferingTerm(terms);
-	    }
-	    
-	    // Category mapping - if Exists
-	    // add category to plan
-
-	    return po;
-	}
+	// FIXME: Do we need the plan mapper?
+	
+//	public static ProductOffering toProductOffering(Plan plan) {
+//		if (plan == null) {
+//		    logger.error("toProductOffering: plan is null, returning null ProductOffering");
+//		    return null;
+//		}
+//
+//	    ProductOffering po = new ProductOffering();
+//	    
+//	    po.setId(plan.getId());
+//	    po.setHref(plan.getId());
+//	    po.setName(plan.getName());
+//	    po.setDescription(plan.getDescription());
+//	    po.setLifecycleStatus(plan.getLifecycleStatus());
+//	    po.setIsBundle(false);
+//	    // if true, it will have other productOffering inside
+//	    // must fill productOffering relationship
+//	    po.setLastUpdate(OffsetDateTime.now());
+//	    po.setVersion("1.0");
+//
+//	    if (plan.getValidFor() != null) {
+//	        TimePeriod validFor = new TimePeriod();
+//	        validFor.setStartDateTime(plan.getValidFor().getStartDateTime());
+//	        validFor.setEndDateTime(plan.getValidFor().getEndDateTime());
+//	        po.setValidFor(validFor);
+//	    }
+//	    
+//		// reference
+//
+//	    // Product Offering Price mapping
+//        if (plan.getPrice() != null) {
+//            // Use the public method to map and collect all prices from the hierarchical structure.
+//            List<ProductOfferingPrice> rawMappedPrices = mapAllPrices(plan.getPrice());
+//
+//            // Convert the list of ProductOfferingPrice to List<ProductOfferingPriceRefOrValue> using the new dedicated helper method.
+//            List<ProductOfferingPriceRefOrValue> finalMappedPrices = toProductOfferingPriceRefOrValueList(rawMappedPrices);
+//            
+//            // Set the final list of wrapped prices to the ProductOffering.
+//            if (!finalMappedPrices.isEmpty()) {
+//                po.setProductOfferingPrice(finalMappedPrices);
+//            }
+//        }
+//
+//	    // Product Specification reference (MUSTTT)
+//	    ProductSpecificationRef psRef = new ProductSpecificationRef();
+//	    psRef.setId("urn:example:product-specification:" + plan.getId());
+//	    psRef.setName(plan.getName() + " Specification");
+//	    psRef.setVersion("0.1");
+//	    try {
+//			psRef.setHref(new URI(psRef.getId()));
+//		} catch (URISyntaxException e) {
+//			 logger.error("Invalid URI syntax for ProductSpecificationRef Href with ID '{}'", psRef.getId(), e);
+//        throw new IllegalArgumentException("Failed to create ProductSpecificationRef Href due to invalid URI syntax", e);
+//		}
+//	    po.setProductSpecification(psRef);
+//
+//	    // Product Offering Terms (e.g., contract duration, renewal)
+//	    List<ProductOfferingTerm> terms = new ArrayList<>();
+//	    if (plan.getContractDurationLength() != null && plan.getContractDurationPeriodType() != null) {
+//	        ProductOfferingTerm term = new ProductOfferingTerm();
+//	        term.setName("Contract Duration");
+//	        term.setDescription("Minimum duration of the plan");
+//	        //OPTIONAL
+////	        TimePeriod duration = new TimePeriod();
+////	        term.setValidFor(duration);
+////	        Duration contractDuration = Duration.of(plan.getContractDurationLength(),
+////	            convertToChronoUnit(plan.getContractDurationPeriodType()));
+////	        term.setDuration(contractDuration);
+//	        terms.add(term);
+//	    }
+//
+//	    if (!terms.isEmpty()) {
+//	        po.setProductOfferingTerm(terms);
+//	    }
+//	    
+//	    // Category mapping - if Exists
+//	    // add category to plan
+//
+//	    return po;
+//	}
 	
 	/**
      * Entry point for mapping a hierarchical {@code Price} structure into a flat list of {@link ProductOfferingPrice} objects.
@@ -238,8 +203,6 @@ public class RevenueProductMapper {
 			}
             refOrValue.setName(price.getName());
             
-            //TODO: ADD OTHER ATTR. IF IT IS NEED.
-            
             finalMappedPrices.add(refOrValue);
         }
         return finalMappedPrices;
@@ -266,53 +229,12 @@ public class RevenueProductMapper {
         ref.setName(subscription.getName());
       
         return ref;
-    }
-	
-	
-	public static Product toProduct(Subscription subscription, it.eng.dome.tmforum.tmf678.v4.model.BillingAccountRef billingAccountRef) {
-		
-		logger.debug("Converting Subscription to Product: {}", subscription.getId());
-		
-		Product product = new Product();
-		
-		product.setId(subscription.getId());
-		product.setName(subscription.getName());
-		product.setDescription("Product for " + subscription.getName());
-		product.setHref(subscription.getId());
-		product.setIsBundle(false);
-//		product.isCustomerVisible(false);
-		product.orderDate(subscription.getStartDate()); //TODO: understand if it's different then start date
-		product.startDate(subscription.getStartDate());
-		product.terminationDate(subscription.getStartDate().plusYears(1)); // ??
-		product.setStatus(ProductStatusType.ACTIVE);
-//		product.setProductSerialNumber(subscription.getId()); //??
-		
-		// reference to the product
-		product.setRelatedParty(TmfConverter.convertRpTo637(subscription.getRelatedParties()));		
-		product.setBillingAccount(TmfConverter.convertBillingAccountRefTo637(billingAccountRef));
-		
-		// productCharacteristics ?
-		// for example, authorization for payment with card - understand how to set this
-		// not necessary by default
-		
-		// productOffering ??
-		
-		// productPrice ?? (is the same of the (plan/ProductOffering?))
-		// must be a ref to ProductOfferingPrice
-		
-		//productSpecificationRef
-		// must be a ref to ProductOffering's Specification if necessary
-		
-		
-		return product;
-	}
-    
-    
-	
+    }	
 
 	/*
 	 * PRODUCT TO SUBSCRIPTION
 	 */
+    
 	public static Subscription toSubscription(Product product) {
 		
 		logger.debug("Converting Product {} to Subscription", product.getId());
@@ -390,6 +312,38 @@ public class RevenueProductMapper {
 	}
 		*/
 
-
-
+//	public static ProductOffering fromPlanToProductOffering(Plan plan) {
+//        try {
+//            ProductOffering offering = new ProductOffering();
+//            offering.setId("urn:tmf:product-offering:" + plan.getId());
+//            offering.setHref("urn:tmf:product-offering:" + plan.getId());
+//            offering.setName(plan.getName() + " Offering");
+//            offering.setDescription(plan.getDescription());
+//            offering.setLifecycleStatus(plan.getLifecycleStatus());
+//            offering.setIsBundle(false);
+//
+//            ProductSpecificationRef specRef = new ProductSpecificationRef();
+//            specRef.setId(plan.getId());
+//            specRef.setName(plan.getName() + " Plan Specification");
+//            specRef.setHref(new URI(plan.getId()));
+//            specRef.setAtType("PlanSpecRef");
+//            specRef.setVersion("1.0");
+//
+//            offering.setProductSpecification(specRef);
+//
+//            if (plan.getValidFor() != null) {
+//                ProductOfferingTerm term = new ProductOfferingTerm();
+//                term.setName(plan.getName());
+//                term.setDescription(plan.getDescription());
+//                term.setValidFor(TmfConverter.convertTPto620(plan.getValidFor()));
+//                offering.setProductOfferingTerm(List.of(term));
+//            }
+//
+//            return offering;
+//
+//        } catch (Exception e) {
+//            logger.error("Error converting Plan to ProductOffering: {}", plan.getId(), e);
+//            throw new RuntimeException("Mapping Plan to ProductOffering failed", e);
+//        }
+//    }
 }

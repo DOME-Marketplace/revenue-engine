@@ -24,7 +24,7 @@ public class RevenueBillingMapper {
 	private static final Logger logger = LoggerFactory.getLogger(RevenueBillingMapper.class);
 	
 	/*
-	 * ITEMS OF SIMPLE BILL
+	 * SIMPLE BILL and Items
 	 *  TO ABCR
 	 */
 	
@@ -146,44 +146,6 @@ public class RevenueBillingMapper {
 
 	    return acbr;
 	}
-
-	// Maps a RevenueStatement to an AppliedCustomerBillingRate (ACBR) object.
-	/* 
-	public static AppliedCustomerBillingRate toACBR(RevenueStatement rs, BillingAccountRef billingAccountRef) {
-        if (rs == null) return null;
-
-        //FIXME: assume get 0
-        RevenueItem rootItem = rs.getRevenueItems().get(0);
-
-        AppliedCustomerBillingRate acbr = new AppliedCustomerBillingRate();
-        acbr.setId(UUID.randomUUID().toString());
-        acbr.setHref(acbr.getId()); // check if it's ok
-        acbr.setName("Applied Customer Billing Rate of " + rootItem.getName());
-        acbr.setDescription("Applied Customer Billing Rate of " + rs.getDescription() + "for period " + rs.getPeriod().getStartDateTime() + "-" + rs.getPeriod().getEndDateTime());
-        acbr.setDate(rs.getSubscription().getStartDate());
-        acbr.setIsBilled(false);
-        acbr.setType(null); //TODO: discuss
-        acbr.setPeriodCoverage(rs.getPeriod());
-        acbr.setBill(null); // beacuse bill will be filled when the party pays the invoice 
-        
-        acbr.setProduct(toProductRef(rs.getSubscription()));
-        acbr.setBillingAccount(billingAccountRef);
-        acbr.setRelatedParty(rs.getSubscription().getRelatedParties());
-        //TODO: add appliedTax
-        
-        // Set taxExcludedAmount (overall value)
-        if (rootItem.getOverallValue() != null) {
-            Money money = new Money();
-            money.setValue(rootItem.getOverallValue().floatValue());
-            money.setUnit(rootItem.getCurrency());
-            acbr.setTaxExcludedAmount(money);
-        }
-        
-        //TODO: add taxIncludedAmount
-
-        return acbr;
-    }
-*/
 	
 	/*
 	 * SIMPLE BILL TO CUSTOMER BILL
@@ -210,7 +172,6 @@ public class RevenueBillingMapper {
         String billId = simpleBill.getId();
         cb.setId(billId.replace("urn:ngsi-ld:simplebill", "urn:ngsi-ld:customerbill"));
 //      cb.setHref(billId);
-//      cb.setBillNo(billId.substring(billId.lastIndexOf(":") + 1, billId.length()).substring(0, 6)); // not currently in use. Ask stefania more info
         cb.setBillDate(simpleBill.getBillTime());
         cb.setLastUpdate(OffsetDateTime.now()); //we can assume that the last update is now
 
