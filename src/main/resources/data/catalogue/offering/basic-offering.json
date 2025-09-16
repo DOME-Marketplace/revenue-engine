@@ -1,6 +1,4 @@
 {
-  "id": "urn:ngsi-ld:product-offering:5a4bab89-9f7c-498b-bde8-f70324488b4f",
-  "href": "urn:ngsi-ld:product-offering:5a4bab89-9f7c-498b-bde8-f70324488b4f",
   "description": "Basic Membership Offering for 2025",
   "isBundle": false,
   "lifecycleStatus": "Launched",
@@ -14,16 +12,14 @@
   ],
   "productOfferingPrice": [
     {
-      "id": "urn:ngsi-ld:product-offering-price:91a5b7f3-afb1-427c-bed1-85332ee1448d",
-      "href": "urn:ngsi-ld:product-offering-price:91a5b7f3-afb1-427c-bed1-85332ee1448d",
+      "id": "${price/basic-price/id}",
       "name": "Plan"
     }
   ],
   "productOfferingTerm": [
   ],
   "productSpecification": {
-    "id": "urn:ngsi-ld:product-specification:10ebf2c1-fe79-4191-81a3-b58207307c5a",
-    "href": "urn:ngsi-ld:product-specification:10ebf2c1-fe79-4191-81a3-b58207307c5a",
+    "id": "${specification/basic-package-spec/id}",
     "name": "Basic Plan 2025 product specification"
   },
   "validFor": {
