@@ -1,6 +1,6 @@
 {
   "name": "Basic 2025 price",
-  "description": "Price for regular providers. 8k upfront. Discounts for previous year performance.\n https://raw.githubusercontent.com/DOME-Marketplace/revenue-engine/refs/heads/main/src/main/resources/data/plans/2025-basic.json",
+  "description": "Price for regular providers. 8k upfront. Discounts for previous year performance.\n https://raw.githubusercontent.com/DOME-Marketplace/revenue-engine/refs/heads/develop/src/main/resources/data/plans/2025-basic.json",
   "lifecycleStatus": "Active",
   "priceType": "custom",
   "price": {},
