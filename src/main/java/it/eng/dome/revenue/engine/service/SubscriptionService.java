@@ -75,6 +75,12 @@ public class SubscriptionService implements InitializingBean {
 			if(prod.getName()!=null && prod.getName().toLowerCase().indexOf("subscription")!=-1) {
 				// FIXME: workaround for bug in tmf. Need to retrieve the product individually.
 				Product fullProduct = productApis.getProduct(prod.getId(), null);
+	            
+				// FIXME: but be careful with last invoices... sub might not be active
+				if (!"active".equalsIgnoreCase(fullProduct.getStatus().getValue())) {
+	                continue;
+	            }
+				
 				if(fullProduct.getRelatedParty()!=null) {
 					for(RelatedParty rp: fullProduct.getRelatedParty()) {
 						if(rp!=null && DOME_OPERATOR_ID.equals(rp.getId()) && "seller".equalsIgnoreCase(rp.getRole())) {
