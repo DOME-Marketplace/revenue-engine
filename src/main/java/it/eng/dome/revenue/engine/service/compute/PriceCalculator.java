@@ -258,12 +258,14 @@ public class PriceCalculator {
 				tp = sth.getChargePeriodAt(time, price);
 				break;
 			case ONE_TIME_PREPAID:
+				logger.debug("Computing charge period for ONE_TIME_PREPAID price type");
 				TimePeriod currentPeriod = sth.getSubscriptionPeriodAt(time);
 				OffsetDateTime startDate = subscription.getStartDate();
 				if (currentPeriod.getStartDateTime().equals(startDate)) {
 					tp = currentPeriod;
 				} else {
 					logger.debug("Current period not match with startDate. It has probably already been calculated");
+					tp = null;
 				}
 				break;
 			default:
@@ -275,8 +277,8 @@ public class PriceCalculator {
 			tp = this.getTimePeriod(price.getParentPrice(), time);
 		}
 
-		logger.debug("Computed time period for price {} - tp: {} - {}", price.getName(), tp.getStartDateTime(),
-				tp.getEndDateTime());
+		if(tp!=null)
+			logger.debug("Computed time period for price {} - tp: {} - {}", price.getName(), tp.getStartDateTime(), tp.getEndDateTime());
 
 		return tp;
 	}
