@@ -133,6 +133,8 @@ public class TmfPeristenceService implements InitializingBean {
             BillRef bref = new BillRef();
             bref.setId(persistedCB.getId());
             acbr.setBill(bref);
+            // mark it as billed
+            acbr.setIsBilled(true);
             // persiste the acbr
             this.persistAppliedCustomerBillingRate(acbr);
         }
@@ -170,7 +172,7 @@ public class TmfPeristenceService implements InitializingBean {
             // FIXME: marking the ACBR so it can be easily removed during development. Remove before flight.
             acbr = watermark(acbr);
             // remove the reference to the bill (its to an local CB)
-            acbr.setBill(null);
+            // acbr.setBill(null);
             // persist it
             logger.info("PERSISTENCE: creating ACBR {}", acbr.getId());
             AppliedCustomerBillingRate createdACBR = this.appliedCustomerBillRateApis.createAppliedCustomerBillingRate(AppliedCustomerBillingRateCreate.fromJson(acbr.toJson()));
