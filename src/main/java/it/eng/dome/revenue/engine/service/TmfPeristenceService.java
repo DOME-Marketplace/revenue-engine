@@ -25,6 +25,7 @@ import it.eng.dome.tmforum.tmf678.v4.ApiException;
 import it.eng.dome.tmforum.tmf678.v4.api.CustomerBillApi;
 import it.eng.dome.tmforum.tmf678.v4.model.AppliedCustomerBillingRate;
 import it.eng.dome.tmforum.tmf678.v4.model.AppliedCustomerBillingRateCreate;
+import it.eng.dome.tmforum.tmf678.v4.model.BillRef;
 import it.eng.dome.tmforum.tmf678.v4.model.CustomerBill;
 import it.eng.dome.tmforum.tmf678.v4.model.CustomerBillCreate;
 import it.eng.dome.tmforum.tmf678.v4.model.ProductRef;
@@ -117,10 +118,8 @@ public class TmfPeristenceService implements InitializingBean {
         // retrieve the cb
         CustomerBill localCb = this.billService.getCustomerBillBySimpleBillId(simpleBillId);
 
-        // FIXME: better do this check
-        OffsetDateTime boundary = OffsetDateTime.now().minusMonths(2);
-        if(localCb.getBillingPeriod().getEndDateTime().isAfter(boundary)) {
-            logger.info("Skipping CB {} because not yet consolidated... too recent or in the future", simpleBillId);
+        if(localCb.getBillDate().isAfter(OffsetDateTime.now())) {
+            logger.info("Skipping CB {} because not yet consolidated.", simpleBillId);
             return null;
         }
 
@@ -128,7 +127,6 @@ public class TmfPeristenceService implements InitializingBean {
         CustomerBill persistedCB = this.persistCustomerBill(localCb);
 
         // generate the acbrs
-        /*
         List<AppliedCustomerBillingRate> acbrs = this.billService.getACBRsBySimpleBillId(simpleBillId);
         for(AppliedCustomerBillingRate acbr: acbrs) {
             // set the reference to the cb
@@ -138,7 +136,7 @@ public class TmfPeristenceService implements InitializingBean {
             // persiste the acbr
             this.persistAppliedCustomerBillingRate(acbr);
         }
-        */
+
         return persistedCB;
     }
 
@@ -199,13 +197,11 @@ public class TmfPeristenceService implements InitializingBean {
     private CustomerBill isCbAlreadyInTMF(CustomerBill cb) throws ApiException, Exception {
 
         // prepare a filter
-//        DateTimeFormatter fmt = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss'Z'");
-        // TODO: if working, do the same also for acbr
 //        Map<String, String> filter = new HashMap<>();
-//        filter.put("billingPeriod.startDateTime", fmt.format(cb.getBillingPeriod().getStartDateTime()));
 //        filter.put("relatedParty.id", cb.getRelatedParty().getId())
 
         // retrieve matches (shouldn't be a large set)
+        // FIXME: properly manage limit and paging
         List<CustomerBill> candidates = this.customerBillAPI.listCustomerBill(null, null, 1000, null);
         logger.info("PERSISTENCE - FOUND {} cb matching initial criteria", candidates.size());
 
@@ -213,9 +209,9 @@ public class TmfPeristenceService implements InitializingBean {
         List<CustomerBill> matchedCandidates = new ArrayList<>();
         for(CustomerBill candidate: candidates) {
         	boolean basicMatch = TmfPeristenceService.match(cb, candidate);
-            boolean productMatch = compareCBsProduct(cb.getId(), candidate.getId());
+            boolean productMatch = this.compareCBsProduct(cb.getId(), candidate.getId());
 
-            if (basicMatch && !productMatch) {
+            if (basicMatch && productMatch) {
                 matchedCandidates.add(candidate);
             } else {
                 logger.debug("isCbAlreadyInTMF - Candidate {} discarded. basicMatch={}, productMatch={}", 
@@ -370,6 +366,7 @@ public class TmfPeristenceService implements InitializingBean {
     	List<AppliedCustomerBillingRate> acbrs2 = billService.getACBRsByCustomerBillId(idCustomerBill2);
     	
     	if(acbrs1 == null || acbrs2 == null || acbrs1.isEmpty() || acbrs2.isEmpty()) {
+            logger.warn("NO ACBR found for at least one CB in {} {}", idCustomerBill1, idCustomerBill2);
     		return false;
     	}
         
@@ -381,7 +378,7 @@ public class TmfPeristenceService implements InitializingBean {
             return false;
         }
         
-        boolean areEqual = Objects.equals(productRef1.getId(), productRef2.getId()) && Objects.equals(productRef1.getHref(), productRef2.getHref()) && Objects.equals(productRef1.getName(), productRef2.getName());
+        boolean areEqual = Objects.equals(productRef1.getId(), productRef2.getId());
         
         return areEqual;
     }

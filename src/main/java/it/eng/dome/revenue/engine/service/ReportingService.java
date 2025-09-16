@@ -115,9 +115,15 @@ public class ReportingService implements InitializingBean {
         }
         Plan plan = planService.getPlanById(subscription.getPlan().getId());
         String planName = plan.getName() != null ? plan.getName() : "Unknown Plan";
+
+        SubscriptionTimeHelper th = new SubscriptionTimeHelper(subscription);
+
         String startDate = subscription.getStartDate() != null ? subscription.getStartDate().toString() : "Unknown Start Date";
         String renewalDate = subscription.getStartDate() != null ? subscription.getStartDate().plusYears(1).toString() : "Unknown Renewal Date";
         
+        startDate = th.getSubscriptionPeriodAt(OffsetDateTime.now()).getStartDateTime().toString();
+        renewalDate = th.getSubscriptionPeriodAt(OffsetDateTime.now()).getEndDateTime().toString();
+
         String agreementsText = Optional.ofNullable(plan.getAgreements())
                 .orElse(Collections.emptyList())
                 .stream()

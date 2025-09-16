@@ -41,9 +41,10 @@ public class SubscriptionTimeHelper {
         if(this.subscription != null && this.subscription.getPlan() != null) {
             OffsetDateTime start = this.subscription.getStartDate();
             // build a preview for the next 1 year
-            OffsetDateTime stopAt = OffsetDateTime.now().plusYears(1);
+//            OffsetDateTime stopAt = OffsetDateTime.now().plusYears(1);
+            OffsetDateTime stopAt = this.rollSubscriptionPeriod(start, 1).minusSeconds(1);
             while(!start.isAfter(stopAt)) {
-                OffsetDateTime end = this.rollBillPeriod(start, 1);
+                OffsetDateTime end = this.rollBillPeriod(start, 1).minusSeconds(1);
                 TimePeriod tp = new TimePeriod();
                 tp.setStartDateTime(start);
                 // apply the modifier, if any.
@@ -92,8 +93,11 @@ public class SubscriptionTimeHelper {
             } else {
                 // iterate over the charge periods, until reaching the current time
                 // or a year in the future
-                OffsetDateTime stopAt = OffsetDateTime.now().plusYears(1).plusMonths(1);
-                while(!start.isAfter(stopAt)) {
+//                OffsetDateTime stopAt = OffsetDateTime.now(); // .plusYears(1).plusMonths(1);
+
+                OffsetDateTime stopAt = this.rollSubscriptionPeriod(start, 1).minusSeconds(1);
+
+                while(start.isBefore(stopAt)) {
                     OffsetDateTime end = this.rollChargePeriod(start, price, 1);
                     TimePeriod tp = new TimePeriod();
                     tp.setStartDateTime(start);
@@ -215,6 +219,7 @@ public class SubscriptionTimeHelper {
     public TimePeriod getNextChargePeriod(OffsetDateTime time, Price price) {
         return this.getChargePeriodByOffset(time, price, 1);
     }
+
 
     private OffsetDateTime rollSubscriptionPeriod(OffsetDateTime time, int howManyPeriods) {
         // retrive subscriptino length unit
