@@ -1,6 +1,4 @@
 {
-    "id": "urn:ngsi-ld:product-specification:2532e67f-0a84-4aed-b31f-7654984daac9",
-    "href": "urn:ngsi-ld:product-specification:2532e67f-0a84-4aed-b31f-7654984daac9",
     "brand": "The DOME Operator",
     "description": "This is the advanced package including all Marketplace service and a riche selection of marketing services",
     "isBundle": false,
@@ -15,14 +13,12 @@
     "productSpecificationRelationship": [],
     "relatedParty": [
         {
-            "id": "urn:ngsi-ld:organization:95fdc12e-6889-4f08-8ff8-296b10e8e781",
-            "href": "urn:ngsi-ld:organization:95fdc12e-6889-4f08-8ff8-296b10e8e781",
+            "id": "${organization/dome-operator/id}",
             "role": "Seller",
             "@referredType": "organization"
         },
         {
-            "id": "urn:ngsi-ld:organization:95fdc12e-6889-4f08-8ff8-296b10e8e781",
-            "href": "urn:ngsi-ld:organization:95fdc12e-6889-4f08-8ff8-296b10e8e781",
+            "id": "${organization/dome-operator/id}",
             "role": "SellerOperator",
             "@referredType": "organization"
         }
@@ -30,20 +26,17 @@
     "resourceSpecification": [],
     "serviceSpecification": [
         {
-            "id": "urn:ngsi-ld:service-specification:89d6bddb-7805-4042-a60a-030ef09ed816",
-            "href": "urn:ngsi-ld:service-specification:89d6bddb-7805-4042-a60a-030ef09ed816",
+            "id": "${service/marketplace-service-spec/id}",
             "name": "DOME Marketplace Services",
             "version": "1"
         },
         {
-            "id": "urn:ngsi-ld:service-specification:f70f5f90-14d2-4442-a459-dae184f233e4",
-            "href": "urn:ngsi-ld:service-specification:f70f5f90-14d2-4442-a459-dae184f233e4",
+            "id": "${service/basic-marketing-spec/id}",
             "name": "Marketing Promotion - Basic",
             "version": "1"
         },
         {
-            "id": "urn:ngsi-ld:service-specification:d612a81a-b154-4ca4-8ed0-28c13233e268",
-            "href": "urn:ngsi-ld:service-specification:d612a81a-b154-4ca4-8ed0-28c13233e268",
+            "id": "${service/advanced-marketing-spec/id}",
             "name": "Marketing Promotion - Advanced",
             "version": "1"
         }

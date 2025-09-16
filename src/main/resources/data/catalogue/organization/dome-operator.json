@@ -1,0 +1,10 @@
+{
+    "name": "A DOME Subscription Seller",
+    "tradingName": "A DOME Subscription Seller",
+    "externalReference": [
+        {
+            "externalReferenceType": "idm_id",
+            "name": "did:elsi:VATEU-12345678J"
+        }
+    ]
+}

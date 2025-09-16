@@ -1,27 +1,30 @@
 {
   "id": "urn:ngsi-ld:plan:52761it5-3d4q-2321-p009-44bro198re0p",
-  "name": "PRO",
-  "description": "Standard access and features, Dome Foundation Membership, Advanced Reporting & Analytics, Advanced Marketing Promotion",
+  "name": "Price Plan for Advanced Subscription 2025",
+  "description": "Standard access and features, DOME Foundation Membership, Advanced Reporting & Analytics, Advanced Marketing Promotion",
   "validFor": {
     "startDateTime": "2025-01-01T00:00:00Z",
     "endDateTime": "2025-12-31T23:59:59Z"
   },
   "lifecycleStatus": "launched",
+
   "contractDurationLength": 1,
   "contractDurationPeriodType": "YEAR",
+
   "renewalTermLength": 1,
   "renewalTermPeriodType": "YEAR",
 
-  "billingPeriodLength": "2",
-  "billingPeriodType": "WEEK",
-  "billingPeriodEnd": "LAST_DAY_OF_CALENDAR_MONTH", "comment": "alternative values are COMPUTED_DAY, NEXT_FRIDAY, NEXT_MONDAY, 15_OF_CALENDAR_MONTH, ...",
+  "billingPeriodLength": "1",
+  "billingPeriodType": "MONTH",
+  "billingPeriodEnd": "LAST_DAY_OF_CALENDAR_MONTH", 
+  "comment": "alternative values are COMPUTED_DAY, NEXT_FRIDAY, NEXT_MONDAY, 15_OF_CALENDAR_MONTH, ...",
 
   "agreements": [
     "Annual subscription with renewal. Providers can receive up to 80% discount based on the sales volume from the previous year",
     "Referral bonus: an extra 10% discount on next year's fee for bringing 3 new providers or if a referred provider reaches 100k+ in sales"
   ],
   "price": {
-    "name": "PRO Plan price components (2025)",
+    "name": "Price components for Advanced 2025",
     "isBundle": true,
     "currency": "EUR",
     "bundleOp": "CUMULATIVE",
@@ -29,26 +32,26 @@
       {
         "name": "End-of-period yearly fee (for dev purposes only)",
         "type": "RECURRING_POSTPAID",
-        "amount": 2550,
-        "currency": "EUR",
         "recurringChargePeriodLength": 1,
-        "recurringChargePeriodType": "YEAR"
+        "recurringChargePeriodType": "YEAR",
+        "amount": 1250,
+        "currency": "EUR"
       },
       {
         "name": "Monthly postpaid fee (for dev purposes only)",
         "type": "RECURRING_POSTPAID",
-        "amount": 13.5,
-        "currency": "EUR",
         "recurringChargePeriodLength": 1,
-        "recurringChargePeriodType": "MONTH"
+        "recurringChargePeriodType": "MONTH",
+        "amount": 150,
+        "currency": "EUR"
       },
       {
-        "name": "Recurring Yearly Fee",
+        "name": "Pre-paid Yearly Fee",
         "type": "RECURRING_PREPAID",
-        "amount": 8000,
-        "currency": "EUR",
         "recurringChargePeriodLength": 1,
         "recurringChargePeriodType": "YEAR",
+        "amount": 8000,
+        "currency": "EUR",
         "discount": {
           "name": "Discount on yearly fee based on previous years sales and referrals",
           "isBundle": true,
@@ -140,10 +143,13 @@
 	  	  "bundleOp": "CUMULATIVE",
         "recurringChargePeriodLength": 1,
         "recurringChargePeriodType": "MONTH",
+        
         "ignorePeriod": "FIRST_3_CHARGE_PERIODS",
+
         "applicableBaseReferencePeriod": "LAST_9_CHARGE_PERIODS",
         "applicableFrom": "2025-01-01T00:00:00Z",
         "applicableBase": "bills-no-taxes",
+
         "computationBaseReferencePeriod": "CURRENT_CHARGE_PERIOD",
         "computationBase": "bills-no-taxes",
         "currency": "EUR",
