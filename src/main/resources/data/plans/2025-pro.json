@@ -30,24 +30,8 @@
     "bundleOp": "CUMULATIVE",
     "prices": [
       {
-        "name": "End-of-period yearly fee (for dev purposes only)",
-        "type": "RECURRING_POSTPAID",
-        "recurringChargePeriodLength": 1,
-        "recurringChargePeriodType": "YEAR",
-        "amount": 1250,
-        "currency": "EUR"
-      },
-      {
-        "name": "Monthly postpaid fee (for dev purposes only)",
-        "type": "RECURRING_POSTPAID",
-        "recurringChargePeriodLength": 1,
-        "recurringChargePeriodType": "MONTH",
-        "amount": 150,
-        "currency": "EUR"
-      },
-      {
         "name": "Pre-paid Yearly Fee",
-        "type": "RECURRING_PREPAID",
+        "type": "ONE_TIME_PREPAID",
         "recurringChargePeriodLength": 1,
         "recurringChargePeriodType": "YEAR",
         "amount": 8000,
@@ -137,6 +121,14 @@
         }
       },
       {
+        "name": "Monthly postpaid fee (for dev purposes only)",
+        "type": "RECURRING_POSTPAID",
+        "recurringChargePeriodLength": 1,
+        "recurringChargePeriodType": "MONTH",
+        "amount": 150,
+        "currency": "EUR"
+      },
+      {
         "name": "Montly revenue-sharing based on transactions",
         "type": "RECURRING_POSTPAID",
   	  	"isBundle": true,
@@ -194,6 +186,14 @@
             "percent": 2.5
           }
         ]
+      },
+      {
+        "name": "End-of-period yearly fee (for dev purposes only)",
+        "type": "RECURRING_POSTPAID",
+        "recurringChargePeriodLength": 1,
+        "recurringChargePeriodType": "YEAR",
+        "amount": 1250,
+        "currency": "EUR"
       }
     ]
   }
