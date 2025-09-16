@@ -12,7 +12,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import it.eng.dome.revenue.engine.model.SimpleBill;
+import it.eng.dome.revenue.engine.model.RevenueBill;
 import it.eng.dome.revenue.engine.service.BillsService;
 import it.eng.dome.revenue.engine.service.RevenueService;
 import it.eng.dome.revenue.engine.service.TmfDataRetriever;
@@ -62,22 +62,22 @@ public class DevController {
     } 
          */
     
-    @GetMapping("bills/{simpleBillId}/acbr")
-    public ResponseEntity<List<AppliedCustomerBillingRate>> getABCRList(@PathVariable String simpleBillId) {
-        SimpleBill sb;
+    @GetMapping("bills/{revenueBillId}/acbr")
+    public ResponseEntity<List<AppliedCustomerBillingRate>> getABCRList(@PathVariable String revenueBillId) {
+        RevenueBill rb;
         try {
-            sb = billsService.getSimpleBillById(simpleBillId);
-            if (sb == null) {
-                logger.info("No Simple Bill found for ID {}", simpleBillId);
+            rb = billsService.getRevenueBillById(revenueBillId);
+            if (rb == null) {
+                logger.info("No Revenue Bill found for ID {}", revenueBillId);
                 return ResponseEntity.noContent().build();
             }
         } catch (Exception e) {
-            logger.error("Failed to retrieve Simple Bill with ID {}: {}", simpleBillId, e.getMessage(), e);
+            logger.error("Failed to retrieve Revenue Bill with ID {}: {}", revenueBillId, e.getMessage(), e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
 
         try {
-            List<AppliedCustomerBillingRate> acbrList = billsService.getACBRsBySimpleBill(sb);
+            List<AppliedCustomerBillingRate> acbrList = billsService.getACBRsByRevenueBill(rb);
 
             // now we have the list of acbr. Extract the product
             // let's ask the billing service to enrich with taxes
@@ -88,10 +88,10 @@ public class DevController {
             return ResponseEntity.ok(acbrList);
         } catch (IllegalArgumentException e) {
             logger.error(e.getMessage());
-            logger.warn("Invalid Simple Bill data for ID {}: {}", simpleBillId, e.getMessage());
+            logger.warn("Invalid Revenue Bill data for ID {}: {}", revenueBillId, e.getMessage());
             return ResponseEntity.badRequest().build();
         } catch (Exception e) {
-            logger.error("Failed to build ACBR List from Simple Bill with ID {}: {}", simpleBillId, e.getMessage(), e);
+            logger.error("Failed to build ACBR List from Revenue Bill with ID {}: {}", revenueBillId, e.getMessage(), e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }

@@ -13,9 +13,9 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import it.eng.dome.revenue.engine.model.RevenueBill;
 import it.eng.dome.revenue.engine.model.RevenueItem;
 import it.eng.dome.revenue.engine.model.RevenueStatement;
-import it.eng.dome.revenue.engine.model.SimpleBill;
 import it.eng.dome.revenue.engine.model.Subscription;
 import it.eng.dome.revenue.engine.service.BillsService;
 import it.eng.dome.revenue.engine.service.cached.CachedStatementsService;
@@ -116,10 +116,10 @@ public class SubscriptionsController {
 	}
 
 	@GetMapping("{subscriptionId}/bills")
-	public ResponseEntity<List<SimpleBill>> getBillPeriods(@PathVariable String subscriptionId) {
+	public ResponseEntity<List<RevenueBill>> getBillPeriods(@PathVariable String subscriptionId) {
 //	    logger.info("Request received: get bills for subscription {}", subscriptionId);
 	    try {
-	        List<SimpleBill> bills = billsService.getSubscriptionBills(subscriptionId);
+	        List<RevenueBill> bills = billsService.getSubscriptionBills(subscriptionId);
 
 	        if (bills == null || bills.isEmpty()) {
 	            logger.info("No bills found for subscription {}", subscriptionId);
@@ -136,16 +136,16 @@ public class SubscriptionsController {
 //	@GetMapping("{subscriptionId}/customerBills")
 //	public ResponseEntity<List<CustomerBill>> getCustomerBills(@PathVariable String subscriptionId) {
 //	    logger.info("Request received: get customer bills for subscription {}", subscriptionId);
-//	    List<SimpleBill> simpleBills;
+//	    List<RevenueBill> revenueBills;
 //	    try {
-//	        simpleBills = billsService.getSubscriptionBills(subscriptionId);
+//	        revenueBills = billsService.getSubscriptionBills(subscriptionId);
 //	    } catch (Exception e) {
-//	        logger.error("Failed to retrieve simple bills for subscription {}: {}", subscriptionId, e.getMessage(), e);
+//	        logger.error("Failed to retrieve revenue bills  for subscription {}: {}", subscriptionId, e.getMessage(), e);
 //	        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
 //	    }
 //
-//	    List<CustomerBill> customerBills = simpleBills.stream()
-//	            .map(billsService::getCustomerBillBySimpleBill)
+//	    List<CustomerBill> customerBills = revenueBills.stream()
+//	            .map(billsService::getCustomerBillByRevenueBill)
 //	            .toList();
 //
 //	    return ResponseEntity.ok(customerBills);

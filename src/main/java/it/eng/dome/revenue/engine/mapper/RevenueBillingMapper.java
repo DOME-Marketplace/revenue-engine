@@ -9,8 +9,8 @@ import java.util.UUID;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import it.eng.dome.revenue.engine.model.RevenueBill;
 import it.eng.dome.revenue.engine.model.RevenueItem;
-import it.eng.dome.revenue.engine.model.SimpleBill;
 import it.eng.dome.revenue.engine.model.Subscription;
 import it.eng.dome.tmforum.tmf678.v4.model.AppliedBillingTaxRate;
 import it.eng.dome.tmforum.tmf678.v4.model.AppliedCustomerBillingRate;
@@ -22,31 +22,26 @@ import it.eng.dome.tmforum.tmf678.v4.model.TaxItem;
 public class RevenueBillingMapper {
 	
 	private static final Logger logger = LoggerFactory.getLogger(RevenueBillingMapper.class);
-	
-	/*
-	 * SIMPLE BILL and Items
-	 *  TO ABCR
-	 */
-	
+		
 	/**
-	 * Maps a SimpleBill object to a list of AppliedCustomerBillingRate objects.
-	 * This method iterates through the revenue items of the SimpleBill,
+	 * Maps a RevenueBill object to a list of AppliedCustomerBillingRate objects.
+	 * This method iterates through the revenue items of the RevenueBill,
 	 * and for each item, it recursively collects all leaf-level RevenueItems
 	 * to be converted into AppliedCustomerBillingRate objects.
-	 * @param sb The SimpleBill object containing the revenue data.
+	 * @param revenueBill The RevenueBill object containing the revenue data.
 	 * @param subscription The Subscription object related to the billing.
 	 * @param billingAccountRef The BillingAccountRef object for the billing account.
-	 * @return A List of AppliedCustomerBillingRate objects, or an empty list if the input SimpleBill is null or has no revenue items.
+	 * @return A List of AppliedCustomerBillingRate objects, or an empty list if the input RevenueBill is null or has no revenue items.
 	*/
-	public static List<AppliedCustomerBillingRate> toACBRList(SimpleBill sb, Subscription subscription) {
-	    if (sb == null || sb.getRevenueItems() == null || sb.getRevenueItems().isEmpty()) {
+	public static List<AppliedCustomerBillingRate> toACBRList(RevenueBill revenueBill, Subscription subscription) {
+	    if (revenueBill == null || revenueBill.getRevenueItems() == null || revenueBill.getRevenueItems().isEmpty()) {
 	        return Collections.emptyList();
 	    }
 
 	    List<AppliedCustomerBillingRate> acbrList = new ArrayList<>();
-	    for (RevenueItem item : sb.getRevenueItems()) {
+	    for (RevenueItem item : revenueBill.getRevenueItems()) {
 			// For each item, call a recursive helper method to find all "leaf" items and map them to AppliedCustomerBillingRate objects.
-	        collectLeafItemsAndMap(item, sb, subscription, acbrList);
+	        collectLeafItemsAndMap(item, revenueBill, subscription, acbrList);
 	    }
 	    return acbrList;
 	}
@@ -58,12 +53,12 @@ public class RevenueBillingMapper {
 	 * and added to the provided list.
 	 *
 	 * @param item The current RevenueItem in the traversal.
-	 * @param sb The SimpleBill object from which the item originates.
+	 * @param revenueBill The RevenueBill object from which the item originates.
 	 * @param subscription The Subscription object related to the billing.
 	 * @param billingAccountRef The BillingAccountRef for the billing account.
 	 * @param acbrList The list to which the generated AppliedCustomerBillingRate objects will be added.
 	*/
-	private static void collectLeafItemsAndMap(RevenueItem item, SimpleBill sb, Subscription subscription, List<AppliedCustomerBillingRate> acbrList) {
+	private static void collectLeafItemsAndMap(RevenueItem item, RevenueBill revenueBill, Subscription subscription, List<AppliedCustomerBillingRate> acbrList) {
 		// Base case for the recursion: if the item is null, simply return.
 		if (item == null) return;
 		
@@ -71,14 +66,14 @@ public class RevenueBillingMapper {
 		if (item.getItems() != null && !item.getItems().isEmpty()) {
 			for (RevenueItem child : item.getItems()) {
 				// if it has children, recursively call this method for each child.
-				collectLeafItemsAndMap(child, sb, subscription, acbrList);
+				collectLeafItemsAndMap(child, revenueBill, subscription, acbrList);
 			}
 		} else {
 			// this is a leaf node (no children). Billable item that can be mapped to an ACBR.
 			try {
 //				if (item.getOverallValue() != null && item.getOverallValue() != 0.0) {
 				// map the leaf RevenueItem to an AppliedCustomerBillingRate and add it to the list.
-				acbrList.add(toACBR(item, sb, subscription));
+				acbrList.add(toACBR(item, revenueBill, subscription));
 //				} else {
 //					logger.debug("Skipping RevenueItem with null or zero value: {}", item.getName());
 //				}
@@ -91,23 +86,23 @@ public class RevenueBillingMapper {
 	/**
 	 * Maps a single RevenueItem to an AppliedCustomerBillingRate (ACBR) object.
 	 * This method creates a new ACBR instance and populates its fields with data
-	 * from the provided RevenueItem, SimpleBill, Subscription, and BillingAccountRef.
+	 * from the provided RevenueItem, RevenueBill, Subscription, and BillingAccountRef.
 	 *
 	 * @param item The RevenueItem to be mapped. This is expected to be a "leaf" item from the bill's hierarchy.
-	 * @param sb The SimpleBill object from which the RevenueItem and other context (like the billing period) originate.
+	 * @param revenueBill The RevenueBill object from which the RevenueItem and other context (like the billing period) originate.
 	 * @param subscription The Subscription related to this billing rate, used to enrich the ACBR's details.
 	 * @param billingAccountRef A reference to the billing account, to be included in the ACBR.
 	 * @return A new AppliedCustomerBillingRate object populated with the provided data, or null if the input item is null.
-	 * @throws IllegalArgumentException if the SimpleBill or its period are null, as these are mandatory for the ACBR.
+	 * @throws IllegalArgumentException if the RevenueBill or its period are null, as these are mandatory for the ACBR.
 	*/
-	public static AppliedCustomerBillingRate toACBR(RevenueItem item, SimpleBill sb, Subscription subscription) {
+	public static AppliedCustomerBillingRate toACBR(RevenueItem item, RevenueBill revenueBill, Subscription subscription) {
 	    if (item == null) {
 	    	logger.warn("Cannot map to AppliedCustomerBillingRate: RevenueItem is null");
 	    	return null;
 	    }
 	    
-	    if (sb == null || sb.getPeriod() == null) {
-	        throw new IllegalArgumentException("SimpleBill or its period must not be null");
+	    if (revenueBill == null || revenueBill.getPeriod() == null) {
+	        throw new IllegalArgumentException("RevenueBill or its period must not be null");
 	    }
 
 		//id and base data
@@ -117,14 +112,14 @@ public class RevenueBillingMapper {
 	    acbr.setName("Applied Customer Billing Rate of " + item.getName());
 	    acbr.setDescription("Applied Customer Billing Rate of " 
 	        + (subscription != null ? subscription.getName() : "") 
-	        + " for period " + sb.getPeriod().getStartDateTime() + " - " + sb.getPeriod().getEndDateTime());
-	    acbr.setDate(sb.getBillTime());
+	        + " for period " + revenueBill.getPeriod().getStartDateTime() + " - " + revenueBill.getPeriod().getEndDateTime());
+	    acbr.setDate(revenueBill.getBillTime());
 	    acbr.setIsBilled(false); // can we assume that it is false at start?
 	    acbr.setType(item.getType());
-	    acbr.setPeriodCoverage(sb.getPeriod());
+	    acbr.setPeriodCoverage(revenueBill.getPeriod());
 
 		//ref
-		acbr.setRelatedParty(sb.getRelatedParties());
+		acbr.setRelatedParty(revenueBill.getRelatedParties());
 		
 		acbr.setBill(null); //from invoice
 
@@ -148,34 +143,34 @@ public class RevenueBillingMapper {
 	}
 	
 	/*
-	 * SIMPLE BILL TO CUSTOMER BILL
+	 * REVENUE BILL TO CUSTOMER BILL
 	 */
 
 	/**
-	 * Maps a SimpleBill object to a CustomerBill object, following the TMF678 specification.
+	 * Maps a RevenueBill object to a CustomerBill object, following the TMF678 specification.
 	 * This method populates the CustomerBill's fields such as ID, dates, billing period,
-	 * amounts, taxes, and related parties based on the provided SimpleBill.
+	 * amounts, taxes, and related parties based on the provided RevenueBill.
 	 *
-	 * @param simpleBill The SimpleBill object containing the source data.
+	 * @param revenueBill The RevenueBill object containing the source data.
 	 * @param billingAccountRef A reference to the billing account associated with this bill.
 	 * @return A new CustomerBill object populated with the mapped data.
-	 * @throws IllegalArgumentException if the provided simpleBill is null.
+	 * @throws IllegalArgumentException if the provided RevenueBill is null.
 	*/
-	public static CustomerBill toCB(SimpleBill simpleBill) {
-		if (simpleBill == null) {
-		    logger.error("toCB: simpleBill is null, cannot map to CustomerBill");
-		    throw new IllegalArgumentException("simpleBill cannot be null");
+	public static CustomerBill toCB(RevenueBill revenueBill) {
+		if (revenueBill == null) {
+		    logger.error("toCB: RevenueBill is null, cannot map to CustomerBill");
+		    throw new IllegalArgumentException("RevenueBill cannot be null");
 		}
 
 		CustomerBill cb = new CustomerBill();
 
-        String billId = simpleBill.getId();
-        cb.setId(billId.replace("urn:ngsi-ld:simplebill", "urn:ngsi-ld:customerbill"));
+        String billId = revenueBill.getId();
+        cb.setId(billId.replace("urn:ngsi-ld:revenuebill", "urn:ngsi-ld:customerbill"));
 //      cb.setHref(billId);
-        cb.setBillDate(simpleBill.getBillTime());
+        cb.setBillDate(revenueBill.getBillTime());
         cb.setLastUpdate(OffsetDateTime.now()); //we can assume that the last update is now
 
-        cb.setBillingPeriod(simpleBill.getPeriod());
+        cb.setBillingPeriod(revenueBill.getPeriod());
 //		cb.setCategory("normal"); // we don't know if they are used
         cb.setRunType("onCycle");
         cb.setState(StateValue.NEW);
@@ -183,11 +178,11 @@ public class RevenueBillingMapper {
 		// amounts
         Money taxExcludedAmount = new Money();
         taxExcludedAmount.setUnit("EUR");
-        taxExcludedAmount.setValue(simpleBill.getAmount().floatValue());
+        taxExcludedAmount.setValue(revenueBill.getAmount().floatValue());
         cb.setTaxExcludedAmount(taxExcludedAmount);
 
 		// REF
-		cb.setRelatedParty(simpleBill.getRelatedParties());
+		cb.setRelatedParty(revenueBill.getRelatedParties());
 		cb.setBillingAccount(null); // set after
 		cb.setAppliedPayment(new ArrayList<>());
 		

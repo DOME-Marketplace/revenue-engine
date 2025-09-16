@@ -65,10 +65,10 @@ public class PersistenceController {
     } 
 
     // request persistence of bills for a given provider
-    @GetMapping("persist/simplebill/{simpleBillId}")
-    public ResponseEntity<CustomerBill> persistSimpleBill(@PathVariable String simpleBillId) {
+    @GetMapping("persist/revenuebill/{revenueBillId}")
+    public ResponseEntity<CustomerBill> persistRevenueBill(@PathVariable String revenueBillId) {
         try {
-            CustomerBill cb = this.tmfPersistenceService.persistRevenueBill(simpleBillId);
+            CustomerBill cb = this.tmfPersistenceService.persistRevenueBill(revenueBillId);
             return ResponseEntity.ok(cb);
         } catch (Exception e) {
             logger.error("Failed to persist customerbills on tmf: {} {}", e.getMessage(), e);

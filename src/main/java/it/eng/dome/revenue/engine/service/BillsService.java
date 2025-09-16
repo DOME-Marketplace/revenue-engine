@@ -19,10 +19,11 @@ import it.eng.dome.brokerage.api.ProductApis;
 import it.eng.dome.revenue.engine.invoicing.InvoicingService;
 import it.eng.dome.revenue.engine.mapper.RevenueBillingMapper;
 import it.eng.dome.revenue.engine.model.RevenueItem;
-import it.eng.dome.revenue.engine.model.SimpleBill;
+import it.eng.dome.revenue.engine.model.RevenueBill;
 import it.eng.dome.revenue.engine.model.Subscription;
-import it.eng.dome.revenue.engine.model.comparator.SimpleBillComparator;
+import it.eng.dome.revenue.engine.model.comparator.RevenueBillComparator;
 import it.eng.dome.revenue.engine.service.cached.CachedStatementsService;
+import it.eng.dome.revenue.engine.service.cached.CachedSubscriptionService;
 import it.eng.dome.revenue.engine.service.cached.TmfCachedDataRetriever;
 import it.eng.dome.revenue.engine.tmf.TmfApiFactory;
 import it.eng.dome.revenue.engine.utils.TmfConverter;
@@ -39,6 +40,9 @@ import it.eng.dome.tmforum.tmf678.v4.model.TimePeriod;
 @Service
 public class BillsService implements InitializingBean {
 	
+    // FIXME: this should be moved to the offering, or to the plan, or to the order (if we want to customise per customer)
+    private static final int PAYMENT_DEADLINE_OFFSET = 45;
+
 	private final Logger logger = LoggerFactory.getLogger(BillsService.class);
 
     @Autowired
@@ -48,7 +52,7 @@ public class BillsService implements InitializingBean {
 	private CachedStatementsService statementsService;
 
     @Autowired
-	private SubscriptionService subscriptionService;
+	private CachedSubscriptionService subscriptionService;
     
     @Autowired
 	private TmfCachedDataRetriever tmfDataRetriever;
@@ -70,17 +74,17 @@ public class BillsService implements InitializingBean {
 	 * Retrieves a bill by its ID.
 	 * 
 	 * @param billId the ID of the bill to retrieve
-	 * @return the SimpleBill object if found, null otherwise
+	 * @return the RevenueBill object if found, null otherwise
 	 * @throws Exception if an error occurs during retrieval
 	*/
-    public SimpleBill getSimpleBillById(String billId) throws Exception {
+    public RevenueBill getRevenueBillById(String billId) throws Exception {
     	logger.info("Fetch bill with ID {}", billId);
         // FIXME: temporary... until we have proper persistence
         // extract the subscription id
-        String subscriptionId = "urn:ngsi-ld:product:"+billId.substring(23, 23+36);
+        String subscriptionId = "urn:ngsi-ld:product:"+billId.substring(24, 24+36);
 
         // iterate over bills for that subscription, until found
-        for(SimpleBill bill: this.getSubscriptionBills(subscriptionId)) {
+        for(RevenueBill bill: this.getSubscriptionBills(subscriptionId)) {
             if(billId.equals(bill.getId()))
                 return bill;
         }
@@ -90,17 +94,17 @@ public class BillsService implements InitializingBean {
     /** Retrieves all bills for a given subscription ID.
 	 * 
 	 * @param subscriptionId the ID of the subscription for which to retrieve bills
-	 * @return a list of SimpleBill objects representing the bills for the subscription
+	 * @return a list of RevenueBill objects representing the bills for the subscription
 	 * @throws Exception if an error occurs during retrieval
 	*/
-    public List<SimpleBill> getSubscriptionBills(String subscriptionId) throws Exception {    
+    public List<RevenueBill> getSubscriptionBills(String subscriptionId) throws Exception {    
 	    logger.info("Fetch bills for subscription with ID{}", subscriptionId);
         try {
-            Set<SimpleBill> bills = new TreeSet<>(new SimpleBillComparator());
+            Set<RevenueBill> bills = new TreeSet<>(new RevenueBillComparator());
             Subscription subscription = this.subscriptionService.getSubscriptionByProductId(subscriptionId);
             List<RevenueItem> items = this.statementsService.getItemsForSubscription(subscriptionId);
             for(TimePeriod tp: this.statementsService.getBillPeriods(subscriptionId)) {
-                SimpleBill bill = new SimpleBill();
+                RevenueBill bill = new RevenueBill();
                 bill.setRelatedParties(subscription.getRelatedParties());
                 bill.setSubscriptionId(subscription.getId());
                 bill.setPeriod(tp);
@@ -116,61 +120,64 @@ public class BillsService implements InitializingBean {
         }
     }
     
-    public CustomerBill getCustomerBillBySimpleBillId(String simpleBillId) {
-    	SimpleBill sb = new SimpleBill();
+    public CustomerBill getCustomerBillByRevenueBillId(String revenueBillId) {
+    	RevenueBill rb = new RevenueBill();
 		try {
-			sb = this.getSimpleBillById(simpleBillId);
+			rb = this.getRevenueBillById(revenueBillId);
 		} catch (Exception e) {
-			logger.error("Failed to retrieve Simple Bill with ID {}: {}", simpleBillId, e.getMessage(), e);
+			logger.error("Failed to retrieve Revenue Bill with ID {}: {}", revenueBillId, e.getMessage(), e);
 		}
-        
-        CustomerBill cb = this.getCustomerBillBySimpleBill(sb);
+        CustomerBill cb = this.getCustomerBillByRevenueBill(rb);
         return cb;
     }
     
-    public List<AppliedCustomerBillingRate> getACBRsBySimpleBillId(String simpleBillId) {
-    	SimpleBill sb = new SimpleBill();
+    public List<AppliedCustomerBillingRate> getACBRsByRevenueBillId(String revenueBillId) {
+    	RevenueBill rb = new RevenueBill();
 		try {
-			sb = this.getSimpleBillById(simpleBillId);
+			rb = this.getRevenueBillById(revenueBillId);
 		} catch (Exception e) {
-			logger.error("Failed to retrieve Simple Bill with ID {}: {}", simpleBillId, e.getMessage(), e);
-		}
-		
-		List<AppliedCustomerBillingRate> acbrs = this.getACBRsBySimpleBill(sb);
+			logger.error("Failed to retrieve Revenue Bill with ID {}: {}", revenueBillId, e.getMessage(), e);
+		}		
+		List<AppliedCustomerBillingRate> acbrs = this.getACBRsByRevenueBill(rb);
 		
 		return acbrs;
     }
     
     /**
-	 * Builds a CustomerBill from a SimpleBill.
+	 * Builds a CustomerBill from a RevenueBill.
 	 * 
-	 * @param sb the SimpleBill to convert
+	 * @param sb the RevenueBill to convert
 	 * @return a CustomerBill object
-	 * @throws IllegalArgumentException if the SimpleBill is null or does not contain related party information
+	 * @throws IllegalArgumentException if the RevenueBill is null or does not contain related party information
 	 */
-    public CustomerBill getCustomerBillBySimpleBill(SimpleBill sb) {
+    public CustomerBill getCustomerBillByRevenueBill(RevenueBill sb) {
     	if (sb == null) {
-            throw new IllegalArgumentException("SimpleBill cannot be null");
+            throw new IllegalArgumentException("RevenueBill cannot be null");
         }
         if (sb.getRelatedParties() == null || sb.getRelatedParties().isEmpty()) {
-            throw new IllegalArgumentException("Missing related party information in SimpleBill");
+            throw new IllegalArgumentException("Missing related party information in RevenueBill");
         }
         if (sb.getPeriod() == null || sb.getPeriod().getEndDateTime() == null) {
-            throw new IllegalArgumentException("SimpleBill period or endDateTime is missing");
+            throw new IllegalArgumentException("RevenueBill period or endDateTime is missing");
         }
         
         CustomerBill cb = RevenueBillingMapper.toCB(sb);
         if (cb == null) {
-            throw new IllegalStateException("Failed to map SimpleBill to CustomerBill");
+            throw new IllegalStateException("Failed to map RevenueBill to CustomerBill");
         }
 
 		cb.setBillingAccount(TmfConverter.convertBillingAccountRefTo678(tmfDataRetriever.retrieveBillingAccountByProductId(sb.getSubscriptionId())));
         
+        // FIXME: should consider the next bill period, then add then eeded days
 		cb.setNextBillDate(sb.getPeriod().getEndDateTime().plusMonths(1)); //?
-		cb.setPaymentDueDate(sb.getPeriod().getEndDateTime().plusDays(10)); // Q: How many days after the invoice date should we set the due date?
+
+        // FIXME: the payment due date should be N days after the billDate, not the period end
+        // DONE, to CHECK
+		// cb.setPaymentDueDate(sb.getPeriod().getEndDateTime().plusDays(10)); // Q: How many days after the invoice date should we set the due date?
+        cb.setPaymentDueDate(cb.getBillDate().plusDays(PAYMENT_DEADLINE_OFFSET));
 		
 		//apply tax
-		List<AppliedCustomerBillingRate> acbrs = this.getACBRsBySimpleBill(sb);
+		List<AppliedCustomerBillingRate> acbrs = this.getACBRsByRevenueBill(sb);
 	
 		List<TaxItem> taxItems = this.getTaxItemListFromACBRs(acbrs);
     	
@@ -325,31 +332,31 @@ public class BillsService implements InitializingBean {
     }
     
     /**
-     * Retrieves the list of AppliedCustomerBillingRate for a given SimpleBill.
-     * Performs mapping from SimpleBill and Subscription, sets billing account reference,
+     * Retrieves the list of AppliedCustomerBillingRate for a given RevenueBill.
+     * Performs mapping from RevenueBill and Subscription, sets billing account reference,
      * customer bill reference, and applies taxes.
      *
-     * @param sb SimpleBill object (must not be null and must have related parties)
+     * @param sb RevenueBill object (must not be null and must have related parties)
      * @return List of AppliedCustomerBillingRate
-     * @throws IllegalArgumentException if the SimpleBill or its related parties are null/empty
+     * @throws IllegalArgumentException if the RevenueBill or its related parties are null/empty
      * @throws IllegalStateException if required data (Subscription, Buyer party, etc.) cannot be retrieved
      */
-    public List<AppliedCustomerBillingRate> getACBRsBySimpleBill(SimpleBill sb) {
-    	if (sb == null) {
-            throw new IllegalArgumentException("SimpleBill cannot be null");
+    public List<AppliedCustomerBillingRate> getACBRsByRevenueBill(RevenueBill rb) {
+    	if (rb == null) {
+            throw new IllegalArgumentException("RevenueBill cannot be null");
         }
-        if (sb.getRelatedParties() == null || sb.getRelatedParties().isEmpty()) {
-            throw new IllegalArgumentException("Missing related party information in SimpleBill");
+        if (rb.getRelatedParties() == null || rb.getRelatedParties().isEmpty()) {
+            throw new IllegalArgumentException("Missing related party information in RevenueBill");
         }
         
-        Subscription subscription = subscriptionService.getSubscriptionByProductId(sb.getSubscriptionId());
+        Subscription subscription = subscriptionService.getSubscriptionByProductId(rb.getSubscriptionId());
         if (subscription == null) {
-            throw new IllegalStateException("Subscription not found for subscriptionId: " + sb.getSubscriptionId());
+            throw new IllegalStateException("Subscription not found for subscriptionId: " + rb.getSubscriptionId());
         }
         
-        List<AppliedCustomerBillingRate> acbrList = RevenueBillingMapper.toACBRList(sb, subscription);
+        List<AppliedCustomerBillingRate> acbrList = RevenueBillingMapper.toACBRList(rb, subscription);
         if (acbrList == null) {
-            throw new IllegalStateException("Failed to map SimpleBill and Subscription to AppliedCustomerBillingRate list");
+            throw new IllegalStateException("Failed to map RevenueBill and Subscription to AppliedCustomerBillingRate list");
         }
         
         acbrList = this.setBillingAccountRef(acbrList, subscription.getId());
@@ -383,8 +390,6 @@ public class BillsService implements InitializingBean {
     public List<AppliedCustomerBillingRate> setCustomerBillRef(List<AppliedCustomerBillingRate> acbrs){
 		// FIXME: Currently, we don't consider persistence.
 		BillRef billRef = new BillRef();
-//		String billId = sb.getId();
-//		billRef.setId(billId.replace("urn:ngsi-ld:simplebill", "urn:ngsi-ld:customerbill"));
 		billRef.setId("urn:ngsi-ld:customerbill:" + UUID.randomUUID().toString());
 		
 		for (AppliedCustomerBillingRate acbr : acbrs) {

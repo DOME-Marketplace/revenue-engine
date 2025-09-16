@@ -10,7 +10,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import it.eng.dome.tmforum.tmf678.v4.model.RelatedParty;
 import it.eng.dome.tmforum.tmf678.v4.model.TimePeriod;
 
-public class SimpleBill {
+public class RevenueBill {
 
     private TimePeriod period;
     private String subscriptionId;
@@ -20,7 +20,7 @@ public class SimpleBill {
     @JsonProperty("relatedParty") 
     private List<RelatedParty> relatedParties; 
 
-    public SimpleBill() {
+    public RevenueBill() {
         this.revenueItems = new ArrayList<>();
     }
 
@@ -143,7 +143,7 @@ public class SimpleBill {
         key += this.getAmount().toString();
         key += this.getDescriptions();
         // include the subscription id (buyer and plan) + the bill nr
-        return "urn:ngsi-ld:simplebill:" + this.subscriptionId.substring(20) + "-" + UUID.nameUUIDFromBytes(key.getBytes()).toString();
+        return "urn:ngsi-ld:revenuebill:" + this.subscriptionId.substring(20) + "-" + UUID.nameUUIDFromBytes(key.getBytes()).toString();
     }
 
 }

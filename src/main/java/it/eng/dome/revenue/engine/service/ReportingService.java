@@ -25,7 +25,7 @@ import it.eng.dome.revenue.engine.model.Plan;
 import it.eng.dome.revenue.engine.model.Report;
 import it.eng.dome.revenue.engine.model.RevenueItem;
 import it.eng.dome.revenue.engine.model.RevenueStatement;
-import it.eng.dome.revenue.engine.model.SimpleBill;
+import it.eng.dome.revenue.engine.model.RevenueBill;
 import it.eng.dome.revenue.engine.model.Subscription;
 import it.eng.dome.revenue.engine.model.SubscriptionTimeHelper;
 import it.eng.dome.revenue.engine.service.cached.CachedStatementsService;
@@ -171,7 +171,7 @@ public class ReportingService implements InitializingBean {
         }
 
         // retrieve all bills
-        List<SimpleBill> allBills;
+        List<RevenueBill> allBills;
         try {
             allBills = billsService.getSubscriptionBills(subscriptionId);
         } catch (Exception e) {
@@ -191,7 +191,7 @@ public class ReportingService implements InitializingBean {
         List<Report> invoiceReports = new ArrayList<>();
 
         // iterate over all bills to filter and build the billing history
-        for (SimpleBill bill : allBills) {
+        for (RevenueBill bill : allBills) {
         	
         	// skip malformed or incomplete bills
             if (bill == null || bill.getPeriod() == null || bill.getPeriod().getEndDateTime() == null) {
@@ -321,7 +321,7 @@ public class ReportingService implements InitializingBean {
         }
 
         // fetch all bills associated with the subscription
-        List<SimpleBill> allBills;
+        List<RevenueBill> allBills;
         try {
             allBills = billsService.getSubscriptionBills(subscriptionId);
         } catch (Exception e) {
@@ -338,7 +338,7 @@ public class ReportingService implements InitializingBean {
         double futureConfirmedTotal = 0.0;
         double currentEstimatedTotal = 0.0;
 
-        for (SimpleBill bill : allBills) {
+        for (RevenueBill bill : allBills) {
             if (bill == null || bill.getPeriod() == null || bill.getPeriod().getEndDateTime() == null) {
                 logger.warn("Skipping malformed bill: {}", bill);
                 continue;

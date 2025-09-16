@@ -15,7 +15,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import it.eng.dome.brokerage.api.AppliedCustomerBillRateApis;
-import it.eng.dome.revenue.engine.model.SimpleBill;
+import it.eng.dome.revenue.engine.model.RevenueBill;
 import it.eng.dome.revenue.engine.model.Subscription;
 import it.eng.dome.revenue.engine.service.cached.CachedSubscriptionService;
 import it.eng.dome.revenue.engine.tmf.TmfApiFactory;
@@ -98,28 +98,28 @@ public class TmfPeristenceService implements InitializingBean {
 
     // Return a list of created or existing customerbills
     public List<CustomerBill> persistSubscriptionRevenueBills(String subscriptionId) throws ApiException, Exception {
-        // iterate over simplebills for the given subscription
+        // iterate over revenue bills for the given subscription
         List<CustomerBill> createdCustomerBills = new ArrayList<>();
-        for(SimpleBill sb: this.billService.getSubscriptionBills(subscriptionId)) {
+        for(RevenueBill sb: this.billService.getSubscriptionBills(subscriptionId)) {
             CustomerBill createdCustomerBill = this.persistRevenueBill(sb.getId());
-            if(createdCustomerBill!=null)
+            if(createdCustomerBill!=null) {
                 createdCustomerBills.add(createdCustomerBill);
-            else {
+            } else {
                 logger.info("CB {} was not created", sb.getId());
             }
         }
         return createdCustomerBills;
     }
 
-    public CustomerBill persistRevenueBill(String simpleBillId) throws ApiException, Exception {
+    public CustomerBill persistRevenueBill(String revenueBillId) throws ApiException, Exception {
 
-        logger.info("PERSISTENCE - persisting simple bill {}", simpleBillId);
+        logger.info("PERSISTENCE - persisting revenue bill {}", revenueBillId);
 
         // retrieve the cb
-        CustomerBill localCb = this.billService.getCustomerBillBySimpleBillId(simpleBillId);
+        CustomerBill localCb = this.billService.getCustomerBillByRevenueBillId(revenueBillId);
 
         if(localCb.getBillDate().isAfter(OffsetDateTime.now())) {
-            logger.info("Skipping CB {} because not yet consolidated.", simpleBillId);
+            logger.info("Skipping CB {} because not yet consolidated.", revenueBillId);
             return null;
         }
 
@@ -127,7 +127,7 @@ public class TmfPeristenceService implements InitializingBean {
         CustomerBill persistedCB = this.persistCustomerBill(localCb);
 
         // generate the acbrs
-        List<AppliedCustomerBillingRate> acbrs = this.billService.getACBRsBySimpleBillId(simpleBillId);
+        List<AppliedCustomerBillingRate> acbrs = this.billService.getACBRsByRevenueBillId(revenueBillId);
         for(AppliedCustomerBillingRate acbr: acbrs) {
             // set the reference to the cb
             BillRef bref = new BillRef();
