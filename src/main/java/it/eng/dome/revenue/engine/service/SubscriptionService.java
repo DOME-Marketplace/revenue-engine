@@ -11,6 +11,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import it.eng.dome.brokerage.api.ProductApis;
@@ -26,10 +27,9 @@ public class SubscriptionService implements InitializingBean {
 	
 	private final Logger logger = LoggerFactory.getLogger(SubscriptionService.class);
 
-	// FIXME: make this parametric
-	private static String DOME_OPERATOR_ID = "urn:ngsi-ld:organization:a195013a-a0e4-493a-810a-b040e10da58f"; //GOLEM-DOME DEV
-	//private static String DOME_OPERATOR_ID = "urn:ngsi-ld:organization:95fdc12e-6889-4f08-8ff8-296b10e8e781"; // DOME OPERATOR MARKT SBX
-
+	/** Dome Operator ID - now parametric via Spring property */
+    @Value("${dome.operator.id}")
+    private String DOME_OPERATOR_ID;
 
     @Autowired
     // Factory for TMF APIss

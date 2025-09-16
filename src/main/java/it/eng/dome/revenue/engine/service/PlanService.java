@@ -73,7 +73,7 @@ public class PlanService implements InitializingBean{
     // retrieve all plans by offerings
     public List<Plan> getAllPlans() {
     	
-    	//TODO: understand how to filter only plan offering
+    	//FIXME: when the RP bug is fixed, filter only plans connected to DO.
         List<ProductOffering> pos = productOfferingApis.getAllProductOfferings(null, null);
         
         List<Plan> plans = new ArrayList<>();
@@ -125,14 +125,14 @@ public class PlanService implements InitializingBean{
 
     private ProductOfferingPrice fetchProductOfferingPriceById(ProductOffering po, String offeringPriceId) {
     	if (po.getProductOfferingPrice() == null || po.getProductOfferingPrice().isEmpty()) {
-            throw new IllegalStateException("ProductOffering has no ProductOfferingPrice");
+            //throw new IllegalStateException("ProductOffering has no ProductOfferingPrice");
         }
 
         for (ProductOfferingPriceRefOrValue ref : po.getProductOfferingPrice()) {
             if (ref.getId().equals(offeringPriceId)) {
                 ProductOfferingPrice pop = popApis.getProductOfferingPrice(ref.getId(), null);
                 if (pop == null) {
-                    throw new IllegalStateException("ProductOfferingPrice not found for id=" + ref.getId());
+                    //throw new IllegalStateException("ProductOfferingPrice not found for id=" + ref.getId());
                 }
                 return pop;
             }
@@ -149,11 +149,11 @@ public class PlanService implements InitializingBean{
 
         ProductOffering po = productOfferingApis.getProductOffering(offeringId, null);
         if (po == null) {
-            throw new IllegalStateException("ProductOffering not found for id=" + offeringId);
+            //throw new IllegalStateException("ProductOffering not found for id=" + offeringId);
         }
 
         if (po.getProductOfferingPrice() == null || po.getProductOfferingPrice().isEmpty()) {
-            logger.error("ProductOffering id={} has no ProductOfferingPrice", offeringId);
+            //logger.error("ProductOffering id={} has no ProductOfferingPrice", offeringId);
             return Collections.emptyList();
         }
 
@@ -162,7 +162,7 @@ public class PlanService implements InitializingBean{
         for (ProductOfferingPriceRefOrValue popRef : po.getProductOfferingPrice()) {
             ProductOfferingPrice pop = popApis.getProductOfferingPrice(popRef.getId(), null);
             if (pop == null) {
-                logger.error("ProductOfferingPrice not found for id={}", popRef.getId());
+                //logger.error("ProductOfferingPrice not found for id={}", popRef.getId());
                 continue; //
             }
 
