@@ -27,8 +27,8 @@ public class SubscriptionService implements InitializingBean {
 	private final Logger logger = LoggerFactory.getLogger(SubscriptionService.class);
 
 	// FIXME: make this parametric
-	//private static String DOME_OPERATOR_ID = "urn:ngsi-ld:organization:a195013a-a0e4-493a-810a-b040e10da58f";
-	private static String DOME_OPERATOR_ID = "urn:ngsi-ld:organization:95fdc12e-6889-4f08-8ff8-296b10e8e781";
+	private static String DOME_OPERATOR_ID = "urn:ngsi-ld:organization:a195013a-a0e4-493a-810a-b040e10da58f"; //GOLEM-DOME DEV
+	//private static String DOME_OPERATOR_ID = "urn:ngsi-ld:organization:95fdc12e-6889-4f08-8ff8-296b10e8e781"; // DOME OPERATOR MARKT SBX
 
 
     @Autowired

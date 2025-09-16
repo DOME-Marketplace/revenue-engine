@@ -14,6 +14,7 @@ import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import it.eng.dome.brokerage.api.AppliedCustomerBillRateApis;
 import it.eng.dome.brokerage.api.ProductApis;
 import it.eng.dome.revenue.engine.invoicing.InvoicingService;
 import it.eng.dome.revenue.engine.mapper.RevenueBillingMapper;
@@ -56,10 +57,13 @@ public class BillsService implements InitializingBean {
 	private InvoicingService invoicingService;
 
     private ProductApis productApis;
+    
+    private AppliedCustomerBillRateApis acbrApis;
 
     @Override
     public void afterPropertiesSet() throws Exception {
         productApis = new ProductApis(tmfApiFactory.getTMF637ProductInventoryApiClient());
+        acbrApis = new AppliedCustomerBillRateApis(tmfApiFactory.getTMF678CustomerBillApiClient());
     }
 
     /**
@@ -401,5 +405,30 @@ public class BillsService implements InitializingBean {
 	  }
 	  
 	  return acbrs;
+  }
+  
+  /**
+   * Retrieves the list of AppliedCustomerBillingRate for a given CustomerBill ID.
+   *
+   * @param cbId ID of CustomerBill object to retrieve ACBRs.
+   * @return List of AppliedCustomerBillingRate
+   * @throws IllegalArgumentException if the cbId is null/empty
+   */
+  public List<AppliedCustomerBillingRate> getACBRsByCustomerBillId(String cbId) {
+	if (cbId == null) {
+	      throw new IllegalArgumentException("CustomerBill ID cannot be null");
 	}
+  	
+  	logger.info("retrieve acbrs by cust id: {} " + cbId);
+  	
+  	Map<String, String> filter = new HashMap<>();
+	filter.put("bill.id", cbId);
+  	List<AppliedCustomerBillingRate> acbrs = acbrApis.getAllAppliedCustomerBillingRates(null, filter);
+
+  	if(acbrs == null || acbrs.isEmpty()) {
+  		throw new IllegalArgumentException("ACBRs is null or empty for customer bill with id: " + cbId);
+  	}
+      
+  	return acbrs;
+  }
 }

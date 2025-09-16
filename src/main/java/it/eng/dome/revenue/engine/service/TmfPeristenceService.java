@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -26,6 +27,7 @@ import it.eng.dome.tmforum.tmf678.v4.model.AppliedCustomerBillingRate;
 import it.eng.dome.tmforum.tmf678.v4.model.AppliedCustomerBillingRateCreate;
 import it.eng.dome.tmforum.tmf678.v4.model.CustomerBill;
 import it.eng.dome.tmforum.tmf678.v4.model.CustomerBillCreate;
+import it.eng.dome.tmforum.tmf678.v4.model.ProductRef;
 
 /**
  * FIXME: Enhancemets and fixes:
@@ -210,8 +212,15 @@ public class TmfPeristenceService implements InitializingBean {
         // compare candidates with the local CustomerBill
         List<CustomerBill> matchedCandidates = new ArrayList<>();
         for(CustomerBill candidate: candidates) {
-            if(TmfPeristenceService.match(cb, candidate))
+        	boolean basicMatch = TmfPeristenceService.match(cb, candidate);
+            boolean productMatch = compareCBsProduct(cb.getId(), candidate.getId());
+
+            if (basicMatch && !productMatch) {
                 matchedCandidates.add(candidate);
+            } else {
+                logger.debug("isCbAlreadyInTMF - Candidate {} discarded. basicMatch={}, productMatch={}", 
+                             candidate.getId(), basicMatch, productMatch);
+            }
         }
 
         // ok if there's one match. null if no match. Exception if more matches.
@@ -225,7 +234,6 @@ public class TmfPeristenceService implements InitializingBean {
             return matchedCandidates.get(0);
         }
     }
-
 
     private AppliedCustomerBillingRate isAcbrAlreadyInTMF(AppliedCustomerBillingRate acbr) throws ApiException, Exception {
         // prepare a filter
@@ -336,6 +344,38 @@ public class TmfPeristenceService implements InitializingBean {
         }
         return cb;
     }
-
-
+    
+    /**
+     * Compares the products of two CustomerBills by their IDs.
+     * <p>
+     * Retrieves the first AppliedCustomerBillingRate (ACBR) of each CustomerBill and 
+     * checks if their ProductRefs are equal (id, href, name).
+     * </p>
+     *
+     * @param idCustomerBill1 ID of the first CustomerBill
+     * @param idCustomerBill2 ID of the second CustomerBill
+     * @return true if both CustomerBills reference the same Product, false otherwise
+    */
+    public boolean compareCBsProduct(String idCustomerBill1, String idCustomerBill2) {
+    	if(idCustomerBill1 == null || idCustomerBill2 == null) {
+    		logger.warn("One of the customer bill IDs is null. idCustomerBill1={}, idCustomerBill2={}", idCustomerBill1, idCustomerBill2);
+    		return false;
+    	}
+    	
+    	if(idCustomerBill1.equals(idCustomerBill2)) {
+    		return true;
+    	}
+        
+        ProductRef productRef1 = (billService.getACBRsByCustomerBillId(idCustomerBill1)).get(0).getProduct();
+        ProductRef productRef2 = (billService.getACBRsByCustomerBillId(idCustomerBill2)).get(0).getProduct();
+        
+        if (productRef1 == null || productRef2 == null) {
+            logger.warn("One of the products is null. productRef1={}, productRef2={}", productRef1, productRef2);
+            return false;
+        }
+        
+        boolean areEqual = Objects.equals(productRef1.getId(), productRef2.getId()) && Objects.equals(productRef1.getHref(), productRef2.getHref()) && Objects.equals(productRef1.getName(), productRef2.getName());
+        
+        return areEqual;
+    }
 }

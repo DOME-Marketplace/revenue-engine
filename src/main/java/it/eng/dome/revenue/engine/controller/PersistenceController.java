@@ -75,16 +75,4 @@ public class PersistenceController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
-    
-//    @GetMapping("/customerbill/{idCb1}/compare/{idCb2}")
-//    public ResponseEntity<Boolean> compareTwoCbs(@PathVariable String idCb1, String idCb2) {
-//        try {
-//            Boolean b = tmfPersistenceService.compareAcbrsOfCbs(idCb1,idCb2);
-//            return ResponseEntity.ok(b);
-//        } catch (Exception e) {
-//            logger.error("Failed to persist customerbills on tmf: {} {}", e.getMessage(), e);
-//            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
-//        }
-//    }
-
 }
