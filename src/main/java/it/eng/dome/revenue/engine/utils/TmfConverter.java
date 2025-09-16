@@ -8,9 +8,9 @@ import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class Converter {
+public class TmfConverter {
 	
-    private static final Logger logger = LoggerFactory.getLogger(Converter.class);
+    private static final Logger logger = LoggerFactory.getLogger(TmfConverter.class);
 
 
     public static it.eng.dome.tmforum.tmf620.v4.model.TimePeriod convertTPto620(it.eng.dome.tmforum.tmf678.v4.model.TimePeriod source) {
@@ -45,8 +45,7 @@ public class Converter {
 
         return list637;
     }
-
-    
+ 
 	public static it.eng.dome.tmforum.tmf637.v4.model.BillingAccountRef convertBillingAccountRefTo637(
 			it.eng.dome.tmforum.tmf678.v4.model.BillingAccountRef billingAccountRef678) {
 
@@ -60,6 +59,21 @@ public class Converter {
 		billingAccountRef637.setName(billingAccountRef678.getName());
 
 		return billingAccountRef637;
+	}
+	
+	public static it.eng.dome.tmforum.tmf678.v4.model.BillingAccountRef convertBillingAccountRefTo678(
+			it.eng.dome.tmforum.tmf637.v4.model.BillingAccountRef in) {
+
+		if (in == null) {
+			return null;
+		}
+
+		it.eng.dome.tmforum.tmf678.v4.model.BillingAccountRef out = new it.eng.dome.tmforum.tmf678.v4.model.BillingAccountRef();
+		out.setId(in.getId());
+		out.setHref(in.getHref());
+		out.setName(in.getName());
+
+		return out;
 	}
 	
 	public static List<it.eng.dome.tmforum.tmf678.v4.model.RelatedParty> convertRpTo678(List<it.eng.dome.tmforum.tmf637.v4.model.RelatedParty> list637) {

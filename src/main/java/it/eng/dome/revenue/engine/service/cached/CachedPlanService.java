@@ -50,11 +50,11 @@ public class CachedPlanService extends PlanService {
      * Retrieve bills from cache or from the parent class if not cached.
     */
     @Override
-    public List<Plan> getAllPlansByOfferings() {
+    public List<Plan> getAllPlans() {
         String key = "all-plans";
         if (!this.planSetCache.containsKey(key)) {
             logger.debug("Cache MISS for " + key);
-            List<Plan> plans = super.getAllPlansByOfferings();
+            List<Plan> plans = super.getAllPlans();
             this.planSetCache.put(key, plans);
         }
         return this.planSetCache.get(key);

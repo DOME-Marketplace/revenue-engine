@@ -36,7 +36,7 @@ public class PlansController {
     public ResponseEntity<List<Plan>> getAllPlans() {
 //    	logger.info("Request received: fetch all plans");    	
         try {
-            List<Plan> plans = subscriptionPlanService.getAllPlansByOfferings();
+            List<Plan> plans = subscriptionPlanService.getAllPlans();
             return ResponseEntity.ok(plans);
         } catch (Exception e) {
         	logger.error("Failed to load plans: {}", e.getMessage(), e);

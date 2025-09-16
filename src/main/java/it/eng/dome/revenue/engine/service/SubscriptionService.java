@@ -27,7 +27,8 @@ public class SubscriptionService implements InitializingBean {
 	private final Logger logger = LoggerFactory.getLogger(SubscriptionService.class);
 
 	// FIXME: make this parametric
-	private static String DOME_OPERATOR_ID = "urn:ngsi-ld:organization:a195013a-a0e4-493a-810a-b040e10da58f";
+	//private static String DOME_OPERATOR_ID = "urn:ngsi-ld:organization:a195013a-a0e4-493a-810a-b040e10da58f";
+	private static String DOME_OPERATOR_ID = "urn:ngsi-ld:organization:95fdc12e-6889-4f08-8ff8-296b10e8e781";
 
 
     @Autowired
@@ -106,7 +107,7 @@ public class SubscriptionService implements InitializingBean {
 	            .orElse(null);
 	}
 	
-	public List<Subscription> getSubscriptionsByPartyId(String id, String role) throws IOException, ApiException {
+	public List<Subscription> getSubscriptionsByRelatedPartyId(String id, String role) throws IOException, ApiException {
 		logger.debug("Retrieving subscription by related party id: {}", id);
 	    return getAllSubscriptions().stream()
 	            .filter(subscription -> subscription.getRelatedParties() != null)
@@ -116,23 +117,6 @@ public class SubscriptionService implements InitializingBean {
 				.toList();
 	}
 
-
-	/**
-	 *  Retrieves the subscription ID associated with a specific related party ID.
-	 * 
-	 * @param relatedPartyId The ID of the related party to search for.
-	 * @return The ID of the subscription if found, null otherwise.
-	 * @throws IOException If there is an error reading the subscription data.
-	 * @throws ApiException If there is an error retrieving the organization.
-	*/
-	/*
-	public String getSubscriptionIdByRelatedPartyId(String relatedPartyId) throws IOException, ApiException {
-		logger.debug("Retrieving subscription id by related party id: {}", relatedPartyId);
-	    Subscription subscription = getSubscriptionByRelatedPartyId(relatedPartyId);
-	    return subscription != null ? subscription.getId() : null;
-	}
-	*/
-	
 	/**
 	 * Retrieves all subscriptions associated with a specific plan ID.
 	 * 
@@ -146,6 +130,5 @@ public class SubscriptionService implements InitializingBean {
         return this.getAllSubscriptions().stream()
                 .filter(sub -> sub.getPlan() != null && id.equals(sub.getPlan().getId()))
                 .collect(Collectors.toList());
-	}
-    	
+	}	
 }

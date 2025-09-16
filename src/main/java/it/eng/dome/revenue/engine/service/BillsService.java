@@ -24,14 +24,14 @@ import it.eng.dome.revenue.engine.model.comparator.SimpleBillComparator;
 import it.eng.dome.revenue.engine.service.cached.CachedStatementsService;
 import it.eng.dome.revenue.engine.service.cached.TmfCachedDataRetriever;
 import it.eng.dome.revenue.engine.tmf.TmfApiFactory;
+import it.eng.dome.revenue.engine.utils.TmfConverter;
+import it.eng.dome.tmforum.tmf637.v4.model.BillingAccountRef;
 import it.eng.dome.tmforum.tmf637.v4.model.Product;
 import it.eng.dome.tmforum.tmf678.v4.model.AppliedBillingTaxRate;
 import it.eng.dome.tmforum.tmf678.v4.model.AppliedCustomerBillingRate;
 import it.eng.dome.tmforum.tmf678.v4.model.BillRef;
-import it.eng.dome.tmforum.tmf678.v4.model.BillingAccountRef;
 import it.eng.dome.tmforum.tmf678.v4.model.CustomerBill;
 import it.eng.dome.tmforum.tmf678.v4.model.Money;
-import it.eng.dome.tmforum.tmf678.v4.model.RelatedParty;
 import it.eng.dome.tmforum.tmf678.v4.model.TaxItem;
 import it.eng.dome.tmforum.tmf678.v4.model.TimePeriod;
 
@@ -160,7 +160,7 @@ public class BillsService implements InitializingBean {
             throw new IllegalStateException("Failed to map SimpleBill to CustomerBill");
         }
 
-		cb.setBillingAccount(this.getBuyerBillingAccount(sb.getRelatedParties()));
+		cb.setBillingAccount(TmfConverter.convertBillingAccountRefTo678(tmfDataRetriever.retrieveBillingAccountByProductId(sb.getSubscriptionId())));
         
 		cb.setNextBillDate(sb.getPeriod().getEndDateTime().plusMonths(1)); //?
 		cb.setPaymentDueDate(sb.getPeriod().getEndDateTime().plusDays(10)); // Q: How many days after the invoice date should we set the due date?
@@ -348,12 +348,7 @@ public class BillsService implements InitializingBean {
             throw new IllegalStateException("Failed to map SimpleBill and Subscription to AppliedCustomerBillingRate list");
         }
         
-        // Retrieve the related party with role = "Buyer"
-        RelatedParty buyerParty = this.getBuyerParty(sb.getRelatedParties());
-        if (buyerParty == null || buyerParty.getId() == null) {
-            throw new IllegalStateException("Buyer party not found or has null ID");
-        }
-        acbrList = this.setBillingAccountRef(acbrList, buyerParty.getId());
+        acbrList = this.setBillingAccountRef(acbrList, subscription.getId());
         if (acbrList == null) {
             throw new IllegalStateException("Failed to set billing account reference on AppliedCustomerBillingRate list");
         }
@@ -369,29 +364,6 @@ public class BillsService implements InitializingBean {
         }
         
         return acbrList;
-    }
-    
-    private RelatedParty getBuyerParty(List<RelatedParty> relatedParties) {
-    	if (relatedParties == null || relatedParties.isEmpty()) {
-    		throw new IllegalArgumentException("Missing related party information in SimpleBill");
-    	}
-    	
-    	return relatedParties.stream()
-    			.filter(rp -> "Buyer".equalsIgnoreCase(rp.getRole()))
-    			.findFirst()
-    			.orElseThrow(() -> new IllegalArgumentException("No related party with role 'Buyer' found"));
-    }
-    
-    private BillingAccountRef getBuyerBillingAccount (List<RelatedParty> relatedParties) {
-    	// Retrieve the related party with role = "Buyer"
-        RelatedParty buyerParty = this.getBuyerParty(relatedParties);
-        
-        BillingAccountRef billingAccountRef = tmfDataRetriever.retrieveBillingAccountByRelatedPartyId(buyerParty.getId());
-		if (billingAccountRef == null) {
-		    logger.warn("toCB: billingAccountRef is null, CustomerBill will have null billingAccount");
-		}
-		
-		return billingAccountRef;
     }
 
     public List<AppliedCustomerBillingRate> applyTaxes(List<AppliedCustomerBillingRate> acbrs) {
@@ -418,17 +390,16 @@ public class BillsService implements InitializingBean {
 		return acbrs;
     }
     
-    public List<AppliedCustomerBillingRate> setBillingAccountRef(List<AppliedCustomerBillingRate> acbrs, String buyerId){
-        BillingAccountRef billingAccountRef = tmfDataRetriever.retrieveBillingAccountByRelatedPartyId(buyerId);
-		if (billingAccountRef == null) {
-		    logger.warn("toCB: billingAccountRef is null, CustomerBill will have null billingAccount");
-		}
-		
-		for (AppliedCustomerBillingRate acbr : acbrs) {
-			acbr.setBillingAccount(billingAccountRef);
-		}
-		
-		return acbrs;
-    }
-
+  public List<AppliedCustomerBillingRate> setBillingAccountRef(List<AppliedCustomerBillingRate> acbrs, String subscriptionId){
+	  BillingAccountRef billingAccountRef = tmfDataRetriever.retrieveBillingAccountByProductId(subscriptionId);
+	  if (billingAccountRef == null) {
+		  logger.warn("toCB: billingAccountRef is null, CustomerBill will have null billingAccount");
+	  }
+	  
+	  for (AppliedCustomerBillingRate acbr : acbrs) {
+		  acbr.setBillingAccount(TmfConverter.convertBillingAccountRefTo678(billingAccountRef));
+	  }
+	  
+	  return acbrs;
+	}
 }

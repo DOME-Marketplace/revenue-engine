@@ -71,7 +71,7 @@ public class PlanService implements InitializingBean{
     }
     
     // retrieve all plans by offerings
-    public List<Plan> getAllPlansByOfferings() {
+    public List<Plan> getAllPlans() {
     	
     	//TODO: understand how to filter only plan offering
         List<ProductOffering> pos = productOfferingApis.getAllProductOfferings(null, null);

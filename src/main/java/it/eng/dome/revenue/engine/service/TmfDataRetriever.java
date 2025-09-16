@@ -1,6 +1,5 @@
 package it.eng.dome.revenue.engine.service;
 
-import java.net.URI;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -15,15 +14,15 @@ import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import it.eng.dome.brokerage.api.AccountManagementApis;
 import it.eng.dome.brokerage.api.AppliedCustomerBillRateApis;
+import it.eng.dome.brokerage.api.ProductApis;
 import it.eng.dome.revenue.engine.tmf.TmfApiFactory;
 import it.eng.dome.tmforum.tmf632.v4.api.OrganizationApi;
 import it.eng.dome.tmforum.tmf632.v4.model.Characteristic;
 import it.eng.dome.tmforum.tmf632.v4.model.Organization;
-import it.eng.dome.tmforum.tmf666.v4.model.BillingAccount;
+import it.eng.dome.tmforum.tmf637.v4.model.BillingAccountRef;
+import it.eng.dome.tmforum.tmf637.v4.model.Product;
 import it.eng.dome.tmforum.tmf678.v4.model.AppliedCustomerBillingRate;
-import it.eng.dome.tmforum.tmf678.v4.model.BillingAccountRef;
 import it.eng.dome.tmforum.tmf678.v4.model.TimePeriod;
 
 @Service
@@ -38,7 +37,10 @@ public class TmfDataRetriever implements InitializingBean {
     // TMForum API to retrieve bills
     private AppliedCustomerBillRateApis billApi;
     private OrganizationApi orgApi;
-    private AccountManagementApis accountApi;
+    //private AccountManagementApis accountApi;
+    
+    // API to retrieve product
+    private ProductApis productApis;
 
     public TmfDataRetriever() {
     }
@@ -47,7 +49,8 @@ public class TmfDataRetriever implements InitializingBean {
     public void afterPropertiesSet() throws Exception {
         this.billApi = new AppliedCustomerBillRateApis(tmfApiFactory.getTMF678CustomerBillApiClient());
         this.orgApi = new OrganizationApi(tmfApiFactory.getTMF632PartyManagementApiClient());
-        this.accountApi = new AccountManagementApis(tmfApiFactory.getTMF666AccountManagementApiClient());
+        //this.accountApi = new AccountManagementApis(tmfApiFactory.getTMF666AccountManagementApiClient());
+        this.productApis = new ProductApis(tmfApiFactory.getTMF637ProductInventoryApiClient());
         logger.info("TmfDataRetriever initialized with billApi and orgApi");
     }
 
@@ -245,49 +248,73 @@ public class TmfDataRetriever implements InitializingBean {
         return this.retrieveBills(null, timePeriod, true);
     }
     
+	/** * Retrieves a billing account by product ID from the TMF API.
+	 *
+	 * @param id The ID of the product that should contain a Billing Account.
+	 * @return A BillingAccountRef object representing the billing account, or null if not found.
+	*/
+	public BillingAccountRef retrieveBillingAccountByProductId(String productId) {
+		logger.debug("Retrieving Billing Account from TMF API By Product with id: {}" + productId);
+	  
+		if (productId == null) {
+			logger.warn("Product ID is null, cannot retrieve billing account.");
+			return null;
+		}
+	  
+		Product prod = this.productApis.getProduct(productId, null);
+
+		BillingAccountRef ba = prod.getBillingAccount();
+	  
+		if(ba == null ) {
+			logger.info("No billing accounts found for product with id {}: " + productId);
+			return null;
+		}
+	      
+		return ba;
+	}
+
     /** * Retrieves a billing account by related party ID from the TMF API.
 	 *
 	 * @param relatedPartyId The ID of the related party to filter billing accounts by.
 	 * @return A BillingAccountRef object representing the billing account, or null if not found.
 	*/
-    public BillingAccountRef retrieveBillingAccountByRelatedPartyId(String relatedPartyId) {
-        logger.debug("Retrieving Billing Account from TMF API By RelatedParty with id: " + relatedPartyId);
-        
-        if (relatedPartyId == null) {
-                logger.warn("RelatedParty ID is null, cannot retrieve billing account.");
-                return null;
-        }
-        
-        try {
-            // filter
-            Map<String, String> filter = new HashMap<>();
-            filter.put("relatedParty.id", relatedPartyId);
-
-            List<BillingAccount> billAccs = accountApi.getAllBillingAccounts(null, filter);
-            
-            if (billAccs == null || billAccs.isEmpty()) {
-                logger.info("No billing accounts found for related party: " + relatedPartyId);
-                return null;
-            }
-
-            BillingAccount first = billAccs.get(0);
-
-            BillingAccountRef ref = new BillingAccountRef();
-            ref.setId(first.getId());
-            URI hrefURI = first.getHref();
-            if (hrefURI != null) {
-                ref.setHref(hrefURI.toString());
-            }
-            ref.setName(first.getName());
-            ref.setAtReferredType("BillingAccount");
-
-            return ref;
-
-        } catch (Exception e) {
-            logger.error("Error retrieving billing account for related party: " + relatedPartyId, e);
-            return null;
-        }
-    }
-
+//    public BillingAccountRef retrieveBillingAccountByRelatedPartyId(String relatedPartyId) {
+//        logger.debug("Retrieving Billing Account from TMF API By RelatedParty with id: " + relatedPartyId);
+//        
+//        if (relatedPartyId == null) {
+//                logger.warn("RelatedParty ID is null, cannot retrieve billing account.");
+//                return null;
+//        }
+//        
+//        try {
+//            // filter
+//            Map<String, String> filter = new HashMap<>();
+//            filter.put("relatedParty.id", relatedPartyId);
+//
+//            List<BillingAccount> billAccs = accountApi.getAllBillingAccounts(null, filter);
+//            
+//            if (billAccs == null || billAccs.isEmpty()) {
+//                logger.info("No billing accounts found for related party: " + relatedPartyId);
+//                return null;
+//            }
+//
+//            BillingAccount first = billAccs.get(0);
+//
+//            BillingAccountRef ref = new BillingAccountRef();
+//            ref.setId(first.getId());
+//            URI hrefURI = first.getHref();
+//            if (hrefURI != null) {
+//                ref.setHref(hrefURI.toString());
+//            }
+//            ref.setName(first.getName());
+//            ref.setAtReferredType("BillingAccount");
+//
+//            return ref;
+//
+//        } catch (Exception e) {
+//            logger.error("Error retrieving billing account for related party: " + relatedPartyId, e);
+//            return null;
+//        }
+//    }
 }
 

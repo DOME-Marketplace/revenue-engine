@@ -87,7 +87,7 @@ public class TmfPeristenceService implements InitializingBean {
     public List<CustomerBill> persistProviderRevenueBills(String providerId) throws ApiException, Exception {
         // iterate over subscriptions for the given provider
         List<CustomerBill> createdCustomerBills = new ArrayList<>();
-        for(Subscription sub: this.subscriptionService.getSubscriptionsByPartyId(providerId, "Buyer")) {
+        for(Subscription sub: this.subscriptionService.getSubscriptionsByRelatedPartyId(providerId, "Buyer")) {
             createdCustomerBills.addAll(this.persistSubscriptionRevenueBills(sub.getId()));
         }
         return createdCustomerBills;

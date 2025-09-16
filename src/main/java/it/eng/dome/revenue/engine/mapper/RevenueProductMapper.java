@@ -12,7 +12,7 @@ import org.slf4j.LoggerFactory;
 
 import it.eng.dome.revenue.engine.model.Plan;
 import it.eng.dome.revenue.engine.model.Subscription;
-import it.eng.dome.revenue.engine.utils.Converter;
+import it.eng.dome.revenue.engine.utils.TmfConverter;
 import it.eng.dome.tmforum.tmf620.v4.model.Money;
 import it.eng.dome.tmforum.tmf620.v4.model.ProductOffering;
 import it.eng.dome.tmforum.tmf620.v4.model.ProductOfferingPrice;
@@ -55,7 +55,7 @@ public class RevenueProductMapper {
                 ProductOfferingTerm term = new ProductOfferingTerm();
                 term.setName(plan.getName());
                 term.setDescription(plan.getDescription());
-                term.setValidFor(Converter.convertTPto620(plan.getValidFor()));
+                term.setValidFor(TmfConverter.convertTPto620(plan.getValidFor()));
                 offering.setProductOfferingTerm(List.of(term));
             }
 
@@ -288,8 +288,8 @@ public class RevenueProductMapper {
 //		product.setProductSerialNumber(subscription.getId()); //??
 		
 		// reference to the product
-		product.setRelatedParty(Converter.convertRpTo637(subscription.getRelatedParties()));		
-		product.setBillingAccount(Converter.convertBillingAccountRefTo637(billingAccountRef));
+		product.setRelatedParty(TmfConverter.convertRpTo637(subscription.getRelatedParties()));		
+		product.setBillingAccount(TmfConverter.convertBillingAccountRefTo637(billingAccountRef));
 		
 		// productCharacteristics ?
 		// for example, authorization for payment with card - understand how to set this
@@ -326,7 +326,7 @@ public class RevenueProductMapper {
 		sub.setStatus(product.getStatus().toString()); //convert status
 		
 		// related parties
-		sub.setRelatedParties(Converter.convertRpTo678(product.getRelatedParty()));
+		sub.setRelatedParties(TmfConverter.convertRpTo678(product.getRelatedParty()));
 				
 		// the product offering
 		String offeringId = null;

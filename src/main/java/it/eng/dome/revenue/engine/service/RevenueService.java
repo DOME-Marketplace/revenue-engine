@@ -24,10 +24,7 @@ public class RevenueService implements InitializingBean {
 	private final Logger logger = LoggerFactory.getLogger(RevenueService.class);
 	
 	@Autowired
-	private TmfApiFactory tmfApiFactory; 
-	
-	@Autowired
-	private TmfDataRetriever tmfDataRetriever; 
+	private TmfApiFactory tmfApiFactory;
 	
 	private CustomerManagementApis customer;
 	private AgreementManagementApis agreement;
@@ -56,24 +53,5 @@ public class RevenueService implements InitializingBean {
 		for (Agreement agreement : agreements) {
 			logger.info("ID: {}", agreement.getId());
 		}
-	}	
-	
-	/**
-	 * Builds an AppliedCustomerBillingRate from a RevenueStatement.
-	 * 
-	 * @param rs The RevenueStatement to convert.
-	 * @return An AppliedCustomerBillingRate object.
-	 * @throws IllegalArgumentException if the RevenueStatement is null or does not contain related party information.
-	 */
-//	public AppliedCustomerBillingRate buildACBR(RevenueStatement rs) {
-//        if (rs == null || rs.getSubscription() == null ||
-//            rs.getSubscription().getRelatedParties() == null ||
-//            rs.getSubscription().getRelatedParties().isEmpty()) {
-//            throw new IllegalArgumentException("Missing related party information in RevenueStatement");
-//        }
-//        //TODO: check which rl to retrieve 
-//        String relatedPartyId = rs.getSubscription().getRelatedParties().get(0).getId();
-//        BillingAccountRef billingAccountRef = tmfDataRetriever.retrieveBillingAccountByRelatedPartyId(relatedPartyId);
-//        return RevenueBillingMapper.toACBR(rs, billingAccountRef);
-//    }
+	}
 }

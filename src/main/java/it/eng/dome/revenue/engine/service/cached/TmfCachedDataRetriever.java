@@ -12,10 +12,8 @@ import org.springframework.stereotype.Service;
 
 import it.eng.dome.revenue.engine.service.TmfDataRetriever;
 import it.eng.dome.tmforum.tmf678.v4.model.AppliedCustomerBillingRate;
-import it.eng.dome.tmforum.tmf678.v4.model.BillingAccountRef;
+import it.eng.dome.tmforum.tmf637.v4.model.BillingAccountRef;
 import it.eng.dome.tmforum.tmf678.v4.model.TimePeriod;
-
-
 
 @Service
 public class TmfCachedDataRetriever extends TmfDataRetriever {
@@ -55,7 +53,6 @@ public class TmfCachedDataRetriever extends TmfDataRetriever {
 
     }
 
-
     @Override
     public List<AppliedCustomerBillingRate> retrieveBills(String sellerId, TimePeriod timePeriod, Boolean isBilled) throws Exception {
         String key = sellerId + timePeriod.toString() + isBilled.toString();
@@ -68,11 +65,11 @@ public class TmfCachedDataRetriever extends TmfDataRetriever {
     }
 
     @Override
-    public BillingAccountRef retrieveBillingAccountByRelatedPartyId(String relatedPartyId) {
-        String key = relatedPartyId;
+    public BillingAccountRef retrieveBillingAccountByProductId(String productId) {
+        String key = productId;
         if (!this.billingAccountCache.containsKey(key)) {
             logger.debug("Cache MISS for " + key);
-            BillingAccountRef billingAccountRef = super.retrieveBillingAccountByRelatedPartyId(relatedPartyId);
+            BillingAccountRef billingAccountRef = super.retrieveBillingAccountByProductId(productId);
             this.billingAccountCache.put(key, billingAccountRef);
         }
         return this.billingAccountCache.get(key);
