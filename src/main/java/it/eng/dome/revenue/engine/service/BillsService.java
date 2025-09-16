@@ -426,7 +426,8 @@ public class BillsService implements InitializingBean {
   	List<AppliedCustomerBillingRate> acbrs = acbrApis.getAllAppliedCustomerBillingRates(null, filter);
 
   	if(acbrs == null || acbrs.isEmpty()) {
-  		throw new IllegalArgumentException("ACBRs is null or empty for customer bill with id: " + cbId);
+  		logger.warn("No AppliedCustomerBillingRate found for CustomerBill ID: {}", cbId);
+  		return null;
   	}
       
   	return acbrs;

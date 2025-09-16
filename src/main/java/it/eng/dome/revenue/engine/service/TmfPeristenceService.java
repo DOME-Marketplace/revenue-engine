@@ -365,9 +365,16 @@ public class TmfPeristenceService implements InitializingBean {
     	if(idCustomerBill1.equals(idCustomerBill2)) {
     		return true;
     	}
+    	
+    	List<AppliedCustomerBillingRate> acbrs1 = billService.getACBRsByCustomerBillId(idCustomerBill1);
+    	List<AppliedCustomerBillingRate> acbrs2 = billService.getACBRsByCustomerBillId(idCustomerBill2);
+    	
+    	if(acbrs1 == null || acbrs2 == null || acbrs1.isEmpty() || acbrs2.isEmpty()) {
+    		return false;
+    	}
         
-        ProductRef productRef1 = (billService.getACBRsByCustomerBillId(idCustomerBill1)).get(0).getProduct();
-        ProductRef productRef2 = (billService.getACBRsByCustomerBillId(idCustomerBill2)).get(0).getProduct();
+        ProductRef productRef1 = acbrs1.get(0).getProduct();
+        ProductRef productRef2 = acbrs2.get(0).getProduct();
         
         if (productRef1 == null || productRef2 == null) {
             logger.warn("One of the products is null. productRef1={}, productRef2={}", productRef1, productRef2);
