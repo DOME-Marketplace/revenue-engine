@@ -8,6 +8,22 @@
   },
   "lifecycleStatus": "launched",
 
+  "billCycleSpecification": {
+    
+    "": "type and length to specify the duration of the bill cycle. Initially computed on the product activation day",
+    "billingPeriodLength": "1",
+    "billingPeriodType": "MONTH",
+
+    "": "When the bill cycle ends. Modifies the previous. Alternative values are COMPUTED_DAY, NEXT_FRIDAY, NEXT_MONDAY, 15_OF_CALENDAR_MONTH, ...",
+    "billingPeriodEnd": "LAST_DAY_OF_CALENDAR_MONTH",
+
+    "": "When the bill is computed and issued. Offset from the end of the billing cycle ",
+    "billingDateShift": "5",
+
+    "": "When the bill is expected to be paid. Offset from the billDate",
+    "paymentDueDateOffset": "45"
+  },
+
   "contractDurationLength": 1,
   "contractDurationPeriodType": "YEAR",
 
@@ -17,7 +33,6 @@
   "billingPeriodLength": "1",
   "billingPeriodType": "MONTH",
   "billingPeriodEnd": "LAST_DAY_OF_CALENDAR_MONTH", 
-  "comment": "alternative values are COMPUTED_DAY, NEXT_FRIDAY, NEXT_MONDAY, 15_OF_CALENDAR_MONTH, ...",
 
   "agreements": [
     "Annual subscription with renewal. Providers can receive up to 80% discount based on the sales volume from the previous year",

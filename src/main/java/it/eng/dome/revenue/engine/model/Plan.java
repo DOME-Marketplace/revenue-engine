@@ -42,9 +42,11 @@ public class Plan {
 	private Integer renewalTermLength; // es. 1
 	private RecurringPeriod renewalTermPeriodType; // es. YEAR
 
-	private Integer billingPeriodLength; // es. 1
-	private RecurringPeriod billingPeriodType;
-	private String billingPeriodEnd;
+	private BillCycleSpecification billCycleSpecification;
+
+//	private Integer billingPeriodLength; // es. 1
+//	private RecurringPeriod billingPeriodType;
+//	private String billingPeriodEnd;
 
 	private List<String> agreements;
 
@@ -155,22 +157,6 @@ public class Plan {
 		this.agreements = agreements;
 	}
 
-	public Integer getBillingPeriodLength() {
-		return billingPeriodLength;
-	}
-
-	public void setBillingPeriodLength(Integer billingPeriodLength) {
-		this.billingPeriodLength = billingPeriodLength;
-	}
-
-	public RecurringPeriod getBillingPeriodType() {
-		return billingPeriodType;
-	}
-
-	public void setBillingPeriodType(RecurringPeriod billingPeriodType) {
-		this.billingPeriodType = billingPeriodType;
-	}
-
 	public Plan buildRef() {
 		Plan planRef = new Plan();
 		planRef.setId(this.getId());
@@ -178,12 +164,12 @@ public class Plan {
 		return planRef;
 	}
 
-	public String getBillingPeriodEnd() {
-		return billingPeriodEnd;
+	public BillCycleSpecification getBillCycleSpecification() {
+		return this.billCycleSpecification;
 	}
 
-	public void setBillingPeriodEnd(String billingPeriodEnd) {
-		this.billingPeriodEnd = billingPeriodEnd;
+	public void setBillCycleSpecification(BillCycleSpecification billCycle) {
+		this.billCycleSpecification = billCycle;
 	}
 
 	@Override
@@ -192,7 +178,7 @@ public class Plan {
 				+ validFor + ", lifecycleStatus=" + lifecycleStatus + ", price=" + price
 				+ ", contractDurationLength=" + contractDurationLength + ", contractDurationPeriodType="
 				+ contractDurationPeriodType + ", renewalTermLength=" + renewalTermLength
-				+ ", renewalTermPeriodType=" + renewalTermPeriodType + ", billingPeriodLength=" + billingPeriodLength
+				+ ", renewalTermPeriodType=" + renewalTermPeriodType + ", billingPeriodLength=" + this.getBillCycleSpecification().getBillingPeriodLength()
 				+ ", agreements=" + agreements + "]";
 	}
 

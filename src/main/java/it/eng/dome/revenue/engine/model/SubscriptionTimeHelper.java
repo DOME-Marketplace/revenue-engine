@@ -48,7 +48,7 @@ public class SubscriptionTimeHelper {
                 TimePeriod tp = new TimePeriod();
                 tp.setStartDateTime(start);
                 // apply the modifier, if any.
-                end = this.applyModifier(end, this.subscription.getPlan().getBillingPeriodEnd());
+                end = this.applyModifier(end, this.subscription.getPlan().getBillCycleSpecification().getBillingPeriodEnd());
                 tp.setEndDateTime(end.minusSeconds(1));
                 billingPeriodTimes.add(tp);
                 start = end;
@@ -269,9 +269,9 @@ public class SubscriptionTimeHelper {
 
     private OffsetDateTime rollBillPeriod(OffsetDateTime time, int howManyPeriods) {
         // retrive subscriptino length unit
-        RecurringPeriod pType = this.subscription.getPlan().getBillingPeriodType();
+        RecurringPeriod pType = this.subscription.getPlan().getBillCycleSpecification().getBillingPeriodType();
         // retrieve subscription length
-        Integer pLength = this.subscription.getPlan().getBillingPeriodLength();
+        Integer pLength = this.subscription.getPlan().getBillCycleSpecification().getBillingPeriodLength();
         // ensure the two above are set
         if(pType == null || pLength == null) {
             throw new IllegalArgumentException("Subscription does not have a valid recurring billing period type or length");
