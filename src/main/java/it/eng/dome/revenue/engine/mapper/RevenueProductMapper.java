@@ -1,8 +1,5 @@
 package it.eng.dome.revenue.engine.mapper;
 
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -14,17 +11,12 @@ import it.eng.dome.revenue.engine.model.Plan;
 import it.eng.dome.revenue.engine.model.Subscription;
 import it.eng.dome.revenue.engine.utils.TmfConverter;
 import it.eng.dome.tmforum.tmf620.v4.model.Money;
-import it.eng.dome.tmforum.tmf620.v4.model.ProductOffering;
 import it.eng.dome.tmforum.tmf620.v4.model.ProductOfferingPrice;
 import it.eng.dome.tmforum.tmf620.v4.model.ProductOfferingPriceRefOrValue;
-import it.eng.dome.tmforum.tmf620.v4.model.ProductOfferingTerm;
-import it.eng.dome.tmforum.tmf620.v4.model.ProductSpecificationRef;
-import it.eng.dome.tmforum.tmf620.v4.model.TimePeriod;
 import it.eng.dome.tmforum.tmf637.v4.model.Product;
 import it.eng.dome.tmforum.tmf637.v4.model.ProductOfferingPriceRef;
 import it.eng.dome.tmforum.tmf637.v4.model.ProductOfferingRef;
 import it.eng.dome.tmforum.tmf637.v4.model.ProductPrice;
-import it.eng.dome.tmforum.tmf637.v4.model.ProductStatusType;
 import it.eng.dome.tmforum.tmf678.v4.model.ProductRef;
 
 public class RevenueProductMapper {
@@ -188,26 +180,26 @@ public class RevenueProductMapper {
      * @return A {@code List} of {@link ProductOfferingPriceRefOrValue} objects.
      * @throws IllegalArgumentException if an invalid URI syntax is encountered when creating the Href.
      */
-    private static List<ProductOfferingPriceRefOrValue> toProductOfferingPriceRefOrValueList(List<ProductOfferingPrice> rawMappedPrices) {
-        List<ProductOfferingPriceRefOrValue> finalMappedPrices = new ArrayList<>();
-        for (ProductOfferingPrice price : rawMappedPrices) {
-        	
-            ProductOfferingPriceRefOrValue refOrValue = new ProductOfferingPriceRefOrValue();
-
-            refOrValue.setId(price.getId());
-            try {
-				refOrValue.setHref(new URI(price.getHref()));
-			} catch (URISyntaxException e) {
-				logger.error("Invalid URI syntax for ProductOfferingPriceRefOrValue Href with ID '{}'", price.getId(), e);
-                throw new IllegalArgumentException("Failed to create ProductOfferingPriceRefOrValue Href due to invalid URI syntax", e);
-			}
-            refOrValue.setName(price.getName());
-            
-            finalMappedPrices.add(refOrValue);
-        }
-        return finalMappedPrices;
-    }
-    
+//    private static List<ProductOfferingPriceRefOrValue> toProductOfferingPriceRefOrValueList(List<ProductOfferingPrice> rawMappedPrices) {
+//        List<ProductOfferingPriceRefOrValue> finalMappedPrices = new ArrayList<>();
+//        for (ProductOfferingPrice price : rawMappedPrices) {
+//        	
+//            ProductOfferingPriceRefOrValue refOrValue = new ProductOfferingPriceRefOrValue();
+//
+//            refOrValue.setId(price.getId());
+//            try {
+//				refOrValue.setHref(new URI(price.getHref()));
+//			} catch (URISyntaxException e) {
+//				logger.error("Invalid URI syntax for ProductOfferingPriceRefOrValue Href with ID '{}'", price.getId(), e);
+//                throw new IllegalArgumentException("Failed to create ProductOfferingPriceRefOrValue Href due to invalid URI syntax", e);
+//			}
+//            refOrValue.setName(price.getName());
+//            
+//            finalMappedPrices.add(refOrValue);
+//        }
+//        return finalMappedPrices;
+//    }
+//    
 	private static Money createMoneyTmF620(Float amount, String currency) {
 		Money money = new it.eng.dome.tmforum.tmf620.v4.model.Money();
 		money.setValue(amount);

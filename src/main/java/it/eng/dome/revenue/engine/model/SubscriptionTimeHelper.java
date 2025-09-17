@@ -267,7 +267,7 @@ public class SubscriptionTimeHelper {
         }
     }
 
-    private OffsetDateTime rollBillPeriod(OffsetDateTime time, int howManyPeriods) {
+    public OffsetDateTime rollBillPeriod(OffsetDateTime time, int howManyPeriods) {
         // retrive subscriptino length unit
         RecurringPeriod pType = this.subscription.getPlan().getBillCycleSpecification().getBillingPeriodType();
         // retrieve subscription length
