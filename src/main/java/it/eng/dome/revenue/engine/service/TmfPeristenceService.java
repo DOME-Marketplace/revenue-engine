@@ -168,6 +168,7 @@ public class TmfPeristenceService implements InitializingBean {
     public AppliedCustomerBillingRate persistAppliedCustomerBillingRate(AppliedCustomerBillingRate acbr) throws ApiException, Exception {
         // check if exist on tmf
         AppliedCustomerBillingRate existingACBR = this.isAcbrAlreadyInTMF(acbr);
+
         // if not, persist it
         if(existingACBR==null) {
             // FIXME: marking the ACBR so it can be easily removed during development. Remove before flight.
@@ -215,14 +216,16 @@ public class TmfPeristenceService implements InitializingBean {
         List<CustomerBill> matchedCandidates = new ArrayList<>();
         for(CustomerBill candidate: candidates) {
         	boolean basicMatch = TmfPeristenceService.match(cb, candidate);
-            boolean productMatch = this.compareCBsProduct(cb.getId(), candidate.getId());
+            //boolean productMatch = this.compareCBsProduct(cb.getId(), candidate.getId());
 
-            if (basicMatch && productMatch) {
+            //&& productMatch
+            if (basicMatch) {
                 matchedCandidates.add(candidate);
-            } else {
-                logger.debug("isCbAlreadyInTMF - Candidate {} discarded. basicMatch={}, productMatch={}", 
-                             candidate.getId(), basicMatch, productMatch);
             }
+//            else {
+//                logger.debug("isCbAlreadyInTMF - Candidate {} discarded. basicMatch={}, productMatch={}", 
+//                             candidate.getId(), basicMatch, productMatch);
+//            }
         }
 
         // ok if there's one match. null if no match. Exception if more matches.
@@ -231,9 +234,10 @@ public class TmfPeristenceService implements InitializingBean {
         else if(matchedCandidates.isEmpty())
             return null;
         else {
-            String msg = String.format("Found %d CustomerBills already on TMF matching the given CustomerBill with local id %s", matchedCandidates.size(), cb.getId());
-            logger.error(msg);
-            return matchedCandidates.get(0);
+            throw new Exception(String.format("Found {} CustomerBills already on TMF matching the given CustomerBill with local id {}", matchedCandidates.size(), cb.getId()));
+//            String msg = String.format("Found %d CustomerBills already on TMF matching the given CustomerBill with local id %s", matchedCandidates.size(), cb.getId());
+//            logger.error(msg);
+//            return matchedCandidates.get(0);
         }
     }
 
@@ -368,7 +372,7 @@ public class TmfPeristenceService implements InitializingBean {
     		return true;
     	}
     	
-    	List<AppliedCustomerBillingRate> acbrs1 = billService.getACBRsByCustomerBillId(idCustomerBill1);
+    	List<AppliedCustomerBillingRate> acbrs1 = billService.getACBRsByCustomerBillId(idCustomerBill1); // recupera da local
     	List<AppliedCustomerBillingRate> acbrs2 = billService.getACBRsByCustomerBillId(idCustomerBill2);
     	
     	if(acbrs1 == null || acbrs2 == null || acbrs1.isEmpty() || acbrs2.isEmpty()) {
