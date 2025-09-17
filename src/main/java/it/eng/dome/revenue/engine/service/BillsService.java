@@ -1,12 +1,12 @@
 package it.eng.dome.revenue.engine.service;
 
+import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
-import java.util.UUID;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -18,10 +18,13 @@ import it.eng.dome.brokerage.api.AppliedCustomerBillRateApis;
 import it.eng.dome.brokerage.api.ProductApis;
 import it.eng.dome.revenue.engine.invoicing.InvoicingService;
 import it.eng.dome.revenue.engine.mapper.RevenueBillingMapper;
-import it.eng.dome.revenue.engine.model.RevenueItem;
+import it.eng.dome.revenue.engine.model.Plan;
 import it.eng.dome.revenue.engine.model.RevenueBill;
+import it.eng.dome.revenue.engine.model.RevenueItem;
 import it.eng.dome.revenue.engine.model.Subscription;
+import it.eng.dome.revenue.engine.model.SubscriptionTimeHelper;
 import it.eng.dome.revenue.engine.model.comparator.RevenueBillComparator;
+import it.eng.dome.revenue.engine.service.cached.CachedPlanService;
 import it.eng.dome.revenue.engine.service.cached.CachedStatementsService;
 import it.eng.dome.revenue.engine.service.cached.CachedSubscriptionService;
 import it.eng.dome.revenue.engine.service.cached.TmfCachedDataRetriever;
@@ -40,9 +43,6 @@ import it.eng.dome.tmforum.tmf678.v4.model.TimePeriod;
 @Service
 public class BillsService implements InitializingBean {
 	
-    // FIXME: this should be moved to the offering, or to the plan, or to the order (if we want to customise per customer)
-    private static final int PAYMENT_DEADLINE_OFFSET = 45;
-
 	private final Logger logger = LoggerFactory.getLogger(BillsService.class);
 
     @Autowired
@@ -53,6 +53,9 @@ public class BillsService implements InitializingBean {
 
     @Autowired
 	private CachedSubscriptionService subscriptionService;
+    
+    @Autowired
+	private CachedPlanService planService;
     
     @Autowired
 	private TmfCachedDataRetriever tmfDataRetriever;
@@ -168,13 +171,16 @@ public class BillsService implements InitializingBean {
 
 		cb.setBillingAccount(TmfConverter.convertBillingAccountRefTo678(tmfDataRetriever.retrieveBillingAccountByProductId(sb.getSubscriptionId())));
         
-        // FIXME: should consider the next bill period, then add then eeded days
-		cb.setNextBillDate(sb.getPeriod().getEndDateTime().plusMonths(1)); //?
+		// NEXT Bill date and Payment Due Date
+		Subscription sub = subscriptionService.getSubscriptionByProductId(sb.getSubscriptionId());
+		Plan plan = planService.getPlanById(sub.getPlan().getId());
+		SubscriptionTimeHelper th = new SubscriptionTimeHelper(sub);
+		
+		OffsetDateTime nextBillDate = th.rollBillPeriod(sb.getBillTime(), plan.getBillCycleSpecification().getBillingPeriodLength());
+		cb.setNextBillDate(nextBillDate); //?
 
-        // FIXME: the payment due date should be N days after the billDate, not the period end
-        // DONE, to CHECK
-		// cb.setPaymentDueDate(sb.getPeriod().getEndDateTime().plusDays(10)); // Q: How many days after the invoice date should we set the due date?
-        cb.setPaymentDueDate(cb.getBillDate().plusDays(PAYMENT_DEADLINE_OFFSET));
+		OffsetDateTime paymentDueDate = cb.getBillDate().plusDays(plan.getBillCycleSpecification().getPaymentDueDateOffset());
+		cb.setPaymentDueDate(paymentDueDate);
 		
 		//apply tax
 		List<AppliedCustomerBillingRate> acbrs = this.getACBRsByRevenueBill(sb);
@@ -364,7 +370,7 @@ public class BillsService implements InitializingBean {
             throw new IllegalStateException("Failed to set billing account reference on AppliedCustomerBillingRate list");
         }
         
-        acbrList = this.setCustomerBillRef(acbrList);
+        acbrList = this.setCustomerBillRef(acbrList, rb);
         if (acbrList == null) {
             throw new IllegalStateException("Failed to set customer bill reference on AppliedCustomerBillingRate list");
         }
@@ -387,10 +393,11 @@ public class BillsService implements InitializingBean {
         return this.invoicingService.applyTaxees(product, acbrs);
     }
     
-    public List<AppliedCustomerBillingRate> setCustomerBillRef(List<AppliedCustomerBillingRate> acbrs){
+    public List<AppliedCustomerBillingRate> setCustomerBillRef(List<AppliedCustomerBillingRate> acbrs, RevenueBill rb){
 		// FIXME: Currently, we don't consider persistence.
 		BillRef billRef = new BillRef();
-		billRef.setId("urn:ngsi-ld:customerbill:" + UUID.randomUUID().toString());
+		String billId = rb.getId();
+		billRef.setId(billId.replace("urn:ngsi-ld:revenuebill", "urn:ngsi-ld:customerbill"));
 		
 		for (AppliedCustomerBillingRate acbr : acbrs) {
 			acbr.setBill(billRef);
