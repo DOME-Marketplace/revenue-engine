@@ -7,6 +7,23 @@
     "endDateTime": "2025-12-31T23:59:59Z"
   },
   "lifecycleStatus": "Launched",
+
+  "billCycleSpecification": {
+    
+    "": "type and length to specify the duration of the bill cycle. Initially computed on the product activation day",
+    "billingPeriodLength": "1",
+    "billingPeriodType": "MONTH",
+
+    "": "When the bill cycle ends. Modifies the previous. Alternative values are COMPUTED_DAY, NEXT_FRIDAY, NEXT_MONDAY, 15_OF_CALENDAR_MONTH, ...",
+    "billingPeriodEnd": "LAST_DAY_OF_CALENDAR_MONTH",
+
+    "": "When the bill is computed and issued. Offset from the end of the billing cycle ",
+    "billingDateShift": "5",
+
+    "": "When the bill is expected to be paid. Offset from the billDate",
+    "paymentDueDateOffset": "45"
+  },
+
   "contractDurationLength": 1,
   "contractDurationPeriodType": "YEAR",
   "renewalTermLength": 1,
@@ -16,10 +33,6 @@
     "Annual subscription with renewal. Providers can receive up to 80% discount based on the sales volume from the previous year",
     "Referral bonus: an extra 10% discount on next year's fee for bringing 3 new providers or if a referred provider reaches 100k+ in sales"
   ],
-
-  "billingPeriodLength": "2",
-  "billingPeriodType": "WEEK",
-  "billingPeriodEnd": "LAST_DAY_OF_CALENDAR_MONTH", "comment": "alternative values are COMPUTED_DAY, NEXT_FRIDAY, NEXT_MONDAY, 15_OF_CALENDAR_MONTH, ...",
 
   "price": {
     "name": "BASIC Plan price components (2025)",

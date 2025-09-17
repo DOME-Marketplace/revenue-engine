@@ -30,11 +30,11 @@ public class PlanValidator {
             issues.add(new PlanValidationIssue( "the plan must include a lifecycle status", PlanValidationIssueSeverity.ERROR));
 
         // make sure there is billing cycle information
-        if(plan.getBillingPeriodType()==null)
+        if(plan.getBillCycleSpecification().getBillingPeriodType()==null)
             issues.add(new PlanValidationIssue( "the plan must include a billingPeriodLength (an integer)", PlanValidationIssueSeverity.ERROR));
-        if(plan.getBillingPeriodType()==null)
+        if(plan.getBillCycleSpecification().getBillingPeriodType()==null)
             issues.add(new PlanValidationIssue( "the plan must include a billingPeriodType (i.e. YEAR, MONTH, WEEK, DAY)", PlanValidationIssueSeverity.ERROR));
-        if(plan.getBillingPeriodEnd()==null)
+        if(plan.getBillCycleSpecification().getBillingPeriodEnd()==null)
             issues.add(new PlanValidationIssue( "the plan does not provide a 'billingPeriodEnd'. Assuming 'COMPUTED_DAY'", PlanValidationIssueSeverity.WARNING));
 
         return issues;
