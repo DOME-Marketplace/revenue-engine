@@ -157,40 +157,12 @@ public class Plan {
 		this.agreements = agreements;
 	}
 
-	/*
-	public Integer getBillingPeriodLength() {
-		return billingPeriodLength;
-	}
-
-	public void setBillingPeriodLength(Integer billingPeriodLength) {
-		this.billingPeriodLength = billingPeriodLength;
-	}
-
-	public RecurringPeriod getBillingPeriodType() {
-		return billingPeriodType;
-	}
-
-	public void setBillingPeriodType(RecurringPeriod billingPeriodType) {
-		this.billingPeriodType = billingPeriodType;
-	}
-	*/
-
 	public Plan buildRef() {
 		Plan planRef = new Plan();
 		planRef.setId(this.getId());
 		planRef.setName(this.getName());
 		return planRef;
 	}
-
-	/*
-	public String getBillingPeriodEnd() {
-		return billingPeriodEnd;
-	}
-
-	public void setBillingPeriodEnd(String billingPeriodEnd) {
-		this.billingPeriodEnd = billingPeriodEnd;
-	}
-	*/
 
 	public BillCycleSpecification getBillCycleSpecification() {
 		return this.billCycleSpecification;
