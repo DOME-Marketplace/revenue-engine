@@ -3,6 +3,7 @@ package it.eng.dome.revenue.engine.service;
 import java.io.IOException;
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
+import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -291,29 +292,36 @@ public class ReportingService implements InitializingBean {
         return new Report("Revenue Volume Monitoring", items);
     }
     
-    /** 
-     * This section calculates the estimated and confirmed future bills for the current month
-     * @param relatedPartyId
-     * @return
-    */
+    /**
+     * Retrieves the billing forecast section for the given relatedPartyId.
+     * Shows estimated and confirmed values for the current and future billing periods.
+     * 
+     * @param relatedPartyId the ID of the related party (organization)
+     * @return a Report summarizing billing forecast information
+     */
     public Report getBillingForecastSection(String relatedPartyId) {
         String subscriptionId;
+        Subscription subscription;
+
+        // Try to retrieve the subscription by related party ID
         try {
-            subscriptionId = subscriptionService.getSubscriptionByRelatedPartyId(relatedPartyId).getId();
+            subscription = subscriptionService.getSubscriptionByRelatedPartyId(relatedPartyId);
         } catch (Exception e) {
-            logger.error("Failed to retrieve subscriptionId for Organization with ID: {}", relatedPartyId, e);
+            logger.error("Failed to retrieve subscription for Organization with ID: {}", relatedPartyId, e);
             return new Report(
                 "Billing Forecast",
                 List.of(new Report("Error", "Unable to retrieve subscription information"))
             );
         }
-        // check null or empty subscriptionId
+
+        // Check null or empty subscriptionId
+        subscriptionId = subscription.getId();
         if (subscriptionId == null || subscriptionId.isEmpty()) {
             logger.warn("Subscription ID is null or not found for Organization with ID: {}", relatedPartyId);
             return new Report("Billing Forecast", List.of(new Report("Error", "Invalid subscription ID")));
         }
 
-        // fetch all bills associated with the subscription
+        // Fetch all bills associated with the subscription
         List<RevenueBill> allBills;
         try {
             allBills = billsService.getSubscriptionBills(subscriptionId);
@@ -322,15 +330,17 @@ public class ReportingService implements InitializingBean {
             return new Report("Billing Forecast", List.of(new Report("Error", "Unable to retrieve bills")));
         }
 
-        // define time boundaries for the current month
+        // Define time boundaries for the current month
         OffsetDateTime now = OffsetDateTime.now();
         OffsetDateTime startOfMonth = now.withDayOfMonth(1).withHour(0).withMinute(0).withSecond(0).withNano(0);
         OffsetDateTime endOfMonth = startOfMonth.plusMonths(1).minusNanos(1);
 
+        double currentEstimatedTotal = 0.0;
+        double currentConfirmedTotal = 0.0;
         double futureEstimatedTotal = 0.0;
         double futureConfirmedTotal = 0.0;
-        double currentEstimatedTotal = 0.0;
 
+        // Iterate over all bills and categorize amounts
         for (RevenueBill bill : allBills) {
             if (bill == null || bill.getPeriod() == null || bill.getPeriod().getEndDateTime() == null) {
                 logger.warn("Skipping malformed bill: {}", bill);
@@ -342,12 +352,16 @@ public class ReportingService implements InitializingBean {
             boolean isEstimated = Boolean.TRUE.equals(bill.isEstimated());
             double amount = bill.getAmount() != null ? bill.getAmount() : 0.0;
 
-            // bills ending within the current month (used for estimated current period)
+            // Bills ending within the current month
             if (!end.isBefore(startOfMonth) && !end.isAfter(endOfMonth)) {
-            	currentEstimatedTotal += amount;
+                if (isEstimated) {
+                    currentEstimatedTotal += amount;
+                } else {
+                    currentConfirmedTotal += amount;
+                }
             }
 
-            // future bills: those starting strictly after 'now'
+            // Future bills: those starting strictly after 'now'
             if (start != null && start.isAfter(now)) {
                 if (isEstimated) {
                     futureEstimatedTotal += amount;
@@ -357,30 +371,56 @@ public class ReportingService implements InitializingBean {
             }
         }
 
+        // Build the report items
         List<Report> items = new ArrayList<>();
-        // add report where is applicable
+
+        // Current month confirmed bills
+        if (currentConfirmedTotal > 0) {
+            String label = String.format(
+                "Confirmed Bills for Period %s - %s",
+                startOfMonth.toLocalDate(),
+                endOfMonth.toLocalDate()
+            );
+            items.add(new Report(label, format(currentConfirmedTotal)));
+        }
+
+        // Current month estimated bills
         if (currentEstimatedTotal > 0) {
-        	String periodLabel = String.format(
-        	        "Estimated Bills for Period %s - %s",
-        	        startOfMonth.toLocalDate(),
-        	        endOfMonth.toLocalDate()
-        	    );
-    	    items.add(new Report(periodLabel, format(currentEstimatedTotal)));
+            String label = String.format(
+                "Estimated Bills for Period %s - %s",
+                startOfMonth.toLocalDate(),
+                endOfMonth.toLocalDate()
+            );
+            items.add(new Report(label, format(currentEstimatedTotal)));
         }
+
+        // Future billing period info
+        SubscriptionTimeHelper th = new SubscriptionTimeHelper(subscription);
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+        String renewalDate = th.getSubscriptionPeriodAt(now).getEndDateTime().format(formatter);
+
         if (futureConfirmedTotal > 0) {
-            items.add(new Report("Future Bills",format(futureConfirmedTotal)));
+            items.add(new Report(
+                "Confirmed Value for Remaining Billing Period until " + renewalDate,
+                format(futureConfirmedTotal)
+            ));
         }
+
         if (futureEstimatedTotal > 0) {
-            items.add(new Report("Future Estimated Bills", format(futureEstimatedTotal)));
+            items.add(new Report(
+                "Estimated Value for Remaining Billing Period until " + renewalDate,
+                format(futureEstimatedTotal)
+            ));
         }
-        // message if there are no relevant bills
+
+        // Message if there are no relevant bills
         if (items.isEmpty()) {
-            items.add(new Report("Info", "No future bills available."));
+            items.add(new Report("Info", "No bills available for current or future periods."));
         }
 
         return new Report("Billing Forecast", items);
     }
-    
+
 
 
     /**
