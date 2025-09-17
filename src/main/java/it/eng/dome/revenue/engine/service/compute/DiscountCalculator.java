@@ -69,6 +69,10 @@ public class DiscountCalculator {
     public RevenueItem compute(Discount discount, TimePeriod timePeriod, Double amount) {
         logger.debug("Computing discount item: {}", discount.getName());
 
+        // TODO: support for applicableFrom?
+        
+        // TODO: support for ignorePeriod?
+
         if (Boolean.TRUE.equals(discount.getIsBundle()) && discount.getDiscounts() != null) {
             RevenueItem bundleResult = getBundleDiscount(discount, timePeriod, amount);
             return bundleResult;

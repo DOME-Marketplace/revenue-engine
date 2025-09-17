@@ -151,7 +151,7 @@ public class SubscriptionTimeHelper {
     public TimePeriod getCustomPeriod(OffsetDateTime time, Price price, String keyword) {
         // if the keyword is null or empty, return null
         if(keyword != null && !keyword.isEmpty()) {
-            Pattern p = Pattern.compile("^(LAST|PREVIOUS)_(\\d+)_CHARGE_PERIODS$");
+            Pattern p = Pattern.compile("^(FIRST|LAST|PREVIOUS)_(\\d+)_CHARGE_PERIODS$");
             var matcher = p.matcher(keyword);
             if(matcher.matches()) {
                 Integer howManyPeriods = Integer.parseInt(matcher.group(2));
@@ -164,6 +164,9 @@ public class SubscriptionTimeHelper {
                 } else if("PREVIOUS".equals(timeWindowEndType)) {
                     startPeriod = this.getChargePeriodByOffset(time, price, -howManyPeriods);
                     endPeriod = this.getPreviousChargePeriod(time, price);
+                } else if("FIRST".equals(timeWindowEndType)) {
+                    startPeriod = this.getChargePeriodAt(this.subscription.getStartDate(), price);
+                    endPeriod = this.getChargePeriodByOffset(startPeriod.getStartDateTime(), price, howManyPeriods-1);
                 }
                 if(startPeriod==null) {
                     // the period is before the subscription, constraining to the start of the subscription

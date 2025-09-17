@@ -84,6 +84,13 @@ public class RevenueItem {
         return total;
     }
 
+    public void zeroAmountsRecursively() {
+        this.value = 0.0;
+        for (RevenueItem item : items) {
+            item.zeroAmountsRecursively();
+        }
+    }
+
     public void setCurrency(String currency) {
 		this.currency = currency;
 	} 

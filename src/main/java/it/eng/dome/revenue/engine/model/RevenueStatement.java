@@ -13,17 +13,20 @@ public class RevenueStatement {
     private TimePeriod period;
     private List<RevenueItem> revenueItems;
 
-    public RevenueStatement() {}
+    public RevenueStatement() {
+		this.revenueItems = new ArrayList<>();
+    }
     
     public RevenueStatement(Subscription subscription, TimePeriod period) {
+        this();
         this.subscription = subscription;
         this.period = period;
     }
 
-    public RevenueStatement(Subscription subscription, TimePeriod period, List<RevenueItem> revenueItem) {
-    	this.subscription = subscription;
-        this.period = period;
-		this.revenueItems = new ArrayList<>(revenueItem);
+    public RevenueStatement(Subscription subscription, TimePeriod period, List<RevenueItem> revenueItems) {
+        this(subscription, period);
+        this.revenueItems.clear();
+        this.revenueItems.addAll(revenueItems);
 	}
     
     @JsonProperty("description")
@@ -70,9 +73,11 @@ public class RevenueStatement {
     public void clusterizeItems() {
         List<RevenueItem> newItems = new ArrayList<>();
         // replace items with filtered ones
-        for(RevenueItem item : this.getRevenueItems()) {
-            for(OffsetDateTime chargeTime : item.extractChargeTimes()) {
-                newItems.add(item.getFilteredClone(chargeTime));
+        if(this.getRevenueItems()!=null) {
+            for(RevenueItem item : this.getRevenueItems()) {
+                for(OffsetDateTime chargeTime : item.extractChargeTimes()) {
+                    newItems.add(item.getFilteredClone(chargeTime));
+                }
             }
         }
         this.setRevenueItems(newItems);

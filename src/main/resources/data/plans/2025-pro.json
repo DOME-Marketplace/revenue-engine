@@ -137,29 +137,35 @@
       },
       {
         "name": "Monthly postpaid fee (for dev purposes only)",
+
         "type": "RECURRING_POSTPAID",
         "recurringChargePeriodLength": 1,
         "recurringChargePeriodType": "MONTH",
+        
         "amount": 150,
         "currency": "EUR"
       },
       {
         "name": "Montly revenue-sharing based on transactions",
+
         "type": "RECURRING_POSTPAID",
-  	  	"isBundle": true,
-	  	  "bundleOp": "CUMULATIVE",
         "recurringChargePeriodLength": 1,
         "recurringChargePeriodType": "MONTH",
-        
+
         "ignorePeriod": "FIRST_3_CHARGE_PERIODS",
 
+        "isBundle": true,
+	  	  "bundleOp": "CUMULATIVE",
+        
         "applicableBaseReferencePeriod": "LAST_9_CHARGE_PERIODS",
         "applicableFrom": "2025-01-01T00:00:00Z",
         "applicableBase": "bills-no-taxes",
 
         "computationBaseReferencePeriod": "CURRENT_CHARGE_PERIOD",
         "computationBase": "bills-no-taxes",
+
         "currency": "EUR",
+
         "prices": [
           {
             "name": "Nothing to be shared with DOME for transactions below 100k",
@@ -204,9 +210,11 @@
       },
       {
         "name": "End-of-period yearly fee (for dev purposes only)",
+        
         "type": "RECURRING_POSTPAID",
         "recurringChargePeriodLength": 1,
         "recurringChargePeriodType": "YEAR",
+        
         "amount": 1250,
         "currency": "EUR"
       }
