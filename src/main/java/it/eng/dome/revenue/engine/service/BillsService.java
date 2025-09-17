@@ -174,6 +174,7 @@ public class BillsService implements InitializingBean {
 		// NEXT Bill date and Payment Due Date
 		Subscription sub = subscriptionService.getSubscriptionByProductId(sb.getSubscriptionId());
 		Plan plan = planService.getPlanById(sub.getPlan().getId());
+		sub.setPlan(plan);
 		SubscriptionTimeHelper th = new SubscriptionTimeHelper(sub);
 		
 		OffsetDateTime nextBillDate = th.rollBillPeriod(sb.getBillTime(), plan.getBillCycleSpecification().getBillingPeriodLength());
