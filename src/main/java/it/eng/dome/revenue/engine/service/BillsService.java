@@ -1,5 +1,6 @@
 package it.eng.dome.revenue.engine.service;
 
+import java.net.URI;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -365,6 +366,10 @@ public class BillsService implements InitializingBean {
         if (acbrList == null) {
             throw new IllegalStateException("Failed to map RevenueBill and Subscription to AppliedCustomerBillingRate list");
         }
+        
+        for (AppliedCustomerBillingRate acbr : acbrList) {
+			acbr.setRelatedParty(rb.getRelatedParties());
+		}
         
         acbrList = this.setBillingAccountRef(acbrList, subscription.getId());
         if (acbrList == null) {

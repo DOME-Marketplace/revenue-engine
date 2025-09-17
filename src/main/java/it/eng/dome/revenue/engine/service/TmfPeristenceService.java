@@ -1,5 +1,6 @@
 package it.eng.dome.revenue.engine.service;
 
+import java.net.URI;
 import java.time.OffsetDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
@@ -175,7 +176,10 @@ public class TmfPeristenceService implements InitializingBean {
             // acbr.setBill(null);
             // persist it
             logger.info("PERSISTENCE: creating ACBR {}", acbr.getId());
-            AppliedCustomerBillingRate createdACBR = this.appliedCustomerBillRateApis.createAppliedCustomerBillingRate(AppliedCustomerBillingRateCreate.fromJson(acbr.toJson()));
+            
+            AppliedCustomerBillingRateCreate acbrc = AppliedCustomerBillingRateCreate.fromJson(acbr.toJson());
+            acbrc.setAtSchemaLocation(new URI("https://raw.githubusercontent.com/DOME-Marketplace/dome-odrl-profile/refs/heads/add-related-party-ref/schemas/simplified/RelatedPartyRef.schema.json"));
+            AppliedCustomerBillingRate createdACBR = this.appliedCustomerBillRateApis.createAppliedCustomerBillingRate(acbrc);
             logger.info("PERSISTENCE: created ACBR with id {}", createdACBR.getId());
             // and return a fresh copy
             return createdACBR;
