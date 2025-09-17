@@ -401,17 +401,17 @@ public class ReportingService implements InitializingBean {
 
         if (futureConfirmedTotal > 0) {
             items.add(new Report(
-                "Confirmed Value for Remaining Billing Period until " + renewalDate,
+                "Current Value for Remaining Billing Period until " + renewalDate,
                 format(futureConfirmedTotal)
             ));
         }
 
-        if (futureEstimatedTotal > 0) {
-            items.add(new Report(
-                "Estimated Value for Remaining Billing Period until " + renewalDate,
-                format(futureEstimatedTotal)
-            ));
-        }
+//        if (futureEstimatedTotal > 0) {
+//            items.add(new Report(
+//                "Estimated Value for Remaining Billing Period until " + renewalDate,
+//                format(futureEstimatedTotal)
+//            ));
+//        }
 
         // Message if there are no relevant bills
         if (items.isEmpty()) {
