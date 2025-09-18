@@ -290,8 +290,6 @@ public class TmfPeristenceService implements InitializingBean {
     private static boolean match(CustomerBill cb1, CustomerBill cb2) {
         Map<String, String> cb1map = buildComparisonMap(cb1);
         Map<String, String> cb2map = buildComparisonMap(cb2);
-        // FIXME: also compare corrsponding acbrs (as there is no product in cb)
-        // [DZCF] - A: done above in isCBAlreadyinTMF() with compareCBsProduct() fuction
         return mapsMatch(cb1map, cb2map);
     }
 

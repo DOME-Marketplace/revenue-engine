@@ -399,7 +399,7 @@ public class BillsService implements InitializingBean {
     }
     
     public List<AppliedCustomerBillingRate> setCustomerBillRef(List<AppliedCustomerBillingRate> acbrs, RevenueBill rb){
-		// FIXME: Currently, we don't consider persistence.
+		// this acbr id is for local istance of acbr. When we persist the acbr, we provide another id.
 		BillRef billRef = new BillRef();
 		String billId = rb.getId();
 		billRef.setId(billId.replace("urn:ngsi-ld:revenuebill", "urn:ngsi-ld:customerbill"));

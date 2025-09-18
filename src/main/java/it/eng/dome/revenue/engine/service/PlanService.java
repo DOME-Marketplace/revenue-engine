@@ -5,7 +5,9 @@ import java.io.InputStream;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -13,6 +15,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import com.fasterxml.jackson.databind.DeserializationFeature;
@@ -36,6 +39,10 @@ import it.eng.dome.tmforum.tmf620.v4.model.ProductOfferingPriceRefOrValue;
  */
 @Service
 public class PlanService implements InitializingBean{
+	
+	/** Dome Operator ID - now parametric via Spring property */
+    @Value("${dome.operator.id}")
+    private String DOME_OPERATOR_ID;
 
     private static final Logger logger = LoggerFactory.getLogger(PlanService.class);
     
@@ -74,6 +81,8 @@ public class PlanService implements InitializingBean{
     public List<Plan> getAllPlans() {
     	
     	//FIXME: when the RP bug is fixed, filter only plans connected to DO.
+//    	Map<String, String> filter = new HashMap<String, String>();
+//    	filter.put("relatedParty.id", DOME_OPERATOR_ID);
         List<ProductOffering> pos = productOfferingApis.getAllProductOfferings(null, null);
         
         List<Plan> plans = new ArrayList<>();
