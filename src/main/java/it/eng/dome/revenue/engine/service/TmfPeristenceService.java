@@ -30,6 +30,7 @@ import it.eng.dome.tmforum.tmf678.v4.model.BillRef;
 import it.eng.dome.tmforum.tmf678.v4.model.CustomerBill;
 import it.eng.dome.tmforum.tmf678.v4.model.CustomerBillCreate;
 import it.eng.dome.tmforum.tmf678.v4.model.ProductRef;
+import it.eng.dome.tmforum.tmf678.v4.model.RelatedParty;
 
 /**
  * FIXME: Enhancemets and fixes:
@@ -116,7 +117,7 @@ public class TmfPeristenceService implements InitializingBean {
 
         logger.info("PERSISTENCE - persisting revenue bill {}", revenueBillId);
 
-        // retrieve the cb
+        // retrieve the local cb
         CustomerBill localCb = this.billService.getCustomerBillByRevenueBillId(revenueBillId);
 
         if(localCb.getBillDate().isAfter(OffsetDateTime.now())) {
@@ -125,35 +126,40 @@ public class TmfPeristenceService implements InitializingBean {
         }
 
         // persiste the cb and get the id
-        CustomerBill persistedCB = this.persistCustomerBill(localCb);
+        CustomerBill persistedCB = this.persistCustomerBill(localCb, revenueBillId);
 
-        // generate the acbrs
-        List<AppliedCustomerBillingRate> acbrs = this.billService.getACBRsByRevenueBillId(revenueBillId);
-        for(AppliedCustomerBillingRate acbr: acbrs) {
-            // set the reference to the cb
-            BillRef bref = new BillRef();
-            bref.setId(persistedCB.getId());
-            acbr.setBill(bref);
-            // mark it as billed
-            acbr.setIsBilled(true);
-            // persiste the acbr
-            this.persistAppliedCustomerBillingRate(acbr);
+        if(persistedCB != null) {
+	        // generate the acbrs
+	        List<AppliedCustomerBillingRate> acbrs = this.billService.getACBRsByRevenueBillId(revenueBillId);
+	        for(AppliedCustomerBillingRate acbr: acbrs) {
+	            // set the reference to the new persisted cb
+	            BillRef bref = new BillRef();
+	            bref.setId(persistedCB.getId());
+	            acbr.setBill(bref);
+	            // mark it as billed
+	            acbr.setIsBilled(true);
+	            // persiste the acbr
+	            this.persistAppliedCustomerBillingRate(acbr);
+	        }
         }
-
+        else
+        	logger.debug("***No ACBR was create beacuse cb already exists");
+        	
         return persistedCB;
     }
 
-    public CustomerBill persistCustomerBill(CustomerBill cb) throws ApiException, Exception {
+    public CustomerBill persistCustomerBill(CustomerBill cb, String revenueBillId) throws ApiException, Exception {
         // check if exist on tmf
-        logger.info("PERSISTENCE - look for existing CB");
-        CustomerBill existingCustomerBill = this.isCbAlreadyInTMF(cb);
-        logger.info("PERSISTENCE - CB {}" , existingCustomerBill);
+        logger.debug("PERSISTENCE - look for existing CB");
+        CustomerBill existingCustomerBill = this.isCbAlreadyInTMF(cb, revenueBillId);
+        logger.debug("PERSISTENCE - CB {}" , existingCustomerBill);
+        
         // if not, persist it
         if(existingCustomerBill==null) {
             // FIXME: marking the CB so it can be easily removed during development. Remove before flight.
             cb = watermark(cb);
             // persist it
-            logger.info("PERSISTENCE: creating CB {}...", cb.getId());
+            logger.debug("PERSISTENCE: creating CB {}...", cb.getId());
             String id = this.appliedCustomerBillRateApis.createCustomerBill(CustomerBillCreate.fromJson(cb.toJson()));
             logger.info("PERSISTENCE: created CB with id {}", id);
             // and return a fresh copy
@@ -161,7 +167,8 @@ public class TmfPeristenceService implements InitializingBean {
 //            return existingCustomerBill;
         } else {
             logger.info("Local CB {} is already on TMF with id {}", cb.getId(), existingCustomerBill.getId());
-            return existingCustomerBill;
+            // return null not CB
+            return null;
         }
     }
 
@@ -181,6 +188,7 @@ public class TmfPeristenceService implements InitializingBean {
             AppliedCustomerBillingRateCreate acbrc = AppliedCustomerBillingRateCreate.fromJson(acbr.toJson());
             acbrc.setAtSchemaLocation(new URI("https://raw.githubusercontent.com/DOME-Marketplace/dome-odrl-profile/refs/heads/add-related-party-ref/schemas/simplified/RelatedPartyRef.schema.json"));
             AppliedCustomerBillingRate createdACBR = this.appliedCustomerBillRateApis.createAppliedCustomerBillingRate(acbrc);
+            
             logger.info("PERSISTENCE: created ACBR with id {}", createdACBR.getId());
             // and return a fresh copy
             return createdACBR;
@@ -201,12 +209,13 @@ public class TmfPeristenceService implements InitializingBean {
      * @throws ApiException
      * @throws Exception
      */
-    private CustomerBill isCbAlreadyInTMF(CustomerBill cb) throws ApiException, Exception {
+    private CustomerBill isCbAlreadyInTMF(CustomerBill cb, String revenueBillId) throws ApiException, Exception {
 
         // prepare a filter
 //        Map<String, String> filter = new HashMap<>();
 //        filter.put("relatedParty.id", cb.getRelatedParty().getId())
-
+//        filter.put("billingAccount.id", "urn:ngsi-ld:billing-account:d8f73230-fe44-4594-9cc0-6c2b76107187");
+        
         // retrieve matches (shouldn't be a large set)
         // FIXME: properly manage limit and paging
         List<CustomerBill> candidates = this.customerBillAPI.listCustomerBill(null, null, 1000, null);
@@ -216,10 +225,11 @@ public class TmfPeristenceService implements InitializingBean {
         List<CustomerBill> matchedCandidates = new ArrayList<>();
         for(CustomerBill candidate: candidates) {
         	boolean basicMatch = TmfPeristenceService.match(cb, candidate);
-            //boolean productMatch = this.compareCBsProduct(cb.getId(), candidate.getId());
+            boolean productMatch = this.compareCBsProduct(revenueBillId, candidate.getId());
+            boolean rlMatch = this.relatedPartyMatch(cb.getRelatedParty(), candidate.getRelatedParty());
 
             //&& productMatch
-            if (basicMatch) {
+            if (basicMatch && productMatch && rlMatch) {
                 matchedCandidates.add(candidate);
             }
 //            else {
@@ -228,11 +238,15 @@ public class TmfPeristenceService implements InitializingBean {
 //            }
         }
 
-        // ok if there's one match. null if no match. Exception if more matches.
-        if(matchedCandidates.size()==1)
+        // ok if there's one match. null if no match. Exception if more matches (done).
+        if(matchedCandidates.size()==1) {
+        	logger.debug("**********CB machedCandidates size is 1");
             return matchedCandidates.get(0);
-        else if(matchedCandidates.isEmpty())
+        }
+        else if(matchedCandidates.isEmpty()) {
+        	logger.debug("******CB machedCandidates is Empty");
             return null;
+        }
         else {
             throw new Exception(String.format("Found {} CustomerBills already on TMF matching the given CustomerBill with local id {}", matchedCandidates.size(), cb.getId()));
 //            String msg = String.format("Found %d CustomerBills already on TMF matching the given CustomerBill with local id %s", matchedCandidates.size(), cb.getId());
@@ -257,10 +271,14 @@ public class TmfPeristenceService implements InitializingBean {
         }
 
         // ok if there's one match. null if no match. Exception if more matches.
-        if(matches.size()==1)
+        if(matches.size()==1) {
+        	logger.debug("&&&&&&&&&& ACBR matches size is 1");
             return matches.get(0);
-        else if(matches.isEmpty())
+        }
+        else if(matches.isEmpty()) {
+        	logger.debug("&&&&&&& ACBR matches is Empty");
             return null;
+        }
         else {
             throw new Exception(String.format("Found {} AppliedCustomerBillingRates already on TMF matching the given AppliedCustomerBillingRate with local id {}", matches.size(), acbr.getId()));
         }    
@@ -273,6 +291,7 @@ public class TmfPeristenceService implements InitializingBean {
         Map<String, String> cb1map = buildComparisonMap(cb1);
         Map<String, String> cb2map = buildComparisonMap(cb2);
         // FIXME: also compare corrsponding acbrs (as there is no product in cb)
+        // [DZCF] - A: done above in isCBAlreadyinTMF() with compareCBsProduct() fuction
         return mapsMatch(cb1map, cb2map);
     }
 
@@ -281,7 +300,7 @@ public class TmfPeristenceService implements InitializingBean {
      */
     private static boolean match(AppliedCustomerBillingRate acbr1, AppliedCustomerBillingRate acbr2) {
         Map<String, String> acbr1map = buildComparisonMap(acbr1);
-        Map<String, String> acbr2map = buildComparisonMap(acbr1);
+        Map<String, String> acbr2map = buildComparisonMap(acbr2);
         return mapsMatch(acbr1map, acbr2map);
     }
 
@@ -294,6 +313,7 @@ public class TmfPeristenceService implements InitializingBean {
             out.put("billingPeriod.endDateTime", fmt.format(cb.getBillingPeriod().getEndDateTime()));
         if(cb.getTaxExcludedAmount()!=null && cb.getTaxExcludedAmount().getValue()!=null)
             out.put("taxExcludedAmount.value", cb.getTaxExcludedAmount().getValue().toString());
+        
         return out;
     }
 
@@ -306,10 +326,12 @@ public class TmfPeristenceService implements InitializingBean {
             out.put("periodCoverage.startDateTime", fmt.format(cb.getPeriodCoverage().getStartDateTime()));
         if(cb.getPeriodCoverage()!=null && cb.getPeriodCoverage().getEndDateTime()!=null)
             out.put("periodCoverage.endDateTime", fmt.format(cb.getPeriodCoverage().getEndDateTime()));
-        if(cb.getName()!=null)
-            out.put("name", cb.getName());
-        if(cb.getDescription()!=null)
-            out.put("description", cb.getDescription());
+//        if(cb.getName()!=null)
+//            out.put("name", cb.getName());
+//        if(cb.getDescription()!=null)
+//            out.put("description", cb.getDescription());
+        if(cb.getBillingAccount()!=null && cb.getBillingAccount().getId()!=null)
+        	out.put("billingAccount.id", cb.getBillingAccount().getId());
         if(cb.getType()!=null)
             out.put("type", cb.getType());
         if(cb.getTaxExcludedAmount()!=null && cb.getTaxExcludedAmount().getValue()!=null)
@@ -362,7 +384,7 @@ public class TmfPeristenceService implements InitializingBean {
      * @param idCustomerBill2 ID of the second CustomerBill
      * @return true if both CustomerBills reference the same Product, false otherwise
     */
-    public boolean compareCBsProduct(String idCustomerBill1, String idCustomerBill2) {
+    private boolean compareCBsProduct(String idCustomerBill1, String idCustomerBill2) {
     	if(idCustomerBill1 == null || idCustomerBill2 == null) {
     		logger.warn("One of the customer bill IDs is null. idCustomerBill1={}, idCustomerBill2={}", idCustomerBill1, idCustomerBill2);
     		return false;
@@ -372,7 +394,7 @@ public class TmfPeristenceService implements InitializingBean {
     		return true;
     	}
     	
-    	List<AppliedCustomerBillingRate> acbrs1 = billService.getACBRsByCustomerBillId(idCustomerBill1); // recupera da local
+    	List<AppliedCustomerBillingRate> acbrs1 = billService.getACBRsByRevenueBillId(idCustomerBill1); // recupera da local
     	List<AppliedCustomerBillingRate> acbrs2 = billService.getACBRsByCustomerBillId(idCustomerBill2);
     	
     	if(acbrs1 == null || acbrs2 == null || acbrs1.isEmpty() || acbrs2.isEmpty()) {
@@ -391,5 +413,28 @@ public class TmfPeristenceService implements InitializingBean {
         boolean areEqual = Objects.equals(productRef1.getId(), productRef2.getId());
         
         return areEqual;
+    }
+    
+    private boolean relatedPartyMatch(List<RelatedParty> rl1, List<RelatedParty> rl2) {
+    	String rlId1 = null;
+    	String rlId2 = null;
+		if(rl1 != null && this.filterRelatedPartyPerRole(rl1, "Buyer")!=null)
+			rlId1 = this.filterRelatedPartyPerRole(rl1, "Buyer").getId();
+		if(rl2 != null && this.filterRelatedPartyPerRole(rl2, "Buyer")!=null)
+			rlId2 = this.filterRelatedPartyPerRole(rl2, "Buyer").getId();
+    	
+		if(rlId1!=null && rlId2!=null && rlId1.equals(rlId2))
+			return true;
+		else
+			return false;
+    }
+    
+    public RelatedParty filterRelatedPartyPerRole(List<RelatedParty> relatedParties, String role) {
+    	for(RelatedParty rl : relatedParties) {
+    		if(role.equalsIgnoreCase(rl.getRole())){
+    			return rl;
+    		}
+    	}
+    	return null;
     }
 }

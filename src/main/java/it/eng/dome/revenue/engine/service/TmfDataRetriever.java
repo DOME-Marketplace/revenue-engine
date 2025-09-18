@@ -272,8 +272,8 @@ public class TmfDataRetriever implements InitializingBean {
 	      
 		return ba;
 	}
-
-    /** * Retrieves a billing account by related party ID from the TMF API.
+	
+	/** * Retrieves a billing account by related party ID from the TMF API.
 	 *
 	 * @param relatedPartyId The ID of the related party to filter billing accounts by.
 	 * @return A BillingAccountRef object representing the billing account, or null if not found.
