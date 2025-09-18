@@ -238,7 +238,7 @@ public class TmfPeristenceService implements InitializingBean {
 //            }
         }
 
-        // ok if there's one match. null if no match. Exception if more matches (done).
+        // ok if there's one match. null if no match. Exception if more matches (non).
         if(matchedCandidates.size()==1) {
         	logger.debug("**********CB machedCandidates size is 1");
             return matchedCandidates.get(0);
@@ -248,10 +248,10 @@ public class TmfPeristenceService implements InitializingBean {
             return null;
         }
         else {
-            throw new Exception(String.format("Found {} CustomerBills already on TMF matching the given CustomerBill with local id {}", matchedCandidates.size(), cb.getId()));
-//            String msg = String.format("Found %d CustomerBills already on TMF matching the given CustomerBill with local id %s", matchedCandidates.size(), cb.getId());
-//            logger.error(msg);
-//            return matchedCandidates.get(0);
+            //throw new Exception(String.format("Found {} CustomerBills already on TMF matching the given CustomerBill with local id {}", matchedCandidates.size(), cb.getId()));
+            String msg = String.format("Found %d CustomerBills already on TMF matching the given CustomerBill with local id %s", matchedCandidates.size(), cb.getId());
+            logger.error(msg);
+            return matchedCandidates.get(0);
         }
     }
 
