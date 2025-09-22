@@ -1,0 +1,28 @@
+{
+  "description": "Advanced Membership Offering for 2025",
+  "name": "Advanced Membership Offering for 2025",
+  "isBundle": false,
+  "lifecycleStatus": "Launched",
+  "version": "1",
+  "bundledProductOffering": [],
+  "category": [
+  ],
+  "place": [
+    
+  ],
+  "productOfferingPrice": [
+    {
+      "id": "${price/advanced-price/id}",
+      "name": "Price plan for Advanced package"
+    }
+  ],
+  "productOfferingTerm": [
+  ],
+  "productSpecification": {
+    "id": "${specification/advanced-package-spec/id}",
+    "name": "Advanced package"
+  },
+  "validFor": {
+    "startDateTime": "2025-06-01T00:00:00.000Z"
+  }
+}

@@ -1,0 +1,28 @@
+{
+  "description": "Basic Membership Offering for 2025",
+  "isBundle": false,
+  "lifecycleStatus": "Launched",
+  "name": "Basic Membership Offering for 2025",
+  "version": "1",
+  "bundledProductOffering": [],
+  "category": [
+  ],
+  "place": [
+    
+  ],
+  "productOfferingPrice": [
+    {
+      "id": "${price/basic-price/id}",
+      "name": "Plan"
+    }
+  ],
+  "productOfferingTerm": [
+  ],
+  "productSpecification": {
+    "id": "${specification/basic-package-spec/id}",
+    "name": "Basic Plan 2025 product specification"
+  },
+  "validFor": {
+    "startDateTime": "2025-06-01T00:00:00.000Z"
+  }
+}

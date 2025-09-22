@@ -1,0 +1,319 @@
+[
+    {
+        "id": "urn:ngsi-ld:service-specification:44e32a74-94ee-4625-a6e3-ca69a66b3881",
+        "href": "urn:ngsi-ld:service-specification:44e32a74-94ee-4625-a6e3-ca69a66b3881",
+        "description": " - 2 extra Posts (LinkedIn/X) - 4/year. \n - Featured as 'Top provider' for 1 month, 2 times per year: \n - - on the landing page \n - - when browsing the catalogue (in 2 categories related to its services). \n - Banner on the landing page and catalogues for 1 month, 3 times per year. \n - Promotion in one newsletter.",
+        "isBundle": false,
+        "lastUpdate": "2025-09-15T16:50:01.378194849Z",
+        "lifecycleStatus": "Active",
+        "name": "Marketing Promotion - Advanced",
+        "version": "1",
+        "relatedParty": [
+            {
+                "id": "urn:ngsi-ld:organization:a195013a-a0e4-493a-810a-b040e10da58f",
+                "href": "urn:ngsi-ld:organization:a195013a-a0e4-493a-810a-b040e10da58f",
+                "role": "Seller",
+                "@referredType": "organization"
+            },
+            {
+                "id": "urn:ngsi-ld:organization:a195013a-a0e4-493a-810a-b040e10da58f",
+                "href": "urn:ngsi-ld:organization:a195013a-a0e4-493a-810a-b040e10da58f",
+                "role": "SellerOperator",
+                "@referredType": "organization"
+            }
+        ]
+    },
+    {
+        "id": "urn:ngsi-ld:service-specification:1670a8bf-d74a-45be-80b0-daa1ffbaa3c9",
+        "href": "urn:ngsi-ld:service-specification:1670a8bf-d74a-45be-80b0-daa1ffbaa3c9",
+        "description": "- Promotional Posts (LinkedIn/X) -  2/year.",
+        "isBundle": false,
+        "lastUpdate": "2025-09-15T16:51:52.987741549Z",
+        "lifecycleStatus": "Active",
+        "name": "Marketing Promotion - Basic",
+        "version": "1",
+        "relatedParty": [
+            {
+                "id": "urn:ngsi-ld:organization:a195013a-a0e4-493a-810a-b040e10da58f",
+                "href": "urn:ngsi-ld:organization:a195013a-a0e4-493a-810a-b040e10da58f",
+                "role": "Seller",
+                "@referredType": "organization"
+            },
+            {
+                "id": "urn:ngsi-ld:organization:a195013a-a0e4-493a-810a-b040e10da58f",
+                "href": "urn:ngsi-ld:organization:a195013a-a0e4-493a-810a-b040e10da58f",
+                "role": "SellerOperator",
+                "@referredType": "organization"
+            }
+        ]
+    },
+    {
+        "id": "urn:ngsi-ld:service-specification:f785d8dd-754e-4d34-9b12-e1c61c77e61f",
+        "href": "urn:ngsi-ld:service-specification:f785d8dd-754e-4d34-9b12-e1c61c77e61f",
+        "description": "- **Onboarding & Certification Check**: Getting started is simple and fully supported. Providers are guided through a step-by-step onboarding process with the help of a comprehensive guide and hands-on support from our team. From initial registration to service configuration, we ensure a smooth and efficient experience. Upon completion of onboarding and successful issuance of your DOME Verifiable Credentials, we are happy to welcome you in your DOME-Verified Digital Trust era! \n - **Account Management**: Manage your provider account with ease through a streamlined, user-friendly dashboard designed to simplify everyday tasks — from updating service details to tracking key performance indicators. Federated marketplaces can also integrate and manage their presence using DOME infrastructure, ensuring consistent governance, trust, and interoperability across connected environments. \n - **Customer Support**: The customer support is focused on solving any kind of need of the portal user in relation to the DOME Ecosystem. We are here for you 24/7 through an online help system as well as a chatbot service trained to answer your DOME questions in your native language! \n - **Services Listing**: Providers benefit from unlimited service listings, with intuitive tools to easily publish, update, and manage their offerings through a centralized interface. There are no restrictions on the number of services you can list, allowing you to showcase your full portfolio and reach a broader audience.ì In addition, listed services can be made available across a federation of interconnected marketplaces, significantly expanding your visibility and market reach within a trusted and compliant European ecosystem. \n - **Reporting and Analytics**: Users benefit from a personalized dashboard providing 24/7 access to key performance metrics, including number of visits, average session duration, user actions, sales data, traffic sources, bounce rate, and geographic origin of visits. For providers with the Advanced package contract, the dashboard also includes enhanced financial reporting and performance benchmarking in relation to other marketplace providers.",
+        "isBundle": false,
+        "lastUpdate": "2025-09-15T16:52:40.199624697Z",
+        "lifecycleStatus": "Active",
+        "name": "DOME Marketplace Services",
+        "version": "1",
+        "relatedParty": [
+            {
+                "id": "urn:ngsi-ld:organization:a195013a-a0e4-493a-810a-b040e10da58f",
+                "href": "urn:ngsi-ld:organization:a195013a-a0e4-493a-810a-b040e10da58f",
+                "role": "Seller",
+                "@referredType": "organization"
+            },
+            {
+                "id": "urn:ngsi-ld:organization:a195013a-a0e4-493a-810a-b040e10da58f",
+                "href": "urn:ngsi-ld:organization:a195013a-a0e4-493a-810a-b040e10da58f",
+                "role": "SellerOperator",
+                "@referredType": "organization"
+            }
+        ]
+    },
+    {
+        "id": "urn:ngsi-ld:product-specification:bc4b662e-3211-4c09-91cf-6ac82ddf35bd",
+        "href": "urn:ngsi-ld:product-specification:bc4b662e-3211-4c09-91cf-6ac82ddf35bd",
+        "brand": "The DOME Operator",
+        "description": "This is the basic package including all Marketplace service and a basic selection of marketing services",
+        "isBundle": false,
+        "lastUpdate": "2025-09-04T16:08:35.112383294Z",
+        "lifecycleStatus": "Active",
+        "name": "Basic Package of DOME services",
+        "productNumber": "2025.1",
+        "version": "1",
+        "attachment": [],
+        "bundledProductSpecification": [],
+        "productSpecCharacteristic": [],
+        "productSpecificationRelationship": [],
+        "relatedParty": [
+            {
+                "id": "urn:ngsi-ld:organization:a195013a-a0e4-493a-810a-b040e10da58f",
+                "href": "urn:ngsi-ld:organization:a195013a-a0e4-493a-810a-b040e10da58f",
+                "role": "Seller",
+                "@referredType": "organization"
+            },
+            {
+                "id": "urn:ngsi-ld:organization:a195013a-a0e4-493a-810a-b040e10da58f",
+                "href": "urn:ngsi-ld:organization:a195013a-a0e4-493a-810a-b040e10da58f",
+                "role": "SellerOperator",
+                "@referredType": "organization"
+            }
+        ],
+        "resourceSpecification": [],
+        "serviceSpecification": [
+            {
+                "id": "urn:ngsi-ld:service-specification:f785d8dd-754e-4d34-9b12-e1c61c77e61f",
+                "href": "urn:ngsi-ld:service-specification:f785d8dd-754e-4d34-9b12-e1c61c77e61f",
+                "name": "DOME Marketplace Services",
+                "version": "1"
+            },
+            {
+                "id": "urn:ngsi-ld:service-specification:1670a8bf-d74a-45be-80b0-daa1ffbaa3c9",
+                "href": "urn:ngsi-ld:service-specification:1670a8bf-d74a-45be-80b0-daa1ffbaa3c9",
+                "name": "Marketing Promotion - Basic",
+                "version": "1"
+            }
+        ],
+        "validFor": {
+            "startDateTime": "2025-06-01T00:00:00Z"
+        }
+    },
+    {
+        "id": "urn:ngsi-ld:product-specification:538b1e8f-12bd-4c7c-a18e-62792bf3e0bc",
+        "href": "urn:ngsi-ld:product-specification:538b1e8f-12bd-4c7c-a18e-62792bf3e0bc",
+        "brand": "The DOME Operator",
+        "description": "This is the advanced package including all Marketplace service and a riche selection of marketing services",
+        "isBundle": false,
+        "lastUpdate": "2025-09-04T16:08:35.112383294Z",
+        "lifecycleStatus": "Active",
+        "name": "Advanced Package of DOME services",
+        "productNumber": "2025.1",
+        "version": "1",
+        "attachment": [],
+        "bundledProductSpecification": [],
+        "productSpecCharacteristic": [],
+        "productSpecificationRelationship": [],
+        "relatedParty": [
+            {
+                "id": "urn:ngsi-ld:organization:a195013a-a0e4-493a-810a-b040e10da58f",
+                "href": "urn:ngsi-ld:organization:a195013a-a0e4-493a-810a-b040e10da58f",
+                "role": "Seller",
+                "@referredType": "organization"
+            },
+            {
+                "id": "urn:ngsi-ld:organization:a195013a-a0e4-493a-810a-b040e10da58f",
+                "href": "urn:ngsi-ld:organization:a195013a-a0e4-493a-810a-b040e10da58f",
+                "role": "SellerOperator",
+                "@referredType": "organization"
+            }
+        ],
+        "resourceSpecification": [],
+        "serviceSpecification": [
+            {
+                "id": "urn:ngsi-ld:service-specification:f785d8dd-754e-4d34-9b12-e1c61c77e61f",
+                "href": "urn:ngsi-ld:service-specification:f785d8dd-754e-4d34-9b12-e1c61c77e61f",
+                "name": "DOME Marketplace Services",
+                "version": "1"
+            },
+            {
+                "id": "urn:ngsi-ld:service-specification:1670a8bf-d74a-45be-80b0-daa1ffbaa3c9",
+                "href": "urn:ngsi-ld:service-specification:1670a8bf-d74a-45be-80b0-daa1ffbaa3c9",
+                "name": "Marketing Promotion - Basic",
+                "version": "1"
+            },
+            {
+                "id": "urn:ngsi-ld:service-specification:44e32a74-94ee-4625-a6e3-ca69a66b3881",
+                "href": "urn:ngsi-ld:service-specification:44e32a74-94ee-4625-a6e3-ca69a66b3881",
+                "name": "Marketing Promotion - Advanced",
+                "version": "1"
+            }
+        ],
+        "validFor": {
+            "startDateTime": "2025-06-01T00:00:00Z"
+        }
+    },
+{
+    "id": "urn:ngsi-ld:product-offering-price:82b1065e-8c96-4aeb-a11d-8088b8e32366",
+    "href": "urn:ngsi-ld:product-offering-price:82b1065e-8c96-4aeb-a11d-8088b8e32366",
+    "description": "Price for regular providers. 8k upfront. Discounts for previous year performance.\n https://raw.githubusercontent.com/DOME-Marketplace/revenue-engine/refs/heads/main/src/main/resources/data/plans/2025-basic.json",
+    "lastUpdate": "2025-09-15T16:57:37.732758105Z",
+    "lifecycleStatus": "Active",
+    "name": "Basic 2025 price",
+    "priceType": "custom",
+    "price": {},
+    "validFor": {
+        "startDateTime": "2025-06-01T00:00:00Z"
+    }
+},
+
+{
+    "id": "urn:ngsi-ld:product-offering-price:356144e6-03de-4a80-9d37-953d0f4ec83c",
+    "href": "urn:ngsi-ld:product-offering-price:356144e6-03de-4a80-9d37-953d0f4ec83c",
+    "description": "Price for regular providers. 8k upfront. Discounts for previous year performance.\n https://raw.githubusercontent.com/DOME-Marketplace/revenue-engine/refs/heads/main/src/main/resources/data/plans/2025-pro.json",
+    "lastUpdate": "2025-09-15T16:58:08.918110320Z",
+    "lifecycleStatus": "Active",
+    "name": "Advanced 2025 price",
+    "priceType": "custom",
+    "price": {},
+    "validFor": {
+        "startDateTime": "2025-06-01T00:00:00Z"
+    }
+},
+
+{
+    "id": "urn:ngsi-ld:product-offering:c7247c95-9468-4a0d-8cdc-7d3fe7c61d29",
+    "href": "urn:ngsi-ld:product-offering:c7247c95-9468-4a0d-8cdc-7d3fe7c61d29",
+  "description": "Basic Membership Offering for 2025",
+  "isBundle": false,
+  "lifecycleStatus": "Launched",
+  "name": "Basic Membership Offering for 2025",
+  "version": "1",
+  "bundledProductOffering": [],
+  "category": [
+  ],
+  "place": [
+    
+  ],
+  "productOfferingPrice": [
+    {
+      "id": "urn:ngsi-ld:product-offering-price:82b1065e-8c96-4aeb-a11d-8088b8e32366",
+      "href": "urn:ngsi-ld:product-offering-price:82b1065e-8c96-4aeb-a11d-8088b8e32366",
+      "name": "Plan"
+    }
+  ],
+  "productOfferingTerm": [
+  ],
+  "productSpecification": {
+    "id": "urn:ngsi-ld:product-specification:bc4b662e-3211-4c09-91cf-6ac82ddf35bd",
+    "href": "urn:ngsi-ld:product-specification:bc4b662e-3211-4c09-91cf-6ac82ddf35bd",
+    "name": "Basic Plan 2025 product specification"
+  },
+  "validFor": {
+    "startDateTime": "2025-06-01T00:00:00.000Z"
+  }
+}
+,
+
+
+{
+    "id": "urn:ngsi-ld:product-offering:6622d6fa-6cbd-4d28-900e-2223f5c65100",
+    "href": "urn:ngsi-ld:product-offering:6622d6fa-6cbd-4d28-900e-2223f5c65100",
+    "description": "Advanced Membership Offering for 2025",
+    "isBundle": false,
+    "lastUpdate": "2025-09-15T17:01:10.268622037Z",
+    "lifecycleStatus": "Launched",
+    "name": "Advanced Membership Offering for 2025",
+    "version": "1",
+    "bundledProductOffering": [],
+    "category": [],
+    "place": [],
+    "productOfferingPrice": [
+        {
+            "id": "urn:ngsi-ld:product-offering-price:356144e6-03de-4a80-9d37-953d0f4ec83c",
+            "href": "urn:ngsi-ld:product-offering-price:356144e6-03de-4a80-9d37-953d0f4ec83c",
+            "name": "Price plan for Advanced package"
+        }
+    ],
+    "productOfferingTerm": [],
+    "productSpecification": {
+        "id": "urn:ngsi-ld:product-specification:538b1e8f-12bd-4c7c-a18e-62792bf3e0bc",
+        "href": "urn:ngsi-ld:product-specification:538b1e8f-12bd-4c7c-a18e-62792bf3e0bc",
+        "name": "Advanced package"
+    },
+    "validFor": {
+        "startDateTime": "2025-06-01T00:00:00Z"
+    }
+}
+
+,
+
+{
+  "id": "urn:ngsi-ld:product:7f0b1424-d18a-4c14-82ee-85e624c785c7",
+  "href": "urn:ngsi-ld:product:7f0b1424-d18a-4c14-82ee-85e624c785c7",
+  "name": "GOLEM subscription for Advanced 2025",                         
+  "startDate": "2025-01-21T01:15:39.961Z",
+  "billingAccount": {
+    "id": "urn:ngsi-ld:billing-account:c04ad028-a5ea-495f-a057-80c8c7ee8e00",  
+    "href": "urn:ngsi-ld:billing-account:c04ad028-a5ea-495f-a057-80c8c7ee8e00" 
+  },
+  "productCharacteristic": [],
+  "productOffering": {
+    "id": "urn:ngsi-ld:product-offering:6622d6fa-6cbd-4d28-900e-2223f5c65100",
+    "href": "urn:ngsi-ld:product-offering:6622d6fa-6cbd-4d28-900e-2223f5c65100"
+  },
+  "productPrice": [
+    {
+      "priceType": null,
+      "price": null,
+      "productOfferingPrice": {
+        "id": "urn:ngsi-ld:product-offering-price:356144e6-03de-4a80-9d37-953d0f4ec83c",
+        "href": "urn:ngsi-ld:product-offering-price:356144e6-03de-4a80-9d37-953d0f4ec83c"
+      }
+    }
+  ],
+  "relatedParty": [
+    {
+      "id": "urn:ngsi-ld:organization:a195013a-a0e4-493a-810a-b040e10da58f",
+      "href": "urn:ngsi-ld:organization:a195013a-a0e4-493a-810a-b040e10da58f",
+      "role": "Seller",
+      "@referredType": "organization"
+    },
+    {
+      "id": "urn:ngsi-ld:organization:b370200a-1d4b-4a43-9184-66df796db1e3",
+      "href": "urn:ngsi-ld:organization:b370200a-1d4b-4a43-9184-66df796db1e3",
+      "role": "Customer",
+      "@referredType": "organization"
+    },
+    {
+      "id": "urn:ngsi-ld:organization:b370200a-1d4b-4a43-9184-66df796db1e3",          
+      "href": "urn:ngsi-ld:organization:b370200a-1d4b-4a43-9184-66df796db1e3",        
+      "role": "Buyer",
+      "@referredType": "organization"
+    }
+  ],
+  "status": "active"
+}
+
+
+]

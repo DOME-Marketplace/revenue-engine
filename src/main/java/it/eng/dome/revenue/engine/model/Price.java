@@ -30,7 +30,7 @@ public class Price extends PlanItem {
     @JsonProperty("discount")
     @Valid
     private Discount discount;
-    
+
     public Price() {}
 
 	/* Return the inherited type, if any. Otherwise the local value. */

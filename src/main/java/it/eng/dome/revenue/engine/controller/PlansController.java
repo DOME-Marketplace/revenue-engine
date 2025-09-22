@@ -1,6 +1,7 @@
 package it.eng.dome.revenue.engine.controller;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 
 import org.slf4j.Logger;
@@ -15,8 +16,9 @@ import org.springframework.web.bind.annotation.RestController;
 
 import it.eng.dome.revenue.engine.model.Plan;
 import it.eng.dome.revenue.engine.model.Subscription;
-import it.eng.dome.revenue.engine.service.PlanService;
-import it.eng.dome.revenue.engine.service.SubscriptionService;
+import it.eng.dome.revenue.engine.service.cached.CachedPlanService;
+import it.eng.dome.revenue.engine.service.cached.CachedSubscriptionService;
+import it.eng.dome.revenue.engine.service.validation.PlanValidationReport;
 
 @RestController
 @RequestMapping("/revenue/plans")
@@ -25,46 +27,62 @@ public class PlansController {
 	private static final Logger logger = LoggerFactory.getLogger(PlansController.class);
     
 	@Autowired
-    private PlanService subscriptionPlanService;
+    private CachedPlanService subscriptionPlanService;
     
     @Autowired
-	private SubscriptionService subscriptionService;
+	private CachedSubscriptionService subscriptionService;
 
-   
     @GetMapping("")
     public ResponseEntity<List<Plan>> getAllPlans() {
-    	logger.info("Request all plans");
-    	
+//    	logger.info("Request received: fetch all plans");    	
         try {
-            List<Plan> plans = subscriptionPlanService.loadAllPlans();
+            List<Plan> plans = subscriptionPlanService.getAllPlans();
             return ResponseEntity.ok(plans);
         } catch (Exception e) {
+        	logger.error("Failed to load plans: {}", e.getMessage(), e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
     
     @GetMapping("/{planId}")
-    public ResponseEntity<Plan> getPlanById(@PathVariable String planId) {
-    	logger.info("Request plan with planId: {}", planId);
-    	
+    public ResponseEntity<Plan> getPlanById(@PathVariable String planId) throws IOException {
+//    	logger.info("Request received: fetch plan with ID {}", planId);
         try {
-            Plan plan = subscriptionPlanService.findPlanById(planId);
+            Plan plan = subscriptionPlanService.getPlanById(planId);
             return ResponseEntity.ok(plan);
-        } catch (IOException e) {
-        	logger.error("Error: {}", e.getMessage());
-            return ResponseEntity.notFound().build(); 
+        } catch (Exception e) {
+            logger.error("Unexpected error retrieving plan {}: {}", planId, e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
     
     @GetMapping("/{planId}/subscriptions")
     public ResponseEntity<List<Subscription>> getSubscriptionsByPlanId(@PathVariable String planId) {
-    	logger.info("Request subscriptions for planId: {}", planId);
-    	
-        List<Subscription> subscriptions = subscriptionService.getByPlanId(planId);
-        if (subscriptions == null || subscriptions.isEmpty()) {
-            return ResponseEntity.noContent().build();
+//        logger.info("Request received: fetch subscriptions for planId {}", planId);
+        try {
+            List<Subscription> subscriptions = subscriptionService.getSubscriptionsByPlanId(planId);
+
+            if (subscriptions == null || subscriptions.isEmpty()) {
+                logger.info("No subscriptions found for plan with ID {}", planId);
+                return ResponseEntity.ok(new ArrayList<>());
+            }
+
+            return ResponseEntity.ok(subscriptions);
+        } catch (Exception e) {
+            logger.error("Failed to retrieve subscriptions for planId {}: {}", planId, e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
-        return ResponseEntity.ok(subscriptions);
     }
-    
+
+    @GetMapping("/{planId}/validate")
+    public ResponseEntity<PlanValidationReport> validatePlan(@PathVariable String planId) throws IOException {
+        try {
+            PlanValidationReport report = subscriptionPlanService.validatePlan(planId);
+            return ResponseEntity.ok(report);
+        } catch (Exception e) {
+            logger.error("Unexpected error validating plan with ID {}: {}", planId, e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+
 }

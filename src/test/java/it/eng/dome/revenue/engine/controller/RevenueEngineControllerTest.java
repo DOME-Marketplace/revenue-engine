@@ -1,4 +1,4 @@
-package it.eng.dome.reveneu.engine.controller;
+package it.eng.dome.revenue.engine.controller;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;

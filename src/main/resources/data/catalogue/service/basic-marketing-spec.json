@@ -1,0 +1,19 @@
+{
+    "description": "- Promotional Posts (LinkedIn/X) -  2/year.",
+    "isBundle": false,
+    "lifecycleStatus": "Active",
+    "name": "Marketing Promotion - Basic",
+    "version": "1",
+    "relatedParty": [
+        {
+            "id": "${organization/dome-operator/id}",
+            "@referredType": "organization",
+            "role": "Seller"
+        },
+        {
+            "id": "${organization/dome-operator/id}",
+            "@referredType": "organization",
+            "role": "SellerOperator"
+         }
+    ]
+}

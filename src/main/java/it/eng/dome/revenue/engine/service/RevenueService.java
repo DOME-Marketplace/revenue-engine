@@ -12,13 +12,9 @@ import org.springframework.stereotype.Component;
 
 import it.eng.dome.brokerage.api.AgreementManagementApis;
 import it.eng.dome.brokerage.api.CustomerManagementApis;
-import it.eng.dome.revenue.engine.mapper.RevenueBillingMapper;
-import it.eng.dome.revenue.engine.model.RevenueStatement;
 import it.eng.dome.revenue.engine.tmf.TmfApiFactory;
 import it.eng.dome.tmforum.tmf629.v4.model.Customer;
 import it.eng.dome.tmforum.tmf651.v4.model.Agreement;
-import it.eng.dome.tmforum.tmf678.v4.model.AppliedCustomerBillingRate;
-import it.eng.dome.tmforum.tmf678.v4.model.BillingAccountRef;
 
 
 @Component(value = "revenueService")
@@ -28,10 +24,7 @@ public class RevenueService implements InitializingBean {
 	private final Logger logger = LoggerFactory.getLogger(RevenueService.class);
 	
 	@Autowired
-	private TmfApiFactory tmfApiFactory; 
-	
-	@Autowired
-	private TmfDataRetriever tmfDataRetriever; 
+	private TmfApiFactory tmfApiFactory;
 	
 	private CustomerManagementApis customer;
 	private AgreementManagementApis agreement;
@@ -60,25 +53,5 @@ public class RevenueService implements InitializingBean {
 		for (Agreement agreement : agreements) {
 			logger.info("ID: {}", agreement.getId());
 		}
-	}	
-	
-	/**
-	 * Builds an AppliedCustomerBillingRate from a RevenueStatement.
-	 * 
-	 * @param rs The RevenueStatement to convert.
-	 * @return An AppliedCustomerBillingRate object.
-	 * @throws IllegalArgumentException if the RevenueStatement is null or does not contain related party information.
-	 */
-	
-	public AppliedCustomerBillingRate buildACBR(RevenueStatement rs) {
-        if (rs == null || rs.getSubscription() == null ||
-            rs.getSubscription().getRelatedParties() == null ||
-            rs.getSubscription().getRelatedParties().isEmpty()) {
-            throw new IllegalArgumentException("Missing related party information in RevenueStatement");
-        }
-        //TODO: check which rl to retrieve 
-        String relatedPartyId = rs.getSubscription().getRelatedParties().get(0).getId();
-        BillingAccountRef billingAccountRef = tmfDataRetriever.retrieveBillingAccountByRelatedPartyId(relatedPartyId);
-        return RevenueBillingMapper.toACBR(rs, billingAccountRef);
-    }
+	}
 }

@@ -1,7 +1,6 @@
 package it.eng.dome.revenue.engine.service;
 
 import java.io.IOException;
-import java.text.NumberFormat;
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.time.temporal.ChronoUnit;
@@ -10,56 +9,63 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
-import java.util.Locale;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import it.eng.dome.revenue.engine.model.Plan;
 import it.eng.dome.revenue.engine.model.Report;
+import it.eng.dome.revenue.engine.model.RevenueBill;
 import it.eng.dome.revenue.engine.model.RevenueItem;
 import it.eng.dome.revenue.engine.model.RevenueStatement;
-import it.eng.dome.revenue.engine.model.SimpleBill;
 import it.eng.dome.revenue.engine.model.Subscription;
 import it.eng.dome.revenue.engine.model.SubscriptionTimeHelper;
-import it.eng.dome.revenue.engine.service.compute.PriceCalculator;
+import it.eng.dome.revenue.engine.service.cached.CachedPlanService;
+import it.eng.dome.revenue.engine.service.cached.CachedStatementsService;
 import it.eng.dome.tmforum.tmf632.v4.ApiException;
+import it.eng.dome.tmforum.tmf678.v4.model.CustomerBill;
 import it.eng.dome.tmforum.tmf678.v4.model.TimePeriod;
 
+
 @Service
-public class ReportingService {
+public class ReportingService implements InitializingBean {
     
     protected final Logger logger = LoggerFactory.getLogger(ReportingService.class);
-    
-    @Autowired
-    TmfDataRetriever tmfDataRetriever;
 
     @Autowired
-    SubscriptionService subscriptionService;
+    private SubscriptionService subscriptionService;
 
     @Autowired
-    PlanService planService;
+    private CachedPlanService planService;
 
     @Autowired
-    PriceCalculator priceCalculator;
-    
-    @Autowired
-    MetricsRetriever metricsRetriever;
-
-    @Autowired
-    StatementsService statementsService;
+    private CachedStatementsService statementsService;
     
     @Autowired
     private BillsService billsService;
     
+    public ReportingService() {}
+
+    public void afterPropertiesSet()  {
+    }
+
+    /**
+     * Retrieves the complete dashboard report for a given organization, using cache to avoid repeated computations.
+     *
+     * @param relatedPartyId the organization ID
+     * @return a list of Report sections for the dashboard
+     * @throws ApiException if an API call fails
+     * @throws IOException if a file or network access fails
+     */
     public List<Report> getDashboardReport(String relatedPartyId) throws ApiException, IOException {
-        logger.info("Call getDashboardReport for relatedPartyId: {}", relatedPartyId);
-        
+        logger.info("Reporting for dashboard, Organization ID = {}", relatedPartyId);
+
         List<Report> report = new ArrayList<>();
 
         // My Subscription Plan
@@ -71,40 +77,37 @@ public class ReportingService {
 
         // Revenue section
         report.add(getRevenueSection(relatedPartyId));
-        
-        // Bill Previsioning section 
-        report.add(getPrevisioningSection(relatedPartyId));
 
-		// Referral Program Area (computed)
-		report.add(getReferralSection(relatedPartyId));
-
-        // Change Request (hardcoded)
-//        report.add(new Reporting("Plan Change Request", Arrays.asList(
-//            new Reporting("Status", "Pending Review"),
-//            new Reporting("Requested Changing", "Basic to Advanced")
-//        )));
-
-        // Support (hardcoded)
-        report.add(new Report("Support",Arrays.asList(
-            new Report("Email", "support@dome-marketplace.org"),
-            new Report("Help Center", "Visit Support Portal", "https://www.dome-helpcenter.org")
-        )));
 
         return report;
     }
 
+
+    /**
+	 * Retrieves the subscription section for the given relatedPartyId.
+	 * 
+	 * @param relatedPartyId the ID of the related party
+	 * @return a Report object containing subscription details
+	 * @throws ApiException if there is an error retrieving data from the API
+	 * @throws IOException if there is an error reading data from files
+	 */
+    
     public Report getSubscriptionSection(String relatedPartyId) throws ApiException, IOException {
         Subscription subscription = subscriptionService.getSubscriptionByRelatedPartyId(relatedPartyId);
         if (subscription == null) {
             return new Report("Subscription", "No active subscription found for this user.");
         }
+        Plan plan = planService.getPlanById(subscription.getPlan().getId());
+        String planName = plan.getName() != null ? plan.getName() : "Unknown Plan";
 
-        String planName = subscription.getPlan() != null ? subscription.getPlan().getName() : "Unknown Plan";
+        SubscriptionTimeHelper th = new SubscriptionTimeHelper(subscription);
+
         String startDate = subscription.getStartDate() != null ? subscription.getStartDate().toString() : "Unknown Start Date";
         String renewalDate = subscription.getStartDate() != null ? subscription.getStartDate().plusYears(1).toString() : "Unknown Renewal Date";
         
-        Plan plan = planService.findPlanById(subscription.getPlan().getId());
-        
+        startDate = th.getSubscriptionPeriodAt(OffsetDateTime.now()).getStartDateTime().toString();
+        renewalDate = th.getSubscriptionPeriodAt(OffsetDateTime.now()).getEndDateTime().toString();
+
         String agreementsText = Optional.ofNullable(plan.getAgreements())
                 .orElse(Collections.emptyList())
                 .stream()
@@ -120,42 +123,43 @@ public class ReportingService {
         ));
     }
     
+    /**
+	 * Retrieves the billing history section for the given relatedPartyId.
+	 * 
+	 * @param relatedPartyId the ID of the related party
+	 * @return a Report object containing billing history details
+	*/
     public Report getBillingHistorySection(String relatedPartyId) {
     	String subscriptionId;
         try {
-            subscriptionId = subscriptionService.getSubscriptionIdByRelatedPartyId(relatedPartyId);
+            subscriptionId = subscriptionService.getSubscriptionByRelatedPartyId(relatedPartyId).getId();
         } catch (Exception e) {
             logger.error("Failed to retrieve subscriptionId for relatedPartyId: {}", relatedPartyId, e);
             return new Report(
-                "Bills Provisioning",
+                "Billing History",
                 List.of(new Report("Error", "Unable to retrieve subscription information"))
             );
         }
         // check null or empty subscriptionId
         if (subscriptionId == null || subscriptionId.isEmpty()) {
-            logger.warn("Subscription ID is null or empty for relatedPartyId: {}", relatedPartyId);
-            return new Report("Bills Provisioning", List.of(new Report("Error", "Invalid subscription ID")));
+            logger.warn("Subscription ID is null or not found for Organization with ID: {}", relatedPartyId);
+            return new Report("Billing History", List.of(new Report("Error", "Invalid subscription ID")));
         }
 
         // retrieve Subscription
-        Subscription subscription;
-        try {
-            subscription = subscriptionService.getSubscriptionById(subscriptionId);
-        } catch (ApiException | IOException e) {
-            logger.error("Failed to retrieve subscription for subscriptionId: {}", subscriptionId, e);
-            return new Report("Billing History", "Unable to retrieve subscription information");
-        }
+        Subscription subscription = subscriptionService.getSubscriptionByProductId(subscriptionId);
+        
         if (subscription == null || subscription.getStartDate() == null) {
-            logger.warn("Subscription not found or missing start date for id: {}", subscriptionId);
+            logger.warn("Subscription not found or missing start date for ID: {}", subscriptionId);
             return new Report("Billing History", "No billing data available");
         }
 
         // retrieve all bills
-        List<SimpleBill> allBills;
+        List<RevenueBill> allBills;
         try {
             allBills = billsService.getSubscriptionBills(subscriptionId);
         } catch (Exception e) {
-            logger.error("Failed to retrieve bills for subscriptionId: {}", subscriptionId, e);
+            logger.error("Failed to retrieve bills for subscription with ID: {}", subscriptionId, e);
             return new Report("Billing History", "No billing data available");
         }
         
@@ -171,7 +175,7 @@ public class ReportingService {
         List<Report> invoiceReports = new ArrayList<>();
 
         // iterate over all bills to filter and build the billing history
-        for (SimpleBill bill : allBills) {
+        for (RevenueBill bill : allBills) {
         	
         	// skip malformed or incomplete bills
             if (bill == null || bill.getPeriod() == null || bill.getPeriod().getEndDateTime() == null) {
@@ -183,10 +187,17 @@ public class ReportingService {
            
             // include only past bills: those that ended before 'now'
             if (!billEnd.isBefore(now)) continue; // skip non-past bills
-
+            CustomerBill cb = billsService.getCustomerBillByRevenueBill(bill);
             List<Report> details = new ArrayList<>();
-            details.add(new Report("Status", "Paid")); // status is hardcoded as "Paid"
-
+            
+            if(cb.getRemainingAmount()!=null && cb.getRemainingAmount().getValue()>0.0) {
+            	details.add(new Report("Status", "Unpaid"));           	
+			}else if(cb.getRemainingAmount()!=null && cb.getRemainingAmount().getValue()==0.0) {
+				details.add(new Report("Status", "Paid"));
+			}else if(cb.getTaxIncludedAmount().getValue()-cb.getAmountDue().getValue()>0.0) {
+				details.add(new Report("Status", "Partially Paid"));
+			}
+            
             // format billing period for readability
             String periodText = String.format(
                 "%s - %s",
@@ -210,41 +221,14 @@ public class ReportingService {
 
         return new Report("Billing History", invoiceReports);
     }
-    
-//    public Report getBillingHistorySection(String relatedPartyId) throws Exception {
-//        TimePeriod tp = new TimePeriod();
-//        String subscriptionId = subscriptionService.getSubscriptionIdByRelatedPartyId(relatedPartyId);
-//        Subscription subscription = subscriptionService.getSubscriptionById(subscriptionId);
-//        tp.setStartDateTime(subscription.getStartDate());
-//        tp.setEndDateTime(OffsetDateTime.now());
-//		
-//        List<AppliedCustomerBillingRate> acbrList = tmfDataRetriever.retrieveBills(relatedPartyId, tp, null);
-//
-//        if (acbrList.isEmpty()) {
-//            return new Report("Billing History", "No billing data available");
-//        }
-//
-//        List<Report> invoiceReports = new ArrayList<>();
-//        for (AppliedCustomerBillingRate acbr : acbrList) {
-//            List<Report> details = new ArrayList<>();
-//            boolean isPaid = Boolean.TRUE.equals(acbr.getIsBilled()) && acbr.getBill() != null;
-//            details.add(new Report("Status", isPaid ? "Paid" : "Pending"));
-//            details.add(new Report("Issued On", acbr.getDate() != null ? acbr.getDate().toString() : "-"));
-////            if (acbr.getHref() != null) {
-////                String link = "https://billing.dome.org/acbr/" + acbr.getHref(); // oppure dove ospiti il PDF
-////                details.add(new Report("Download", "Download PDF", link));
-////            }
-//            if(acbr.getBill() != null) {
-//            	invoiceReports.add(new Report("Invoice " + acbr.getBill().getId(), details));
-//            }
-//            else {
-//            	invoiceReports.add(new Report("ACBR " + acbr.getId(), details));
-//            }
-//        }
-//
-//        return new Report("Billing History", invoiceReports);
-//    }
 
+    /**	Retrieves the revenue section for the given relatedPartyId.
+	 * 
+	 * @param relatedPartyId the ID of the related party
+	 * @return a Report object containing revenue details
+	 * @throws ApiException if there is an error retrieving data from the API
+	 * @throws IOException if there is an error reading data from files
+	*/
     public Report getRevenueSection(String relatedPartyId) throws ApiException, IOException {
     	List<RevenueStatement> statements = getRevenueStatements(relatedPartyId);
     	
@@ -305,184 +289,33 @@ public class ReportingService {
         return new Report("Revenue Volume Monitoring", items);
     }
     
-    public Report getPrevisioningSection(String relatedPartyId) {
-        String subscriptionId;
+
+
+    /**
+	 * Retrieves revenue statements for the given relatedPartyId.
+	 * 
+	 * @param relatedPartyId the ID of the related party
+	 * @return a list of RevenueStatement objects
+	 * @throws ApiException if there is an error retrieving data from the API
+	 * @throws IOException if there is an error reading data from files
+	 */
+    public List<RevenueStatement> getRevenueStatements(String relatedPartyId) throws ApiException, IOException {
+    	logger.info("Call getRevenueStatements with relatedPartyId: {}", relatedPartyId);
+
+        String subscriptionId = subscriptionService.getSubscriptionByRelatedPartyId(relatedPartyId).getId();
+        logger.debug("Retrieved subscriptionId: {}", subscriptionId);
+
         try {
-            subscriptionId = subscriptionService.getSubscriptionIdByRelatedPartyId(relatedPartyId);
+            return statementsService.getStatementsForSubscription(subscriptionId);
+        } catch (ApiException | IOException e) {
+            // Propagate specific declared exceptions
+            logger.error("Error retrieving statements for subscription with ID {}: {}", subscriptionId, e.getMessage(), e);
+            throw e;
         } catch (Exception e) {
-            logger.error("Failed to retrieve subscriptionId for relatedPartyId: {}", relatedPartyId, e);
-            return new Report(
-                "Bills Provisioning",
-                List.of(new Report("Error", "Unable to retrieve subscription information"))
-            );
+            // Wrap unexpected exception in a runtime one or log and return empty if you want to fail gracefully
+            logger.error("Unexpected error retrieving statements for subscription with ID {}: {}", subscriptionId, e.getMessage(), e);
+            throw new RuntimeException("Unexpected error retrieving statements", e);
         }
-        // check null or empty subscriptionId
-        if (subscriptionId == null || subscriptionId.isEmpty()) {
-            logger.warn("Subscription ID is null or empty for relatedPartyId: {}", relatedPartyId);
-            return new Report("Bills Provisioning", List.of(new Report("Error", "Invalid subscription ID")));
-        }
-
-        // fetch all bills associated with the subscription
-        List<SimpleBill> allBills;
-        try {
-            allBills = billsService.getSubscriptionBills(subscriptionId);
-        } catch (Exception e) {
-            logger.error("Failed to retrieve bills for subscriptionId: {}", subscriptionId, e);
-            return new Report(
-                "Bills Provisioning",
-                List.of(new Report("Error", "Unable to retrieve bills"))
-            );
-        }
-
-        // define time boundaries for the current month
-        OffsetDateTime now = OffsetDateTime.now();
-        OffsetDateTime startOfMonth = now.withDayOfMonth(1).withHour(0).withMinute(0).withSecond(0).withNano(0);
-        OffsetDateTime endOfMonth = startOfMonth.plusMonths(1).minusNanos(1);
-
-        double futureEstimatedTotal = 0.0;
-        double futureConfirmedTotal = 0.0;
-        double currentEstimatedTotal = 0.0;
-
-        for (SimpleBill bill : allBills) {
-            if (bill == null || bill.getPeriod() == null || bill.getPeriod().getEndDateTime() == null) {
-                logger.warn("Skipping malformed bill: {}", bill);
-                continue;
-            }
-
-            OffsetDateTime start = bill.getPeriod().getStartDateTime();
-            OffsetDateTime end = bill.getPeriod().getEndDateTime();
-            boolean isEstimated = Boolean.TRUE.equals(bill.isEstimated());
-            double amount = bill.getAmount() != null ? bill.getAmount() : 0.0;
-
-            // bills ending within the current month (used for estimated current period)
-            if (!end.isBefore(startOfMonth) && !end.isAfter(endOfMonth)) {
-            	currentEstimatedTotal += amount;
-            }
-
-            // future bills: those starting strictly after 'now'
-            if (start != null && start.isAfter(now)) {
-                if (isEstimated) {
-                    futureEstimatedTotal += amount;
-                } else {
-                    futureConfirmedTotal += amount;
-                }
-            }
-        }
-
-        // format totals using eur
-        NumberFormat euroFormat = NumberFormat.getCurrencyInstance(Locale.ITALY);
-        List<Report> items = new ArrayList<>();
-        // add report where is applicable
-        if (currentEstimatedTotal > 0) {
-        	String periodLabel = String.format(
-        	        "Estimated Bill Volume for Period %s - %s",
-        	        startOfMonth.toLocalDate(),
-        	        endOfMonth.toLocalDate()
-        	    );
-    	    items.add(new Report(periodLabel, euroFormat.format(currentEstimatedTotal)));
-        }
-        if (futureConfirmedTotal > 0) {
-            items.add(new Report("Future Confirmed (Not Estimated) Bills Volume", euroFormat.format(futureConfirmedTotal)));
-        }
-        if (futureEstimatedTotal > 0) {
-            items.add(new Report("Future Estimated Bills Volume", euroFormat.format(futureEstimatedTotal)));
-        }
-        // message if there are no relevant bills
-        if (items.isEmpty()) {
-            items.add(new Report("Info", "No future bills available."));
-        }
-
-        return new Report("Bills Provisioning", items);
-    }
-    
-    public Report getReferralSection(String relatedPartyId) {        
-    	Subscription subscription;
-        try {
-            subscription = subscriptionService.getSubscriptionByRelatedPartyId(relatedPartyId);
-        } catch (IOException | ApiException e) {
-            logger.error("Failed to retrieve subscription for related party {}: {}", relatedPartyId, e.getMessage(), e);
-            return new Report("Referral Program Area", List.of(
-                new Report("Referred Providers", "N/A"),
-                new Report("Reward Earned", "N/A")
-            ));
-        }
-        
-        SubscriptionTimeHelper timeHelper = new SubscriptionTimeHelper(subscription);
-        TimePeriod subscriptionPeriod = timeHelper.getSubscriptionPeriodAt(subscription.getStartDate());
-        
-        Integer referralProviders;
-        try {
-            referralProviders = metricsRetriever.computeReferralsProvidersNumber(
-                subscription.getBuyerId(),
-                subscriptionPeriod
-            );
-        } catch (Exception e) {
-            logger.error("Failed to compute referral providers for buyer {}: {}", subscription.getBuyerId(), e.getMessage(), e);
-            referralProviders = 0;
-        }
-
-        List<RevenueStatement> statements;
-        try {
-            statements = getRevenueStatements(relatedPartyId);
-        } catch (IOException | ApiException e) {
-            logger.error("Failed to retrieve revenue statements for related party {}: {}", relatedPartyId, e.getMessage(), e);
-            statements = Collections.emptyList();
-        }
-        
-        List<RevenueItem> referralDiscounts = extractReferralDiscounts(statements);
-        
-        String discountEarned = calculateTotalDiscountEarned(referralDiscounts);
-        
-        return new Report("Referral Program Area", Arrays.asList(
-            new Report("Referred Providers", referralProviders != null ? referralProviders.toString() : "0"),
-            new Report("Reward Earned", discountEarned)));
-    }
-
-    private List<RevenueItem> extractReferralDiscounts(List<RevenueStatement> statements) {
-        List<RevenueItem> discounts = new ArrayList<>();
-        
-        if (statements == null) return discounts;
-
-        for (RevenueStatement statement : statements) {
-            for (RevenueItem item : statement.getRevenueItems()) {
-                findNestedReferralDiscounts(item, discounts);
-            }
-        }
-        return discounts;
-    }
-
-    private void findNestedReferralDiscounts(RevenueItem item, List<RevenueItem> discounts) {
-        if (item == null) return;
-        
-        // Check if current item is a referral discount
-        if (isReferralDiscount(item)) {
-            discounts.add(item);
-        }
-        
-        // Recursively check nested items
-        if (item.getItems() != null) {
-            for (RevenueItem subItem : item.getItems()) {
-                findNestedReferralDiscounts(subItem, discounts);
-            }
-        }
-    }
-
-    private boolean isReferralDiscount(RevenueItem item) {
-        return item != null && 
-               item.getName() != null && 
-               (item.getName().toLowerCase().contains("referr") || 
-                item.getName().toLowerCase().contains("discount")) &&
-               item.getValue() != null && 
-               item.getValue() < 0; // Only negative values (actual discounts)
-    }
-
-    private String calculateTotalDiscountEarned(List<RevenueItem> discountItems) {
-        double total = discountItems.stream()
-            .filter(Objects::nonNull)
-            .mapToDouble(item -> Math.abs(item.getValue()))
-            .sum();
-        
-        return format(total) + " EUR";
     }
 
     private String extractRevenueSharePercentage(RevenueItem item) {
@@ -503,59 +336,10 @@ public class ReportingService {
         
         return "N/A";
     }
-
-    public List<RevenueStatement> getRevenueStatements(String relatedPartyId) throws ApiException, IOException {
-    	logger.info("Call getRevenueStatements with relatedPartyId: {}", relatedPartyId);
-
-        String subscriptionId = subscriptionService.getSubscriptionIdByRelatedPartyId(relatedPartyId);
-        logger.info("Retrieved subscriptionId: {}", subscriptionId);
-
-        try {
-            return statementsService.getStatementsForSubscription(subscriptionId);
-        } catch (ApiException | IOException e) {
-            // Propagate specific declared exceptions
-            logger.error("Error retrieving statements for subscription {}: {}", subscriptionId, e.getMessage(), e);
-            throw e;
-        } catch (Exception e) {
-            // Wrap unexpected exception in a runtime one or log and return empty if you want to fail gracefully
-            logger.error("Unexpected error retrieving statements for subscription {}: {}", subscriptionId, e.getMessage(), e);
-            throw new RuntimeException("Unexpected error retrieving statements", e);
-        }
-    }
-
+    
     private String format(Double value) {
         if (value == null) return "-";
         return String.format("%,.2f", value);
     }
     
-//  public Reporting getTotalRevenueSection(List<RevenueStatement> statements) {
-//      if (statements == null || statements.isEmpty()) {
-//          return new Reporting("Revenue Summary", "No revenue data available");
-//      }
-//
-//      List<Reporting> totalRevenueItems = new ArrayList<>();
-//
-//      for (RevenueStatement rs : statements) {
-//          // FIXME: (PF) now that items are an array, returing the first item (to let it compile)
-//          RevenueItem root = rs.getRevenueItems().get(0);
-//          if (root == null) continue;
-//
-//          String currency = root.getCurrency() != null ? root.getCurrency() + " " : "";
-//          TimePeriod period = rs.getPeriod();
-//          OffsetDateTime startDateTime = period.getStartDateTime();
-//          OffsetDateTime endDateTime = period.getEndDateTime();
-//          String periodLabel = String.format("%s to %s",
-//              startDateTime != null ? startDateTime.toLocalDate() : "?",
-//              endDateTime != null ? endDateTime.toLocalDate() : "?"
-//          );
-//
-//          double periodTotal = root.getOverallValue();
-//          
-//          String label = String.format("Total Revenue for %s", periodLabel);
-//          totalRevenueItems.add(new Reporting(label, currency + format(periodTotal)));
-//      }
-//
-//      return new Reporting("Revenue Volume Monitoring", totalRevenueItems);
-//  }
-  
 }

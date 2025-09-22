@@ -44,6 +44,9 @@ public abstract class PlanItem {
 	@Deprecated 
     private ReferencePeriod applicableBaseReferencePeriod;
 
+	@JsonProperty("ignorePeriod")
+	private ReferencePeriod ignorePeriod;
+
 	@JsonProperty("applicableFrom")
 	private OffsetDateTime applicableFrom;
 	
@@ -195,6 +198,18 @@ public abstract class PlanItem {
 
 	public void setComputationFrom(OffsetDateTime computationFrom) {
 		this.computationFrom = computationFrom;
+	}
+
+	public ReferencePeriod getIgnorePeriod() {
+		if(this.getParentPrice()!=null && this.getParentPrice().getIgnorePeriod()!=null)
+			return this.getParentPrice().getIgnorePeriod();
+		else {
+				return this.ignorePeriod;
+		}
+	}
+
+	public void setIgnorePeriod(ReferencePeriod ignorePeriod) {
+		this.ignorePeriod = ignorePeriod;
 	}
 
 	@JsonIgnore

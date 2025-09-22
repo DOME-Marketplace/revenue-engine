@@ -1,0 +1,48 @@
+{
+  "name": "ENG subscription for Advanced 2025",
+  "startDate": "2025-01-21T01:15:39.961Z",
+  "billingAccount": {
+    "id": "${organization/customer-billing-account/id}"
+  },
+  "productCharacteristic": [],
+  "productOffering": {
+    "id": "${offering/advanced-offering/id}"
+  },
+  "productPrice": [
+    {
+      "priceType": null,
+      "price": null,
+      "productOfferingPrice": {
+        "id": "${price/advanced-price/id}"
+      }
+    }
+  ],
+  "relatedParty": [
+    {
+      "id": "${organization/dome-operator/id}",
+      "role": "Seller",
+      "@referredType": "organization"
+    },
+    {
+      "id": "${organization/dome-operator/id}",
+      "role": "SellerOperator",
+      "@referredType": "organization"
+    },
+    {
+      "id": "${organization/customer/id}",
+      "role": "Customer",
+      "@referredType": "organization"
+    },
+    {
+      "id": "${organization/customer/id}",
+      "role": "Buyer",
+      "@referredType": "organization"
+    },
+    {
+      "id": "${organization/customer/id}",
+      "role": "BuyerOperator",
+      "@referredType": "organization"
+    }
+  ],
+  "status": "active"
+}

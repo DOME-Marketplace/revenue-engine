@@ -1,0 +1,19 @@
+{
+    "description": " - 2 extra Posts (LinkedIn/X) - 4/year. \n - Featured as 'Top provider' for 1 month, 2 times per year: \n - - on the landing page \n - - when browsing the catalogue (in 2 categories related to its services). \n - Banner on the landing page and catalogues for 1 month, 3 times per year. \n - Promotion in one newsletter.",
+    "isBundle": false,
+    "lifecycleStatus": "Active",
+    "name": "Marketing Promotion - Advanced",
+    "version": "1",
+    "relatedParty": [
+        {
+            "id": "${organization/dome-operator/id}",
+            "@referredType": "organization",
+            "role": "Seller"
+        },
+        {
+            "id": "${organization/dome-operator/id}",
+            "@referredType": "organization",
+            "role": "SellerOperator"
+        }
+    ]
+}

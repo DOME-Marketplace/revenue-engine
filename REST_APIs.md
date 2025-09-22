@@ -1,17 +1,10 @@
 # Revenue Engine
 
-**Version:** 1.2.1  
+**Version:** 1.2.2  
 **Description:** Swagger REST APIs for the revenue-engine software  
 
 
 ## REST API Endpoints
-
-### dev-controller
-| Verb | Path | Task |
-|------|------|------|
-| POST | `/dev/revenue/to-acbr` | convertToACBR |
-| POST | `/dev/revenue/to-acbr-list` | convertToACBRList |
-| GET | `/dev/revenue/billingAccount/{relatedPartyId}` | getBillingAccountByRelatedParty |
 
 ### subscriptions-controller
 | Verb | Path | Task |
@@ -43,6 +36,16 @@
 | Verb | Path | Task |
 |------|------|------|
 | GET | `/revenue/bills/{billId}` | getBillPeriods_1 |
+| GET | `/revenue/bills/{revenueBillId}/cb` | getCustomerBillByRevenueBillId |
+| GET | `/revenue/bills/{revenueBillId}/acbr` | getACBRsByRevenueBillId |
+
+### persistence-controller
+| Verb | Path | Task |
+|------|------|------|
+| GET | `/revenue/persistence/persist` | peristEverything |
+| GET | `/revenue/persistence/subscription/{subscriptionId}` | peristForSubscription |
+| GET | `/revenue/persistence/revenueBill/{revenueBillId}` | peristRevenueBill |
+| GET | `/revenue/persistence/provider/{providerId}` | peristForProvider |
 
 ### dev-organization-controller
 | Verb | Path | Task |

@@ -1,206 +1,118 @@
 package it.eng.dome.revenue.engine.service;
 
 import java.io.IOException;
-import java.time.OffsetDateTime;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
-import it.eng.dome.revenue.engine.model.Plan;
+import it.eng.dome.brokerage.api.ProductApis;
+import it.eng.dome.revenue.engine.mapper.RevenueProductMapper;
 import it.eng.dome.revenue.engine.model.Subscription;
 import it.eng.dome.revenue.engine.tmf.TmfApiFactory;
 import it.eng.dome.tmforum.tmf632.v4.ApiException;
-import it.eng.dome.tmforum.tmf632.v4.api.OrganizationApi;
-import it.eng.dome.tmforum.tmf632.v4.model.Organization;
-import it.eng.dome.tmforum.tmf678.v4.model.RelatedParty;
+import it.eng.dome.tmforum.tmf637.v4.model.Product;
+import it.eng.dome.tmforum.tmf637.v4.model.RelatedParty;
 
 @Service
 public class SubscriptionService implements InitializingBean {
 	
-
 	private final Logger logger = LoggerFactory.getLogger(SubscriptionService.class);
+
+	/** Dome Operator ID - now parametric via Spring property */
+    @Value("${dome.operator.id}")
+    private String DOME_OPERATOR_ID;
 
     @Autowired
     // Factory for TMF APIss
     private TmfApiFactory tmfApiFactory;
 
-    // TMForum API to retrieve bills
-    private OrganizationApi orgApi;
-
-//	private final Path storageDir = Paths.get("src/main/resources/data/subscriptions/");
-//
-//	private final ObjectMapper mapper;
-//
-//	public SubscriptionService() {
-//		this.mapper = new ObjectMapper().registerModule(new JavaTimeModule())
-//				.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
-//				.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
-//		new PlanService();
-//	}
-
+    // API to retrieve product
+    private ProductApis productApis;
+   
+	public SubscriptionService() {
+	}
+    
     @Override
     public void afterPropertiesSet() throws Exception {
-        this.orgApi = new OrganizationApi(tmfApiFactory.getTMF632PartyManagementApiClient());
-        logger.info("SubscriptionService initialized with orgApi");
+        this.productApis = new ProductApis(tmfApiFactory.getTMF637ProductInventoryApiClient());
+        logger.info("SubscriptionService initialized with orgApi {}", this.productApis);
     }
-	
 	/*
-	 * Temporary solution.
-	 * For each organisation, assume the subscription of a Basic 2025 plan.
-	 * The id of the subscription is the concatenation of the organisation and the plan.
+	 * Retrieves a subscription by its product ID.
 	 */
+    public Subscription getSubscriptionByProductId(String productId) {
+    	
+    	 if (productId == null || productId.isEmpty()) {
+             throw new IllegalArgumentException("Product ID cannot be null or empty");
+         }
 
+         logger.info("Fetching subscription from product id: {}", productId);
+         
+         Product prod = this.productApis.getProduct(productId, null);
 
-    // === GET BY Id===
-	/*
-	@Deprecated
-    public Subscription getBySubscriptionId(String id) throws IOException {
-        return loadAllFromStorage().stream()
-                .filter(sub -> sub.getId() != null && sub.getId().equals(id))
-                .findFirst()
-                .orElse(null);
+         return RevenueProductMapper.toSubscription(prod);
     }
+    
+    /**
+	 * Retrieves all subscriptions associated with the DOME operator.
+	 * 
+	 * @return A list of Subscription objects.
+	 * @throws IOException If there is an error reading the subscription data.
+	 * @throws ApiException If there is an error retrieving the organization.
 	*/
-
-	public Subscription getSubscriptionById(String id) throws ApiException, IOException {
-		logger.info("Retrieving subscription by id: {}", id);
-		// 1. check the id is in the right format
-		if (id == null || id.isEmpty() || id.length()!=98) {
-			logger.error("malformed subscription id: " + id);
-			return null;
-		}
-		String organisationId = "urn:ngsi-ld:organization:"+id.substring(25, 61);
-		logger.debug("Retrieved organisationId: " + organisationId);
-		String planId = "urn:ngsi-ld:plan:"+id.substring(62, 98);
-		logger.debug("Retrieved planId: " + planId);
-
-		// 2. retrieve the organization
-		Organization organization = this.orgApi.retrieveOrganization(organisationId, null);
-		logger.debug("TradingName organization: {}", organization.getTradingName());
-
-		// 3. retrieve the plan
-		Plan plan = new PlanService().findPlanById(planId);
-		logger.debug("Retrieved plan: " + plan);
-
-		// 4. create the subscription
-		Subscription subscription = this.createSubscription(id, organization, plan);
-		return subscription;
-	}
-
-	private Subscription createSubscription(String id, Organization organization, Plan plan) throws ApiException, IOException {
-		
-		logger.debug("Creating subscription with id: {}", id);
-
-		// 1. create the subscription
-		Subscription subscription = new Subscription();
-		subscription.setId(id);
-		subscription.setName("Subscription for " + organization.getTradingName() + " on plan " + plan.getName());
-		// 1.1 embed a plan reference
-		subscription.setPlan(plan.buildRef());
-		// 1.2 embed an organisation ref
-		RelatedParty party = new RelatedParty();
-		party.setId(organization.getId());
-		party.setName(organization.getTradingName());
-		party.setRole("Buyer");
-		List<RelatedParty> relatedParties = new ArrayList<>();
-		relatedParties.add(party);
-		// 1.3 also embed the DOME operator
-		relatedParties.add(this.getFakeDomeOperatorParty());
-
-		subscription.setRelatedParties(relatedParties);
-
-		// 2 status and start date
-		subscription.setStatus("active");
-		// default start time for everybody is 5 July 2025
-		OffsetDateTime startTime = OffsetDateTime.parse("2025-05-05T00:00:00+00:00");
-		subscription.setStartDate(startTime);	
-
-		return subscription;
-	}
-
-	private RelatedParty getFakeDomeOperatorParty() {
-		RelatedParty dome = new RelatedParty();
-		dome.setId("urn:ngsi-ld:organization:24d2ea66-0cd4-4396-a8b5-ea5fd8bf2bdd");
-		dome.setName("The DOME Operator");
-		dome.setRole("Seller");
-		return dome;
-	}
-
-
-
-	public List<Subscription> getAllSubscriptions() throws ApiException, IOException {
-		
-		logger.info("Request getAllSubscriptions");
-		
-		// 1. retrieve all organizations
-		List<Organization> organizations = this.orgApi.listOrganization(null, null, 5, null);
-		
-		logger.info("Number of organization found: {}", organizations.size());
-
-		// 2. build the subscription and add it to the output
-		List<Subscription> subscriptions = new ArrayList<>();
-		for(Organization o:organizations) {
-			
-			logger.debug("Analysing organizationId: {}", o.getId());
-			
-			// 2.1. identify a default plan for each organization.
-			Plan plan = this.getPlanForOrganization(o);
-			
-			// 2.2 create the subscription
-			String subscriptionId = "urn:ngsi-ld:subscription:" + o.getId().substring("urn:ngsi-ld:organization:".length()) + "-" + plan.getId().substring("urn:ngsi-ld:plan:".length());
-			logger.debug("Subscription id: {}", subscriptionId);
-			
-			Subscription subscription = this.createSubscription(subscriptionId, o, plan);
-			subscriptions.add(subscription);
-		}
-		
-		logger.info("Subscriptions size: {}", subscriptions.size());
-		
-		return subscriptions;
-	}
-
-	private Plan getPlanForOrganization(Organization organization) throws IOException {
-		Character c = organization.getId().charAt(25);
-		if(Character.isDigit(c)) {
-			// basic
-			return new PlanService().findPlanById("urn:ngsi-ld:plan:02645de3-8c7y-1276-a344-00rfl123aq1n");
-		} else {
-			// pro
-			return new PlanService().findPlanById("urn:ngsi-ld:plan:52761it5-3d4q-2321-p009-44bro198re0p");
-		}
-	}
-
-
-	// === GET ALL ===
-	/*
-	@Deprecated
-	public List<Subscription> loadAllFromStorage() throws IOException {
-
-		List<Subscription> subscriptions = new ArrayList<>();
-
-		if (Files.exists(storageDir)) {
-			return Files.walk(storageDir).filter(Files::isRegularFile).filter(p -> p.toString().endsWith(".json"))
-					.map(p -> {
-						try {
-							return mapper.readValue(p.toFile(), Subscription.class);
-						} catch (IOException e) {
-							throw new RuntimeException("Failed to read subscription file: " + p, e);
+    public List<Subscription> getAllSubscriptions() {
+    	logger.info("Fetching subscriptions from products");
+    	        
+        logger.info("Using the productAPIs {}", this.productApis);
+		Map<String, String> filter = new HashMap<>();
+		filter.put("relatedParty.id", DOME_OPERATOR_ID);
+        List<Product> prods = productApis.getAllProducts(null, filter);
+        
+        List<Subscription> subs = new ArrayList<>();
+        
+        for (Product prod : prods) {
+			// FIXME: weak control con products to guess it's a subscription
+			if(prod.getName()!=null && prod.getName().toLowerCase().indexOf("subscription")!=-1) {
+				// FIXME: workaround for bug in tmf. Need to retrieve the product individually.
+				Product fullProduct = productApis.getProduct(prod.getId(), null);
+	            
+				// FIXME: but be careful with last invoices... sub might not be active
+				if (!"active".equalsIgnoreCase(fullProduct.getStatus().getValue())) {
+	                continue;
+	            }
+				
+				if(fullProduct.getRelatedParty()!=null) {
+					for(RelatedParty rp: fullProduct.getRelatedParty()) {
+						if(rp!=null && DOME_OPERATOR_ID.equals(rp.getId()) && "seller".equalsIgnoreCase(rp.getRole())) {
+							subs.add(RevenueProductMapper.toSubscription(fullProduct));
 						}
-					}).collect(Collectors.toList());
+					}
+				}
+			}
 		}
-		return subscriptions;
-	}
-	*/
+        
+        return subs;
+    }
 
-	// === GET BY PARTY ID ===
-	
+	/**
+	 * Retrieves a subscription by its related party ID.
+	 * 
+	 * @param id The ID of the related party to search for.
+	 * @return The Subscription object if found, null otherwise.
+	 * @throws IOException If there is an error reading the subscription data.
+	 * @throws ApiException If there is an error retrieving the organization.
+	*/
 	public Subscription getSubscriptionByRelatedPartyId(String id) throws IOException, ApiException {
+		// FIXME: this only returns the first subscription!!!!
 		logger.debug("Retrieving subscription by related party id: {}", id);
 	    return getAllSubscriptions().stream()
 	            .filter(subscription -> subscription.getRelatedParties() != null)
@@ -210,26 +122,36 @@ public class SubscriptionService implements InitializingBean {
 	            .orElse(null);
 	}
 	
-	// === GET BY PLAN ID ===
-
-
-	public List<Subscription> getByPlanId(String id) {
-	    logger.debug("Retrieving subscriptions by plan id: {}", id);
-	    try {
-	        return this.getAllSubscriptions().stream()
-	                .filter(sub -> sub.getPlan() != null && id.equals(sub.getPlan().getId()))
-	                .collect(Collectors.toList());
-	    } catch (IOException | ApiException e) {
-	        throw new RuntimeException("Unable to load subscriptions for planId: " + id, e);
-	    }
-	}
-	
-	// === GET SUBSCRIPTION ID BY RELATED PARTY ID ===
-	public String getSubscriptionIdByRelatedPartyId(String relatedPartyId) throws IOException, ApiException {
-		logger.debug("Retrieving subscription id by related party id: {}", relatedPartyId);
-	    Subscription subscription = getSubscriptionByRelatedPartyId(relatedPartyId);
-	    return subscription != null ? subscription.getId() : null;
+	/**
+	 * Retrieves a list of subscriptions by related party ID and role.
+	 * @param id
+	 * @param role
+	 * @return
+	 * @throws IOException
+	 * @throws ApiException
+	 */
+	public List<Subscription> getSubscriptionsByRelatedPartyId(String id, String role) throws IOException, ApiException {
+		logger.debug("Retrieving subscription by related party id: {}", id);
+	    return getAllSubscriptions().stream()
+	            .filter(subscription -> subscription.getRelatedParties() != null)
+	            .filter(subscription -> subscription.getRelatedParties().stream()
+					.anyMatch(party -> party != null && party.getId() != null && party.getId().equals(id) && party.getRole()!=null && party.getRole().equalsIgnoreCase(role)) 
+				)
+				.toList();
 	}
 
-	
+	/**
+	 * Retrieves all subscriptions associated with a specific plan ID.
+	 * 
+	 * @param id The ID of the plan to filter subscriptions by.
+	 * @return A list of Subscription objects that match the given plan ID.
+	 * @throws IOException If there is an error reading the subscription data.
+	 * @throws ApiException If there is an error retrieving the organization.
+	*/
+	public List<Subscription> getSubscriptionsByPlanId(String id) {
+	    logger.debug("Retrieving subscriptions by plan ID: {}", id);
+        return this.getAllSubscriptions().stream()
+                .filter(sub -> sub.getPlan() != null && id.equals(sub.getPlan().getId()))
+                .collect(Collectors.toList());
+	}	
 }
