@@ -167,10 +167,10 @@ public class TmfPeristenceService implements InitializingBean {
         // if not, persist it
         if(existingCustomerBill==null) {
             // FIXME: marking the CB so it can be easily removed during development. Remove before flight.
-            cb = watermark(cb);
+            CustomerBill cbToPersist = watermark(cb);
             // persist it
-            logger.debug("PERSISTENCE: creating CB {}...", cb.getId());
-            String id = this.appliedCustomerBillRateApis.createCustomerBill(CustomerBillCreate.fromJson(cb.toJson()));
+            logger.debug("PERSISTENCE: creating CB {}...", cbToPersist.getId());
+            String id = this.appliedCustomerBillRateApis.createCustomerBill(CustomerBillCreate.fromJson(cbToPersist.toJson()));
             logger.info("PERSISTENCE: created CB with id {}", id);
             // and return a fresh copy
             return this.customerBillAPI.retrieveCustomerBill(id, null);
@@ -192,13 +192,13 @@ public class TmfPeristenceService implements InitializingBean {
         // if not, persist it
         if(existingACBR==null) {
             // FIXME: marking the ACBR so it can be easily removed during development. Remove before flight.
-            acbr = watermark(acbr);
+        	AppliedCustomerBillingRate acbrToPersist = watermark(acbr);
             // remove the reference to the bill (its to an local CB)
             // acbr.setBill(null);
             // persist it
-            logger.info("PERSISTENCE: creating ACBR {}", acbr.getId());
+            logger.info("PERSISTENCE: creating ACBR {}", acbrToPersist.getId());
             
-            AppliedCustomerBillingRateCreate acbrc = AppliedCustomerBillingRateCreate.fromJson(acbr.toJson());
+            AppliedCustomerBillingRateCreate acbrc = AppliedCustomerBillingRateCreate.fromJson(acbrToPersist.toJson());
             acbrc.setAtSchemaLocation(new URI("https://raw.githubusercontent.com/DOME-Marketplace/dome-odrl-profile/refs/heads/add-related-party-ref/schemas/simplified/RelatedPartyRef.schema.json"));
             AppliedCustomerBillingRate createdACBR = this.appliedCustomerBillRateApis.createAppliedCustomerBillingRate(acbrc);
             
