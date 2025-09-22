@@ -336,10 +336,6 @@ public class SubscriptionTimeHelper {
         Thread.sleep(100);
         now = OffsetDateTime.now();
 
-        TimePeriod chargePeriod = helper.getChargePeriodByOffset(now, price, 18);
-        logger.debug(chargePeriod.getStartDateTime().toString());
-        logger.debug(chargePeriod.getEndDateTime().toString());
-
         Set<TimePeriod> chargePeriods = helper.getChargePeriodTimes();
         for(TimePeriod t : chargePeriods) {
             logger.debug("Charge period: " + t);

@@ -12,11 +12,11 @@ import it.eng.dome.revenue.engine.model.Subscription;
 import it.eng.dome.revenue.engine.utils.TmfConverter;
 import it.eng.dome.tmforum.tmf620.v4.model.Money;
 import it.eng.dome.tmforum.tmf620.v4.model.ProductOfferingPrice;
-import it.eng.dome.tmforum.tmf620.v4.model.ProductOfferingPriceRefOrValue;
 import it.eng.dome.tmforum.tmf637.v4.model.Product;
 import it.eng.dome.tmforum.tmf637.v4.model.ProductOfferingPriceRef;
 import it.eng.dome.tmforum.tmf637.v4.model.ProductOfferingRef;
 import it.eng.dome.tmforum.tmf637.v4.model.ProductPrice;
+import it.eng.dome.tmforum.tmf637.v4.model.ProductStatusType;
 import it.eng.dome.tmforum.tmf678.v4.model.ProductRef;
 
 public class RevenueProductMapper {
@@ -122,7 +122,9 @@ public class RevenueProductMapper {
 		sub.setId(product.getId());
 		sub.setName(product.getName());
 		sub.setStartDate(product.getStartDate());
-		sub.setStatus(product.getStatus().toString()); //convert status
+		ProductStatusType status = product.getStatus();
+		if(status!=null)
+			sub.setStatus(status.toString()); //convert status
 		
 		// related parties
 		sub.setRelatedParties(TmfConverter.convertRpTo678(product.getRelatedParty()));
