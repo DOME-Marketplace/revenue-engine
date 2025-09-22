@@ -68,18 +68,4 @@ public class BillsController {
         }
     	return ResponseEntity.ok(acbrs);
     }
-    
-    // test controller (can be removed)
-    @PostMapping("/toCB")
-    public ResponseEntity<CustomerBill> getCustomerBillByRevenueBill (@RequestBody RevenueBill revenueBill) {
-    	CustomerBill cb = billsService.getCustomerBillByRevenueBill(revenueBill);
-        return ResponseEntity.ok(cb);
-    }
-
-    // test controller (can be removed)
-    @PostMapping("/acbr")
-    public ResponseEntity<List<AppliedCustomerBillingRate>> getACBRsByRevenueBill (@RequestBody RevenueBill revenueBill) {
-    	List<AppliedCustomerBillingRate> acbrList = billsService.getACBRsByRevenueBill(revenueBill);
-        return ResponseEntity.ok(acbrList);
-    }
 }

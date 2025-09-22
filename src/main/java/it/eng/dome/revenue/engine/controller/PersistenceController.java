@@ -17,7 +17,7 @@ import it.eng.dome.tmforum.tmf678.v4.model.CustomerBill;
 
 @RestController
 //@RequiredArgsConstructor
-@RequestMapping("/dev/revenue/persistence")
+@RequestMapping("/revenue/persistence")
 public class PersistenceController {
     
 	protected final Logger logger = LoggerFactory.getLogger(PersistenceController.class);

@@ -123,6 +123,12 @@ public class BillsService implements InitializingBean {
         }
     }
     
+    /** Retrieve an Customer Bill (CB) for a given RevenueBill ID.
+	 * 
+	 * @param revenueBillId the ID of the RevenueBill for which to retrieve CB
+	 * @return an Customer Bill objects representing the RevenueBill for tmf
+	 * @throws Exception if an error occurs during retrieval
+	*/
     public CustomerBill getCustomerBillByRevenueBillId(String revenueBillId) {
     	RevenueBill rb = new RevenueBill();
 		try {
@@ -134,6 +140,12 @@ public class BillsService implements InitializingBean {
         return cb;
     }
     
+    /** Retrieves Applied Customer Billing Rate (ACBR) for a given RevenueBill ID.
+ 	 * 
+ 	 * @param revenueBillId the ID of the RevenueBill for which to retrieve ACBR
+ 	 * @return a List of ACBR objects representing the bills of RevenueBill for tmf
+ 	 * @throws Exception if an error occurs during retrieval
+ 	*/
     public List<AppliedCustomerBillingRate> getACBRsByRevenueBillId(String revenueBillId) {
     	RevenueBill rb = new RevenueBill();
 		try {
@@ -388,6 +400,11 @@ public class BillsService implements InitializingBean {
         return acbrList;
     }
 
+    /** Apply Taxes on a list of ACBR
+ 	 * 
+ 	 * @param acbrs is a list of ACBR
+ 	 * @return a list of ACBR with AppliedBillingTaxRate attribute for each object.
+ 	*/
     public List<AppliedCustomerBillingRate> applyTaxes(List<AppliedCustomerBillingRate> acbrs) {
 
         // first, retrieve the product
@@ -398,6 +415,12 @@ public class BillsService implements InitializingBean {
         return this.invoicingService.applyTaxees(product, acbrs);
     }
     
+    /** Set Customer Bill Ref for each object in a List of Applied Customer Billing Rate
+ 	 * 
+ 	 * @param acbrs is a list of ACBR
+ 	 * @param rb is a RevenueBill used to generate a CustomerBill Id
+ 	 * @return a list of ACBR with Customer Bill Ref attribute for each object.
+ 	*/
     public List<AppliedCustomerBillingRate> setCustomerBillRef(List<AppliedCustomerBillingRate> acbrs, RevenueBill rb){
 		// this acbr id is for local istance of acbr. When we persist the acbr, we provide another id.
 		BillRef billRef = new BillRef();
@@ -411,6 +434,12 @@ public class BillsService implements InitializingBean {
 		return acbrs;
     }
     
+    /** Set Billing Account Ref for each object in a List of Applied Customer Billing Rate
+ 	 * 
+ 	 * @param acbrs is a list of ACBR
+ 	 * @param subscriptionId is a Subscription ID used to retrieve Billing Account
+ 	 * @return a list of ACBR with Billing Account Ref attribute for each object.
+ 	*/
   public List<AppliedCustomerBillingRate> setBillingAccountRef(List<AppliedCustomerBillingRate> acbrs, String subscriptionId){
 	  BillingAccountRef billingAccountRef = tmfDataRetriever.retrieveBillingAccountByProductId(subscriptionId);
 	  if (billingAccountRef == null) {
