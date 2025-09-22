@@ -46,7 +46,9 @@ public class SubscriptionService implements InitializingBean {
         this.productApis = new ProductApis(tmfApiFactory.getTMF637ProductInventoryApiClient());
         logger.info("SubscriptionService initialized with orgApi {}", this.productApis);
     }
-	
+	/*
+	 * Retrieves a subscription by its product ID.
+	 */
     public Subscription getSubscriptionByProductId(String productId) {
     	
     	 if (productId == null || productId.isEmpty()) {
@@ -60,6 +62,13 @@ public class SubscriptionService implements InitializingBean {
          return RevenueProductMapper.toSubscription(prod);
     }
     
+    /**
+	 * Retrieves all subscriptions associated with the DOME operator.
+	 * 
+	 * @return A list of Subscription objects.
+	 * @throws IOException If there is an error reading the subscription data.
+	 * @throws ApiException If there is an error retrieving the organization.
+	*/
     public List<Subscription> getAllSubscriptions() {
     	logger.info("Fetching subscriptions from products");
     	        
@@ -113,6 +122,14 @@ public class SubscriptionService implements InitializingBean {
 	            .orElse(null);
 	}
 	
+	/**
+	 * Retrieves a list of subscriptions by related party ID and role.
+	 * @param id
+	 * @param role
+	 * @return
+	 * @throws IOException
+	 * @throws ApiException
+	 */
 	public List<Subscription> getSubscriptionsByRelatedPartyId(String id, String role) throws IOException, ApiException {
 		logger.debug("Retrieving subscription by related party id: {}", id);
 	    return getAllSubscriptions().stream()

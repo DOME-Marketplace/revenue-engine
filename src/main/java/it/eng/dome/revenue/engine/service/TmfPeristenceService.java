@@ -98,7 +98,10 @@ public class TmfPeristenceService implements InitializingBean {
         return createdCustomerBills;
     }
 
-    // Return a list of created or existing customerbills
+    /*
+     * Persist all revenue bills for a subscription; where needed and applicable.
+     * @param subscriptionId
+     */
     public List<CustomerBill> persistSubscriptionRevenueBills(String subscriptionId) throws ApiException, Exception {
         // iterate over revenue bills for the given subscription
         List<CustomerBill> createdCustomerBills = new ArrayList<>();
@@ -113,6 +116,10 @@ public class TmfPeristenceService implements InitializingBean {
         return createdCustomerBills;
     }
 
+    /**
+	 * Persist a revenue bill; where needed and applicable.
+	 * @param revenueBillId
+	 */
     public CustomerBill persistRevenueBill(String revenueBillId) throws ApiException, Exception {
 
         logger.info("PERSISTENCE - persisting revenue bill {}", revenueBillId);
@@ -148,6 +155,9 @@ public class TmfPeristenceService implements InitializingBean {
         return persistedCB;
     }
 
+    /*
+     * Persist a CustomerBill if not already present on TMF. 
+     */
     public CustomerBill persistCustomerBill(CustomerBill cb, String revenueBillId) throws ApiException, Exception {
         // check if exist on tmf
         logger.debug("PERSISTENCE - look for existing CB");
@@ -172,6 +182,9 @@ public class TmfPeristenceService implements InitializingBean {
         }
     }
 
+    /*
+	 * Persist an AppliedCustomerBillingRate if not already present on TMF. 
+	 */
     public AppliedCustomerBillingRate persistAppliedCustomerBillingRate(AppliedCustomerBillingRate acbr) throws ApiException, Exception {
         // check if exist on tmf
         AppliedCustomerBillingRate existingACBR = this.isAcbrAlreadyInTMF(acbr);
@@ -255,6 +268,13 @@ public class TmfPeristenceService implements InitializingBean {
         }
     }
 
+    /**
+	 * Retrieve ACBRs on TMF that, potentially match the local ACBR. 
+	 * @param acbr
+	 * @return
+	 * @throws ApiException
+	 * @throws Exception
+	 */
     private AppliedCustomerBillingRate isAcbrAlreadyInTMF(AppliedCustomerBillingRate acbr) throws ApiException, Exception {
         // prepare a filter
         Map<String, String> filter = new HashMap<>();

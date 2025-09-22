@@ -5,9 +5,7 @@ import java.io.InputStream;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -97,7 +95,9 @@ public class PlanService implements InitializingBean{
 
         return plans;
     }
-    
+    /*
+     * Retrieves a plan by its ID.
+     */
     public Plan getPlanById(String planId) {
 
         // FIXME: make this unpack more robust.
@@ -109,6 +109,9 @@ public class PlanService implements InitializingBean{
         return this.findPlan(offeringId, offeringPriceId);
     }
 
+    /*
+	 * Retrieves a plan by its offering ID and offering price ID.
+	 */
     public Plan findPlan(String offeringId, String offeringPriceId) {
     	if (offeringId == null || offeringId.isEmpty()) {
             throw new IllegalArgumentException("Offering ID cannot be null or empty");
@@ -132,6 +135,9 @@ public class PlanService implements InitializingBean{
 		}
     }
 
+    /*
+     * Fetches the ProductOfferingPrice by its ID from the given ProductOffering.
+     */
     private ProductOfferingPrice fetchProductOfferingPriceById(ProductOffering po, String offeringPriceId) {
     	if (po.getProductOfferingPrice() == null || po.getProductOfferingPrice().isEmpty()) {
             //throw new IllegalStateException("ProductOffering has no ProductOfferingPrice");
@@ -149,6 +155,10 @@ public class PlanService implements InitializingBean{
 
         throw new IllegalStateException("ProductOfferingPrice id not found: " + offeringPriceId);
     }
+    
+    /*
+	 * Retrieves all plans associated with the given offering ID.
+	 */
  
     public List<Plan> findPlans(String offeringId) {
         if (offeringId == null || offeringId.isEmpty()) {
