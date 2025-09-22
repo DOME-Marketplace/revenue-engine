@@ -1,5 +1,6 @@
 package it.eng.dome.revenue.engine.model;
 
+import java.nio.charset.StandardCharsets;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -134,23 +135,25 @@ public class RevenueBill {
     public String getId() {
         return this.generateId();
     }
-    
+
     private String generateId() {
         // FIXME: temporary... until we have proper persistence
         String key = "";
         OffsetDateTime startDateTime = this.period.getStartDateTime();
-        if(startDateTime!=null)
-        	key += startDateTime.toString();
+        if (startDateTime != null)
+            key += startDateTime.toString();
         OffsetDateTime endDateTime = this.period.getEndDateTime();
-        if(endDateTime!=null)
-        	key += endDateTime.toString();
+        if (endDateTime != null)
+            key += endDateTime.toString();
         key += this.getBillTime().toString();
         key += this.getRelatedPartyIdWithRole("buyer");
         key += this.getRelatedPartyIdWithRole("seller");
         key += this.getAmount().toString();
         key += this.getDescriptions();
         // include the subscription id (buyer and plan) + the bill nr
-        return "urn:ngsi-ld:revenuebill:" + this.subscriptionId.substring(20) + "-" + UUID.nameUUIDFromBytes(key.getBytes()).toString();
+        return "urn:ngsi-ld:revenuebill:" + this.subscriptionId.substring(20) + "-" +
+               UUID.nameUUIDFromBytes(key.getBytes(StandardCharsets.UTF_8)).toString();
     }
+
 
 }

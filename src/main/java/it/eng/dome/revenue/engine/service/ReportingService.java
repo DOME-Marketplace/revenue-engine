@@ -102,11 +102,9 @@ public class ReportingService implements InitializingBean {
 
         SubscriptionTimeHelper th = new SubscriptionTimeHelper(subscription);
 
-        String startDate = subscription.getStartDate() != null ? subscription.getStartDate().toString() : "Unknown Start Date";
-        String renewalDate = subscription.getStartDate() != null ? subscription.getStartDate().plusYears(1).toString() : "Unknown Renewal Date";
-        
-        startDate = th.getSubscriptionPeriodAt(OffsetDateTime.now()).getStartDateTime().toString();
-        renewalDate = th.getSubscriptionPeriodAt(OffsetDateTime.now()).getEndDateTime().toString();
+        String startDate = th.getSubscriptionPeriodAt(OffsetDateTime.now()).getStartDateTime().toString();
+        String renewalDate = th.getSubscriptionPeriodAt(OffsetDateTime.now()).getEndDateTime().toString();
+
 
         String agreementsText = Optional.ofNullable(plan.getAgreements())
                 .orElse(Collections.emptyList())
