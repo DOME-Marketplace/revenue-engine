@@ -22,3 +22,4 @@ tmp/
 /.apt_generated_tests/
 /.factorypath
 /logs
+src/test/java/it/eng/dome/revenue/testcase/TestCaseBuilder.java

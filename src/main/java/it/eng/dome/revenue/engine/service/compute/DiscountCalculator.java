@@ -23,24 +23,55 @@ public class DiscountCalculator {
 
     private Subscription subscription;
 
+    /**
+     * Default constructor.
+     */
     public DiscountCalculator() {
     }
 
+    /**
+     * Constructor with subscription and metrics retriever.
+     * 
+     * @param subscription the subscription context
+     * @param metricsRetriever the retriever for metric values
+     */
     public DiscountCalculator(Subscription subscription, MetricsRetriever metricsRetriever) {
         this.subscription = subscription;
         this.metricsRetriever = metricsRetriever;
     }
 
+    /**
+     * Sets the metrics retriever.
+     * 
+     * @param metricsRetriever the retriever for metric values
+     */
     public void setMetricsRetriever(MetricsRetriever metricsRetriever) {
         this.metricsRetriever = metricsRetriever;
     }
-    
+
+    /**
+     * Sets the subscription.
+     * 
+     * @param subscription the subscription context
+     */
     public void setSubscription(Subscription subscription) {
         this.subscription = subscription;
     }
 
+    /**
+     * Computes the discount item based on the provided discount, time period, and amount.
+     * 
+     * @param discount the discount to apply
+     * @param timePeriod the time period for which the discount is applicable
+     * @param amount the amount to which the discount will be applied
+     * @return a RevenueItem representing the computed discount, or null if not applicable
+     */
     public RevenueItem compute(Discount discount, TimePeriod timePeriod, Double amount) {
         logger.debug("Computing discount item: {}", discount.getName());
+
+        // TODO: support for applicableFrom?
+        
+        // TODO: support for ignorePeriod?
 
         if (Boolean.TRUE.equals(discount.getIsBundle()) && discount.getDiscounts() != null) {
             RevenueItem bundleResult = getBundleDiscount(discount, timePeriod, amount);
@@ -55,6 +86,14 @@ public class DiscountCalculator {
         }
     }
 
+    /**
+     * Processes a bundle discount based on its operation type.
+     * 
+     * @param discount the bundle discount to process
+     * @param timePeriod the time period for which the discount is applicable
+     * @param amount the amount to which the discount will be applied
+     * @return a RevenueItem representing the computed bundle discount
+     */
     private RevenueItem getBundleDiscount(Discount discount, TimePeriod timePeriod, Double amount) {
         logger.debug("Processing bundle discount with operation: {}", discount.getBundleOp());
         RevenueItem bundleResult;
@@ -76,11 +115,18 @@ public class DiscountCalculator {
         return bundleResult;
     }
 
+    /**
+     * Computes an atomic discount based on the provided discount, time period, and amount.
+     * 
+     * @param discount the discount to apply
+     * @param timePeriod the time period for which the discount is applicable
+     * @param amount the amount to which the discount will be applied
+     * @return a RevenueItem representing the computed atomic discount, or null if not applicable
+     */
     private RevenueItem getAtomicDiscount(Discount discount, TimePeriod timePeriod, Double amount) {
         logger.debug("Computing atomic discount for: {}", discount.getName());
 
         TimePeriod tp = getTimePeriod(discount, timePeriod.getStartDateTime().plusSeconds(1));
-//        TimePeriod tp = getTimePeriod(discount, time);
 
         if(!tp.getStartDateTime().equals(timePeriod.getStartDateTime()) || !tp.getEndDateTime().equals(timePeriod.getEndDateTime())) {
             logger.debug("Time period mismatch for price {}: REF {}, DISCOUNT TP {}. Skipping this price.", discount.getName(), timePeriod, tp);
@@ -98,6 +144,13 @@ public class DiscountCalculator {
         return new RevenueItem(discount.getName(), -amountValue, "EUR");
     }
 
+    /**
+     * Retrieves the time period applicable for the discount based on its reference period.
+     * 
+     * @param discount the discount definition
+     * @param time the offset date time to base the computation on
+     * @return the TimePeriod applicable for the discount
+     */
     private TimePeriod getTimePeriod(Discount discount, OffsetDateTime time) {
         SubscriptionTimeHelper sth = new SubscriptionTimeHelper(subscription);
         TimePeriod tp;
@@ -106,7 +159,7 @@ public class DiscountCalculator {
             if (discount.getApplicableBaseReferencePeriod().getValue().equalsIgnoreCase("PREVIOUS_SUBSCRIPTION_PERIOD")) {
                 tp = sth.getSubscriptionPeriodAt(time);
             } else {
-            	// TODO: recoding this logic
+                // TODO: recoding this logic
                 tp = null;
             }
         } else {
@@ -117,70 +170,86 @@ public class DiscountCalculator {
         return tp;
     }
 
+    /**
+     * Computes the discount value based on the discount type, buyer ID, time period, and amount.
+     * 
+     * @param discount the discount configuration
+     * @param buyerId the identifier of the buyer
+     * @param tp the applicable time period
+     * @param amount the amount to apply the discount on
+     * @return the computed discount value, or null if not applicable
+     */
     private Double computeDiscount(Discount discount, String buyerId, TimePeriod tp, Double amount) {
         Double applicableValue = getApplicableValue(discount, buyerId, tp);
 
-
         if (applicableValue == null) {
-            // if not exists an applicable or an computation then we had only amount discount
             return discount.getAmount();
         }
 
-        // if value in range then computation 
         if (discount.getApplicableBaseRange() != null && discount.getApplicableBaseRange().inRange(applicableValue)) {
             logger.info("Applicable value computed: {} in tp: {} - {}", applicableValue, tp.getStartDateTime(), tp.getEndDateTime());
-
             return getComputationValue(discount, buyerId, tp, amount);
         } else if (discount.getApplicableBaseRange() == null) {
-            // No range specified, proceed with computation
             return getComputationValue(discount, buyerId, tp, amount);
         } else {
             return null;
         }
     }
 
+    /**
+     * Computes the actual discount value based on the computation base and percent/amount.
+     * 
+     * @param discount the discount configuration
+     * @param buyerId the identifier of the buyer
+     * @param tp the applicable time period
+     * @param amount the amount to which the discount will be applied
+     * @return the discount value computed, or null if not computable
+     */
     private Double getComputationValue(Discount discount, String buyerId, TimePeriod tp, Double amount) {
         logger.debug("Computation of discount value");
-        // computation logic
         if (discount.getComputationBase() != null && !discount.getComputationBase().isEmpty()) {
-        	 if (discount.getPercent() != null) {
-	            Double computationValue = 0.0;
-	            try {
-	                // Handle special case for "parent-price" computation base
-	                if ("parent-price".equals(discount.getComputationBase())) {
-	                    computationValue = amount; // Use the parent price amount
-	                    logger.debug("Using parent price amount: {}", computationValue);
-	                } else {
-	                    computationValue = metricsRetriever.computeValueForKey(discount.getComputationBase(), buyerId, tp);
-	                    //computationValue += 200000.00; // Simulating a base value for testing purposes
-	                    logger.info("Computation value computed: {} in tp: {}", computationValue, tp);
-	                }
-	            } catch (Exception e) {
-	                logger.error("Error computing discount value: {}", e.getMessage(), e);
-	            }
+            if (discount.getPercent() != null) {
+                Double computationValue = 0.0;
+                try {
+                    if ("parent-price".equals(discount.getComputationBase())) {
+                        computationValue = amount;
+                        logger.debug("Using parent price amount: {}", computationValue);
+                    } else {
+                        computationValue = metricsRetriever.computeValueForKey(discount.getComputationBase(), buyerId, tp);
+                        logger.info("Computation value computed: {} in tp: {}", computationValue, tp);
+                    }
+                } catch (Exception e) {
+                    logger.error("Error computing discount value: {}", e.getMessage(), e);
+                }
 
                 return (computationValue * (discount.getPercent() / 100));
             } else if (discount.getAmount() != null) {
                 return discount.getAmount();
             }
         } else {
-        	// TODO: discuss about this else
+            // TODO: discuss about this else
             logger.warn("Computation not exists!");
         }
         return null;
     }
 
+    /**
+     * Computes the applicable value used to determine discount eligibility.
+     * 
+     * @param discount the discount configuration
+     * @param buyerId the identifier of the buyer
+     * @param tp the applicable time period
+     * @return the applicable value, or null if not available
+     */
     private Double getApplicableValue(Discount discount, String buyerId, TimePeriod tp) {
         Double applicableValue = 0.0;
 
-        // APPLICABLE LOGIC
         if (discount.getApplicableBase() != null && !discount.getApplicableBase().isEmpty()) {
             try {
                 applicableValue = metricsRetriever.computeValueForKey(discount.getApplicableBase(), buyerId, tp);
             } catch (Exception e) {
                 logger.error("Error getting applicable value: {}", e.getMessage(), e);
             }
-            //applicableValue += 200000.00; // Simulating a base value for testing purposes
         } else {
             return null;
         }
@@ -188,6 +257,14 @@ public class DiscountCalculator {
         return applicableValue;
     }
 
+    /**
+     * Computes a cumulative discount by summing up all valid child discounts.
+     * 
+     * @param bundleDiscount the parent bundle discount
+     * @param timePeriod the applicable time period
+     * @param amount the base amount
+     * @return a RevenueItem aggregating all applicable discounts, or null if none apply
+     */
     private RevenueItem getCumulativeDiscount(Discount bundleDiscount, TimePeriod timePeriod, Double amount) {
         List<Discount> childDiscounts = bundleDiscount.getDiscounts();
         logger.debug("Computing cumulative discount from {} items", childDiscounts.size());
@@ -209,6 +286,14 @@ public class DiscountCalculator {
         return cumulativeItem;
     }
 
+    /**
+     * Computes the highest discount among the child discounts (least negative).
+     * 
+     * @param bundleDiscount the parent bundle discount
+     * @param timePeriod the applicable time period
+     * @param amount the base amount
+     * @return a RevenueItem wrapping the best discount, or null if none apply
+     */
     private RevenueItem getHigherDiscount(Discount bundleDiscount, TimePeriod timePeriod, Double amount) {
         List<Discount> childDiscounts = bundleDiscount.getDiscounts();
         logger.debug("Finding higher discount from {} items", childDiscounts.size());
@@ -234,7 +319,14 @@ public class DiscountCalculator {
         return wrapper;
     }
 
-
+    /**
+     * Computes the lowest discount among the child discounts (most negative).
+     * 
+     * @param bundleDiscount the parent bundle discount
+     * @param timePeriod the applicable time period
+     * @param amount the base amount
+     * @return a RevenueItem wrapping the worst discount, or null if none apply
+     */
     private RevenueItem getLowerDiscount(Discount bundleDiscount, TimePeriod timePeriod, Double amount) {
         List<Discount> childDiscounts = bundleDiscount.getDiscounts();
         logger.debug("Finding lower discount from {} items", childDiscounts.size());
@@ -259,6 +351,4 @@ public class DiscountCalculator {
 
         return wrapper;
     }
-
-
 }

@@ -9,7 +9,7 @@ server:
 # Logging Configuration
 logging:
   level:
-    it.eng.dome: ${LOG_LEVEL:INFO}
+    it.eng.dome: ${LOG_LEVEL:DEBUG}
     org.apache.coyote.http11: ERROR
   pattern:
     console: "%d{yyyy-MM-dd HH:mm:ss} [%-5level] %logger{36} - %msg%n" 
@@ -33,11 +33,11 @@ management:
       show-details: never
   health:
     probes:
-      enabled: true	
+      enabled: true 
 
 tmforumapi:
-  tmf_endpoint: ${TMF_ENDPOINT:https://dome-dev.eng.it}
-  #tmf_endpoint: ${TMF_ENDPOINT:https://tmf.dome-marketplace-sbx.org}
+#  tmf_endpoint: ${TMF_ENDPOINT:https://dome-dev.eng.it}
+  tmf_endpoint: ${TMF_ENDPOINT:https://tmf.dome-marketplace-sbx.org}
 
   tmf_envoy:  ${TMF_ENVOY:true}
   # valid only if envoy false
@@ -46,10 +46,16 @@ tmforumapi:
   tmf_port:  ${TMF_PORT:8080}
    
 #  tmf_endpoint: http://localhost:8100
+  tmf620_product_catalog_management_path: tmf-api/productCatalogManagement/v4
   tmf629_customer_management_path: tmf-api/customerManagement/v4
   tmf632_party_management_path: tmf-api/party/v4
   tmf637_inventory_path: tmf-api/productInventory/v4
   tmf651_agreement_management_path: tmf-api/agreementManagement/v4
   tmf666_account_management_path: tmf-api/accountManagement/v4
   tmf678_billing_path: tmf-api/customerBillManagement/v4
- 
+
+# Dome Operator configuration
+dome:
+  operator:
+    id: ${DOME_OPERATOR_ID:urn:ngsi-ld:organization:95fdc12e-6889-4f08-8ff8-296b10e8e781} 
+    #id: ${DOME_OPERATOR_ID:urn:ngsi-ld:organization:a195013a-a0e4-493a-810a-b040e10da58f} for dome-dev

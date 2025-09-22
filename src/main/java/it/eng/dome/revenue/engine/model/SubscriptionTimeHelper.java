@@ -41,13 +41,14 @@ public class SubscriptionTimeHelper {
         if(this.subscription != null && this.subscription.getPlan() != null) {
             OffsetDateTime start = this.subscription.getStartDate();
             // build a preview for the next 1 year
-            OffsetDateTime stopAt = OffsetDateTime.now().plusYears(1);
+//            OffsetDateTime stopAt = OffsetDateTime.now().plusYears(1);
+            OffsetDateTime stopAt = this.rollSubscriptionPeriod(start, 1).minusSeconds(1);
             while(!start.isAfter(stopAt)) {
-                OffsetDateTime end = this.rollBillPeriod(start, 1);
+                OffsetDateTime end = this.rollBillPeriod(start, 1).minusSeconds(1);
                 TimePeriod tp = new TimePeriod();
                 tp.setStartDateTime(start);
                 // apply the modifier, if any.
-                end = this.applyModifier(end, this.subscription.getPlan().getBillingPeriodEnd());
+                end = this.applyModifier(end, this.subscription.getPlan().getBillCycleSpecification().getBillingPeriodEnd());
                 tp.setEndDateTime(end.minusSeconds(1));
                 billingPeriodTimes.add(tp);
                 start = end;
@@ -92,8 +93,11 @@ public class SubscriptionTimeHelper {
             } else {
                 // iterate over the charge periods, until reaching the current time
                 // or a year in the future
-                OffsetDateTime stopAt = OffsetDateTime.now().plusYears(1).plusMonths(1);
-                while(!start.isAfter(stopAt)) {
+//                OffsetDateTime stopAt = OffsetDateTime.now(); // .plusYears(1).plusMonths(1);
+
+                OffsetDateTime stopAt = this.rollSubscriptionPeriod(start, 1).minusSeconds(1);
+
+                while(start.isBefore(stopAt)) {
                     OffsetDateTime end = this.rollChargePeriod(start, price, 1);
                     TimePeriod tp = new TimePeriod();
                     tp.setStartDateTime(start);
@@ -147,7 +151,7 @@ public class SubscriptionTimeHelper {
     public TimePeriod getCustomPeriod(OffsetDateTime time, Price price, String keyword) {
         // if the keyword is null or empty, return null
         if(keyword != null && !keyword.isEmpty()) {
-            Pattern p = Pattern.compile("^(LAST|PREVIOUS)_(\\d+)_CHARGE_PERIODS$");
+            Pattern p = Pattern.compile("^(FIRST|LAST|PREVIOUS)_(\\d+)_CHARGE_PERIODS$");
             var matcher = p.matcher(keyword);
             if(matcher.matches()) {
                 Integer howManyPeriods = Integer.parseInt(matcher.group(2));
@@ -160,6 +164,9 @@ public class SubscriptionTimeHelper {
                 } else if("PREVIOUS".equals(timeWindowEndType)) {
                     startPeriod = this.getChargePeriodByOffset(time, price, -howManyPeriods);
                     endPeriod = this.getPreviousChargePeriod(time, price);
+                } else if("FIRST".equals(timeWindowEndType)) {
+                    startPeriod = this.getChargePeriodAt(this.subscription.getStartDate(), price);
+                    endPeriod = this.getChargePeriodByOffset(startPeriod.getStartDateTime(), price, howManyPeriods-1);
                 }
                 if(startPeriod==null) {
                     // the period is before the subscription, constraining to the start of the subscription
@@ -216,6 +223,7 @@ public class SubscriptionTimeHelper {
         return this.getChargePeriodByOffset(time, price, 1);
     }
 
+
     private OffsetDateTime rollSubscriptionPeriod(OffsetDateTime time, int howManyPeriods) {
         // retrive subscriptino length unit
         RecurringPeriod pType = this.subscription.getPlan().getContractDurationPeriodType();
@@ -262,11 +270,11 @@ public class SubscriptionTimeHelper {
         }
     }
 
-    private OffsetDateTime rollBillPeriod(OffsetDateTime time, int howManyPeriods) {
+    public OffsetDateTime rollBillPeriod(OffsetDateTime time, int howManyPeriods) {
         // retrive subscriptino length unit
-        RecurringPeriod pType = this.subscription.getPlan().getBillingPeriodType();
+        RecurringPeriod pType = this.subscription.getPlan().getBillCycleSpecification().getBillingPeriodType();
         // retrieve subscription length
-        Integer pLength = this.subscription.getPlan().getBillingPeriodLength();
+        Integer pLength = this.subscription.getPlan().getBillCycleSpecification().getBillingPeriodLength();
         // ensure the two above are set
         if(pType == null || pLength == null) {
             throw new IllegalArgumentException("Subscription does not have a valid recurring billing period type or length");
@@ -327,10 +335,6 @@ public class SubscriptionTimeHelper {
 
         Thread.sleep(100);
         now = OffsetDateTime.now();
-
-        TimePeriod chargePeriod = helper.getChargePeriodByOffset(now, price, 18);
-        logger.debug(chargePeriod.getStartDateTime().toString());
-        logger.debug(chargePeriod.getEndDateTime().toString());
 
         Set<TimePeriod> chargePeriods = helper.getChargePeriodTimes();
         for(TimePeriod t : chargePeriods) {

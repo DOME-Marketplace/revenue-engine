@@ -1,7 +1,18 @@
 # Release Notes
  
 **Release Notes** of the *Revenue Engine* software:
- 
+
+Added a new mapper for handling ACBR and Invoice calls for tax management.
+
+### <code>1.2.2</code> :calendar: 22/09/2025
+**Feature**
+- Added a new mapper for handling ACBR and Invoice-Service calls for tax management.
+- Implemented persistence logic for ACBR (AppliedCustomerBillingRate) and CustomerBill (CB) in TMF.
+- Introduced caching to improve performance.
+  
+**Improvements**
+- General bug fixes and minor optimizations in the RevenueProductMapper class.
+
 ### <code>1.2.1</code> :calendar: 01/08/2025
 **Feature**
 - Added following sections in Report:

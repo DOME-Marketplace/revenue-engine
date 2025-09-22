@@ -1,0 +1,42 @@
+{
+    "brand": "The DOME Operator",
+    "description": "This is the basic package including all Marketplace service and a basic selection of marketing services",
+    "isBundle": false,
+    "lastUpdate": "2025-09-04T16:08:35.112383294Z",
+    "lifecycleStatus": "Active",
+    "name": "Basic Package of DOME services",
+    "productNumber": "2025.1",
+    "version": "1",
+    "attachment": [],
+    "bundledProductSpecification": [],
+    "productSpecCharacteristic": [],
+    "productSpecificationRelationship": [],
+    "relatedParty": [
+        {
+            "id": "${organization/dome-operator/id}",
+            "role": "Seller",
+            "@referredType": "organization"
+        },
+        {
+            "id": "${organization/dome-operator/id}",
+            "role": "SellerOperator",
+            "@referredType": "organization"
+        }
+    ],
+    "resourceSpecification": [],
+    "serviceSpecification": [
+        {
+            "id": "${service/marketplace-service-spec/id}",
+            "name": "DOME Marketplace Services",
+            "version": "1"
+        },
+        {
+            "id": "${service/basic-marketing-spec/id}",
+            "name": "Marketing Promotion - Basic",
+            "version": "1"
+        }
+    ],
+    "validFor": {
+        "startDateTime": "2025-06-01T00:00:00Z"
+    }
+}

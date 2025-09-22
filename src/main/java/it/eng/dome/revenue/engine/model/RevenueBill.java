@@ -1,5 +1,6 @@
 package it.eng.dome.revenue.engine.model;
 
+import java.nio.charset.StandardCharsets;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -10,7 +11,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import it.eng.dome.tmforum.tmf678.v4.model.RelatedParty;
 import it.eng.dome.tmforum.tmf678.v4.model.TimePeriod;
 
-public class SimpleBill {
+public class RevenueBill {
 
     private TimePeriod period;
     private String subscriptionId;
@@ -20,7 +21,7 @@ public class SimpleBill {
     @JsonProperty("relatedParty") 
     private List<RelatedParty> relatedParties; 
 
-    public SimpleBill() {
+    public RevenueBill() {
         this.revenueItems = new ArrayList<>();
     }
 
@@ -105,7 +106,10 @@ public class SimpleBill {
     }
 
     public OffsetDateTime getBillTime() {
-        return this.period.getEndDateTime().plusDays(3);
+        OffsetDateTime endDateTime = this.period.getEndDateTime();
+        if(endDateTime!=null)
+        	return endDateTime.plusDays(3);
+        return null;
     }
 
     private String getRelatedPartyIdWithRole(String role) {
@@ -131,19 +135,25 @@ public class SimpleBill {
     public String getId() {
         return this.generateId();
     }
-    
+
     private String generateId() {
         // FIXME: temporary... until we have proper persistence
         String key = "";
-        key += this.period.getStartDateTime().toString();
-        key += this.period.getEndDateTime().toString();
+        OffsetDateTime startDateTime = this.period.getStartDateTime();
+        if (startDateTime != null)
+            key += startDateTime.toString();
+        OffsetDateTime endDateTime = this.period.getEndDateTime();
+        if (endDateTime != null)
+            key += endDateTime.toString();
         key += this.getBillTime().toString();
         key += this.getRelatedPartyIdWithRole("buyer");
         key += this.getRelatedPartyIdWithRole("seller");
         key += this.getAmount().toString();
         key += this.getDescriptions();
         // include the subscription id (buyer and plan) + the bill nr
-        return "urn:ngsi-ld:simplebill:" + this.subscriptionId.substring(25) + "-" + UUID.nameUUIDFromBytes(key.getBytes()).toString();
+        return "urn:ngsi-ld:revenuebill:" + this.subscriptionId.substring(20) + "-" +
+               UUID.nameUUIDFromBytes(key.getBytes(StandardCharsets.UTF_8)).toString();
     }
+
 
 }

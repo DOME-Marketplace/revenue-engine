@@ -1,0 +1,11 @@
+{
+  "id": "urn:ngsi-ld:organization:bf9d03af-cec5-419c-ac60-8955dc4de710",
+  "href": "urn:ngsi-ld:organization:bf9d03af-cec5-419c-ac60-8955dc4de710",
+  "tradingName": "Engineering Ingegneria Informatica S.p.A.",
+  "externalReference": [
+    {
+      "externalReferenceType": "idm_id",
+      "name": "VATIT-05724831002"
+    }
+  ]
+}
