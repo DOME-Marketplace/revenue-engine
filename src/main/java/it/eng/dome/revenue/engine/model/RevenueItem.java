@@ -56,7 +56,11 @@ public class RevenueItem {
     public void addRevenueItem(RevenueItem item) {
         this.items.add(item);
     }
- 
+
+    public void addRevenueItems(List<RevenueItem> items) {
+        this.items.addAll(items);
+    }
+
     public String getName() {
         return name;
     }

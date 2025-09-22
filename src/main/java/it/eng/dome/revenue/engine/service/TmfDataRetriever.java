@@ -54,7 +54,17 @@ public class TmfDataRetriever implements InitializingBean {
         logger.info("TmfDataRetriever initialized with billApi and orgApi");
     }
 
-      
+    /*
+    public Set<String> getSubProviders(String sellerId, TimePeriod timePeriod) {
+        Set<String> subproviders = new TreeSet<String>();
+        // TODO: retrieve all ACBRS by 'sellerId', in timePeriod
+        // - somehow exctract who's the sub-provider
+        // - if not in the ACBR, look at the Product.
+        // TODISCUSS: where the sub-provider is set in the spec, offering, order, product, cb, acbr????
+        return subproviders;
+    }
+    */
+
     /**
 	 * Retrieves bills from the TMF API based on the provided seller ID, time period, and billing status.
 	 *
@@ -92,6 +102,11 @@ public class TmfDataRetriever implements InitializingBean {
         }
 
         List<AppliedCustomerBillingRate> out = billApi.getAllAppliedCustomerBillingRates(null, filter);
+
+        // TODO: further filter results to be sure id and role are in the sameRelatedParties (see fixme above)
+
+        // TODO: further filters, if any (maybe by using a map of properties in the signature)
+
         logger.debug("Found " + out.size() + " bills in the specified period");
         return out;
     }

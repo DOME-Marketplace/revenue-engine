@@ -163,6 +163,10 @@ public class PriceCalculator {
 		case ALTERNATIVE_LOWER:
 			bundledRevenueItem = this.getLowerPrice(price, timePeriod);
 			break;
+		case FOREACH:
+			bundledRevenueItem = null;
+			// TODO: implement this
+			break;
 		default:
 			throw new IllegalArgumentException("Unknown bundle operation: " + price.getBundleOp());
 		}
@@ -184,6 +188,7 @@ public class PriceCalculator {
 		List<RevenueItem> discountItems = new ArrayList<>();
 
 		Double amount = price.getAmount(); // Assuming amount is the base amount for the discount
+		// FIXME: why are we passing the metricsRetriever? It's stateless and also Autowired within DiscountCalculator
 		DiscountCalculator discountCalculator = new DiscountCalculator(subscription, metricsRetriever);
 		RevenueItem discountItem = discountCalculator.compute(price.getDiscount(), timePeriod, amount);
 		if (discountItem != null) {
@@ -478,28 +483,24 @@ public class PriceCalculator {
 		List<Price> childPrices = bundlePrice.getPrices();
 		logger.debug("Finding higher price from {} items", childPrices.size());
 
-		RevenueItem bestItem = null;
+		RevenueItem higherItem = null;
 
 		for (Price p : childPrices) {
 			RevenueItem current = this.compute(p, timePeriod);
 			if (current == null)
 				continue;
 
-			if (bestItem == null || current.getOverallValue() > bestItem.getOverallValue()) {
-				bestItem = current;
+			if (higherItem == null || current.getOverallValue() > higherItem.getOverallValue()) {
+				higherItem = current;
 			}
 		}
 
-		if (bestItem == null) {
+		if (higherItem == null) {
 			return null;
 		}
 
 		RevenueItem wrapper = new RevenueItem(bundlePrice.getName(), bundlePrice.getCurrency());
-		wrapper.addRevenueItem(bestItem);
-		/*
-		 * List<RevenueItem> items = new ArrayList<>(); items.add(bestItem);
-		 * wrapper.setItems(items);
-		 */
+		wrapper.addRevenueItem(higherItem);
 
 		return wrapper;
 	}
@@ -514,28 +515,24 @@ public class PriceCalculator {
 		List<Price> childPrices = bundlePrice.getPrices();
 		logger.debug("Finding lower price from {} items", childPrices.size());
 
-		RevenueItem bestItem = null;
+		RevenueItem lowerItem = null;
 
 		for (Price p : childPrices) {
 			RevenueItem current = this.compute(p, timePeriod);
 			if (current == null)
 				continue;
 
-			if (bestItem == null || current.getOverallValue() < bestItem.getOverallValue()) {
-				bestItem = current;
+			if (lowerItem == null || current.getOverallValue() < lowerItem.getOverallValue()) {
+				lowerItem = current;
 			}
 		}
 
-		if (bestItem == null) {
+		if (lowerItem == null) {
 			return null;
 		}
 
 		RevenueItem wrapper = new RevenueItem(bundlePrice.getName(), bundlePrice.getCurrency());
-		wrapper.addRevenueItem(bestItem);
-		/*
-		 * List<RevenueItem> items = new ArrayList<>(); items.add(bestItem);
-		 * wrapper.setItems(items);
-		 */
+		wrapper.addRevenueItem(lowerItem);
 
 		return wrapper;
 	}
