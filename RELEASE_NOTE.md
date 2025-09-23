@@ -5,11 +5,13 @@
 ### <code>1.2.3</code> :calendar: 23/09/2025
 **Bug Fixing**
 - General bug fixing:
-	-Added parameter in InvoicingService
-	-Fixed filter for RelatedParty
+	- Added parameter in **InvoicingService**.
+	- Fixed filter for **RelatedParty**.
   
 **Improvements**
-- General bug fixes and minor optimizations in the RevenueProductMapper class.
+- General bug fixes and minor optimizations in the **RevenueProductMapper** class.
+
+
 ### <code>1.2.2</code> :calendar: 22/09/2025
 **Feature**
 - Added a new mapper for handling ACBR and Invoice-Service calls for tax management.
