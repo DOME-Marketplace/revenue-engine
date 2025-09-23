@@ -74,7 +74,7 @@ public class SubscriptionService implements InitializingBean {
     	        
         logger.info("Using the productAPIs {}", this.productApis);
 		Map<String, String> filter = new HashMap<>();
-		filter.put("relatedParty.id", DOME_OPERATOR_ID);
+		filter.put("relatedParty", DOME_OPERATOR_ID);
         List<Product> prods = productApis.getAllProducts(null, filter);
         
         List<Subscription> subs = new ArrayList<>();
