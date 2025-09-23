@@ -89,7 +89,7 @@ public class PlanResolver {
 
 	private String resolveToken(String token) {
         // product characteristics
-		Pattern p1 = Pattern.compile("product.characteristic.([a-zA-Z]+)");
+		Pattern p1 = Pattern.compile("subscription.characteristic.([a-zA-Z]+)");
 		Matcher m = p1.matcher(token);
 		if(m.matches()) {
 			if(this.subscription!=null) {
@@ -97,7 +97,7 @@ public class PlanResolver {
 			}
 		}
         // directly properties
-		Pattern p2 = Pattern.compile("product.([a-zA-Z]+)");
+		Pattern p2 = Pattern.compile("subscription.([a-zA-Z]+)");
 		m = p2.matcher(token);
 		if(m.matches()) {
             if("name".equalsIgnoreCase(m.group(1)))
