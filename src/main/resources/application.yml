@@ -33,7 +33,11 @@ management:
       show-details: never
   health:
     probes:
-      enabled: true 
+      enabled: true
+
+# Billing Service
+billing:
+  invoicing_service: ${INVOICING_SERVICE:http://localhost:8380}
 
 tmforumapi:
 #  tmf_endpoint: ${TMF_ENDPOINT:https://dome-dev.eng.it}

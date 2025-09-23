@@ -5,6 +5,7 @@ import java.util.List;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
@@ -24,8 +25,8 @@ public class InvoicingService {
 	
 	RestTemplate restTemplate = new RestTemplate();
 	
-//	@Value("${billing.invoicing_service}")
-	public String invoicingService = "http://localhost:8380";
+	@Value("${billing.invoicing_service}")
+	public String invoicingService;
 		
 
 	public List<AppliedCustomerBillingRate> applyTaxees(Product product, List<AppliedCustomerBillingRate> acbrs) {
