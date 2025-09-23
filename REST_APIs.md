@@ -1,6 +1,6 @@
 # Revenue Engine
 
-**Version:** 1.2.2  
+**Version:** 1.2.3  
 **Description:** Swagger REST APIs for the revenue-engine software  
 
 
@@ -20,7 +20,16 @@
 |------|------|------|
 | GET | `/revenue/plans` | getAllPlans |
 | GET | `/revenue/plans/{planId}` | getPlanById |
+| GET | `/revenue/plans/{planId}/validate` | validatePlan |
 | GET | `/revenue/plans/{planId}/subscriptions` | getSubscriptionsByPlanId |
+
+### persistence-controller
+| Verb | Path | Task |
+|------|------|------|
+| GET | `/revenue/persistence/persist` | peristEverything |
+| GET | `/revenue/persistence/persist/subscription/{subscriptionId}` | persistForSubscription |
+| GET | `/revenue/persistence/persist/revenuebill/{revenueBillId}` | persistRevenueBill |
+| GET | `/revenue/persistence/persist/provider/{providerId}` | persistForProvider |
 
 ### Revenue Engine Controller
 | Verb | Path | Task |
@@ -35,17 +44,9 @@
 ### bills-controller
 | Verb | Path | Task |
 |------|------|------|
-| GET | `/revenue/bills/{billId}` | getBillPeriods_1 |
 | GET | `/revenue/bills/{revenueBillId}/cb` | getCustomerBillByRevenueBillId |
 | GET | `/revenue/bills/{revenueBillId}/acbr` | getACBRsByRevenueBillId |
-
-### persistence-controller
-| Verb | Path | Task |
-|------|------|------|
-| GET | `/revenue/persistence/persist` | peristEverything |
-| GET | `/revenue/persistence/subscription/{subscriptionId}` | peristForSubscription |
-| GET | `/revenue/persistence/revenueBill/{revenueBillId}` | peristRevenueBill |
-| GET | `/revenue/persistence/provider/{providerId}` | peristForProvider |
+| GET | `/revenue/bills/{billId}` | getBillPeriods_1 |
 
 ### dev-organization-controller
 | Verb | Path | Task |
