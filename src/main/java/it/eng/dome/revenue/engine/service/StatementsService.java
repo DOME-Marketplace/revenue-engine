@@ -12,6 +12,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import it.eng.dome.revenue.engine.model.Plan;
+import it.eng.dome.revenue.engine.model.PlanResolver;
 import it.eng.dome.revenue.engine.model.RevenueItem;
 import it.eng.dome.revenue.engine.model.RevenueStatement;
 import it.eng.dome.revenue.engine.model.Subscription;
@@ -74,6 +75,10 @@ public class StatementsService implements InitializingBean {
             // retrive the plan for the subscription
             Plan plan = this.planService.getPlanById(sub.getPlan().getId());
 
+            // resolve the plan
+            PlanResolver planResolver = new PlanResolver(sub);
+            plan = planResolver.resolve(plan);
+
             // add the full plan to the subscription
             sub.setPlan(plan);
 
@@ -113,6 +118,10 @@ public class StatementsService implements InitializingBean {
             logger.error("Failed to retrieve plan for subscription {}: {}", subscriptionId, ex.getMessage(), ex);
             throw new RuntimeException("Failed to retrieve plan for subscription: " + subscriptionId, ex);
         }
+
+        // resolve the plan
+        PlanResolver planResolver = new PlanResolver(sub);
+        plan = planResolver.resolve(plan);
 
         sub.setPlan(plan);
 

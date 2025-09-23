@@ -60,10 +60,21 @@ public abstract class PlanItem {
 	@JsonProperty("computationFrom")
 	private OffsetDateTime computationFrom;
 
+    @JsonProperty("ignore")
+	private String ignore;
+
 	// reference to the parent price, if any
 	@JsonIgnore
 	private Price parentPrice;
 	
+	public String getIgnore() {
+			return this.ignore;
+	}
+
+	public void setIgnore(String ignore) {
+		this.ignore = ignore;
+	}
+
 	public String getApplicableBase() {
 		if(this.getParentPrice()!=null && this.getParentPrice().getApplicableBase()!=null)
 			return this.getParentPrice().getApplicableBase();
@@ -76,7 +87,7 @@ public abstract class PlanItem {
 	}
 
 	public String getName() {
-		return name;
+			return this.name;
 	}
 
 	public void setName(String name) {
