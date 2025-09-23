@@ -121,7 +121,7 @@ public class PriceCalculator {
 		}
 
 
-		RevenueItem outRevenueItem = null;
+		RevenueItem outRevenueItem;
 
 		if (Boolean.TRUE.equals(price.getIsBundle()) && price.getPrices() != null) {
 			outRevenueItem = this.getBundlePrice(price, timePeriod);

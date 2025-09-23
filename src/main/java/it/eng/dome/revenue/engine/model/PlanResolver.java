@@ -10,7 +10,7 @@ import org.slf4j.LoggerFactory;
 
 public class PlanResolver {
 
-	private static final Logger logger = LoggerFactory.getLogger(PlanResolver.class);
+    private static final Logger logger = LoggerFactory.getLogger(PlanResolver.class);
 
     private Subscription subscription;
 
@@ -19,102 +19,118 @@ public class PlanResolver {
     }
 
     public Plan resolve(Plan plan) {
-        this.resolve(plan.getPrice());
+        if (plan != null) {
+            resolvePrice(plan.getPrice());
+        }
         return plan;
     }
 
     private PlanItem resolveDirectProperties(PlanItem item) {
-        if(item!=null) {
-            item.setIgnore(this.resolve(item.getIgnore()));
-            item.setName(this.resolve(item.getName()));
+        if (item != null) {
+            String resolvedIgnore = resolveString(item.getIgnore());
+            String resolvedName = resolveString(item.getName());
+            item.setIgnore(resolvedIgnore);
+            item.setName(resolvedName);
         }
         return item;
     }
 
-    private Price resolve(Price price) {
-        if(price!=null) {
-            this.resolveDirectProperties(price);
-            if(price.getPrices()!=null) {
-                for(Price p: price.getPrices()) {
-                    this.resolve(p);
+    private Price resolvePrice(Price price) {
+        if (price != null) {
+            resolveDirectProperties(price);
+            if (price.getPrices() != null) {
+                for (Price p : price.getPrices()) {
+                    resolvePrice(p);
                 }
             }
-            this.resolve(price.getDiscount());
+            resolveDiscount(price.getDiscount());
         }
         return price;
     }
 
-    private Discount resolve(Discount discount) {
-        if(discount!=null) {
-            this.resolveDirectProperties(discount);
-            discount.setIgnore(this.resolve(discount.getIgnore()));
-            if(discount.getDiscounts()!=null) {
-                for(Discount d: discount.getDiscounts()) {
-                    this.resolve(d);
+    private Discount resolveDiscount(Discount discount) {
+        if (discount != null) {
+            resolveDirectProperties(discount);
+            discount.setIgnore(resolveString(discount.getIgnore()));
+            if (discount.getDiscounts() != null) {
+                for (Discount d : discount.getDiscounts()) {
+                    resolveDiscount(d);
                 }
             }
         }
         return discount;
     }
 
-    private String resolve(String text) {
-		final Pattern p = Pattern.compile("!?\\$\\{([a-zA-Z\\.]+)\\}");
-		if(text!=null && !text.isEmpty()) {
-			Matcher m = p.matcher(text);
-			// identify properties to be resolved
-			Map<String, String> resolvedProperties = new HashMap<>();
-			while(m.find()) {
-				resolvedProperties.put(m.group(1), null);
-			}
-			// now retrieve actual values
-			for(String key: resolvedProperties.keySet()) {
-				String resolvedValue = this.resolveToken(key);
-				if(resolvedValue!=null) {
-					resolvedProperties.put(key, resolvedValue);
-                }
-				else {
-					logger.error("unresolved property {} in plan {}", key, this.subscription.getPlan().getName());
-                }
-			}
-			// finally replace
-			for(String key: resolvedProperties.keySet()) {
-				String value = resolvedProperties.get(key);
-				if(value==null)
-					value = "<<ERROR.UNRESOLVED>>";
-				text = text.replace("${"+key+"}", value);
-			}
-		}
-		return text;
-	}
+    private String resolveString(String input) {
+        if (input == null || input.isEmpty()) {
+            return input;
+        }
 
-	private String resolveToken(String token) {
-        // product characteristics
-		Pattern p1 = Pattern.compile("subscription.characteristic.([a-zA-Z]+)");
-		Matcher m = p1.matcher(token);
-		if(m.matches()) {
-			if(this.subscription!=null) {
-				return this.subscription.getCharacteristic(m.group(1));
-			}
-		}
-        // directly properties
-		Pattern p2 = Pattern.compile("subscription.([a-zA-Z]+)");
-		m = p2.matcher(token);
-		if(m.matches()) {
-            if("name".equalsIgnoreCase(m.group(1)))
-                return this.subscription.getName();
-            if("startDate".equalsIgnoreCase(m.group(1)))
-                return this.subscription.getStartDate().toString();
-    		// TODO: add further patterns (e.g. product.<property>)... to be resolved with getters (with reflection?)
-		}
+        String resolvedText = input;
+        final Pattern pattern = Pattern.compile("!?\\$\\{([a-zA-Z\\.]+)\\}");
+        Matcher matcher = pattern.matcher(input);
+
+        Map<String, String> resolvedProperties = new HashMap<>();
+        while (matcher.find()) {
+            resolvedProperties.put(matcher.group(1), null);
+        }
+
+        // resolve each token
+        for (String key : resolvedProperties.keySet()) {
+            String resolvedValue = resolveToken(key);
+            if (resolvedValue != null) {
+                resolvedProperties.put(key, resolvedValue);
+            } else {
+                logger.error("Unresolved property {} in plan {}", key,
+                        subscription != null && subscription.getPlan() != null
+                                ? subscription.getPlan().getName()
+                                : "<<UNKNOWN>>");
+            }
+        }
+
+        // replace tokens
+        for (Map.Entry<String, String> entry : resolvedProperties.entrySet()) {
+            String value = entry.getValue() != null ? entry.getValue() : "<<ERROR.UNRESOLVED>>";
+            resolvedText = resolvedText.replace("${" + entry.getKey() + "}", value);
+        }
+
+        return resolvedText;
+    }
+
+    private String resolveToken(String token) {
+        // subscription characteristics
+        Pattern p1 = Pattern.compile("subscription.characteristic.([a-zA-Z]+)");
+        Matcher m = p1.matcher(token);
+        if (m.matches() && subscription != null) {
+            return subscription.getCharacteristic(m.group(1));
+        }
+
+        // subscription direct properties
+        Pattern p2 = Pattern.compile("subscription.([a-zA-Z]+)");
+        m = p2.matcher(token);
+        if (m.matches() && subscription != null) {
+            switch (m.group(1).toLowerCase()) {
+                case "name":
+                    return subscription.getName();
+                case "startdate":
+                    return subscription.getStartDate().toString();
+                default:
+                    break; // TODO: add more subscription properties
+            }
+        }
+
         // plan properties
-		Pattern p3 = Pattern.compile("plan.([a-zA-Z]+)");
-		m = p3.matcher(token);
-		if(m.matches()) {
-            if("name".equalsIgnoreCase(m.group(1)))
-                return this.subscription.getPlan().getName();
-    		// TODO: add further plan properties...
-		}
-		return null;
-	}
+        Pattern p3 = Pattern.compile("plan.([a-zA-Z]+)");
+        m = p3.matcher(token);
+        if (m.matches() && subscription != null && subscription.getPlan() != null) {
+            switch (m.group(1).toLowerCase()) {
+                case "name":
+                    return subscription.getPlan().getName();
+                default:
+                    break; // TODO: add more plan properties
+            }
+        }
 
+        return null;
+    }
 }
