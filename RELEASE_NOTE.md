@@ -7,9 +7,9 @@
 - General bug fixing:
 	- Added parameter in `InvoicingService`.
 	- Fixed filter for `RelatedParty`.
-  
+
 **Improvements**
-- General bug fixes and minor optimizations in the **RevenueProductMapper** class.
+- General bug fixes and minor optimizations in the RevenueProductMapper class.
 
 
 ### <code>1.2.2</code> :calendar: 22/09/2025
