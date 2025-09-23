@@ -97,6 +97,11 @@ public class Subscription {
         return null; // or throw an exception if a buyer is mandatory
     }
 
+    // TODO: implement this. Requires including product characteristics in the subscription.
+    public String getCharacteristic(String key) {
+        return null;
+    }
+
     @Override
     public String toString() {
 		return "Subscription{" +

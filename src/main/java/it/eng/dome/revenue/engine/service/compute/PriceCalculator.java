@@ -82,8 +82,13 @@ public class PriceCalculator {
 	 * @param timePeriod the TimePeriod for computation
 	 * @return RevenueItem or null if not applicable
 	 */
-	public RevenueItem compute(Price price, TimePeriod timePeriod) {
+	private RevenueItem compute(Price price, TimePeriod timePeriod) {
 		logger.debug("Computing price item: {}", price.getName());
+
+		// check if the price is to be included
+		if("true".equalsIgnoreCase(price.getIgnore())) {
+			return null;
+		}
 
 		// check if the price is applicable in the given time period (using the applicableFrom attribute)
 		// FIXME: here we only check that if start isBefore, the the whole period is not considered.
@@ -114,6 +119,7 @@ public class PriceCalculator {
 				}
 			}
 		}
+
 
 		RevenueItem outRevenueItem = null;
 		if (Boolean.TRUE.equals(price.getIsBundle()) && price.getPrices() != null) {
