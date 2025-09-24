@@ -2,11 +2,13 @@ package it.eng.dome.revenue.engine.model;
 
 import java.time.OffsetDateTime;
 import java.util.List;
+import java.util.Map;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
+import it.eng.dome.tmforum.tmf637.v4.model.Product;
 import it.eng.dome.tmforum.tmf678.v4.model.RelatedParty;
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
@@ -22,6 +24,10 @@ public class Subscription {
     private String status;
     private OffsetDateTime startDate;
     
+    private Map<String,String> characteristics;
+    private Product product;
+
+
     @JsonProperty("relatedParty") 
     private List<RelatedParty> relatedParties; 
 
@@ -98,9 +104,16 @@ public class Subscription {
     }
 
     // TODO: implement this. Requires including product characteristics in the subscription.
-    public String getCharacteristic(String key) {
+    public String getCharacteristics(String key) {
+        if(characteristics != null) {
+            return characteristics.get(key);
+        }
         return null;
     }
+    
+    public void setCharacteristics(Map<String, String> characteristics) {
+		this.characteristics = characteristics;
+	}
 
     @Override
     public String toString() {
@@ -112,5 +125,13 @@ public class Subscription {
 				", startDate=" + startDate +
 				", relatedParties=" + relatedParties +
 				'}';
+	}
+
+	public Product getProduct() {
+		return product;
+	}
+
+	public void setProduct(Product product) {
+		this.product = product;
 	}
 }

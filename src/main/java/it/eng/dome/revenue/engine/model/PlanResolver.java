@@ -35,7 +35,7 @@ public class PlanResolver {
         return item;
     }
 
-    private Price resolvePrice(Price price) {
+    public Price resolvePrice(Price price) {
         if (price != null) {
             resolveDirectProperties(price);
             if (price.getPrices() != null) {
@@ -102,7 +102,7 @@ public class PlanResolver {
         Pattern p1 = Pattern.compile("subscription.characteristic.([a-zA-Z]+)");
         Matcher m = p1.matcher(token);
         if (m.matches() && subscription != null) {
-            return subscription.getCharacteristic(m.group(1));
+            return subscription.getCharacteristics(m.group(1));
         }
 
         // subscription direct properties
@@ -130,6 +130,14 @@ public class PlanResolver {
                     break; // TODO: add more plan properties
             }
         }
+        
+        Pattern p4 = Pattern.compile("product.productCharacteristic.([a-zA-Z]+)");
+        Matcher mProduct = p4.matcher(token);
+        if (mProduct.matches() && subscription != null) {
+            return subscription.getCharacteristics(mProduct.group(1));
+        }
+
+
 
         return null;
     }

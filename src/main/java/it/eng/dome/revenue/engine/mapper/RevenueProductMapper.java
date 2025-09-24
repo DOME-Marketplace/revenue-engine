@@ -1,7 +1,9 @@
 package it.eng.dome.revenue.engine.mapper;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 import org.slf4j.Logger;
@@ -167,7 +169,15 @@ public class RevenueProductMapper {
 
 		}
 		*/
-		
+		// characteristics
+		if(product.getProductCharacteristic() != null && !product.getProductCharacteristic().isEmpty()) {
+		    Map<String,String> characteristics = new HashMap<>();
+		    for(var pc : product.getProductCharacteristic()) {
+		        characteristics.put(pc.getName(), pc.getValue() != null ? pc.getValue().toString() : null);
+		    }
+		    sub.setCharacteristics(characteristics);
+		}
+
 		return sub;
 	}
 

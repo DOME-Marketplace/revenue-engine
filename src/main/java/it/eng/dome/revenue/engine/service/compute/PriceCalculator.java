@@ -9,6 +9,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import it.eng.dome.revenue.engine.model.PlanResolver;
 import it.eng.dome.revenue.engine.model.Price;
 import it.eng.dome.revenue.engine.model.RevenueItem;
 import it.eng.dome.revenue.engine.model.RevenueStatement;
@@ -25,7 +26,9 @@ public class PriceCalculator {
 	private MetricsRetriever metricsRetriever;
 
 	private Subscription subscription;
-
+	
+	private PlanResolver planResolver;
+	
 	/**
 	 * Retrieves the current subscription
 	 * @return the current Subscription object
@@ -42,6 +45,7 @@ public class PriceCalculator {
 	public void setSubscription(Subscription subscription) {
 		logger.debug("Setting new subscription: {}", subscription != null ? subscription.getId() : "null");
 		this.subscription = subscription;
+		this.planResolver = new PlanResolver(subscription);
 	}
 
 	/**
@@ -76,20 +80,110 @@ public class PriceCalculator {
 		return null;
 	}
 
-	/**
-	 * Computes a revenue item for a given price and time period
-	 * @param price the Price to compute
-	 * @param timePeriod the TimePeriod for computation
-	 * @return RevenueItem or null if not applicable
-	 */
+//	/**
+//	 * Computes a revenue item for a given price and time period
+//	 * @param price the Price to compute
+//	 * @param timePeriod the TimePeriod for computation
+//	 * @return RevenueItem or null if not applicable
+//	 */
+	
+	
+//	private RevenueItem compute(Price price, TimePeriod timePeriod) {
+//		logger.debug("Computing price item: {}", price.getName());
+//		boolean zeroIt = false;
+//
+//		// check if the price is to be included
+////		if("true".equalsIgnoreCase(price.getIgnore())) {
+////			
+////			return null;
+////			
+////		}
+//		//String ignore = price.getIgnore(); // FIXME: ALWAYS NULL,[CC] IS IT NECESSARY?
+//		
+//	    // check if price type is ONE_TIME_PREPAID
+//		if (price.getType() == PriceType.ONE_TIME_PREPAID) {
+//		    zeroIt = Boolean.parseBoolean(
+//		        Objects.toString(subscription.getCharacteristic("ignoreYearlyFee"), "false")
+//		    );
+//
+//		    if (zeroIt) {
+//		        logger.info("Ignoring initial yearly fee for price {} based on ignoreYearlyFee", price.getName());
+//		        price.setAmount(0.0); // zero the fee
+//		    }
+//		}
+//
+//		// check if the price is applicable in the given time period (using the applicableFrom attribute)
+//		// FIXME: here we only check that if start isBefore, the the whole period is not considered.
+//		// However, if the end is after, then the second half of the period should be considered.
+//		// In this case, a new TimePeriod should be considered, including only the second half.
+//		// Q: and what if the ignorePeriod is entirely contained (and smaller) in the charge period?
+//		// Need to split in two? Resulting in two items? Not working for flat prices... maybe it's price-dependent behaviour.
+//		// Needs more branistorming.
+//		
+//		if (price.getApplicableFrom() != null && timePeriod.getStartDateTime().isBefore(price.getApplicableFrom())) {
+//			logger.debug("Price {} not applicable for time period {} (applicable from {})", price.getName(), timePeriod,
+//					price.getApplicableFrom());
+//			//return null;
+//			zeroIt = true;
+//		}
+//
+//		// now also check the 'ignorePeriod' property. Resolve it and check if the period is affected.
+//		// FIXME: same considerations as above
+//		SubscriptionTimeHelper sth = new SubscriptionTimeHelper(subscription);
+//		if(price.getIgnorePeriod()!=null) {
+//		    TimePeriod tp = sth.getCustomPeriod(null, price, price.getIgnorePeriod().getValue());
+//			if(tp!=null) {
+//				logger.debug("For this price, ignoring the period {} - {}", tp.getStartDateTime(), tp.getEndDateTime());
+//				if(timePeriod.getStartDateTime().isBefore(tp.getEndDateTime())) {
+//					logger.debug("Ignoring the price entirely as it sarts within the period");
+////					return null;
+//					zeroIt = true;
+//				}
+//			}
+//		}
+//
+//
+//		RevenueItem outRevenueItem;
+//
+//		if (Boolean.TRUE.equals(price.getIsBundle()) && price.getPrices() != null) {
+//			outRevenueItem = this.getBundlePrice(price, timePeriod);
+//		} else {
+//			outRevenueItem = this.getAtomicPrice(price, timePeriod);
+//			if (outRevenueItem == null) {
+//				logger.debug("Price {} not applicable (atomic price is null), skipping item creation.",
+//						price.getName());
+//				return null;
+//			}
+//
+//			if (price.getDiscount() != null) {
+//				List<RevenueItem> discountRevenueItems = this.getDiscountItems(price, timePeriod);
+//				if (discountRevenueItems != null) {
+//					for (RevenueItem di : discountRevenueItems)
+//						outRevenueItem.addRevenueItem(di);
+//				}
+//				/*
+//				 * if (!discountItems.isEmpty()) { if (item.getItems() == null) {
+//				 * item.setItems(new ArrayList<>()); } item.getItems().addAll(discountItems); }
+//				 */
+//			}
+//		}
+//		if(outRevenueItem!=null && zeroIt)
+//			outRevenueItem.zeroAmountsRecursively();
+//		return outRevenueItem;
+//	}
+
 	private RevenueItem compute(Price price, TimePeriod timePeriod) {
-		logger.debug("Computing price item: {}", price.getName());
+	    logger.debug("Computing price item: {}", price.getName());
+	    boolean zeroIt = false;
 
-		// check if the price is to be included
-		if("true".equalsIgnoreCase(price.getIgnore())) {
-			return null;
-		}
+	    planResolver.resolvePrice(price);
 
+	    // check if the price is to be ignored
+	    if ("true".equalsIgnoreCase(price.getIgnore())) {
+	        zeroIt = true;
+	        logger.info("Ignoring price {} based on ignore flag {}", price.getName(), price.getIgnore());
+	    }
+		
 		// check if the price is applicable in the given time period (using the applicableFrom attribute)
 		// FIXME: here we only check that if start isBefore, the the whole period is not considered.
 		// However, if the end is after, then the second half of the period should be considered.
@@ -97,7 +191,7 @@ public class PriceCalculator {
 		// Q: and what if the ignorePeriod is entirely contained (and smaller) in the charge period?
 		// Need to split in two? Resulting in two items? Not working for flat prices... maybe it's price-dependent behaviour.
 		// Needs more branistorming.
-		boolean zeroIt = false;
+		
 		if (price.getApplicableFrom() != null && timePeriod.getStartDateTime().isBefore(price.getApplicableFrom())) {
 			logger.debug("Price {} not applicable for time period {} (applicable from {})", price.getName(), timePeriod,
 					price.getApplicableFrom());
@@ -149,7 +243,6 @@ public class PriceCalculator {
 			outRevenueItem.zeroAmountsRecursively();
 		return outRevenueItem;
 	}
-
 	/**
 	 * Computes the price for a bundle of prices
 	 * @param price the bundle Price object
