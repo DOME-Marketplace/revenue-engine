@@ -45,6 +45,7 @@
         "recurringChargePeriodType": "YEAR",
         "amount": 8000,
         "currency": "EUR",
+		"ignore": "${product.productCharacteristic.ignoreYearlyFee}",
         "discount": {
           "name": "Discount on yearly fee based on previous years sales and referrals",
           "isBundle": true,
