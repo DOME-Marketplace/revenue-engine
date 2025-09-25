@@ -143,7 +143,6 @@
           "discounts": [
             {
               "name": "First 3 charge periods free",
-              "type": "DISCOUNT",
               "applicableReferencePeriod": "FIRST_3_CHARGE_PERIODS",
               "percentage": 100
             }
@@ -169,7 +168,6 @@
 	    "discounts": [
 	      {
 	        "name": "First 3 charge periods free",
-	        "type": "DISCOUNT",
 	        "applicableReferencePeriod": "FIRST_3_CHARGE_PERIODS",
 	        "percentage": 100
 	      }
