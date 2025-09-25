@@ -159,7 +159,9 @@ public class DiscountCalculator {
         if (discount.getApplicableBaseReferencePeriod() != null) {
             if (discount.getApplicableBaseReferencePeriod().getValue().equalsIgnoreCase("PREVIOUS_SUBSCRIPTION_PERIOD")) {
                 tp = sth.getSubscriptionPeriodAt(time);
-            } else {
+            } else if(discount.getApplicableBaseReferencePeriod().getValue().equalsIgnoreCase("FIRST_3_CHARGE_PERIODS")) {
+				tp = sth.getChargePeriodByOffset(time, discount.getParentPrice(), 3);
+            }else {
                 // TODO: recoding this logic
                 tp = null;
             }
@@ -167,6 +169,7 @@ public class DiscountCalculator {
             // TODO: get by parent reference period ?? - discuss if it can be removed
             tp = sth.getSubscriptionPeriodAt(time);
         }
+        
 
         return tp;
     }

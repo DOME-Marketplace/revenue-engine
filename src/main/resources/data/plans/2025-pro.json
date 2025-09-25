@@ -137,17 +137,14 @@
         "recurringChargePeriodType": "MONTH",
         "amount": 150,
         "currency": "EUR",
-        "discount": {
-          "name": "100% discount first 3 charge periods",
-          "isBundle": false,
-          "discounts": [
-            {
-              "name": "First 3 charge periods free",
-              "applicableReferencePeriod": "FIRST_3_CHARGE_PERIODS",
-              "percentage": 100
-            }
-          ]
-        }
+		"discount": {
+		  "name": "100% discount trial charge periods (fee)",
+		  "isBundle": false,
+		  "applicableBaseReferencePeriod": "FIRST_3_CHARGE_PERIODS",
+		  "applicableBase": "bills-no-taxes",
+		  "computationBase": "parent-price",
+		  "percent": 100	     	    
+		}
       },
 	{
 	  "name": "Montly revenue-sharing based on transactions",
@@ -163,15 +160,12 @@
 	  "isBundle": true,
 	  "bundleOp": "CUMULATIVE",
 	  "discount": {
-	    "name": "100% discount first 3 charge periods",
+	    "name": "100% discount trial charge periods (revenue share)",
 	    "isBundle": false,
-	    "discounts": [
-	      {
-	        "name": "First 3 charge periods free",
-	        "applicableReferencePeriod": "FIRST_3_CHARGE_PERIODS",
-	        "percentage": 100
-	      }
-	    ]
+		"applicableBaseReferencePeriod": "FIRST_3_CHARGE_PERIODS",
+		"applicableBase": "bills-no-taxes",
+		"computationBase": "parent-price",
+        "percent": 100	     	    
 	  },
 	  "prices": [
 	    {
