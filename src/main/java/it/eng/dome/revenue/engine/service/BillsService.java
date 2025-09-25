@@ -19,6 +19,7 @@ import it.eng.dome.brokerage.api.ProductApis;
 import it.eng.dome.revenue.engine.invoicing.InvoicingService;
 import it.eng.dome.revenue.engine.mapper.RevenueBillingMapper;
 import it.eng.dome.revenue.engine.model.Plan;
+import it.eng.dome.revenue.engine.model.PlanResolver;
 import it.eng.dome.revenue.engine.model.RevenueBill;
 import it.eng.dome.revenue.engine.model.RevenueItem;
 import it.eng.dome.revenue.engine.model.Subscription;
@@ -105,6 +106,13 @@ public class BillsService implements InitializingBean {
         try {
             Set<RevenueBill> bills = new TreeSet<>(new RevenueBillComparator());
             Subscription subscription = this.subscriptionService.getSubscriptionByProductId(subscriptionId);
+
+            Plan plan = planService.getPlanById(subscription.getPlan().getId());
+
+	        PlanResolver planResolver = new PlanResolver(subscription);
+	        Plan resolvedPlan = planResolver.resolve(plan);
+	        subscription.setPlan(resolvedPlan);
+
             List<RevenueItem> items = this.statementsService.getItemsForSubscription(subscriptionId);
             for(TimePeriod tp: this.statementsService.getBillPeriods(subscriptionId)) {
                 RevenueBill bill = new RevenueBill();
@@ -186,7 +194,10 @@ public class BillsService implements InitializingBean {
 		// NEXT Bill date and Payment Due Date
 		Subscription sub = subscriptionService.getSubscriptionByProductId(sb.getSubscriptionId());
 		Plan plan = planService.getPlanById(sub.getPlan().getId());
-		sub.setPlan(plan);
+		PlanResolver planResolver = new PlanResolver(sub);
+		Plan resolvedPlan = planResolver.resolve(plan);
+		sub.setPlan(resolvedPlan);
+		
 		SubscriptionTimeHelper th = new SubscriptionTimeHelper(sub);
 		
 		OffsetDateTime nextBillDate = th.rollBillPeriod(sb.getBillTime(), plan.getBillCycleSpecification().getBillingPeriodLength());
@@ -369,11 +380,17 @@ public class BillsService implements InitializingBean {
         }
         
         Subscription subscription = subscriptionService.getSubscriptionByProductId(rb.getSubscriptionId());
+        
         if (subscription == null) {
             throw new IllegalStateException("Subscription not found for subscriptionId: " + rb.getSubscriptionId());
         }
         
-        List<AppliedCustomerBillingRate> acbrList = RevenueBillingMapper.toACBRList(rb, subscription);
+		Plan plan = planService.getPlanById(subscription.getPlan().getId());
+		PlanResolver planResolver = new PlanResolver(subscription);
+		Plan resolvedPlan = planResolver.resolve(plan);
+		subscription.setPlan(resolvedPlan);
+        
+		List<AppliedCustomerBillingRate> acbrList = RevenueBillingMapper.toACBRList(rb, subscription);
         if (acbrList == null) {
             throw new IllegalStateException("Failed to map RevenueBill and Subscription to AppliedCustomerBillingRate list");
         }

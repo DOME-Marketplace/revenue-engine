@@ -111,6 +111,10 @@ public class Subscription {
         return null;
     }
     
+	public Map<String, String> getCharacteristics() {
+		return characteristics;
+	}
+    
     public void setCharacteristics(Map<String, String> characteristics) {
 		this.characteristics = characteristics;
 	}

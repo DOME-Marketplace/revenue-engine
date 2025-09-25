@@ -14,6 +14,7 @@ import it.eng.dome.revenue.engine.model.Subscription;
 import it.eng.dome.revenue.engine.utils.TmfConverter;
 import it.eng.dome.tmforum.tmf620.v4.model.Money;
 import it.eng.dome.tmforum.tmf620.v4.model.ProductOfferingPrice;
+import it.eng.dome.tmforum.tmf637.v4.model.Characteristic;
 import it.eng.dome.tmforum.tmf637.v4.model.Product;
 import it.eng.dome.tmforum.tmf637.v4.model.ProductOfferingPriceRef;
 import it.eng.dome.tmforum.tmf637.v4.model.ProductOfferingRef;
@@ -170,13 +171,21 @@ public class RevenueProductMapper {
 		}
 		*/
 		// characteristics
-		if(product.getProductCharacteristic() != null && !product.getProductCharacteristic().isEmpty()) {
-		    Map<String,String> characteristics = new HashMap<>();
-		    for(var pc : product.getProductCharacteristic()) {
-		        characteristics.put(pc.getName(), pc.getValue() != null ? pc.getValue().toString() : null);
+		Map<String,String> characteristics = new HashMap<>();
+		if (product.getProductCharacteristic() != null) {
+		    for (Characteristic ch: product.getProductCharacteristic()) {
+		        String key = ch.getName();
+		        Object val = ch.getValue();
+		        String value;
+		        if (val instanceof Boolean) {
+		            value = ((Boolean) val).toString();
+		        } else {
+		            value = val != null ? val.toString() : null;
+		        }
+		        characteristics.put(key, value);
 		    }
-		    sub.setCharacteristics(characteristics);
 		}
+		sub.setCharacteristics(characteristics);
 
 		return sub;
 	}

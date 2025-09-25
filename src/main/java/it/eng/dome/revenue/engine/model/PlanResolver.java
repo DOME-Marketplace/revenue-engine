@@ -35,7 +35,7 @@ public class PlanResolver {
         return item;
     }
 
-    public Price resolvePrice(Price price) {
+    private Price resolvePrice(Price price) {
         if (price != null) {
             resolveDirectProperties(price);
             if (price.getPrices() != null) {
@@ -99,7 +99,7 @@ public class PlanResolver {
 
     private String resolveToken(String token) {
         // subscription characteristics
-        Pattern p1 = Pattern.compile("subscription.characteristic.([a-zA-Z]+)");
+        Pattern p1 = Pattern.compile("subscription.characteristics.([a-zA-Z]+)");
         Matcher m = p1.matcher(token);
         if (m.matches() && subscription != null) {
             return subscription.getCharacteristics(m.group(1));
@@ -131,11 +131,11 @@ public class PlanResolver {
             }
         }
         
-        Pattern p4 = Pattern.compile("product.productCharacteristic.([a-zA-Z]+)");
-        Matcher mProduct = p4.matcher(token);
-        if (mProduct.matches() && subscription != null) {
-            return subscription.getCharacteristics(mProduct.group(1));
-        }
+//        Pattern p4 = Pattern.compile("product.productCharacteristic.([a-zA-Z]+)");
+//        Matcher mProduct = p4.matcher(token);
+//        if (mProduct.matches() && subscription != null) {
+//            return subscription.getCharacteristics(mProduct.group(1));
+//        }
 
 
 

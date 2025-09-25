@@ -27,8 +27,6 @@ public class PriceCalculator {
 
 	private Subscription subscription;
 	
-	private PlanResolver planResolver;
-	
 	/**
 	 * Retrieves the current subscription
 	 * @return the current Subscription object
@@ -45,7 +43,6 @@ public class PriceCalculator {
 	public void setSubscription(Subscription subscription) {
 		logger.debug("Setting new subscription: {}", subscription != null ? subscription.getId() : "null");
 		this.subscription = subscription;
-		this.planResolver = new PlanResolver(subscription);
 	}
 
 	/**
@@ -175,8 +172,6 @@ public class PriceCalculator {
 	private RevenueItem compute(Price price, TimePeriod timePeriod) {
 	    logger.debug("Computing price item: {}", price.getName());
 	    boolean zeroIt = false;
-
-	    planResolver.resolvePrice(price);
 
 	    // check if the price is to be ignored
 	    if ("true".equalsIgnoreCase(price.getIgnore())) {
