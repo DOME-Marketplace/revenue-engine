@@ -135,66 +135,88 @@
         "type": "RECURRING_POSTPAID",
         "recurringChargePeriodLength": 1,
         "recurringChargePeriodType": "MONTH",
-        "ignorePeriod": "FIRST_3_CHARGE_PERIODS",
         "amount": 150,
-        "currency": "EUR"
-      },
-      {
-        "name": "Montly revenue-sharing based on transactions",
-        "type": "RECURRING_POSTPAID",
-        "recurringChargePeriodLength": 1,
-        "recurringChargePeriodType": "MONTH",
-        "ignorePeriod": "FIRST_3_CHARGE_PERIODS",
-        "applicableBaseReferencePeriod": "LAST_9_CHARGE_PERIODS",
-        "applicableFrom": "2025-01-01T00:00:00Z",
-        "applicableBase": "bills-no-taxes",
-        "computationBaseReferencePeriod": "CURRENT_CHARGE_PERIOD",
-        "computationBase": "bills-no-taxes",
         "currency": "EUR",
-        "isBundle": true,
-	  	  "bundleOp": "CUMULATIVE",
-        "prices": [
-          {
-            "name": "Nothing to be shared with DOME for transactions below 100k",
-            "applicableBaseRange": {
-              "min": 0,
-              "max": 100000
-            },
-            "percent": 0
-          },
-          {
-            "name": "4% revenue share for transactions between 100k and 250k in the last 9 charge periods",
-            "applicableBaseRange": {
-              "min": 100000,
-              "max": 250000
-            },
-            "percent": 4
-          },
-          {
-            "name": "3.5% revenue share for transactions between 250K and 750k in the last 9 charge periods",
-            "applicableBaseRange": {
-              "min": 250000,
-              "max": 750000
-            },
-            "percent": 3.5
-          },
-          {
-            "name": "3% revenue share for transactions between 750K and 1M in the last 9 charge periods",
-            "applicableBaseRange": {
-              "min": 750000,
-              "max": 1000000
-            },
-            "percent": 3
-          },
-          {
-            "name": "2.5% revenue share for transactions over 1M in the last 9 charge periods",
-            "applicableBaseRange": {
-              "min": 1000000
-            },
-            "percent": 2.5
-          }
-        ]
+        "discount": {
+          "name": "100% discount first 3 charge periods",
+          "isBundle": false,
+          "discounts": [
+            {
+              "name": "First 3 charge periods free",
+              "type": "DISCOUNT",
+              "applicableReferencePeriod": "FIRST_3_CHARGE_PERIODS",
+              "percentage": 100
+            }
+          ]
+        }
       },
+	{
+	  "name": "Montly revenue-sharing based on transactions",
+	  "type": "RECURRING_POSTPAID",
+	  "recurringChargePeriodLength": 1,
+	  "recurringChargePeriodType": "MONTH",
+	  "applicableBaseReferencePeriod": "LAST_9_CHARGE_PERIODS",
+	  "applicableFrom": "2025-01-01T00:00:00Z",
+	  "applicableBase": "bills-no-taxes",
+	  "computationBaseReferencePeriod": "CURRENT_CHARGE_PERIOD",
+	  "computationBase": "bills-no-taxes",
+	  "currency": "EUR",
+	  "isBundle": true,
+	  "bundleOp": "CUMULATIVE",
+	  "discount": {
+	    "name": "100% discount first 3 charge periods",
+	    "isBundle": false,
+	    "discounts": [
+	      {
+	        "name": "First 3 charge periods free",
+	        "type": "DISCOUNT",
+	        "applicableReferencePeriod": "FIRST_3_CHARGE_PERIODS",
+	        "percentage": 100
+	      }
+	    ]
+	  },
+	  "prices": [
+	    {
+	      "name": "Nothing to be shared with DOME for transactions below 100k",
+	      "applicableBaseRange": {
+	        "min": 0,
+	        "max": 100000
+	      },
+	      "percent": 0
+	    },
+	    {
+	      "name": "4% revenue share for transactions between 100k and 250k in the last 9 charge periods",
+	      "applicableBaseRange": {
+	        "min": 100000,
+	        "max": 250000
+	      },
+	      "percent": 4
+	    },
+	    {
+	      "name": "3.5% revenue share for transactions between 250K and 750k in the last 9 charge periods",
+	      "applicableBaseRange": {
+	        "min": 250000,
+	        "max": 750000
+	      },
+	      "percent": 3.5
+	    },
+	    {
+	      "name": "3% revenue share for transactions between 750K and 1M in the last 9 charge periods",
+	      "applicableBaseRange": {
+	        "min": 750000,
+	        "max": 1000000
+	      },
+	      "percent": 3
+	    },
+	    {
+	      "name": "2.5% revenue share for transactions over 1M in the last 9 charge periods",
+	      "applicableBaseRange": {
+	        "min": 1000000
+	      },
+	      "percent": 2.5
+	    }
+	  ]
+	},
       {
         "name": "End-of-period yearly fee (for dev purposes only)",        
         "type": "RECURRING_POSTPAID",
