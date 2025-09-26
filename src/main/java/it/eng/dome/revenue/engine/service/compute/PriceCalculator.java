@@ -25,6 +25,9 @@ public class PriceCalculator {
 	@Autowired
 	private MetricsRetriever metricsRetriever;
 
+	@Autowired
+	private DiscountCalculator discountCalculator;
+
 	private Subscription subscription;
 	
 	/**
@@ -209,11 +212,11 @@ public class PriceCalculator {
 			}
 		}
 
-
 		RevenueItem outRevenueItem;
 
 		if (Boolean.TRUE.equals(price.getIsBundle()) && price.getPrices() != null) {
 			outRevenueItem = this.getBundlePrice(price, timePeriod);
+			logger.info("**********************Computed bundle price item: {} with value: {}", outRevenueItem!=null?outRevenueItem.getName():"null", outRevenueItem!=null?outRevenueItem.getValue():"null");
 		} else {
 			outRevenueItem = this.getAtomicPrice(price, timePeriod);
 			if (outRevenueItem == null) {
@@ -222,20 +225,22 @@ public class PriceCalculator {
 				return null;
 			}
 
+			logger.info("**********************Computed atomic price item: {} with value: {}", outRevenueItem.getName(), outRevenueItem.getValue());
+
 			if (price.getDiscount() != null) {
 				List<RevenueItem> discountRevenueItems = this.getDiscountItems(price, timePeriod);
-				if (discountRevenueItems != null) {
-					for (RevenueItem di : discountRevenueItems)
+				if (!discountRevenueItems.isEmpty()) {
+					for (RevenueItem di : discountRevenueItems) {
 						outRevenueItem.addRevenueItem(di);
+						// after adding each discount item, update the overall value
+						outRevenueItem.getOverallValue();
+						logger.info("**********************Added discount item: {} with value: {}. Updated overall value: {}", di.getName(), di.getValue(), outRevenueItem.getOverallValue());
+					}
 				}
-				/*
-				 * if (!discountItems.isEmpty()) { if (item.getItems() == null) {
-				 * item.setItems(new ArrayList<>()); } item.getItems().addAll(discountItems); }
-				 */
 			}
 		}
-		if(outRevenueItem!=null && zeroIt)
-			outRevenueItem.zeroAmountsRecursively();
+//		if(outRevenueItem!=null && zeroIt)
+//			outRevenueItem.zeroAmountsRecursively();
 		return outRevenueItem;
 	}
 	/**
@@ -284,8 +289,7 @@ public class PriceCalculator {
 
 		Double amount = price.getAmount(); // Assuming amount is the base amount for the discount
 		// FIXME: why are we passing the metricsRetriever? It's stateless and also Autowired within DiscountCalculator
-		DiscountCalculator discountCalculator = new DiscountCalculator(subscription, metricsRetriever);
-		RevenueItem discountItem = discountCalculator.compute(price.getDiscount(), timePeriod, amount);
+		RevenueItem discountItem = discountCalculator.compute(price.getDiscount(), subscription, timePeriod, amount);
 		if (discountItem != null) {
 			discountItems.add(discountItem);
 		}
