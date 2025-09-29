@@ -21,8 +21,14 @@ public class DiscountCalculator {
 
     private final MetricsRetriever metricsRetriever;
 
+    private Subscription subscription;
+
     public DiscountCalculator(MetricsRetriever metricsRetriever) {
         this.metricsRetriever = metricsRetriever;
+    }
+
+    public void setSubscription(Subscription subscription) {
+        this.subscription = subscription;
     }
 
 
@@ -30,24 +36,27 @@ public class DiscountCalculator {
      * Computes the discount item based on the provided discount, time period, and amount.
      * 
      * @param discount the discount to apply
-     * @param subscription the subscription to which the discount is applied
      * @param timePeriod the time period for which the discount is applicable
      * @param amount the amount to which the discount will be applied
      * @return a RevenueItem representing the computed discount, or null if not applicable
      */
-    public RevenueItem compute(Discount discount, Subscription subscription, TimePeriod timePeriod, Double amount) {
+    public RevenueItem compute(Discount discount, TimePeriod timePeriod, Double amount) {
+        if (this.subscription == null) {
+            throw new IllegalStateException("Subscription must be set before computing discounts");
+        }
+
         logger.debug("Computing discount item: {}", discount.getName());
 
-		// check if the price is to be included
-		if("true".equalsIgnoreCase(discount.getIgnore())) {
-			return null;
-		}
+        // check if the price is to be included
+        if ("true".equalsIgnoreCase(discount.getIgnore())) {
+            return null;
+        }
 
         if (Boolean.TRUE.equals(discount.getIsBundle()) && discount.getDiscounts() != null) {
-            RevenueItem bundleResult = getBundleDiscount(discount, subscription, timePeriod, amount);
+            RevenueItem bundleResult = getBundleDiscount(discount, timePeriod, amount);
             return bundleResult;
         } else {
-            RevenueItem atomicDiscount = getAtomicDiscount(discount, subscription, timePeriod, amount);
+            RevenueItem atomicDiscount = getAtomicDiscount(discount, timePeriod, amount);
             if (atomicDiscount == null) {
                 logger.debug("Discount {} not applicable (atomic discount is null), skipping item creation.", discount.getName());
                 return null;
@@ -64,19 +73,19 @@ public class DiscountCalculator {
      * @param amount the amount to which the discount will be applied
      * @return a RevenueItem representing the computed bundle discount
      */
-    private RevenueItem getBundleDiscount(Discount discount, Subscription subscription,TimePeriod timePeriod, Double amount) {
+    private RevenueItem getBundleDiscount(Discount discount, TimePeriod timePeriod, Double amount) {
         logger.debug("Processing bundle discount with operation: {}", discount.getBundleOp());
         RevenueItem bundleResult;
 
         switch (discount.getBundleOp()) {
             case CUMULATIVE:
-                bundleResult = getCumulativeDiscount(discount, subscription, timePeriod, amount);
+                bundleResult = getCumulativeDiscount(discount, timePeriod, amount);
                 break;
             case ALTERNATIVE_HIGHER:
-                bundleResult = getHigherDiscount(discount, subscription, timePeriod, amount);
+                bundleResult = getHigherDiscount(discount, timePeriod, amount);
                 break;
             case ALTERNATIVE_LOWER:
-                bundleResult = getLowerDiscount(discount, subscription, timePeriod, amount);
+                bundleResult = getLowerDiscount(discount, timePeriod, amount);
                 break;
             default:
                 throw new IllegalArgumentException("Unknown bundle operation: " + discount.getBundleOp());
@@ -89,15 +98,15 @@ public class DiscountCalculator {
      * Computes an atomic discount based on the provided discount, time period, and amount.
      * 
      * @param discount the discount to apply
-     * @param subscription the subscription to which the discount is applied
      * @param timePeriod the time period for which the discount is applicable
      * @param amount the amount to which the discount will be applied
      * @return a RevenueItem representing the computed atomic discount, or null if not applicable
      */
-    private RevenueItem getAtomicDiscount(Discount discount, Subscription subscription, TimePeriod timePeriod, Double amount) {
+    private RevenueItem getAtomicDiscount(Discount discount, TimePeriod timePeriod, Double amount) {
         logger.debug("Computing atomic discount for: {}", discount.getName());
 
-        TimePeriod tp = getTimePeriod(discount, subscription, timePeriod.getStartDateTime().plusSeconds(1));
+        SubscriptionTimeHelper sth = new SubscriptionTimeHelper(this.subscription);
+        TimePeriod tp = getTimePeriod(discount, timePeriod.getStartDateTime().plusSeconds(1), sth);
 
         if (tp == null) {
             logger.debug("Discount {} not applicable: no valid time period found", discount.getName());
@@ -105,82 +114,64 @@ public class DiscountCalculator {
         }
 
         // periods must match exactly else skip the discount
-        if(!tp.getStartDateTime().equals(timePeriod.getStartDateTime()) || !tp.getEndDateTime().equals(timePeriod.getEndDateTime())) {
+        if (!tp.getStartDateTime().equals(timePeriod.getStartDateTime()) || !tp.getEndDateTime().equals(timePeriod.getEndDateTime())) {
             logger.debug("Time period mismatch for price {}: REF {}, DISCOUNT TP {}. Skipping this price.", discount.getName(), timePeriod, tp);
             return null;
         }
 
-        String buyerId = subscription.getBuyerId();
+        String buyerId = this.subscription.getBuyerId();
         Double amountValue = this.computeDiscount(discount, buyerId, tp, amount);
 
-        if (amountValue == null) {
+        if (amountValue == null || amountValue == 0.0) {
             logger.debug("Atomic discount for {} is null, returning null", discount.getName());
             return null;
         }
 
-        //FIXME: currency hardcoded
         return new RevenueItem(discount.getName(), -amountValue, "EUR");
     }
 
     /**
      * Retrieves the time period applicable for the discount based on its reference period.
-     * 
-     * @param discount the discount definition
-     * @param time the offset date time to base the computation on
-     * @return the TimePeriod applicable for the discount
-     */
-    /**
-     * Retrieves the time period applicable for the discount based on its reference period.
      *
      * @param discount the discount definition
      * @param time the offset date time to base the computation on
+     * @param sth the SubscriptionTimeHelper instance
      * @return the TimePeriod applicable for the discount, or null if not applicable
      */
-    private TimePeriod getTimePeriod(Discount discount, Subscription subscription, OffsetDateTime time) {
+    private TimePeriod getTimePeriod(Discount discount, OffsetDateTime time, SubscriptionTimeHelper sth) {
         if (discount == null) {
             logger.error("Discount is null, cannot determine time period");
             return null;
         }
 
-        SubscriptionTimeHelper sth = new SubscriptionTimeHelper(subscription);
         TimePeriod tp = null;
 
         if (discount.getApplicableBaseReferencePeriod() != null) {
             String ref = discount.getApplicableBaseReferencePeriod().getValue();
 
-            if ("PREVIOUS_SUBSCRIPTION_PERIOD".equalsIgnoreCase(ref)) {
-                tp = sth.getSubscriptionPeriodAt(time);
+            //TODO: cover all cases, if needed
+            switch (ref.toUpperCase()) {
+                case "PREVIOUS_SUBSCRIPTION_PERIOD":
+                    tp = sth.getPreviousSubscriptionPeriod(time);
+                    break;
 
-            } else if ("FIRST_3_CHARGE_PERIODS".equalsIgnoreCase(ref)) {
-                OffsetDateTime start = subscription.getStartDate();
-                OffsetDateTime endThree = start.plusMonths(3);
-
-                // Creo un periodo "fittizio" che rappresenta i primi 3 mesi
-                TimePeriod firstThreeMonths = new TimePeriod();
-                firstThreeMonths.setStartDateTime(start);
-                firstThreeMonths.setEndDateTime(endThree);
-
-                TimePeriod firstChargePeriod = sth.getChargePeriodAt(time, discount.getParentPrice());
-
-                // Verifico che il tempo richiesto ricada dentro i primi 3 mesi
-                if (!time.isBefore(start) && !time.isAfter(endThree)) {
-                    tp = firstChargePeriod;
-                } else {
-                    logger.debug(
-                            "Time '{}' non ricade nei primi 3 mesi [{} - {}], returning null",
-                            time, start, endThree
-                    );
-                    return null;
-                }
-
-            } else {
-                // Caso non gestito
-                logger.warn("Unknown ApplicableBaseReferencePeriod '{}', returning null", ref);
-                return null;
+                default:
+                    TimePeriod custom = sth.getCustomPeriod(time, discount.getParentPrice(), ref);
+                    if (custom != null
+                            && !time.isBefore(custom.getStartDateTime())
+                            && !time.isAfter(custom.getEndDateTime())) {
+                        tp = sth.getChargePeriodAt(time, discount.getParentPrice());
+                    } else {
+                        logger.debug("Time '{}' non ricade nel periodo custom '{}': [{} - {}], returning null",
+                                time, ref,
+                                custom != null ? custom.getStartDateTime() : "null",
+                                custom != null ? custom.getEndDateTime() : "null");
+                        tp = null;
+                    }
+                    break;
             }
 
         } else {
-            // Default: periodo di subscription corrente
             tp = sth.getSubscriptionPeriodAt(time);
         }
 
@@ -246,6 +237,7 @@ public class DiscountCalculator {
         } else {
             // TODO: discuss about this else
             logger.warn("Computation not exists!");
+            return null;
         }
         return null;
     }
@@ -282,7 +274,7 @@ public class DiscountCalculator {
      * @param amount the base amount
      * @return a RevenueItem aggregating all applicable discounts, or null if none apply
      */
-    private RevenueItem getCumulativeDiscount(Discount bundleDiscount, Subscription subscription, TimePeriod timePeriod, Double amount) {
+    private RevenueItem getCumulativeDiscount(Discount bundleDiscount, TimePeriod timePeriod, Double amount) {
         List<Discount> childDiscounts = bundleDiscount.getDiscounts();
         logger.debug("Computing cumulative discount from {} items", childDiscounts.size());
 
@@ -290,7 +282,7 @@ public class DiscountCalculator {
         cumulativeItem.setItems(new ArrayList<>());
 
         for (Discount d : childDiscounts) {
-            RevenueItem current = this.compute(d, subscription, timePeriod, amount);
+            RevenueItem current = this.compute(d, timePeriod, amount);
             if (current != null) {
                 cumulativeItem.getItems().add(current);
             }
@@ -311,14 +303,14 @@ public class DiscountCalculator {
      * @param amount the base amount
      * @return a RevenueItem wrapping the best discount, or null if none apply
      */
-    private RevenueItem getHigherDiscount(Discount bundleDiscount, Subscription subscription, TimePeriod timePeriod, Double amount) {
+    private RevenueItem getHigherDiscount(Discount bundleDiscount, TimePeriod timePeriod, Double amount) {
         List<Discount> childDiscounts = bundleDiscount.getDiscounts();
         logger.debug("Finding higher discount from {} items", childDiscounts.size());
 
         RevenueItem bestItem = null;
 
         for (Discount d : childDiscounts) {
-            RevenueItem current = this.compute(d, subscription, timePeriod, amount);
+            RevenueItem current = this.compute(d, timePeriod, amount);
             if (current == null) continue;
 
             if (bestItem == null || current.getOverallValue() < bestItem.getOverallValue()) {
@@ -344,14 +336,14 @@ public class DiscountCalculator {
      * @param amount the base amount
      * @return a RevenueItem wrapping the worst discount, or null if none apply
      */
-    private RevenueItem getLowerDiscount(Discount bundleDiscount, Subscription subscription, TimePeriod timePeriod, Double amount) {
+    private RevenueItem getLowerDiscount(Discount bundleDiscount, TimePeriod timePeriod, Double amount) {
         List<Discount> childDiscounts = bundleDiscount.getDiscounts();
         logger.debug("Finding lower discount from {} items", childDiscounts.size());
 
         RevenueItem bestItem = null;
 
         for (Discount d : childDiscounts) {
-            RevenueItem current = compute(d, subscription, timePeriod, amount);
+            RevenueItem current = compute(d, timePeriod, amount);
             if (current == null) continue;
 
             if (bestItem == null || current.getOverallValue() > bestItem.getOverallValue()) {

@@ -9,7 +9,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import it.eng.dome.revenue.engine.model.PlanResolver;
 import it.eng.dome.revenue.engine.model.Price;
 import it.eng.dome.revenue.engine.model.RevenueItem;
 import it.eng.dome.revenue.engine.model.RevenueStatement;
@@ -127,11 +126,13 @@ public class PriceCalculator {
 			logger.info("**********************Computed bundle price item: {} with value: {}", outRevenueItem!=null?outRevenueItem.getName():"null", outRevenueItem!=null?outRevenueItem.getValue():"null");
 		} else {
 			outRevenueItem = this.getAtomicPrice(price, timePeriod);
+
 			// FIXME: this is a trick to return a zero-valued item instead of null, to allow discounts on flat prices
 			if (outRevenueItem == null){
-			    outRevenueItem = new RevenueItem(price.getName(), 0.0, price.getCurrency());
-			}
+					outRevenueItem = new RevenueItem(price.getName(), 0.0, price.getCurrency());
 
+			}
+			
 			logger.info("**********************Computed atomic price item: {} with value: {}", outRevenueItem.getName(), outRevenueItem.getValue());
 
 			if (price.getDiscount() != null) {
@@ -193,8 +194,8 @@ public class PriceCalculator {
 		List<RevenueItem> discountItems = new ArrayList<>();
 
 		Double amount = price.getAmount(); // Assuming amount is the base amount for the discount
-		// FIXME: why are we passing the metricsRetriever? It's stateless and also Autowired within DiscountCalculator
-		RevenueItem discountItem = discountCalculator.compute(price.getDiscount(), subscription, timePeriod, amount);
+		discountCalculator.setSubscription(subscription);
+		RevenueItem discountItem = discountCalculator.compute(price.getDiscount(), timePeriod, amount);
 		if (discountItem != null) {
 			discountItems.add(discountItem);
 		}
