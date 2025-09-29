@@ -4,6 +4,7 @@ import java.util.List;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 
+import it.eng.dome.revenue.engine.utils.IdUtils;
 import it.eng.dome.tmforum.tmf678.v4.model.TimePeriod;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
@@ -170,6 +171,10 @@ public class Plan {
 
 	public void setBillCycleSpecification(BillCycleSpecification billCycle) {
 		this.billCycleSpecification = billCycle;
+	}
+
+	public String generateId(String offeringId, String priceId) {
+		return IdUtils.pack("plan", offeringId, priceId);
 	}
 
 	@Override

@@ -114,8 +114,6 @@ public class RevenueBillingMapper {
 	        + (subscription != null ? subscription.getName() : "") 
 	        + " for period " + revenueBill.getPeriod().getStartDateTime() + " - " + revenueBill.getPeriod().getEndDateTime());
 	    acbr.setDate(revenueBill.getBillTime());
-		// FIXME: can we assume that it is false at start?
-		// A: Yes, but should be set to true when persisting
 	    acbr.setIsBilled(false); 
 	    acbr.setType(item.getType());
 	    acbr.setPeriodCoverage(revenueBill.getPeriod());

@@ -8,6 +8,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
 
+import it.eng.dome.revenue.engine.utils.IdUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.InitializingBean;
@@ -83,9 +84,9 @@ public class BillsService implements InitializingBean {
 	*/
     public RevenueBill getRevenueBillById(String billId) throws Exception {
     	logger.info("Fetch bill with ID {}", billId);
-        // FIXME: temporary... until we have proper persistence
-        // extract the subscription id
-        String subscriptionId = "urn:ngsi-ld:product:"+billId.substring(24, 24+36);
+
+        String[] parts = IdUtils.unpack(billId, "revenuebill");
+        String subscriptionId = parts[0];
 
         // iterate over bills for that subscription, until found
         for(RevenueBill bill: this.getSubscriptionBills(subscriptionId)) {

@@ -159,8 +159,7 @@ public class RevenueProductMapper {
 
 		// finally the plan
 		Plan plan = new Plan();
-		// FIXME: use a clever packing of ids
-		plan.setId("urn:ngsi-ld:plan:"+offeringId+productOfferingPriceId);
+		plan.setId(plan.generateId(offeringId, productOfferingPriceId));
 		sub.setPlan(plan);
 
 		/*

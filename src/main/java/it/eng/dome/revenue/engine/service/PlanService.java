@@ -9,6 +9,7 @@ import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import it.eng.dome.revenue.engine.utils.IdUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.InitializingBean;
@@ -99,12 +100,9 @@ public class PlanService implements InitializingBean{
      * Retrieves a plan by its ID.
      */
     public Plan getPlanById(String planId) {
-
-        // FIXME: make this unpack more robust.
-        int offeringStart = planId.indexOf("urn:ngsi-ld:product-offering");
-        int priceStart = planId.indexOf("urn:ngsi-ld:product-offering-price");
-        String offeringId = planId.substring(offeringStart, priceStart);
-        String offeringPriceId = planId.substring(priceStart);
+        String[] parts = IdUtils.unpack(planId, "plan");
+        String offeringId = parts[0];
+        String offeringPriceId = parts[1];
         
         return this.findPlan(offeringId, offeringPriceId);
     }
@@ -231,7 +229,7 @@ public class PlanService implements InitializingBean{
     }
 
     private Plan overwritingPlanByProductOffering(Plan plan, ProductOffering po, ProductOfferingPrice pop) {
-    	plan.setId("urn:ngsi-ld:plan:"+po.getId()+pop.getId());
+    	plan.setId(plan.generateId(po.getId(), pop.getId()));
         plan.setLifecycleStatus(po.getLifecycleStatus());
         plan.setDescription(po.getDescription());
         
