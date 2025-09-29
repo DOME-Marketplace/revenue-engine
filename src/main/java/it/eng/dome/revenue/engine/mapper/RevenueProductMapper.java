@@ -172,8 +172,9 @@ public class RevenueProductMapper {
 		*/
 		// characteristics
 		Map<String,String> characteristics = new HashMap<>();
-		if (product.getProductCharacteristic() != null) {
-		    for (Characteristic ch: product.getProductCharacteristic()) {
+		List<Characteristic> productCharacteristic = product.getProductCharacteristic();
+		if (productCharacteristic != null) {
+		    for (Characteristic ch: productCharacteristic) {
 		        String key = ch.getName();
 		        Object val = ch.getValue();
 		        String value;

@@ -6,7 +6,7 @@ import java.util.List;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
 
 import it.eng.dome.revenue.engine.model.Discount;
 import it.eng.dome.revenue.engine.model.RevenueItem;
@@ -14,7 +14,6 @@ import it.eng.dome.revenue.engine.model.Subscription;
 import it.eng.dome.revenue.engine.model.SubscriptionTimeHelper;
 import it.eng.dome.revenue.engine.service.MetricsRetriever;
 import it.eng.dome.tmforum.tmf678.v4.model.TimePeriod;
-import org.springframework.stereotype.Service;
 
 @Service
 public class DiscountCalculator {
@@ -114,8 +113,8 @@ public class DiscountCalculator {
         String buyerId = subscription.getBuyerId();
         Double amountValue = this.computeDiscount(discount, buyerId, tp, amount);
 
-        if (amountValue == null || amountValue == 0.0) {
-            logger.debug("Atomic discount for {} is null or zero, returning null", discount.getName());
+        if (amountValue == null) {
+            logger.debug("Atomic discount for {} is null, returning null", discount.getName());
             return null;
         }
 

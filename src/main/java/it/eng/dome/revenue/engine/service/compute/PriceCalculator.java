@@ -127,10 +127,9 @@ public class PriceCalculator {
 			logger.info("**********************Computed bundle price item: {} with value: {}", outRevenueItem!=null?outRevenueItem.getName():"null", outRevenueItem!=null?outRevenueItem.getValue():"null");
 		} else {
 			outRevenueItem = this.getAtomicPrice(price, timePeriod);
-			if (outRevenueItem == null) {
-				logger.debug("Price {} not applicable (atomic price is null), skipping item creation.",
-						price.getName());
-				return null;
+			// FIXME: this is a trick to return a zero-valued item instead of null, to allow discounts on flat prices
+			if (outRevenueItem == null){
+			    outRevenueItem = new RevenueItem(price.getName(), 0.0, price.getCurrency());
 			}
 
 			logger.info("**********************Computed atomic price item: {} with value: {}", outRevenueItem.getName(), outRevenueItem.getValue());
@@ -221,7 +220,7 @@ public class PriceCalculator {
 		String buyerId = subscription.getBuyerId();
 		Double amountValue = this.computePrice(price, buyerId, timePeriod);
 
-		if (amountValue == null || amountValue == 0.0) {
+		if (amountValue == null) {
 			logger.debug("Atomic price for {} is null or zero, returning null", price.getName());
 			return null;
 		}
