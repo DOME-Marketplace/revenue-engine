@@ -105,7 +105,7 @@ public class RevenueProductMapper {
 
         ProductRef ref = new ProductRef();
         ref.setId(subscription.getId());
-        ref.setHref(subscription.getId()); //TODO: change this with href when sub will contains href
+        ref.setHref(subscription.getHref());
         ref.setName(subscription.getName());
       
         return ref;
@@ -123,6 +123,7 @@ public class RevenueProductMapper {
 		
 		// general metadata
 		sub.setId(product.getId());
+		sub.setHref(product.getHref());
 		sub.setName(product.getName());
 		sub.setStartDate(product.getStartDate());
 		ProductStatusType status = product.getStatus();
