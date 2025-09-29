@@ -6,10 +6,7 @@ import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
+import org.springframework.http.*;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
@@ -59,8 +56,11 @@ public class InvoicingService {
      * Calls the invoicing service endpoint for applying taxes.
      */
     private String billApplyTaxes(String bill) {
-		// TODO: check this whole method more carefully
-    	
+        if (bill == null || bill.isBlank()) {
+            logger.warn("Cannot apply taxes: bill payload is null or empty");
+            return null;
+        }
+
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
         HttpEntity<String> request = new HttpEntity<>(bill, headers);
@@ -74,12 +74,15 @@ public class InvoicingService {
                     String.class
             );
 
-            if (response != null && response.getBody() != null) {
-                logger.debug("Headers: " + response.getHeaders().toString());
-                logger.debug("Body:\n" + response.getBody().toString());
-                return response.getBody().toString();
+            HttpStatus status = HttpStatus.valueOf(response.getStatusCode().value());
+            String body = response.getBody();
+
+            if (status.is2xxSuccessful() && body != null) {
+                logger.debug("Response headers: {}", response.getHeaders());
+                logger.debug("Response body:\n{}", body);
+                return body;
             } else {
-                logger.warn("Response was null or empty");
+                logger.warn("Unexpected response from invoicing service. Status: {}, Body: {}", status, body);
                 return null;
             }
         } catch (Exception e) {
