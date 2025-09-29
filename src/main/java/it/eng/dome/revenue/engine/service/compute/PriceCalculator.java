@@ -120,17 +120,18 @@ public class PriceCalculator {
 		}
 
 		RevenueItem outRevenueItem;
-
+		boolean hasDiscountApplied = false;
 		if (Boolean.TRUE.equals(price.getIsBundle()) && price.getPrices() != null) {
 			outRevenueItem = this.getBundlePrice(price, timePeriod);
 			logger.info("**********************Computed bundle price item: {} with value: {}", outRevenueItem!=null?outRevenueItem.getName():"null", outRevenueItem!=null?outRevenueItem.getValue():"null");
 		} else {
 			outRevenueItem = this.getAtomicPrice(price, timePeriod);
 
-			// FIXME: this is a trick to return a zero-valued item instead of null, to allow discounts on flat prices
 			if (outRevenueItem == null){
+				if(hasDiscountApplied)
 					outRevenueItem = new RevenueItem(price.getName(), 0.0, price.getCurrency());
-
+				else
+					return null;
 			}
 			
 			logger.info("**********************Computed atomic price item: {} with value: {}", outRevenueItem.getName(), outRevenueItem.getValue());
@@ -140,11 +141,14 @@ public class PriceCalculator {
 				if (!discountRevenueItems.isEmpty()) {
 					for (RevenueItem di : discountRevenueItems) {
 						outRevenueItem.addRevenueItem(di);
+						hasDiscountApplied=true;
+
 						logger.info("**********************Added discount item: {} with value: {}. Updated overall value: {}", di.getName(), di.getValue(), outRevenueItem.getOverallValue());
 					}
 				}
 			}
 		}
+
 		if(outRevenueItem!=null && zeroIt)
 			outRevenueItem.zeroAmountsRecursively();
 		return outRevenueItem;
