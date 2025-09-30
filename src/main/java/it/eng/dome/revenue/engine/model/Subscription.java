@@ -122,7 +122,6 @@ public class Subscription {
         return null; // or throw an exception if a buyer is mandatory
     }
 
-    // TODO: implement this. Requires including product characteristics in the subscription.
     public String getCharacteristics(String key) {
         if(characteristics != null) {
             return characteristics.get(key);

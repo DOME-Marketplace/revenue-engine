@@ -44,7 +44,7 @@ public class SubscriptionService implements InitializingBean {
     @Override
     public void afterPropertiesSet() throws Exception {
         this.productApis = new ProductApis(tmfApiFactory.getTMF637ProductInventoryApiClient());
-        logger.info("SubscriptionService initialized with orgApi {}", this.productApis);
+        logger.info("SubscriptionService initialized with ProductApis {}", this.productApis);
     }
 	/*
 	 * Retrieves a subscription by its product ID.
