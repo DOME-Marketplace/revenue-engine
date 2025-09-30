@@ -40,9 +40,7 @@ public class Discount extends PlanItem{
 	}
 
 	public List<PlanItem> getChildItems() {
-		List<PlanItem> out = new ArrayList<>();
-		out.addAll(this.getDiscounts());
-		return out;
+		return this.getBundleItems();
 	}
 
 	public List<PlanItem> getBundleItems() {
