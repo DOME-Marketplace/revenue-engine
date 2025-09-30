@@ -1,9 +1,11 @@
 package it.eng.dome.revenue.engine.service.compute2;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 import it.eng.dome.revenue.engine.model.PlanItem;
+import it.eng.dome.revenue.engine.model.Price;
 import it.eng.dome.revenue.engine.model.RevenueItem;
 import it.eng.dome.revenue.engine.model.Subscription;
 import it.eng.dome.tmforum.tmf678.v4.model.TimePeriod;
@@ -37,6 +39,26 @@ public class AlternativeCalculator extends AbstractCalculator {
 		}
 		RevenueItem wrapper = new RevenueItem(item.getName(), item.getCurrency());
 		wrapper.addRevenueItem(selectedItem);
+
+		// FIXME: what if the alternative bundle is a price? It might also have a Discount which needs to be included
+		// Quick and dirty workaround below
+		if(this.item instanceof Price) {
+			Price p = (Price)this.item;
+			if(p.getDiscount()!=null) {
+				Map<String, Double> discountContext = new HashMap<>();
+				discountContext.put("parent-price", selectedItem.getOverallValue());
+				Calculator discountCalculator = CalculatorFactory.getCalculatorFor(this.getSubscription(), p.getDiscount());
+				RevenueItem discountRevenueItem = discountCalculator.compute(timePeriod, discountContext);
+				if(discountRevenueItem!=null) {
+					wrapper.addRevenueItem(discountRevenueItem);
+				}
+			}
+		}
+
+		if (wrapper.getItems().isEmpty()) {
+			return null;
+		}
+
 		return wrapper;
 	}
 
