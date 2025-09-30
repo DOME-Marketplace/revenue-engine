@@ -136,18 +136,23 @@ public class Price extends PlanItem {
 
 	@JsonIgnore
 	public List<PlanItem> getBundleItems() {
-		List<PlanItem> out = new ArrayList<>();
-		out.addAll(this.getPrices());
-		return out;
+	    List<PlanItem> out = new ArrayList<>();
+	    if (this.getPrices() != null) {
+	        out.addAll(this.getPrices());
+	    }
+	    return out;
 	}
+
 
 	@JsonIgnore
 	public List<PlanItem> getChildItems() {
-		List<PlanItem> out = this.getBundleItems();
-		if(this.getDiscount()!=null)
-			out.add(this.getDiscount());
-		return out;
+	    List<PlanItem> out = new ArrayList<>(this.getBundleItems());
+	    if (this.getDiscount() != null) {
+	        out.add(this.getDiscount());
+	    }
+	    return out;
 	}
+
 
 	@JsonIgnore
 	public Price getReferencePrice() {
