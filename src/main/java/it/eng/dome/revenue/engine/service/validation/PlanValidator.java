@@ -1,5 +1,6 @@
 package it.eng.dome.revenue.engine.service.validation;
 
+import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -10,6 +11,8 @@ import it.eng.dome.revenue.engine.model.Plan;
 import it.eng.dome.revenue.engine.model.PlanItem;
 import it.eng.dome.revenue.engine.model.Price;
 import it.eng.dome.revenue.engine.model.RecurringPeriod;
+
+//TODO: check other possible validations
 
 public class PlanValidator {
 
@@ -31,15 +34,19 @@ public class PlanValidator {
 
         return issues;
     }
-
+    
     private List<PlanValidationIssue> validateCommonProperties(Plan plan) {
         List<PlanValidationIssue> issues = new ArrayList<>();
         if (plan.getName() == null || plan.getName().isEmpty())
-            issues.add(new PlanValidationIssue("the plan must have a name", PlanValidationIssueSeverity.ERROR));
+            issues.add(new PlanValidationIssue("the plan must have a name", PlanValidationIssueSeverity.WARNING));
         if (plan.getDescription() == null || plan.getDescription().isEmpty())
-            issues.add(new PlanValidationIssue("the plan must include a description", PlanValidationIssueSeverity.ERROR));
+            issues.add(new PlanValidationIssue("the plan must include a description", PlanValidationIssueSeverity.WARNING));
+        if (plan.getValidFor() == null || plan.getValidFor().getStartDateTime().isAfter(plan.getValidFor().getEndDateTime()))
+			issues.add(new PlanValidationIssue("the plan must include a validFor period with startDateTime before endDateTime", PlanValidationIssueSeverity.ERROR));
         if (plan.getLifecycleStatus() == null || plan.getLifecycleStatus().isEmpty())
             issues.add(new PlanValidationIssue("the plan must include a lifecycle status", PlanValidationIssueSeverity.ERROR));
+        if(plan.getContractDurationLength() != null && plan.getContractDurationLength() < 0)
+			issues.add(new PlanValidationIssue("contractDurationLength must be >= 0", PlanValidationIssueSeverity.WARNING));
         return issues;
     }
 
@@ -60,6 +67,8 @@ public class PlanValidator {
             issues.add(new PlanValidationIssue("billingDateShift must be >= 0", PlanValidationIssueSeverity.WARNING));
         if (plan.getBillCycleSpecification().getPaymentDueDateOffset() != null && plan.getBillCycleSpecification().getPaymentDueDateOffset() < 0)
             issues.add(new PlanValidationIssue("paymentDueDateOffset must be >= 0", PlanValidationIssueSeverity.WARNING));
+        if(plan.getBillCycleSpecification().getBillingPeriodLength() != null && plan.getBillCycleSpecification().getBillingPeriodLength() < 0)
+			issues.add(new PlanValidationIssue("billingPeriodLength must be >= 0", PlanValidationIssueSeverity.WARNING));
         return issues;
     }
 
