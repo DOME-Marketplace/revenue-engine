@@ -263,7 +263,7 @@ public abstract class PlanItem {
 	public abstract List<PlanItem> getChildItems();
 
 	/**
-	 * The closest ancestor price.
+	 * The closest ancestor reference price.
 	 * @return
 	 */
 	public abstract Price getReferencePrice();

@@ -29,7 +29,6 @@ public class Subscription {
     private Map<String,String> characteristics;
     private Product product;
 
-
     @JsonProperty("relatedParty") 
     private List<RelatedParty> relatedParties; 
 
@@ -102,7 +101,17 @@ public class Subscription {
     }
 
     @JsonIgnore
+    @Deprecated
+    /**
+     * @deprecated: Use getSubscriberId() instead.
+     * @return
+     */
     public String getBuyerId() {
+        return this.getSubscriberId();
+    }
+
+    @JsonIgnore
+    public String getSubscriberId() {
         if (relatedParties != null && !relatedParties.isEmpty()) {
             for (RelatedParty party : relatedParties) {
                 if ("Buyer".equalsIgnoreCase(party.getRole())) {

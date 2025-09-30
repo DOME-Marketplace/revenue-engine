@@ -25,6 +25,8 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import it.eng.dome.brokerage.api.ProductOfferingApis;
 import it.eng.dome.brokerage.api.ProductOfferingPriceApis;
 import it.eng.dome.revenue.engine.model.Plan;
+import it.eng.dome.revenue.engine.model.PlanResolver;
+import it.eng.dome.revenue.engine.model.Subscription;
 import it.eng.dome.revenue.engine.service.validation.PlanValidationReport;
 import it.eng.dome.revenue.engine.service.validation.PlanValidator;
 import it.eng.dome.revenue.engine.tmf.TmfApiFactory;
@@ -105,6 +107,16 @@ public class PlanService implements InitializingBean{
         String offeringPriceId = parts[1];
         
         return this.findPlan(offeringId, offeringPriceId);
+    }
+
+    public Plan getResolvedPlanById(String planId, Subscription sub) {
+        PlanResolver planResolver = new PlanResolver(sub);
+        Plan plan = this.getPlanById(planId);
+        if(plan!=null) {
+            return planResolver.resolve(plan);
+        } else {
+            return null;
+        }        
     }
 
     /*

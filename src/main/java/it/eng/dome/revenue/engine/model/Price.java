@@ -140,7 +140,8 @@ public class Price extends PlanItem {
 
 	public List<PlanItem> getChildItems() {
 		List<PlanItem> out = this.getBundleItems();
-		out.add(this.getDiscount());
+		if(this.getDiscount()!=null)
+			out.add(this.getDiscount());
 		return out;
 	}
 

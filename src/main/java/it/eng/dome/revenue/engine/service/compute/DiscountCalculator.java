@@ -119,7 +119,7 @@ public class DiscountCalculator {
             return null;
         }
 
-        String buyerId = this.subscription.getBuyerId();
+        String buyerId = this.subscription.getSubscriberId();
         Double amountValue = this.computeDiscount(discount, buyerId, tp, amount);
 
         if (amountValue == null || amountValue == 0.0) {
