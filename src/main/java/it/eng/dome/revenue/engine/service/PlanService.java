@@ -259,6 +259,11 @@ public class PlanService implements InitializingBean{
         return new PlanValidator().validate(plan);
     }
     
+    //TODO: to be removed when not needed anymore
+    public PlanValidationReport validatePlanTest(Plan plan) throws IOException {
+        return new PlanValidator().validate(plan);
+    }
+    
     /**
      * Validates the plan corresponding to the given ID.
      *
