@@ -83,6 +83,7 @@ public class StatementsService implements InitializingBean {
             sub.setPlan(plan);
 
             // configure the price calculator
+            // FIXME: is the price calculator needed here?
             priceCalculator.setSubscription(sub);
 
             // build all statements
@@ -126,12 +127,14 @@ public class StatementsService implements InitializingBean {
         sub.setPlan(plan);
 
         try {
+//            RevenueStatementBuilder rsb = new RevenueStatementBuilder(sub);
             priceCalculator.setSubscription(sub);
 
             SubscriptionTimeHelper timeHelper = new SubscriptionTimeHelper(sub);
             for (TimePeriod tp : timeHelper.getChargePeriodTimes()) {
                 try {
                     RevenueStatement statement = priceCalculator.compute(tp);
+//                    RevenueStatement statement = rsb.buildStatement(tp);
                     if (statement != null) {
                         statement.clusterizeItems();
                         statements.add(statement);

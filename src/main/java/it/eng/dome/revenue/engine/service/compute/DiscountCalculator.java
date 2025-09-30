@@ -156,11 +156,11 @@ public class DiscountCalculator {
                     break;
 
                 default:
-                    TimePeriod custom = sth.getCustomPeriod(time, discount.getParentPrice(), ref);
+                    TimePeriod custom = sth.getCustomPeriod(time, discount.getReferencePrice(), ref);
                     if (custom != null
                             && !time.isBefore(custom.getStartDateTime())
                             && !time.isAfter(custom.getEndDateTime())) {
-                        tp = sth.getChargePeriodAt(time, discount.getParentPrice());
+                        tp = sth.getChargePeriodAt(time, discount.getReferencePrice());
                     } else {
                         logger.debug("Time '{}' non ricade nel periodo custom '{}': [{} - {}], returning null",
                                 time, ref,

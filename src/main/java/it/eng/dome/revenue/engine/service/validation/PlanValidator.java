@@ -40,4 +40,9 @@ public class PlanValidator {
         return issues;
     }
 
+    // ERROR bundle is forEach => forEachMetric expected
+    // WARNING forEachMetric found & bundle!=forEach
+    // ERROR forEachMetric != Seller
+
+
 }

@@ -36,12 +36,15 @@ public class SubscriptionTimeHelper {
         }
     }
 
+    /**
+     * For a given subscription, computes the expected billing cycles
+     * @return
+     */
     public Set<TimePeriod> getBillingTimePeriods() {
         Set<TimePeriod> billingPeriodTimes = new TreeSet<>(new TimePeriodComparator());       
         if(this.subscription != null && this.subscription.getPlan() != null) {
             OffsetDateTime start = this.subscription.getStartDate();
-            // build a preview for the next 1 year
-//            OffsetDateTime stopAt = OffsetDateTime.now().plusYears(1);
+            // build a preview for the entire subscription duration
             OffsetDateTime stopAt = this.rollSubscriptionPeriod(start, 1).minusSeconds(1);
             while(!start.isAfter(stopAt)) {
                 OffsetDateTime end = this.rollBillPeriod(start, 1).minusSeconds(1);
@@ -70,7 +73,6 @@ public class SubscriptionTimeHelper {
             logger.warn("unknown modifier {}. Returning unchanged time");
             return time;
         }
-
     }
 
     private Set<TimePeriod> getChargePeriodTimes(Price price) {
@@ -91,12 +93,8 @@ public class SubscriptionTimeHelper {
                 chargePeriodTimes.add(tp);
                 logger.debug("One-time prepaid price, returning single charge period: " + tp + " for price: " + price.getName());
             } else {
-                // iterate over the charge periods, until reaching the current time
-                // or a year in the future
-//                OffsetDateTime stopAt = OffsetDateTime.now(); // .plusYears(1).plusMonths(1);
-
+                // iterate over the charge periods, up to the end of the subscription
                 OffsetDateTime stopAt = this.rollSubscriptionPeriod(start, 1).minusSeconds(1);
-
                 while(start.isBefore(stopAt)) {
                     OffsetDateTime end = this.rollChargePeriod(start, price, 1);
                     TimePeriod tp = new TimePeriod();
@@ -223,7 +221,6 @@ public class SubscriptionTimeHelper {
         return this.getChargePeriodByOffset(time, price, 1);
     }
 
-
     private OffsetDateTime rollSubscriptionPeriod(OffsetDateTime time, int howManyPeriods) {
         // retrive subscriptino length unit
         RecurringPeriod pType = this.subscription.getPlan().getContractDurationPeriodType();
@@ -294,6 +291,21 @@ public class SubscriptionTimeHelper {
         }
     }
 
+    public OffsetDateTime getChargeTime(TimePeriod timePeriod, Price price) {
+		if (price.getType() == null) {
+			return null;
+		}
+		switch (price.getType()) {
+		case RECURRING_PREPAID:
+		case ONE_TIME_PREPAID:
+			return timePeriod.getStartDateTime();
+		case RECURRING_POSTPAID:
+			return timePeriod.getEndDateTime().minusSeconds(1);
+		default:
+            logger.warn("Unknown price type for charge time: {}", price.getType());
+			return null;
+		}
+	}
 
     public static void main(String[] args) throws Exception{
 

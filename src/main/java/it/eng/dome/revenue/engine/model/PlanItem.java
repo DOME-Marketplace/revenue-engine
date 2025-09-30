@@ -1,6 +1,7 @@
 package it.eng.dome.revenue.engine.model;
 
 import java.time.OffsetDateTime;
+import java.util.List;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -63,9 +64,12 @@ public abstract class PlanItem {
     @JsonProperty("ignore")
 	private String ignore;
 
+    @JsonProperty("forEachMetric")
+	private String forEachMetric;
+
 	// reference to the parent price, if any
 	@JsonIgnore
-	private Price parentPrice;
+	private PlanItem parentItem;
 	
 	public String getIgnore() {
 			return this.ignore;
@@ -76,8 +80,8 @@ public abstract class PlanItem {
 	}
 
 	public String getApplicableBase() {
-		if(this.getParentPrice()!=null && this.getParentPrice().getApplicableBase()!=null)
-			return this.getParentPrice().getApplicableBase();
+		if(this.getParentItem()!=null && this.getParentItem().getApplicableBase()!=null)
+			return this.getParentItem().getApplicableBase();
 		else
 			return this.applicableBase;
 	}
@@ -119,8 +123,8 @@ public abstract class PlanItem {
 	}
 
     public String getComputationBase() {
-		if(this.getParentPrice()!=null && this.getParentPrice().getComputationBase()!=null)
-			return this.getParentPrice().getComputationBase();
+		if(this.getParentItem()!=null && this.getParentItem().getComputationBase()!=null)
+			return this.getParentItem().getComputationBase();
 		else
 			return this.computationBase;
 	}
@@ -130,8 +134,8 @@ public abstract class PlanItem {
 	}
 
     public Range getApplicableBaseRange() {
-		if(this.getParentPrice()!=null && this.getParentPrice().getApplicableBaseRange()!=null)
-			return this.getParentPrice().getApplicableBaseRange();
+		if(this.getParentItem()!=null && this.getParentItem().getApplicableBaseRange()!=null)
+			return this.getParentItem().getApplicableBaseRange();
 		else
 			return this.applicableBaseRange;
 	}
@@ -141,8 +145,8 @@ public abstract class PlanItem {
 	}
 
 	public String getCurrency() {
-		if(this.getParentPrice()!=null && this.getParentPrice().getCurrency()!=null)
-			return this.getParentPrice().getCurrency();
+		if(this.getParentItem()!=null && this.getParentItem().getCurrency()!=null)
+			return this.getParentItem().getCurrency();
 		else
 			return this.currency;
 	}
@@ -151,16 +155,20 @@ public abstract class PlanItem {
 		this.currency = currency;
 	}
 
-    public void setParentPrice(Price parentPrice) {
-		this.parentPrice = parentPrice;
+    public void setParentItem(PlanItem parentItem) {
+		this.parentItem = parentItem;
 	}
 
-	public Price getParentPrice() {
-		return parentPrice;
+	public PlanItem getParentItem() {
+		return this.parentItem;
 	}
 	
 	public Double getPercent() {
 		return percent;
+	}
+
+	public PriceType getType() {
+		return null;
 	}
 
 	public void setPercent(Double percent) {
@@ -168,8 +176,8 @@ public abstract class PlanItem {
 	}
 
 	public ReferencePeriod getApplicableBaseReferencePeriod() {
-		if(this.getParentPrice()!=null && this.getParentPrice().getApplicableBaseReferencePeriod()!=null)
-			return this.getParentPrice().getApplicableBaseReferencePeriod();
+		if(this.getParentItem()!=null && this.getParentItem().getApplicableBaseReferencePeriod()!=null)
+			return this.getParentItem().getApplicableBaseReferencePeriod();
 		else
 			return this.applicableBaseReferencePeriod;
 	}
@@ -179,8 +187,8 @@ public abstract class PlanItem {
 	}
 
 	public ReferencePeriod getComputationBaseReferencePeriod() {
-		if(this.getParentPrice()!=null && this.getParentPrice().getComputationBaseReferencePeriod()!=null)
-			return this.getParentPrice().getComputationBaseReferencePeriod();
+		if(this.getParentItem()!=null && this.getParentItem().getComputationBaseReferencePeriod()!=null)
+			return this.getParentItem().getComputationBaseReferencePeriod();
 		else
 			return this.computationBaseReferencePeriod;
 	}
@@ -190,8 +198,8 @@ public abstract class PlanItem {
 	}
 
 	public OffsetDateTime getApplicableFrom() {
-		if(this.getParentPrice()!=null && this.getParentPrice().getApplicableFrom()!=null)
-			return this.getParentPrice().getApplicableFrom();
+		if(this.getParentItem()!=null && this.getParentItem().getApplicableFrom()!=null)
+			return this.getParentItem().getApplicableFrom();
 		else
 			return this.applicableFrom;
 	}
@@ -201,8 +209,8 @@ public abstract class PlanItem {
 	}
 
 	public OffsetDateTime getComputationFrom() {
-		if(this.getParentPrice()!=null && this.getParentPrice().getComputationFrom()!=null)
-			return this.getParentPrice().getComputationFrom();
+		if(this.getParentItem()!=null && this.getParentItem().getComputationFrom()!=null)
+			return this.getParentItem().getComputationFrom();
 		else
 			return this.computationFrom;
 	}
@@ -212,8 +220,8 @@ public abstract class PlanItem {
 	}
 
 	public ReferencePeriod getIgnorePeriod() {
-		if(this.getParentPrice()!=null && this.getParentPrice().getIgnorePeriod()!=null)
-			return this.getParentPrice().getIgnorePeriod();
+		if(this.getParentItem()!=null && this.getParentItem().getIgnorePeriod()!=null)
+			return this.getParentItem().getIgnorePeriod();
 		else {
 				return this.ignorePeriod;
 		}
@@ -233,5 +241,31 @@ public abstract class PlanItem {
 	}
 
 	public abstract boolean isVariable();
+
+	public String getForEachMetric() {
+		return forEachMetric;
+	}
+
+	public void setForEachMetric(String forEachMetric) {
+		this.forEachMetric = forEachMetric;
+	}
+
+	/**
+	 * Return the bundled prices/discounts, depending on the specific type of the item
+	 * @return
+	 */
+	public abstract List<PlanItem> getBundleItems();
+
+	/**
+	 * Return all child items (thus including prices AND discount)
+	 * @return
+	 */
+	public abstract List<PlanItem> getChildItems();
+
+	/**
+	 * The closest ancestor price.
+	 * @return
+	 */
+	public abstract Price getReferencePrice();
 
 }

@@ -1,5 +1,6 @@
 package it.eng.dome.revenue.engine.service;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import org.slf4j.Logger;
@@ -32,7 +33,7 @@ public class MetricsRetriever implements InitializingBean {
     }
     
     // implement retriever for key 'bills-no-taxes'
-    public Double computeBillsNoTaxes(String sellerId, TimePeriod timePeriod) throws Exception {
+    private Double computeBillsNoTaxes(String sellerId, TimePeriod timePeriod) throws Exception {
     	
     	// retrieve all seller billed invoices in the period
         List<AppliedCustomerBillingRate> bills = tmfDataRetriever.retrieveBills(sellerId, timePeriod, true);
@@ -50,7 +51,7 @@ public class MetricsRetriever implements InitializingBean {
     }
 
     // implement retriever for key 'referred-providers-number'
-    public Integer computeReferralsProvidersNumber(String sellerId, TimePeriod timePeriod) throws Exception {
+    private Integer computeReferralsProvidersNumber(String sellerId, TimePeriod timePeriod) throws Exception {
     	// retrieves the list of providers referenced by the seller
         List<Organization> referred = tmfDataRetriever.listReferralsProviders(sellerId);
         
@@ -65,7 +66,7 @@ public class MetricsRetriever implements InitializingBean {
     }
 
     // implement retriever for key 'referred-providers-transaction-volume'
-    public Double computeReferralsProvidersTransactionVolume(String sellerId, TimePeriod timePeriod) throws Exception {
+    private Double computeReferralsProvidersTransactionVolume(String sellerId, TimePeriod timePeriod) throws Exception {
     	// retrieve the list of providers referred by the given seller
     	List<Organization> referred = tmfDataRetriever.listReferralsProviders(sellerId);
     	Double totalTransactionVolume = 0.0;
@@ -83,7 +84,7 @@ public class MetricsRetriever implements InitializingBean {
     }
     
     // implement retriever for key 'referred-provider-max-transaction-volume'
-    public Double computeReferralsProviderMaxTransactionVolume(String sellerId, TimePeriod timePeriod) throws Exception {
+    private Double computeReferralsProviderMaxTransactionVolume(String sellerId, TimePeriod timePeriod) throws Exception {
     	// retrieve the list of providers referred by the given seller
     	List<Organization> referred = tmfDataRetriever.listReferralsProviders(sellerId);
 	    
@@ -113,6 +114,25 @@ public class MetricsRetriever implements InitializingBean {
                 throw new IllegalArgumentException("Unknown metric key: " + key);
         }
     }
+
+    public List<String> getDistinctValuesForKey(String key, String subscriberId, TimePeriod timePeriod) {
+        switch(key) {
+            case "seller":
+                return this.getActiveSellersBehindMarketplace(subscriberId, timePeriod);
+            default:
+                throw new IllegalArgumentException("Unknown metric key: " + key);
+        }
+    }
+
+    private List<String> getActiveSellersBehindMarketplace(String marketplaceId, TimePeriod timePeriod) {
+        // we need distinct values of 'seller.id' in transactions where the 'referenceMarketplace' role is played by 'marketplaceId'
+        // if nothing is found, then add only marketplaceId (?)
+        // TODO: complete this implementation
+        List<String> out = new ArrayList<>();
+        out.add(marketplaceId);
+        return out;
+    }
+
 
 }
 
