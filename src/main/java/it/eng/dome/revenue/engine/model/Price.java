@@ -3,6 +3,7 @@ package it.eng.dome.revenue.engine.model;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
@@ -132,12 +133,14 @@ public class Price extends PlanItem {
 		return false;
 	}
 
+	@JsonIgnore
 	public List<PlanItem> getBundleItems() {
 		List<PlanItem> out = new ArrayList<>();
 		out.addAll(this.getPrices());
 		return out;
 	}
 
+	@JsonIgnore
 	public List<PlanItem> getChildItems() {
 		List<PlanItem> out = this.getBundleItems();
 		if(this.getDiscount()!=null)
@@ -145,6 +148,7 @@ public class Price extends PlanItem {
 		return out;
 	}
 
+	@JsonIgnore
 	public Price getReferencePrice() {
 		return this;
 	}

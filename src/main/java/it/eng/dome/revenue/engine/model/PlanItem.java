@@ -254,18 +254,21 @@ public abstract class PlanItem {
 	 * Return the bundled prices/discounts, depending on the specific type of the item
 	 * @return
 	 */
+	@JsonIgnore
 	public abstract List<PlanItem> getBundleItems();
 
 	/**
 	 * Return all child items (thus including prices AND discount)
 	 * @return
 	 */
+	@JsonIgnore
 	public abstract List<PlanItem> getChildItems();
 
 	/**
 	 * The closest ancestor reference price.
 	 * @return
 	 */
+	@JsonIgnore
 	public abstract Price getReferencePrice();
 
 }
