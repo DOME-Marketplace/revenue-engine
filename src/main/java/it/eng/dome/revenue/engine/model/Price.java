@@ -66,6 +66,7 @@ public class Price extends PlanItem {
 		}	
 	}
 
+	@JsonIgnore
 	public Price getParentPrice() {
 		PlanItem parent = this.getParentItem();
 		if(parent!=null && parent instanceof Price)

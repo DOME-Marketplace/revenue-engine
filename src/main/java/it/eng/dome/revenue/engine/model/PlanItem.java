@@ -159,6 +159,7 @@ public abstract class PlanItem {
 		this.parentItem = parentItem;
 	}
 
+	@JsonIgnore
 	public PlanItem getParentItem() {
 		return this.parentItem;
 	}
