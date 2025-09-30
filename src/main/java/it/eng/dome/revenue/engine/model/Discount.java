@@ -46,10 +46,13 @@ public class Discount extends PlanItem{
 
 	@JsonIgnore
 	public List<PlanItem> getBundleItems() {
-		List<PlanItem> out = new ArrayList<>();
-		out.addAll(this.getDiscounts());
-		return out;
+	    List<PlanItem> out = new ArrayList<>();
+	    if (this.getDiscounts() != null) {
+	        out.addAll(this.getDiscounts());
+	    }
+	    return out;
 	}
+
 
 	@JsonIgnore
 	public Price getReferencePrice() {
