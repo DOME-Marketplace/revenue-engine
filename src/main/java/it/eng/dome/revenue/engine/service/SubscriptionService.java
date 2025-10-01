@@ -70,15 +70,15 @@ public class SubscriptionService implements InitializingBean {
 	 * @throws ApiException If there is an error retrieving the organization.
 	*/
     public List<Subscription> getAllSubscriptions() {
-    	logger.info("Fetching subscriptions from products");
-    	        
-        logger.info("Using the productAPIs {}", this.productApis);
+    	logger.info("Fetching subscriptions from tmf products");
+
 		Map<String, String> filter = new HashMap<>();
 		filter.put("relatedParty", DOME_OPERATOR_ID);
-        List<Product> prods = productApis.getAllProducts(null, filter);
-        
-        List<Subscription> subs = new ArrayList<>();
-        
+		logger.info("Using filter: {}", filter);
+
+		List<Product> prods = productApis.getAllProducts(null, filter);
+
+		List<Subscription> subs = new ArrayList<>();
         for (Product prod : prods) {
 			// FIXME: weak control con products to guess it's a subscription
 			if(prod.getName()!=null && prod.getName().toLowerCase().indexOf("subscription")!=-1) {

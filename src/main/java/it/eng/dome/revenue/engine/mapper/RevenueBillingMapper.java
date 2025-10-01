@@ -30,7 +30,6 @@ public class RevenueBillingMapper {
 	 * to be converted into AppliedCustomerBillingRate objects.
 	 * @param revenueBill The RevenueBill object containing the revenue data.
 	 * @param subscription The Subscription object related to the billing.
-	 * @param billingAccountRef The BillingAccountRef object for the billing account.
 	 * @return A List of AppliedCustomerBillingRate objects, or an empty list if the input RevenueBill is null or has no revenue items.
 	*/
 	public static List<AppliedCustomerBillingRate> toACBRList(RevenueBill revenueBill, Subscription subscription) {
@@ -55,7 +54,6 @@ public class RevenueBillingMapper {
 	 * @param item The current RevenueItem in the traversal.
 	 * @param revenueBill The RevenueBill object from which the item originates.
 	 * @param subscription The Subscription object related to the billing.
-	 * @param billingAccountRef The BillingAccountRef for the billing account.
 	 * @param acbrList The list to which the generated AppliedCustomerBillingRate objects will be added.
 	*/
 	private static void collectLeafItemsAndMap(RevenueItem item, RevenueBill revenueBill, Subscription subscription, List<AppliedCustomerBillingRate> acbrList) {
@@ -91,7 +89,6 @@ public class RevenueBillingMapper {
 	 * @param item The RevenueItem to be mapped. This is expected to be a "leaf" item from the bill's hierarchy.
 	 * @param revenueBill The RevenueBill object from which the RevenueItem and other context (like the billing period) originate.
 	 * @param subscription The Subscription related to this billing rate, used to enrich the ACBR's details.
-	 * @param billingAccountRef A reference to the billing account, to be included in the ACBR.
 	 * @return A new AppliedCustomerBillingRate object populated with the provided data, or null if the input item is null.
 	 * @throws IllegalArgumentException if the RevenueBill or its period are null, as these are mandatory for the ACBR.
 	*/
@@ -152,7 +149,6 @@ public class RevenueBillingMapper {
 	 * amounts, taxes, and related parties based on the provided RevenueBill.
 	 *
 	 * @param revenueBill The RevenueBill object containing the source data.
-	 * @param billingAccountRef A reference to the billing account associated with this bill.
 	 * @return A new CustomerBill object populated with the mapped data.
 	 * @throws IllegalArgumentException if the provided RevenueBill is null.
 	*/
@@ -177,7 +173,7 @@ public class RevenueBillingMapper {
 
 		// amounts
         Money taxExcludedAmount = new Money();
-        taxExcludedAmount.setUnit("EUR");
+        taxExcludedAmount.setUnit(revenueBill.getRevenueItems().get(0).getCurrency());
         taxExcludedAmount.setValue(revenueBill.getAmount().floatValue());
         cb.setTaxExcludedAmount(taxExcludedAmount);
 
