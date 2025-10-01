@@ -91,5 +91,9 @@ public class InvoicingService {
         }
     }
 
+    public String info() {
+        return "PASS";
+    }
+
 
 }
