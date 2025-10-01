@@ -11,6 +11,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
 import it.eng.dome.brokerage.invoicing.dto.ApplyTaxesRequestDTO;
+import it.eng.dome.revenue.engine.utils.health.Info;
 import it.eng.dome.tmforum.tmf637.v4.model.Product;
 import it.eng.dome.tmforum.tmf678.v4.JSON;
 import it.eng.dome.tmforum.tmf678.v4.model.AppliedCustomerBillingRate;
@@ -91,9 +92,25 @@ public class InvoicingService {
         }
     }
 
-    public String info() {
-        return "PASS";
-    }
+    /**
+     * Calls the invoicing service endpoint for getting info.
+     */
+    public Info getInfo() throws Exception {
 
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+
+        try {
+            ResponseEntity<Info> response = restTemplate.getForEntity(
+                    invoicingService + "/invoicing/info",
+                    Info.class
+            );
+            Info body = response.getBody();
+            return body;
+        } catch (Exception e) {
+            logger.error("Exception calling invoicing service: ", e);
+            throw(e);
+        }
+    }    
 
 }
