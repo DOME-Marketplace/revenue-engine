@@ -59,8 +59,6 @@ public class PlanService implements InitializingBean{
 
     /**
      * Constructs the PlanService and initializes the plan cache and file list.
-     *
-     * @param cacheService shared cache service for creating and retrieving plan cache.
      */
     public PlanService() {
         this.mapper = new ObjectMapper()
@@ -80,10 +78,10 @@ public class PlanService implements InitializingBean{
     
     // retrieve all plans by offerings
     public List<Plan> getAllPlans() {
-    	
-    	//FIXME: when the RP bug is fixed, filter only plans connected to DO.
-//    	Map<String, String> filter = new HashMap<String, String>();
-//    	filter.put("relatedParty.id", DOME_OPERATOR_ID);
+        logger.info("Fetching all plans...");
+    	// FIXME: when the RP bug is fixed, filter only plans connected to DO.
+        // Map<String, String> filter = new HashMap<String, String>();
+        // filter.put("relatedParty.id", DOME_OPERATOR_ID);
         List<ProductOffering> pos = productOfferingApis.getAllProductOfferings(null, null);
         
         List<Plan> plans = new ArrayList<>();
@@ -126,7 +124,6 @@ public class PlanService implements InitializingBean{
     	if (offeringId == null || offeringId.isEmpty()) {
             throw new IllegalArgumentException("Offering ID cannot be null or empty");
         }
-        logger.info("Fetching plan for offering id: {}", offeringId);
 
         ProductOffering po = productOfferingApis.getProductOffering(offeringId, null);
         if (po == null) {
@@ -138,7 +135,8 @@ public class PlanService implements InitializingBean{
 
         try {
             Plan plan = this.loadPlanFromLink(link);
-            return this.overwritingPlanByProductOffering(plan, po, pop);
+            this.overwritingPlanByProductOffering(plan, po, pop);
+            return plan;
 		} catch (IOException e) {
 			logger.error("Failed to load Plan from link={}", link, e);
             return null;
@@ -174,7 +172,6 @@ public class PlanService implements InitializingBean{
         if (offeringId == null || offeringId.isEmpty()) {
             throw new IllegalArgumentException("Offering ID cannot be null or empty");
         }
-        logger.info("Fetching plans for offering id: {}", offeringId);
 
         ProductOffering po = productOfferingApis.getProductOffering(offeringId, null);
         if (po == null) {
@@ -205,10 +202,10 @@ public class PlanService implements InitializingBean{
                     continue;
                 }
                 
-                plan = this.overwritingPlanByProductOffering(plan, po, pop);
+                this.overwritingPlanByProductOffering(plan, po, pop);
 
                 plans.add(plan);
-                logger.info("Plan loaded for offeringId={}, priceId={}", offeringId, pop.getId());
+//                logger.info("Plan loaded for offeringId={}, priceId={}", offeringId, pop.getId());
             } catch (IllegalStateException e) {
                 logger.error("Skipping ProductOfferingPrice id={} due to error: {}", popRef.getId(), e.getMessage());
             }
@@ -240,21 +237,18 @@ public class PlanService implements InitializingBean{
         }
     }
 
-    private Plan overwritingPlanByProductOffering(Plan plan, ProductOffering po, ProductOfferingPrice pop) {
+    private void overwritingPlanByProductOffering(Plan plan, ProductOffering po, ProductOfferingPrice pop) {
     	plan.setId(plan.generateId(po.getId(), pop.getId()));
         plan.setLifecycleStatus(po.getLifecycleStatus());
         plan.setDescription(po.getDescription());
-        
-        return plan;
     }
     
     /**
      * Validates the plan corresponding to the offering ID.
      *
-     * @param offeringId the ID of the offering
      * @return a PlanValidationReport with validation results
      */
-    public PlanValidationReport validatePlan(String planId) throws IOException {
+    public PlanValidationReport validatePlan(String planId) {
         Plan plan = getPlanById(planId);
         return new PlanValidator().validate(plan);
     }
@@ -263,15 +257,4 @@ public class PlanService implements InitializingBean{
     public PlanValidationReport validatePlanTest(Plan plan) throws IOException {
         return new PlanValidator().validate(plan);
     }
-    
-    /**
-     * Validates the plan corresponding to the given ID.
-     *
-     * @param planId the ID of the plan
-     * @return a PlanValidationReport with validation results
-     */
-//    public PlanValidationReport validatePlan(String planId) throws IOException {
-//        Plan plan = findPlanById(planId);
-//        return new PlanValidator().validate(plan);
-//    }
 }
