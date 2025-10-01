@@ -223,9 +223,9 @@ public class SubscriptionTimeHelper {
 
     private OffsetDateTime rollSubscriptionPeriod(OffsetDateTime time, int howManyPeriods) {
         // retrive subscriptino length unit
-        RecurringPeriod pType = this.subscription.getPlan().getContractDurationPeriodType();
+        RecurringPeriod pType = this.subscription.getPlan().getSubscriptionDurationPeriodType();
         // retrieve subscription length
-        Integer pLength = this.subscription.getPlan().getContractDurationLength();
+        Integer pLength = this.subscription.getPlan().getSubscriptionDurationLength();
         // increase according to pType and pLength and howManyPeriods
         pType = (pType != null) ? pType : RecurringPeriod.YEAR; // default to YEAR if not set
         pLength = (pLength != null) ? pLength : 1; // default to 1 if not set
@@ -313,8 +313,8 @@ public class SubscriptionTimeHelper {
 
         // create a fake subscription plan
         Plan plan = new Plan();
-        plan.setContractDurationPeriodType(RecurringPeriod.YEAR);
-        plan.setContractDurationLength(1);
+        plan.setSubscriptionDurationPeriodType(RecurringPeriod.YEAR);
+        plan.setSubscriptionDurationLength(1);
 
         Subscription subscription = new Subscription();
         subscription.setPlan(plan);
