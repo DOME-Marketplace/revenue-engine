@@ -1,6 +1,5 @@
 package it.eng.dome.revenue.engine.service.validation;
 
-import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -45,7 +44,7 @@ public class PlanValidator {
 			issues.add(new PlanValidationIssue("the plan must include a validFor period with startDateTime before endDateTime", PlanValidationIssueSeverity.ERROR));
         if (plan.getLifecycleStatus() == null || plan.getLifecycleStatus().isEmpty())
             issues.add(new PlanValidationIssue("the plan must include a lifecycle status", PlanValidationIssueSeverity.ERROR));
-        if(plan.getContractDurationLength() != null && plan.getContractDurationLength() < 0)
+        if(plan.getSubscriptionDurationLength() != null && plan.getSubscriptionDurationLength() < 0)
 			issues.add(new PlanValidationIssue("contractDurationLength must be >= 0", PlanValidationIssueSeverity.WARNING));
         return issues;
     }
@@ -55,7 +54,7 @@ public class PlanValidator {
         if (plan.getBillCycleSpecification().getBillingPeriodLength() == null)
             issues.add(new PlanValidationIssue("the plan must include a billingPeriodLength (an integer)", PlanValidationIssueSeverity.ERROR));
         if (plan.getBillCycleSpecification().getBillingPeriodType() == null)
-            issues.add(new PlanValidationIssue("the plan must include a billingPeriodType (i.e. YEAR, MONTH, WEEK, DAY)", PlanValidationIssueSeverity.ERROR));
+            issues.add(new PlanValidationIssue("the plan must include a billingPeriodType", PlanValidationIssueSeverity.ERROR));
         if (plan.getBillCycleSpecification().getBillingPeriodEnd() == null)
             issues.add(new PlanValidationIssue("the plan does not provide a 'billingPeriodEnd'", PlanValidationIssueSeverity.WARNING));
         return issues;
@@ -101,8 +100,16 @@ public class PlanValidator {
         if (item.getApplicableBaseRange() != null &&
             item.getApplicableBaseRange().getMax() != null &&
             item.getApplicableBaseRange().getMin() != null &&
-            item.getApplicableBaseRange().getMax() < item.getApplicableBaseRange().getMin())
+            item.getApplicableBaseRange().getMax() < item.getApplicableBaseRange().getMin()) 
             issues.add(new PlanValidationIssue("applicableBaseRange min > max", PlanValidationIssueSeverity.ERROR));
+        if (item.getApplicableBaseRange() != null &&
+			item.getApplicableBaseRange().getMin() != null &&
+			item.getApplicableBaseRange().getMin() < 0) 
+			issues.add(new PlanValidationIssue("applicableBaseRange min < 0", PlanValidationIssueSeverity.ERROR));
+        if (item.getApplicableBaseRange() != null && 
+        		item.getApplicableBaseRange().getMax() != null && 
+        		item.getApplicableBaseRange().getMax() < 0)
+			issues.add(new PlanValidationIssue("applicableBaseRange max < 0", PlanValidationIssueSeverity.ERROR));
         if (item.getApplicableBaseReferencePeriod() != null && item.getApplicableBaseReferencePeriod().toString().isEmpty())
             issues.add(new PlanValidationIssue("applicableBaseReferencePeriod is empty", PlanValidationIssueSeverity.WARNING));
         if (item.getApplicableFrom() != null && item.getApplicableFrom().toString().isEmpty())
