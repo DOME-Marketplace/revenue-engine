@@ -152,7 +152,10 @@
 	  "recurringChargePeriodLength": 1,
 	  "recurringChargePeriodType": "MONTH",
 	  "applicableBaseReferencePeriod": "LAST_9_CHARGE_PERIODS",
-	  "applicableFrom": "2025-01-01T00:00:00Z",
+	  "XXXXXXXX applicableFrom": "2025-01-01T00:00:00Z",
+    "validBetween": {
+      "startDateTime": "2025-01-01T00:00:00Z"
+    },
 	  "applicableBase": "bills-no-taxes",
 	  "computationBaseReferencePeriod": "CURRENT_CHARGE_PERIOD",
 	  "computationBase": "bills-no-taxes",
