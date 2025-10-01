@@ -81,14 +81,8 @@ public abstract class AbstractCalculator implements Calculator {
 			return false;
 	    }
 
-        return true;
-    }
 
-	private boolean checkZeroIt(TimePeriod timePeriod) {
-		// FIXME: should the check below be reeally here or in the "checkIgnore"?
-
-		boolean zeroIt = false;
-		
+		// TODO: replace the following with a full support for "validFor"
 		// check if the price is applicable in the given time period (using the applicableFrom attribute)
 		// FIXME: here we only check that if start isBefore, the the whole period is not considered.
 		// However, if the end is after, then the second half of the period should be considered.
@@ -96,31 +90,43 @@ public abstract class AbstractCalculator implements Calculator {
 		// Q: and what if the ignorePeriod is entirely contained (and smaller) in the charge period?
 		// Need to split in two? Resulting in two items? Not working for flat prices... maybe it's price-dependent behaviour.
 		// Needs more branistorming.
-		
 		if (this.item.getApplicableFrom() != null && timePeriod.getStartDateTime().isBefore(this.item.getApplicableFrom())) {
 			logger.debug("Price {} not applicable for time period {} (applicable from {})", this.item.getName(), timePeriod,
 					this.item.getApplicableFrom());
-			//return null;
-			zeroIt = true;
+			return false;
 		}
 
+		// TODO: support for "ignorePeriod"
 		// now also check the 'ignorePeriod' property. Resolve it and check if the period is affected.
 		// FIXME: same considerations as above
 		SubscriptionTimeHelper sth = new SubscriptionTimeHelper(this.getSubscription());
 		if(this.item.getIgnorePeriod()!=null) {
-		    TimePeriod tp = sth.getCustomPeriod(null, (Price)this.item, ((Price)this.item).getIgnorePeriod().getValue());
-			if(tp!=null) {
-				logger.debug("For this price, ignoring the period {} - {}", tp.getStartDateTime(), tp.getEndDateTime());
-				if(timePeriod.getStartDateTime().isBefore(tp.getEndDateTime())) {
-					logger.debug("Ignoring the price entirely as it sarts within the period");
-//					return null;
-					zeroIt = true;
+		    TimePeriod customPeriod = sth.getCustomPeriod(null, (Price)this.item, ((Price)this.item).getIgnorePeriod().getValue());
+			if(customPeriod!=null) {
+				logger.debug("For this price/discount, ignoring the period {} - {}", customPeriod.getStartDateTime(), customPeriod.getEndDateTime());
+				if(timePeriod.getStartDateTime().isBefore(customPeriod.getEndDateTime())) {
+					logger.debug("Ignoring the price/discount entirely as it sarts within the period");
+					return false;
 				}
 			}
 		}
-		
-		return zeroIt;
-		
+
+        return true;
+    }
+
+	private boolean checkZeroIt(TimePeriod timePeriod) {
+
+		// TODO: support for zero (Boolean)
+
+		// TODO: support for zeroPeriod (String)
+
+		// TODO: support for zeroBetween (TimePeriod)
+
+		// TODO: support for computePeriod (String)
+
+		// TODO: support for computeBetween (TimePeriod)
+
+		return false;
 	}
 
 

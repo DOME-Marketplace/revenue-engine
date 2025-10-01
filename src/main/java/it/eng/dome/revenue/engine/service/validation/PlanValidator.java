@@ -123,8 +123,8 @@ public class PlanValidator {
             issues.add(new PlanValidationIssue("computationBaseReferencePeriod is empty", PlanValidationIssueSeverity.WARNING));
         if (item.getComputationBase() != null && item.getComputationBase().isEmpty())
             issues.add(new PlanValidationIssue("computationBase is empty", PlanValidationIssueSeverity.WARNING));
-        if (item.getComputationFrom() != null && item.getApplicableFrom() != null &&
-            item.getComputationFrom().isBefore(item.getApplicableFrom()))
+//        if (item.getComputationFrom() != null && item.getApplicableFrom() != null &&
+//            item.getComputationFrom().isBefore(item.getApplicableFrom()))
             issues.add(new PlanValidationIssue("computationFrom is before applicableFrom", PlanValidationIssueSeverity.WARNING));
         return issues;
     }

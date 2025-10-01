@@ -4,36 +4,65 @@ import java.time.OffsetDateTime;
 import java.util.List;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
+import it.eng.dome.tmforum.tmf620.v4.model.TimePeriod;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.PositiveOrZero;
 
+@JsonInclude(JsonInclude.Include.NON_NULL)
 public abstract class PlanItem {
 
+	/**
+	 * Descriptive field. Will appear in reports.
+	 */
     @JsonProperty("name")
 	private String name;
 
+	/**
+	 * Bundle management
+	 */
     @JsonProperty("isBundle")
     private Boolean isBundle;
     
     @JsonProperty("bundleOp")
     private BundleOperator bundleOp;
 
-    // For not bundle elements
+	@JsonProperty("forEachMetric")
+	private String forEachMetric;
+
+	/**
+	 * The following property provide information about the due amount, either as absolute value or in perc.
+	 */
     @JsonProperty("amount")
     @PositiveOrZero
     private Double amount;
 
-    @JsonProperty("percent")
-    @PositiveOrZero
-    @Max(100)
-    private Double percent;
-
     @JsonProperty("currency")
     private String currency;
     
+	/**
+	 * Items satisfying the following properties are completely skipped from the computation and reports.
+	 * - ignore (Boolean)
+	 * - ignorePeriod (String)
+	 * - validFor (Range)
+	 * - validForPeriod (String) 
+	 */
+	@JsonProperty("ignore")
+	private String ignore;
+
+	@JsonProperty("ignorePeriod")
+	private ReferencePeriod ignorePeriod;
+
+	@JsonProperty("validBetween")
+	private TimePeriod validBetween;
+
+	/**
+	 * The following properties are used to check if the computation is applicable. If not, the item
+	 * is skipped from computation (and not included in the report? To be confirmed).
+	 */
     @JsonProperty("applicableBase")
     private String applicableBase;
 
@@ -45,27 +74,40 @@ public abstract class PlanItem {
 	@Deprecated 
     private ReferencePeriod applicableBaseReferencePeriod;
 
-	@JsonProperty("ignorePeriod")
-	private ReferencePeriod ignorePeriod;
 
-	@JsonProperty("applicableFrom")
-	private OffsetDateTime applicableFrom;
+//	@JsonProperty("applicableFrom")
+//	@Deprecated
+//	private OffsetDateTime applicableFrom;
 	
+	/**
+	 * These properties drive the computation, in particular when the price/discount is expressed as a percentage.
+	 */
 	@JsonProperty("computationBase")
 	private String computationBase;
 	
 	@JsonProperty("computationBaseReferencePeriod")
-	@Deprecated 
     private ReferencePeriod computationBaseReferencePeriod;
 
-	@JsonProperty("computationFrom")
-	private OffsetDateTime computationFrom;
+	@JsonProperty("percent")
+    @PositiveOrZero
+    @Max(100)
+    private Double percent;
 
-    @JsonProperty("ignore")
-	private String ignore;
+	/**
+	 * Items satisfying the following properties are included in reports, but their amount is zeroed.
+	 * Either zero or compute fields are allowed in the same item. If more than one is specified, their
+	 * union is considered.
+	 * - zero (Boolean)
+	 * - zeroPeriod (String)
+	 * - zeroBetween (TimePeriod)
+	 * - computePeriod (String)
+	 * - computeBetween (TimePeriod)
+	 */
+	// TODO: implement the above
 
-    @JsonProperty("forEachMetric")
-	private String forEachMetric;
+//	@JsonProperty("computationFrom")
+//	private OffsetDateTime computationFrom;
+
 
 	// reference to the parent price, if any
 	@JsonIgnore
@@ -198,17 +240,28 @@ public abstract class PlanItem {
 		this.computationBaseReferencePeriod = computationBaseReferencePeriod;
 	}
 
+	/**
+	 * @deprecated getValidBetween().getStartDateTime()
+	 */
 	public OffsetDateTime getApplicableFrom() {
-		if(this.getParentItem()!=null && this.getParentItem().getApplicableFrom()!=null)
-			return this.getParentItem().getApplicableFrom();
+		TimePeriod validBetween = this.getValidBetween();
+		if(validBetween!=null)
+			return validBetween.getStartDateTime();
 		else
-			return this.applicableFrom;
+			return null;
 	}
 
-	public void setApplicableFrom(OffsetDateTime applicableFrom) {
-		this.applicableFrom = applicableFrom;
+	public void setValidBetween(TimePeriod validBetween) {
+		this.validBetween = validBetween;
 	}
 
+	public TimePeriod getValidBetween() {
+		if(this.getParentItem()!=null && this.getParentItem().getValidBetween()!=null)
+			return this.getParentItem().getValidBetween();
+		return this.validBetween;
+	}
+
+	/*
 	public OffsetDateTime getComputationFrom() {
 		if(this.getParentItem()!=null && this.getParentItem().getComputationFrom()!=null)
 			return this.getParentItem().getComputationFrom();
@@ -219,6 +272,7 @@ public abstract class PlanItem {
 	public void setComputationFrom(OffsetDateTime computationFrom) {
 		this.computationFrom = computationFrom;
 	}
+	*/
 
 	public ReferencePeriod getIgnorePeriod() {
 		if(this.getParentItem()!=null && this.getParentItem().getIgnorePeriod()!=null)

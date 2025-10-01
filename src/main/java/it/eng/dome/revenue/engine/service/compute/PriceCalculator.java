@@ -222,7 +222,7 @@ public class PriceCalculator {
 			return null;
 		}
 
-		String buyerId = subscription.getBuyerId();
+		String buyerId = subscription.getSubscriberId();
 		Double amountValue = this.computePrice(price, buyerId, timePeriod);
 
 		if (amountValue == null) {
