@@ -43,11 +43,8 @@ public class StatementsService implements InitializingBean {
     public void afterPropertiesSet() throws Exception {
     }
 
-	/**
+	/*
 	 * Returns a list of RevenueItems for the subscription
-	 * @param subscriptionId
-	 * @return
-	 * @throws Exception
 	 */
     public List<RevenueItem> getItemsForSubscription(String subscriptionId) throws Exception {    	
         List<RevenueStatement> statements = this.getStatementsForSubscription(subscriptionId);
@@ -65,9 +62,8 @@ public class StatementsService implements InitializingBean {
 	 * 
 	 * @param subscriptionId The ID of the subscription for which to retrieve billing periods.
 	 * @return A set of TimePeriod objects representing the billing periods.
-	 * @throws Exception If an error occurs during retrieval.
 	 */
-    public Set<TimePeriod> getBillPeriods(String subscriptionId) throws Exception {
+    public Set<TimePeriod> getBillPeriods(String subscriptionId) {
 
             // retrieve the subscription by id
             Subscription sub = subscriptionService.getSubscriptionByProductId(subscriptionId);
@@ -155,9 +151,7 @@ public class StatementsService implements InitializingBean {
             sub.setPlan(plan.buildRef());
         }
 
-        List<RevenueStatement> result = new ArrayList<>(statements);
-
-        return result;
+        return new ArrayList<>(statements);
     }
     
 }

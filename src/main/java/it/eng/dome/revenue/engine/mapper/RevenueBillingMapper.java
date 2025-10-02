@@ -104,7 +104,7 @@ public class RevenueBillingMapper {
 
 		//id and base data
 	    AppliedCustomerBillingRate acbr = new AppliedCustomerBillingRate();
-	    acbr.setId("urn:ngsi-ld:applied-customer-billing-rate:" + UUID.randomUUID().toString());
+	    acbr.setId("urn:ngsi-ld:applied-customer-billing-rate:" + UUID.randomUUID());
 	    acbr.setHref(acbr.getId());
 	    acbr.setName("Applied Customer Billing Rate of " + item.getName());
 	    acbr.setDescription("Applied Customer Billing Rate of " 
