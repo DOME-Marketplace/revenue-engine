@@ -22,6 +22,13 @@ public abstract class PlanItem {
 	private String name;
 
 	/**
+	 * A description for the benefit of the DOME operator only, not disclosed to subscribers within bills. 
+	 * This might be useful to describe the rationale of the Plan Item, to provide references to external documentation.
+	 */
+	@JsonProperty("comment")
+	private String comment;
+
+	/**
 	 * Bundle management
 	 */
     @JsonProperty("isBundle")
@@ -92,6 +99,25 @@ public abstract class PlanItem {
     @PositiveOrZero
     @Max(100)
     private Double percent;
+
+	/**
+	 * this is to force the resulting amount in the given range
+	 */
+	@JsonProperty("resultingAmountRange")
+	private Range resultingAmountRange;
+
+	/**
+	 * when true, the descendent items are discarded and the resulting item is like an atomic item.
+	 * 
+	 */
+	@JsonProperty("collapse")
+	private Boolean collapse;
+
+	/**
+	 * Whenever the resulting value of the computation is zero, this item (and all its descendants) is discarded
+	 */
+	@JsonProperty("skipIfZero")
+	private Boolean skipIfZero;
 
 	/**
 	 * Items satisfying the following properties are included in reports, but their amount is zeroed.
@@ -326,4 +352,38 @@ public abstract class PlanItem {
 	@JsonIgnore
 	public abstract Price getReferencePrice();
 
+
+	public String getComment() {
+		return comment;
+	}
+
+	public void setComment(String comment) {
+		this.comment = comment;
+	}
+
+	public Range getResultingAmountRange() {
+		return resultingAmountRange;
+	}
+
+	public void setResultingAmountRange(Range resultingAmountRange) {
+		this.resultingAmountRange = resultingAmountRange;
+	}
+
+	public Boolean getCollapse() {
+		return Boolean.TRUE.equals(collapse);
+	}
+
+	public void setCollapse(Boolean collapse) {
+		this.collapse = collapse;
+	}
+
+	public Boolean getSkipIfZero() {
+		return Boolean.TRUE.equals(skipIfZero);
+	}
+
+	public void setSkipIfZero(Boolean skipIfZero) {
+		this.skipIfZero = skipIfZero;
+	}
+
+	
 }
