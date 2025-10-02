@@ -6,7 +6,6 @@ import java.util.Map;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 
 import it.eng.dome.revenue.engine.model.PlanItem;
 import it.eng.dome.revenue.engine.model.Price;
@@ -21,10 +20,10 @@ public abstract class AbstractCalculator implements Calculator {
 
     private static final Logger logger = LoggerFactory.getLogger(AbstractCalculator.class);
 
-    @Autowired
+	protected PlanItem item;
+
 	MetricsRetriever metricsRetriever;
 
-    protected PlanItem item;
     private Subscription subscription;
 
     public AbstractCalculator(Subscription subscription, PlanItem item) {
@@ -32,55 +31,86 @@ public abstract class AbstractCalculator implements Calculator {
         this.item = item;
     }
 
+	public void setMetricsRetriever(MetricsRetriever mr) {
+		this.metricsRetriever = mr;
+	}
+
 	public final RevenueItem compute(TimePeriod timePeriod, Map<String, Double> computeContext) {
 
 		// check if it's to skip or not
-		if(!this.checkIgnoreConditions(timePeriod))
+		logger.debug("checking preconditions...");
+		if(!this.checkPreconditions(timePeriod)) {
 			return null;
+		}
+
+		logger.debug("checking computability...");
+		if(!this.checkComputability(timePeriod)) {
+			return null;
+		}
+
+		logger.debug("checking applicability...");
+		if(!this.checkApplicability(timePeriod)) {
+			return null;
+		}
 
 		// check if it has to be zeroed (although we keep the structure)
 		boolean zeroIt = this.checkZeroIt(timePeriod);
+		logger.debug("zeroIt? {}", zeroIt);
 
 		// do build the structure and value
+		logger.debug("doComputing...");
 		RevenueItem outRevenueItem = this.doCompute(timePeriod, computeContext);
+		logger.debug("outRevenueItem: {}", outRevenueItem);
+
+		// if nothing is returned, exit
+		if(outRevenueItem==null)
+			return null;
 
 		// zero the item, if needed
 		if(outRevenueItem!=null && zeroIt)
 			outRevenueItem.zeroAmountsRecursively();
 
 		// constrain the resulting value, if needed
-		// TODO: this has to be tested
 		Range r = this.item.getResultingAmountRange();
 		if(r!=null) {
+			logger.debug("enforcing resulting amount range...");
 			if(r.getMin()!=null) {
+				logger.debug("constraining min...");
 				outRevenueItem.setValue(Math.max(r.getMin(), outRevenueItem.getValue()));
 			}
 			if(r.getMax()!=null) {
+				logger.debug("constraining max...");
 				outRevenueItem.setValue(Math.min(r.getMax(), outRevenueItem.getValue()));
 			}
 		}
 
 		// if requested, forget the revenue item, if the result is zero
 		if(this.item.getSkipIfZero() && outRevenueItem.getOverallValue()==0) {
+			logger.debug("overall value is zero and 'skipIfZero' is true... returning null");
 			return null;
 		}
 
 		// variable vallues for future items lead to estimaed revenueItems
-		if (this.item.isVariable() && outRevenueItem.getChargeTime().isAfter(OffsetDateTime.now())) {
-			outRevenueItem.setEstimated(true);
-		} else {
-			outRevenueItem.setEstimated(false);
+		// FIXME: the second check below is to move ahead with development, but shouldn't be there
+		if (outRevenueItem!=null && outRevenueItem.getChargeTime()!=null) {
+			logger.debug("setting the charge time...");
+			if(this.item.isVariable() && outRevenueItem.getChargeTime().isAfter(OffsetDateTime.now())) {
+				outRevenueItem.setEstimated(true);
+			} else {
+				outRevenueItem.setEstimated(false);
+			}
 		}
 
 		// as a final step, if needed, collapse the revenueItem
-		// TODO: this has to be tested
-		if(this.item.getCollapse()) {
+		if(outRevenueItem!=null && this.item.getCollapse()) {
+			logger.debug("collapsing...");
 			// set the value to be the same as getOverallValue() 
 			outRevenueItem.setValue(outRevenueItem.getOverallValue());
 			// remove all child items
 			outRevenueItem.setItems(new ArrayList<>());
 		}
 
+		logger.debug("returing {} for addition", outRevenueItem);
 		return outRevenueItem;
 	}
 
@@ -94,16 +124,20 @@ public abstract class AbstractCalculator implements Calculator {
      * @param timePeriod
      * @return
      */
-    private boolean checkIgnoreConditions(TimePeriod timePeriod) {
+    private boolean checkPreconditions(TimePeriod timePeriod) {
 
-		// check the charge time period
-		TimePeriod tp = this.getChargeTimePeriod(timePeriod.getStartDateTime().plusSeconds(1));
-		if (tp == null || !tp.getStartDateTime().equals(timePeriod.getStartDateTime())
-				|| !tp.getEndDateTime().equals(timePeriod.getEndDateTime())) {
-			return false;
+		// check that the charge time period for the price corresponds with the one as parameter (only if not a bundle)
+		if(!this.item.getIsBundle()) {
+			TimePeriod tp = this.getChargeTimePeriod(timePeriod.getStartDateTime().plusSeconds(1));
+			logger.debug("price/discount charge period is {}", tp);
+			if (tp == null || tp.getStartDateTime()==null || !tp.getStartDateTime().equals(timePeriod.getStartDateTime())
+					|| !tp.getEndDateTime().equals(timePeriod.getEndDateTime())) {
+				logger.debug("This item '{}' period {} does not match the statements period {}. Skipping.", this.item.getName(), tp, timePeriod);
+				return false;
+			}
 		}
 
-		// check it's not to ignore
+		// check the item is not to ignore
 	    if ("true".equalsIgnoreCase(this.item.getIgnore())) {
 	        logger.info("Ignoring price/discount {} based on ignore flag {}", this.item.getName(), this.item.getIgnore());
 			return false;
@@ -163,7 +197,10 @@ public abstract class AbstractCalculator implements Calculator {
 	 * @param tp
 	 * @return
 	 */
-    protected boolean checkApplicability(TimePeriod timePeriod) {
+    private boolean checkApplicability(TimePeriod timePeriod) {
+
+		if(this.item.getIsBundle())
+			return true;
 
 		String subscriberId = this.getSubscription().getSubscriberId();
 
@@ -174,11 +211,12 @@ public abstract class AbstractCalculator implements Calculator {
 		}
 
 		// if value in range then computation
-		if (this.item.getApplicableBaseRange().inRange(applicableValue)) {
+		if (this.item.getApplicableBaseRange()!=null && this.item.getApplicableBaseRange().inRange(applicableValue)) {
 			logger.info("Applicable value: {}, for price: {}, in tp: {} - {}", applicableValue, this.item.getName(), timePeriod.getStartDateTime(), timePeriod.getEndDateTime());
 			return true;
 		}
 		return false;
+
 	}
 
     /**
@@ -186,55 +224,71 @@ public abstract class AbstractCalculator implements Calculator {
      * @param tp
      * @return
      */
-    protected boolean checkComputability(TimePeriod tp) {
-		// make sure a computationBase is set (TODISCUSS: is this true? maybe a fixed amount do)
-		if (this.item.getComputationBase() == null || this.item.getComputationBase().isEmpty()) {
-			logger.debug("No computation base defined!");
-			return false;
-		}
-		// TODO: refactor these checks... a mix of the two with the above
-		// FIXME: for bundles this is not needed
+    private boolean checkComputability(TimePeriod tp) {
+
+		if(this.item.getIsBundle())
+			return true;
+
+		// for atomic items, make sure an amount or a percent are set
 		if (this.item.getPercent() == null && this.item.getAmount() == null) {
-			logger.debug("Neither percent nor amount defined for computation!");
+			logger.warn("Neither percent nor amount defined for computation!");
 			return false;
 		}
-		// TODO: check the reference period is set
+
+		// make sure a computationBase is set (TODISCUSS: is this true? maybe a fixed amount do)
+		if (this.item.getPercent()!=null && (this.item.getComputationBase() == null || this.item.getComputationBase().isEmpty())) {
+			logger.warn("A percent is set, but no computation base defined!");
+			return false;
+		}
+
+		// also a reference period for the computation base is needed
+		if (this.item.getPercent()!=null && !"parent-price".equals(this.item.getComputationBase()) && (
+				this.item.getComputationBaseReferencePeriod() == null 
+				|| this.item.getComputationBaseReferencePeriod().getValue() == null
+				|| this.item.getComputationBaseReferencePeriod().getValue().isEmpty())) {
+			logger.warn("A percent is set, but no computation base reference period is defined!");
+			return false;
+		}
+
 		return true;
 	}
 
     private TimePeriod getChargeTimePeriod(OffsetDateTime time) {
+
 		if (this.item == null) {
-			logger.error("Price is null, cannot determine time period");
+			logger.error("PlanItem is null, cannot determine time period");
 			return null;
 		}
 
 		SubscriptionTimeHelper sth = new SubscriptionTimeHelper(this.getSubscription());
-		TimePeriod tp = new TimePeriod();
+		TimePeriod tp = null;
 
 		Price referencePrice = this.item.getReferencePrice();
+		logger.debug("referencePrice is {}", referencePrice.getName());
+		logger.debug("referencePrice.type is {}", referencePrice.getType());
 		if (referencePrice.getType() != null) {
 			switch (referencePrice.getType()) {
-			case RECURRING_PREPAID:
-				logger.debug("Computing charge period for RECURRING_PREPAID price type");
-				tp = sth.getChargePeriodAt(time, referencePrice);
-				break;
-			case RECURRING_POSTPAID:
-				logger.debug("Computing charge period for RECURRING_POSTPAID price type");
-				tp = sth.getChargePeriodAt(time, referencePrice);
-				break;
-			case ONE_TIME_PREPAID:
-				logger.debug("Computing charge period for ONE_TIME_PREPAID price type");
-				TimePeriod currentPeriod = sth.getSubscriptionPeriodAt(time);
-				OffsetDateTime startDate = this.getSubscription().getStartDate();
-				if (currentPeriod.getStartDateTime().equals(startDate)) {
-					tp = currentPeriod;
-				} else {
-					logger.debug("Current period not match with startDate. It has probably already been calculated");
-					tp = null;
-				}
-				break;
-			default:
-				throw new IllegalArgumentException("Unsupported price type: " + referencePrice.getType());
+				case RECURRING_PREPAID:
+					logger.debug("Computing charge period for RECURRING_PREPAID price type");
+					tp = sth.getChargePeriodAt(time, referencePrice);
+					break;
+				case RECURRING_POSTPAID:
+					logger.debug("Computing charge period for RECURRING_POSTPAID price type");
+					tp = sth.getChargePeriodAt(time, referencePrice);
+					break;
+				case ONE_TIME_PREPAID:
+					logger.debug("Computing charge period for ONE_TIME_PREPAID price type");
+					TimePeriod currentPeriod = sth.getSubscriptionPeriodAt(time);
+					OffsetDateTime startDate = this.getSubscription().getStartDate();
+					if (currentPeriod.getStartDateTime().equals(startDate)) {
+						tp = currentPeriod;
+					} else {
+						logger.debug("Current period not match with startDate. It has probably already been calculated");
+						tp = null;
+					}
+					break;
+				default:
+					throw new IllegalArgumentException("Unsupported price type: " + referencePrice.getType());
 			}
 //		} else {
 //			// TODO: GET PARENT TYPE FROM PRICE ?? - discuss if it can be removed
@@ -249,6 +303,35 @@ public abstract class AbstractCalculator implements Calculator {
 		return tp;
 	}
 
+	protected TimePeriod getComputationTimePeriod(OffsetDateTime time) {
+		// extract the keyword of reference period for the computation base
+		String computationPeriodKeyword = null;
+		if(this.item.getComputationBaseReferencePeriod() != null) 
+			computationPeriodKeyword = this.item.getComputationBaseReferencePeriod().getValue();
+		if(computationPeriodKeyword==null) {
+			logger.debug("No reference period specified. ComputationBaseReferencePeriod is null");
+			return null;
+		}
+		SubscriptionTimeHelper helper = new SubscriptionTimeHelper(this.getSubscription());
+		TimePeriod computationPeriod = helper.getCustomPeriod(time, this.item.getReferencePrice(), computationPeriodKeyword);
+		return computationPeriod;
+	}
+
+	protected TimePeriod getApplicableTimePeriod(OffsetDateTime time) {
+		// extract the keyword of reference period for the applicable base
+		String applicablePeriodKeyword = null;
+		if(this.item.getApplicableBaseReferencePeriod() != null) 
+			applicablePeriodKeyword = this.item.getApplicableBaseReferencePeriod().getValue();
+		if(applicablePeriodKeyword==null) {
+			logger.debug("No reference period specified. ApplicableBaseReferencePeriod is null");
+			return null;
+		}
+		SubscriptionTimeHelper helper = new SubscriptionTimeHelper(this.getSubscription());
+		TimePeriod applicablePeriod = helper.getCustomPeriod(time, this.item.getReferencePrice(), applicablePeriodKeyword);
+		return applicablePeriod;
+	}
+
+	/*
     private TimePeriod getApplicableTimePeriod(OffsetDateTime time) {        
         // TODO: refactor this method to be more generic
 
@@ -310,8 +393,10 @@ public abstract class AbstractCalculator implements Calculator {
 
         return tp;
     }
+	*/
 
 	private Double getApplicableValue(String subscriberId, TimePeriod tp) {
+
 		if (this.item.getApplicableBase() == null || this.item.getApplicableBase().isEmpty()) {
 			return null;
 		}
@@ -320,31 +405,13 @@ public abstract class AbstractCalculator implements Calculator {
 			TimePeriod actualTp = tp;
 			actualTp = this.getApplicableTimePeriod(tp.getEndDateTime());
 
-			/*
-			String referencePeriod = this.item.getApplicableBaseReferencePeriod().getValue();
-			if (referencePeriod != null) {
-				SubscriptionTimeHelper helper = new SubscriptionTimeHelper(this.getSubscription());
-
-				if ("PREVIOUS_SUBSCRIPTION_PERIOD".equals(referencePeriod)) {
-					actualTp = helper.getPreviousSubscriptionPeriod(tp.getEndDateTime());
-				} else if ((referencePeriod.startsWith("PREVIOUS_") || referencePeriod.startsWith("LAST_"))
-						&& referencePeriod.endsWith("_CHARGE_PERIODS")) {
-					actualTp = helper.getCustomPeriod(tp.getEndDateTime(), this.item.getReferencePrice(), referencePeriod);
-
-					if (actualTp == null) {
-						logger.debug("Could not compute custom period for reference: {}", referencePeriod);
-						return null;
-					}
-
-					logger.debug("Using custom period for {}: {} - {}, based on reference: {}", referencePeriod,
-							actualTp.getStartDateTime(), actualTp.getEndDateTime(), referencePeriod);
-				}
+			if(actualTp!=null) {
+				// FIXME: this was not under the above condition... is it needed?
+				Double applicableValue = this.metricsRetriever.computeValueForKey(this.item.getApplicableBase(), subscriberId, actualTp);
+				return applicableValue;
+			} else {
+				return null;
 			}
-			*/
-
-			Double applicableValue = this.metricsRetriever.computeValueForKey(this.item.getApplicableBase(), subscriberId, actualTp);
-
-			return applicableValue;
 		} catch (Exception e) {
 			logger.error("Error computing applicable value for base '{}': {}", this.item.getApplicableBase(),
 					e.getMessage(), e);

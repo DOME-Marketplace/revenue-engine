@@ -66,14 +66,15 @@ public class HealthService implements InitializingBean {
             h.addCheck(c);
         }
 
-        // check tmf apis
+        // check the TMF PIs
         for(Check c: this.getTMFChecks())
             h.addCheck(c);
 
-        // Status of its dependencies. In case of FAIL or WARN set it to WARN... but not to FAIL.
+        // Status of its dependencies. In case of FAIL or WARN set it to WARN
         for(Check c: h.getAllChecks()) {
             h.elevateStatus(c.getStatus());
         }
+        // ... but not to FAIL (which means a failure in the Revenue itself)
         if(HealthStatus.FAIL.equals(h.getStatus()))
             h.setStatus(HealthStatus.WARN);
 
@@ -87,30 +88,6 @@ public class HealthService implements InitializingBean {
         h.setNotes(this.buildNotes(h));
 
         return h;
-    }
-
-    private List<String> buildNotes(Health hlt) {
-        List<String> notes = new ArrayList<>();
-        for(Check c: hlt.getChecks("self", null)) {
-            switch(c.getStatus()) {
-                case PASS:
-                    break;
-                case WARN:
-                    notes.add("Revenue Sharing Service has some internal troubles degrading its behaviour/performance");
-                    break;
-                case FAIL:
-                    notes.add("Revenue Sharing Service has some major internal troubles");
-                    break;
-            }
-        }
-        for(Check c: hlt.getChecks("invoicing-service", null))
-            if(c.getStatus().getSeverity()>HealthStatus.PASS.getSeverity())
-                notes.add("Revenue Sharing Service can't behave correctly because the Invoicing Service is degraded or failing");
-        for(Check c: hlt.getChecks("tmf-api", null))
-            if(c.getStatus().getSeverity()>HealthStatus.PASS.getSeverity())
-                notes.add("Revenue Sharing Service can't behave correctly because the TMF APIs are degraded or failing");
-
-        return notes;
     }
 
     private List<Check> getChecksOnSelf() {
@@ -168,6 +145,35 @@ public class HealthService implements InitializingBean {
 
         return out;
     }
+
+    private List<String> buildNotes(Health hlt) {
+        List<String> notes = new ArrayList<>();
+
+        // first, some notes about the Revenue Service itself
+        for(Check c: hlt.getChecks("self", null)) {
+            switch(c.getStatus()) {
+                case PASS:
+                    break;
+                case WARN:
+                    notes.add("Revenue Sharing Service has some internal troubles degrading its behaviour/performance");
+                    break;
+                case FAIL:
+                    notes.add("Revenue Sharing Service has some major internal troubles");
+                    break;
+            }
+        }
+
+        // Then, some notes on its dependencies
+        for(Check c: hlt.getChecks("invoicing-service", null))
+            if(c.getStatus().getSeverity()>HealthStatus.PASS.getSeverity())
+                notes.add("Revenue Sharing Service can't behave correctly because the Invoicing Service is degraded or failing");
+        for(Check c: hlt.getChecks("tmf-api", null))
+            if(c.getStatus().getSeverity()>HealthStatus.PASS.getSeverity())
+                notes.add("Revenue Sharing Service can't behave correctly because the TMF APIs are degraded or failing");
+
+        return notes;
+    }
+
 }
 
 

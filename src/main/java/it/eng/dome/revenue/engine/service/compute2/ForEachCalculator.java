@@ -9,6 +9,7 @@ import org.slf4j.LoggerFactory;
 import it.eng.dome.revenue.engine.model.PlanItem;
 import it.eng.dome.revenue.engine.model.RevenueItem;
 import it.eng.dome.revenue.engine.model.Subscription;
+import it.eng.dome.revenue.engine.service.MetricsRetriever;
 import it.eng.dome.tmforum.tmf678.v4.model.TimePeriod;
 
 public class ForEachCalculator extends AbstractCalculator {
@@ -30,7 +31,7 @@ public class ForEachCalculator extends AbstractCalculator {
 			return null;
 		}
 		// retrieve the possible values
-		List<String> sellerIds = this.metricsRetriever.getDistinctValuesForKey(iterateOver, this.getSubscription().getSubscriberId(), timePeriod);
+		List<String> sellerIds = new MetricsRetriever().getDistinctValuesForKey(iterateOver, this.getSubscription().getSubscriberId(), timePeriod);
 
 		// foreach 'iterator' property, build a sub-revenueItem with all child prices computed with the 'iterator' property.
 		for(String sellerId: sellerIds) {

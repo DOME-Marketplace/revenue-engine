@@ -12,7 +12,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import it.eng.dome.revenue.engine.model.Plan;
-import it.eng.dome.revenue.engine.model.PlanResolver;
 import it.eng.dome.revenue.engine.model.RevenueItem;
 import it.eng.dome.revenue.engine.model.RevenueStatement;
 import it.eng.dome.revenue.engine.model.Subscription;
@@ -100,15 +99,11 @@ public class StatementsService implements InitializingBean {
 
         Plan plan;
         try {
-            plan = planService.getPlanById(sub.getPlan().getId());
+            plan = planService.getResolvedPlanById(sub.getPlan().getId(), sub);
         } catch (Exception ex) {
             logger.error("Failed to retrieve plan for subscription {}: {}", subscriptionId, ex.getMessage(), ex);
             throw new RuntimeException("Failed to retrieve plan for subscription: " + subscriptionId, ex);
         }
-
-        // resolve the plan
-        PlanResolver planResolver = new PlanResolver(sub);
-        plan = planResolver.resolve(plan);
 
         sub.setPlan(plan);
 

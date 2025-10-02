@@ -20,41 +20,39 @@ public class CumulativeCalculator extends AbstractCalculator {
 
 		List<PlanItem> bundleItems = this.item.getBundleItems();
 
-		RevenueItem cumulativeItem = new RevenueItem(this.item.getName(), this.item.getCurrency());		
+		RevenueItem cumulativeRevenueItem = new RevenueItem(this.item.getName(), this.item.getCurrency());		
 		if(this.item.getType()!=null)
-			cumulativeItem.setType(this.item.getType().toString());
+			cumulativeRevenueItem.setType(this.item.getType().toString());
 
 		// first process prices
-		for (PlanItem p : bundleItems) {
-			if(!(p instanceof Price))
+		for (PlanItem price : bundleItems) {
+			if(!(price instanceof Price))
 				continue;
-			Calculator childCalc = CalculatorFactory.getCalculatorFor(this.getSubscription(), p);
-			RevenueItem childRevenueItem = childCalc.compute(timePeriod, computeContext);
+			Calculator childCalculator = CalculatorFactory.getCalculatorFor(this.getSubscription(), price);
+			RevenueItem childRevenueItem = childCalculator.compute(timePeriod, computeContext);
 			if (childRevenueItem != null) {
-				cumulativeItem.addRevenueItem(childRevenueItem);
+				cumulativeRevenueItem.addRevenueItem(childRevenueItem);
 			}
 		}
 
-		// FIXME: what if the cumulative bundle is a price? It might also have a Discount which needs to be included
-		// Quick and dirty workaround below
 		if(this.item instanceof Price) {
-			Price p = (Price)this.item;
-			if(p.getDiscount()!=null) {
+			Price price = (Price)this.item;
+			if(price.getDiscount()!=null) {
 				Map<String, Double> discountContext = new HashMap<>();
-				discountContext.put("parent-price", cumulativeItem.getOverallValue());
-				Calculator discountCalculator = CalculatorFactory.getCalculatorFor(this.getSubscription(), p.getDiscount());
+				discountContext.put("parent-price", cumulativeRevenueItem.getOverallValue());
+				Calculator discountCalculator = CalculatorFactory.getCalculatorFor(this.getSubscription(), price.getDiscount());
 				RevenueItem discountRevenueItem = discountCalculator.compute(timePeriod, discountContext);
 				if(discountRevenueItem!=null) {
-					cumulativeItem.addRevenueItem(discountRevenueItem);
+					cumulativeRevenueItem.addRevenueItem(discountRevenueItem);
 				}
 			}
 		}
 
-		if (cumulativeItem.getItems().isEmpty()) {
+		if (cumulativeRevenueItem.getItems().isEmpty()) {
 			return null;
+		} else {
+			return cumulativeRevenueItem;
 		}
-
-		return cumulativeItem;
 	}
 
 }

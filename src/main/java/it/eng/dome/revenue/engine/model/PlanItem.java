@@ -66,6 +66,9 @@ public abstract class PlanItem {
 	@JsonProperty("validBetween")
 	private TimePeriod validBetween;
 
+	@JsonProperty("validPeriod")
+	private ReferencePeriod validPeriod;
+
 	/**
 	 * The following properties are used to check if the computation is applicable. If not, the item
 	 * is skipped from computation (and not included in the report? To be confirmed).
@@ -304,7 +307,15 @@ public abstract class PlanItem {
 		if(this.getParentItem()!=null && this.getParentItem().getIgnorePeriod()!=null)
 			return this.getParentItem().getIgnorePeriod();
 		else {
-				return this.ignorePeriod;
+			return this.ignorePeriod;
+		}
+	}
+
+	public ReferencePeriod getValidPeriod() {
+		if(this.getParentItem()!=null && this.getParentItem().getValidPeriod()!=null)
+			return this.getParentItem().getValidPeriod();
+		else {
+			return this.validPeriod;
 		}
 	}
 
@@ -385,5 +396,8 @@ public abstract class PlanItem {
 		this.skipIfZero = skipIfZero;
 	}
 
+	public void setValidPeriod(ReferencePeriod validPeriod) {
+		this.validPeriod = validPeriod;
+	}
 	
 }

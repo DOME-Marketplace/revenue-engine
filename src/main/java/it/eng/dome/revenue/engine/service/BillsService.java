@@ -368,7 +368,7 @@ public class BillsService implements InitializingBean {
      * @throws IllegalArgumentException if the RevenueBill or its related parties are null/empty
      * @throws IllegalStateException if required data (Subscription, Buyer party, etc.) cannot be retrieved
      */
-    public List<AppliedCustomerBillingRate> getACBRsByRevenueBill(RevenueBill rb) {
+    private List<AppliedCustomerBillingRate> getACBRsByRevenueBill(RevenueBill rb) {
     	if (rb == null) {
             throw new IllegalArgumentException("RevenueBill cannot be null");
         }
@@ -419,7 +419,7 @@ public class BillsService implements InitializingBean {
  	 * @param acbrs is a list of ACBR
  	 * @return a list of ACBR with AppliedBillingTaxRate attribute for each object.
  	*/
-    public List<AppliedCustomerBillingRate> applyTaxes(List<AppliedCustomerBillingRate> acbrs) {
+    private List<AppliedCustomerBillingRate> applyTaxes(List<AppliedCustomerBillingRate> acbrs) {
 
         // first, retrieve the product
         String productId = acbrs.get(0).getProduct().getId();
@@ -435,7 +435,7 @@ public class BillsService implements InitializingBean {
  	 * @param rb is a RevenueBill used to generate a CustomerBill id
  	 * @return a list of ACBR with Customer Bill Ref attribute for each object.
  	*/
-    public List<AppliedCustomerBillingRate> setCustomerBillRef(List<AppliedCustomerBillingRate> acbrs, RevenueBill rb){
+    private List<AppliedCustomerBillingRate> setCustomerBillRef(List<AppliedCustomerBillingRate> acbrs, RevenueBill rb){
 		// this acbr id is for local istance of acbr. When we persist the acbr, we provide another id.
 		BillRef billRef = new BillRef();
 		String billId = rb.getId();
@@ -454,7 +454,7 @@ public class BillsService implements InitializingBean {
  	 * @param subscriptionId is a Subscription ID used to retrieve Billing Account
  	 * @return a list of ACBR with Billing Account Ref attribute for each object.
  	*/
-  public List<AppliedCustomerBillingRate> setBillingAccountRef(List<AppliedCustomerBillingRate> acbrs, String subscriptionId){
+  private List<AppliedCustomerBillingRate> setBillingAccountRef(List<AppliedCustomerBillingRate> acbrs, String subscriptionId){
 	  BillingAccountRef billingAccountRef = tmfDataRetriever.retrieveBillingAccountByProductId(subscriptionId);
 	  if (billingAccountRef == null) {
 		  logger.warn("toCB: billingAccountRef is null, CustomerBill will have null billingAccount");

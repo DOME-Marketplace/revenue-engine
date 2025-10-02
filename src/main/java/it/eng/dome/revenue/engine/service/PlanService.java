@@ -1,5 +1,7 @@
 package it.eng.dome.revenue.engine.service;
 
+import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
@@ -10,6 +12,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import it.eng.dome.revenue.engine.utils.IdUtils;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.InitializingBean;
@@ -103,7 +106,15 @@ public class PlanService implements InitializingBean{
         String[] parts = IdUtils.unpack(planId, "plan");
         String offeringId = parts[0];
         String offeringPriceId = parts[1];
-        
+        /*
+        try {
+            return this.loadPlanFromFile(".../revenue-engine/src/main/resources/data/plans/2025-pro.json");
+        } catch(Exception e) {
+            logger.error(e.getMessage(), e);
+            return null;
+        }
+        */
+
         return this.findPlan(offeringId, offeringPriceId);
     }
 
@@ -235,6 +246,15 @@ public class PlanService implements InitializingBean{
             logger.debug("Loaded plan '{}' with ID '{}'", link, plan.getId());
             return plan;
         }
+    }
+
+    protected Plan loadPlanFromFile(String path) throws IOException {
+        File file = new File(path);
+        try (InputStream is = new FileInputStream(file)) {
+            Plan plan = mapper.readValue(is, Plan.class);
+            return plan;
+        }
+
     }
 
     private void overwritingPlanByProductOffering(Plan plan, ProductOffering po, ProductOfferingPrice pop) {
