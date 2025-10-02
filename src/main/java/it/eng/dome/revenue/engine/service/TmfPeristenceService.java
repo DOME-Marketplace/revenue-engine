@@ -24,9 +24,7 @@ import java.util.*;
 
 /**
  * FIXME: Enhancemets and fixes:
- * [L] properly manage limits --> DONE
- * [M] comparison of CB should consider also attached acbrs --> DONE
- * [H] only consider past & consolidated entities (cb and acbrs). Filter here based on dates, state, etc...
+ * [H] consider parameter to limit the number of bills to persist (e.g. only last month/ last 2 months)
  * [H] only consider active subscriptions ([L] but be careful with last invoices... sub might not be active)
  */
 
