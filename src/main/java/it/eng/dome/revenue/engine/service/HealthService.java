@@ -162,7 +162,6 @@ public class HealthService implements InitializingBean {
             connectivity.setOutput(e.getMessage());
         }
 
-        connectivity.setStatus(HealthStatus.FAIL);
         out.add(connectivity);
 
         // TODO: return more/better checks
