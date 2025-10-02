@@ -66,7 +66,7 @@ public class InvoicingService {
         headers.setContentType(MediaType.APPLICATION_JSON);
         HttpEntity<String> request = new HttpEntity<>(bill, headers);
 
-        logger.debug("Payload bill apply taxes received:\n" + bill);
+        logger.debug("Payload bill apply taxes received:\n {}", bill);
 
         try {
             ResponseEntity<String> response = restTemplate.postForEntity(
