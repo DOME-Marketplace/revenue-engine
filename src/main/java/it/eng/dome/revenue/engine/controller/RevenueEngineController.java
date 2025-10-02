@@ -8,7 +8,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RestController;
 
 import io.swagger.v3.oas.annotations.tags.Tag;
-import it.eng.dome.revenue.engine.service.HealthService;
+import it.eng.dome.revenue.engine.service.cached.CachedHealthService;
 import it.eng.dome.revenue.engine.utils.health.Health;
 import it.eng.dome.revenue.engine.utils.health.Info;
 
@@ -23,7 +23,7 @@ public class RevenueEngineController {
     private static final Logger log = LoggerFactory.getLogger(RevenueEngineController.class);
     
     @Autowired
-    private HealthService healthService;
+    private CachedHealthService healthService;
 
     @GetMapping("/health")
     public ResponseEntity<Health> getHealth() {

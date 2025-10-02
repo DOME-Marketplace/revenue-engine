@@ -5,6 +5,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
@@ -30,6 +31,12 @@ public class Health {
 
     public void setStatus(HealthStatus status) {
         this.status = status;
+    }
+
+    public void elevateStatus(HealthStatus status) {
+        if(this.status==null || (status.getSeverity()>this.status.getSeverity())) {
+            this.setStatus(status);
+        }
     }
 
     public void addCheck(Check check) {
@@ -77,6 +84,33 @@ public class Health {
 
     public Map<String, List<Check>> getChecks() {
         return checks;
+    }
+
+    @JsonIgnore
+    public List<Check> getAllChecks() {
+        List<Check> out = new ArrayList<>();
+        for(List<Check> chks : this.getChecks().values()) {
+            out.addAll(chks);
+        }
+        return out;
+    }
+
+    @JsonIgnore
+    public List<Check> getChecks(String componentName, String measurementType) {
+        List<Check> out = new ArrayList<>();
+
+        if(componentName!=null && measurementType!=null) {
+            out.addAll(this.checks.get("componentName"+":"+measurementType));
+        } else {
+            for(String k: this.checks.keySet()) {
+                if(componentName!=null && k.startsWith(componentName+":"))
+                    out.addAll(this.checks.get(k));
+                else if(measurementType!=null && k.endsWith(":"+measurementType))
+                    out.addAll(this.checks.get(k));
+            }
+        }
+
+        return out;
     }
 
 }

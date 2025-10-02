@@ -1,6 +1,8 @@
 package it.eng.dome.revenue.engine.utils.health;
 
 import java.time.OffsetDateTime;
+import java.time.temporal.ChronoUnit;
+import java.time.temporal.TemporalUnit;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -65,7 +67,7 @@ public class Check {
     }
 
     public void setTime(OffsetDateTime time) {
-        this.time = time;
+        this.time = time.truncatedTo(ChronoUnit.SECONDS);
     }
 
     public String getOutput() {
