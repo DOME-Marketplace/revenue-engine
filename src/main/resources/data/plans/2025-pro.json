@@ -45,7 +45,7 @@
         "recurringChargePeriodType": "YEAR",
         "amount": 8000,
         "currency": "EUR",
-		"ignore": "${subscription.characteristics.marketplace_subscription}",
+		"ignore": "${subscription.characteristics.marketplaceSubscription}",
         "discount": {
           "name": "Discount on yearly fee based on previous years sales and referrals",
           "isBundle": true,

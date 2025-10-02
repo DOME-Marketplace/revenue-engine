@@ -1,6 +1,7 @@
 package it.eng.dome.revenue.engine.service.compute2;
 
 import java.time.OffsetDateTime;
+import java.util.ArrayList;
 import java.util.Map;
 
 import org.slf4j.Logger;
@@ -9,6 +10,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 
 import it.eng.dome.revenue.engine.model.PlanItem;
 import it.eng.dome.revenue.engine.model.Price;
+import it.eng.dome.revenue.engine.model.Range;
 import it.eng.dome.revenue.engine.model.RevenueItem;
 import it.eng.dome.revenue.engine.model.Subscription;
 import it.eng.dome.revenue.engine.model.SubscriptionTimeHelper;
@@ -46,11 +48,37 @@ public abstract class AbstractCalculator implements Calculator {
 		if(outRevenueItem!=null && zeroIt)
 			outRevenueItem.zeroAmountsRecursively();
 
+		// constrain the resulting value, if needed
+		// TODO: this has to be tested
+		Range r = this.item.getResultingAmountRange();
+		if(r!=null) {
+			if(r.getMin()!=null) {
+				outRevenueItem.setValue(Math.max(r.getMin(), outRevenueItem.getValue()));
+			}
+			if(r.getMax()!=null) {
+				outRevenueItem.setValue(Math.min(r.getMax(), outRevenueItem.getValue()));
+			}
+		}
+
+		// if requested, forget the revenue item, if the result is zero
+		if(this.item.getSkipIfZero() && outRevenueItem.getOverallValue()==0) {
+			return null;
+		}
+
 		// variable vallues for future items lead to estimaed revenueItems
 		if (this.item.isVariable() && outRevenueItem.getChargeTime().isAfter(OffsetDateTime.now())) {
 			outRevenueItem.setEstimated(true);
 		} else {
 			outRevenueItem.setEstimated(false);
+		}
+
+		// as a final step, if needed, collapse the revenueItem
+		// TODO: this has to be tested
+		if(this.item.getCollapse()) {
+			// set the value to be the same as getOverallValue() 
+			outRevenueItem.setValue(outRevenueItem.getOverallValue());
+			// remove all child items
+			outRevenueItem.setItems(new ArrayList<>());
 		}
 
 		return outRevenueItem;

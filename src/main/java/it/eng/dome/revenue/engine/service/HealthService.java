@@ -1,16 +1,12 @@
 package it.eng.dome.revenue.engine.service;
 
-import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Map.Entry;
+import java.util.ArrayList;
+import java.util.List;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.info.BuildProperties;
@@ -26,10 +22,8 @@ import it.eng.dome.revenue.engine.utils.health.Info;
 @Service
 public class HealthService implements InitializingBean {
 
-    private final Logger logger = LoggerFactory.getLogger(BillsService.class);
-
     @Autowired
-    InvoicingService invoicingService;
+    private InvoicingService invoicingService;
 
     @Autowired
     private BuildProperties buildProperties;
@@ -58,48 +52,54 @@ public class HealthService implements InitializingBean {
         Health h = new Health();
         h.setDescription("health for the revenue engine service");
 
-        // TODO: implement proper checks and summarize the status in h.status
+        // TODO: implement proper/more checks and summarize the status in h.status
 
-        for(Entry<String, Check> e: this.getInvoicingServiceCheck().entrySet())
-            h.addCheck(e.getKey(), e.getValue());
+        for(Check c: this.getInvoicingServiceCheck())
+            h.addCheck(c);
 
-        for(Entry<String, Check> e: this.getTMFChecks().entrySet())
-            h.addCheck(e.getKey(), e.getValue());
+        for(Check c: this.getTMFChecks())
+            h.addCheck(c);
 
         h.setStatus(HealthStatus.PASS);
 
         return h;
     }
 
-    private Map<String, Check> getInvoicingServiceCheck() {
-        // TODO: return better/more checks
+    private List<Check> getInvoicingServiceCheck() {
 
-        Check connectivity = new Check();
+        List<Check> out = new ArrayList<>();
+
+        Check connectivity = new Check("invoicing", "connectivity");
         connectivity.setComponentType("external");
         connectivity.setTime(OffsetDateTime.now());
 
-        if("PASS".equalsIgnoreCase(invoicingService.info())) {
+        try {
+            Info invoicingInfo = invoicingService.getInfo();
             connectivity.setStatus(HealthStatus.PASS);
-        } else {
-            connectivity.setStatus(HealthStatus.FAIL);
+            connectivity.setOutput(invoicingInfo.getName()+":"+invoicingInfo.getVersion());
         }
+        catch(Exception e) {
+            connectivity.setStatus(HealthStatus.FAIL);
+            connectivity.setOutput(e.getMessage());
+        }
+        out.add(connectivity);
 
-        Map<String, Check> out = new HashMap<>();
-        out.put("invoicing-service:connections", connectivity);
+        // TODO: return better/more checks
 
         return out;
     }
 
-    private Map<String, Check> getTMFChecks() {
-        // TODO: return better/more checks
+    private List<Check> getTMFChecks() {
 
-        Check connectivity = new Check();
+        List<Check> out = new ArrayList<>();
+
+        Check connectivity = new Check("tmf-api", "connectivity");
         connectivity.setComponentType("external");
         connectivity.setTime(OffsetDateTime.now());
         connectivity.setStatus(HealthStatus.FAIL);
+        out.add(connectivity);
 
-        Map<String, Check> out = new HashMap<>();
-        out.put("tmf-api:connections", connectivity);
+        // TODO: return better/more checks
 
         return out;
     }

@@ -17,7 +17,7 @@ public class Health {
     private String output;
     private String description;
 
-    private Map<String, Check> checks;
+    private Map<String, List<Check>> checks;
 
     public Health() {
         this.checks = new HashMap<>();
@@ -32,19 +32,20 @@ public class Health {
         this.status = status;
     }
 
-    public void addCheck(String name, Check check) {
-        this.checks.put(name, check);
+    public void addCheck(Check check) {
+        String key = check.getComponentName()+":"+check.getMeasurementName();
+        if(this.checks.get(key)==null)
+            this.checks.put(key, new ArrayList<>());
+        this.checks.get(key).add(check);
     }
 
     public String getReleaseId() {
         return releaseId;
     }
 
-
     public void setReleaseId(String releaseId) {
         this.releaseId = releaseId;
     }
-
 
     public List<String> getNotes() {
         return notes;
@@ -62,22 +63,19 @@ public class Health {
         return output;
     }
 
-
     public void setOutput(String output) {
         this.output = output;
     }
-
 
     public String getDescription() {
         return description;
     }
 
-
     public void setDescription(String description) {
         this.description = description;
     }    
 
-    public Map<String, Check> getChecks() {
+    public Map<String, List<Check>> getChecks() {
         return checks;
     }
 

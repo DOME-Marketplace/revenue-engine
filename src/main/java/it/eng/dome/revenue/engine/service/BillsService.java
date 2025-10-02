@@ -108,11 +108,8 @@ public class BillsService implements InitializingBean {
             Set<RevenueBill> bills = new TreeSet<>(new RevenueBillComparator());
             Subscription subscription = this.subscriptionService.getSubscriptionByProductId(subscriptionId);
 
-            Plan plan = planService.getPlanById(subscription.getPlan().getId());
-
-	        PlanResolver planResolver = new PlanResolver(subscription);
-	        Plan resolvedPlan = planResolver.resolve(plan);
-	        subscription.setPlan(resolvedPlan);
+            Plan plan = planService.getResolvedPlanById(subscription.getPlan().getId(),subscription);
+	        subscription.setPlan(plan);
 
             List<RevenueItem> items = this.statementsService.getItemsForSubscription(subscriptionId);
             for(TimePeriod tp: this.statementsService.getBillPeriods(subscriptionId)) {

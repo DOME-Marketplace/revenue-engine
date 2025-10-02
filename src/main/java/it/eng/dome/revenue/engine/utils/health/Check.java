@@ -4,10 +4,15 @@ import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class Check {
+
+    private String componentName;
+
+    private String measurementName;
 
     private HealthStatus status;
 
@@ -23,6 +28,12 @@ public class Check {
 
     public Check() {
         this.affectedEndpoints = new ArrayList<>();
+    }
+
+    public Check(String componentName, String measurementName) {
+        this();
+        this.componentName = componentName;
+        this.measurementName = measurementName;
     }
 
     public String getComponentId() {
@@ -73,4 +84,21 @@ public class Check {
         this.status = status;
     }
 
+    @JsonIgnore
+    public String getComponentName() {
+        return componentName;
+    }
+
+    public void setComponentName(String componentName) {
+        this.componentName = componentName;
+    }
+
+    @JsonIgnore
+    public String getMeasurementName() {
+        return measurementName;
+    }
+
+    public void setMeasurementName(String measurementName) {
+        this.measurementName = measurementName;
+    }
 }
