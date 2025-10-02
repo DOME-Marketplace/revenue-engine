@@ -72,20 +72,9 @@ public class StatementsService implements InitializingBean {
             // retrieve the subscription by id
             Subscription sub = subscriptionService.getSubscriptionByProductId(subscriptionId);
 
-            // retrive the plan for the subscription
-//            Plan plan = this.planService.getPlanById(sub.getPlan().getId());
-            Plan plan = this.planService.getResolvedPlanById(sub.getPlan().getId(), sub);
-
-            // resolve the plan
-//            PlanResolver planResolver = new PlanResolver(sub);
-//            plan = planResolver.resolve(plan);
-
-            // add the full plan to the subscription
-            sub.setPlan(plan);
-
-            // configure the price calculator
-            // FIXME: is the price calculator needed here?
-//            priceCalculator.setSubscription(sub);
+            // retrieve the resolved plan for the subscription
+            Plan plan = planService.getResolvedPlanById(sub.getPlan().getId(), sub);
+	        sub.setPlan(plan);
 
             // build all statements
             SubscriptionTimeHelper timeHelper = new SubscriptionTimeHelper(sub);
