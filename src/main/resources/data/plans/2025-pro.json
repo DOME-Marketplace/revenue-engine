@@ -7,31 +7,23 @@
     "endDateTime": "2025-12-31T23:59:59Z"
   },
   "lifecycleStatus": "launched",
-
   "billCycleSpecification": {
-    
     "": "type and length to specify the duration of the bill cycle. Initially computed on the product activation day",
     "billingPeriodLength": "1",
     "billingPeriodType": "MONTH",
-
     "": "When the bill cycle ends. Modifies the previous. Alternative values are COMPUTED_DAY, NEXT_FRIDAY, NEXT_MONDAY, 15_OF_CALENDAR_MONTH, ...",
     "billingPeriodEnd": "LAST_DAY_OF_CALENDAR_MONTH",
-
     "": "When the bill is computed and issued. Offset from the end of the billing cycle ",
     "billingDateShift": "5",
-
     "": "When the bill is expected to be paid. Offset from the billDate",
     "paymentDueDateOffset": "45"
   },
-
   "subscriptionDurationLength": 1,
   "subscriptionDurationPeriodType": "YEAR",
-
   "agreements": [
     "Annual subscription with renewal. Providers can receive up to 80% discount based on the sales volume from the previous year",
     "Referral bonus: an extra 10% discount on next year's fee for bringing 3 new providers or if a referred provider reaches 100k+ in sales"
   ],
-
   "price": {
     "name": "Price components for Advanced 2025",
     "isBundle": true,
@@ -45,7 +37,7 @@
         "recurringChargePeriodType": "YEAR",
         "amount": 8000,
         "currency": "EUR",
-		"ignore": "${subscription.characteristics.marketplaceSubscription}",
+        "ignore": "${subscription.characteristics.marketplaceSubscription}",
         "discount": {
           "name": "Discount on yearly fee based on previous years sales and referrals",
           "isBundle": true,
@@ -105,19 +97,18 @@
               "isBundle": true,
               "bundleOp": "ALTERNATIVE_HIGHER",
               "applicableBaseReferencePeriod": "PREVIOUS_SUBSCRIPTION_PERIOD",
-              "discounts": 
-              [
+              "discounts": [
                 {
-				          "name": "Discount for referring 3 providers",
+                  "name": "Discount for referring 3 providers",
                   "applicableBase": "referred-providers-number",
-				          "applicableBaseRange": {
+                  "applicableBaseRange": {
                     "min": 3
                   },
                   "computationBase": "parent-price",
                   "percent": 10
                 },
                 {
-				          "name": "Discount for referred provider with sales over 100k",
+                  "name": "Discount for referred provider with sales over 100k",
                   "applicableBase": "referred-providers-transaction-volume",
                   "applicableBaseRange": {
                     "min": 100000
@@ -137,83 +128,85 @@
         "recurringChargePeriodType": "MONTH",
         "amount": 150,
         "currency": "EUR",
-		"discount": {
-		  "name": "100% discount trial charge periods (fee)",
-		  "isBundle": false,
-		  "applicableBaseReferencePeriod": "FIRST_3_CHARGE_PERIODS",
-		  "applicableBase": "bills-no-taxes",
-		  "computationBase": "parent-price",
-		  "percent": 100	     	    
-		}
+        "discount": {
+          "name": "100% discount trial charge periods (fee)",
+          "isBundle": false,
+          "XXX applicableBaseReferencePeriod": "FIRST_3_CHARGE_PERIODS",
+          "XXX applicableBase": "bills-no-taxes",
+          "validPeriod" : "FIRST_3_CHARGE_PERIODS",
+          "computationBase": "parent-price",
+          "percent": 100
+        }
       },
-	{
-	  "name": "Montly revenue-sharing based on transactions",
-	  "type": "RECURRING_POSTPAID",
-	  "recurringChargePeriodLength": 1,
-	  "recurringChargePeriodType": "MONTH",
-	  "applicableBaseReferencePeriod": "LAST_9_CHARGE_PERIODS",
-	  "XXXXXXXX applicableFrom": "2025-01-01T00:00:00Z",
-    "validBetween": {
-      "startDateTime": "2025-01-01T00:00:00Z"
-    },
-	  "applicableBase": "bills-no-taxes",
-	  "computationBaseReferencePeriod": "CURRENT_CHARGE_PERIOD",
-	  "computationBase": "bills-no-taxes",
-	  "currency": "EUR",
-	  "isBundle": true,
-	  "bundleOp": "CUMULATIVE",
-	  "discount": {
-	    "name": "100% discount trial charge periods (revenue share)",
-	    "isBundle": false,
-		"applicableBaseReferencePeriod": "FIRST_3_CHARGE_PERIODS",
-		"applicableBase": "bills-no-taxes",
-		"computationBase": "parent-price",
-        "percent": 100	     	    
-	  },
-	  "prices": [
-	    {
-	      "name": "Nothing to be shared with DOME for transactions below 100k",
-	      "applicableBaseRange": {
-	        "min": 0,
-	        "max": 100000
-	      },
-	      "percent": 0
-	    },
-	    {
-	      "name": "4% revenue share for transactions between 100k and 250k in the last 9 charge periods",
-	      "applicableBaseRange": {
-	        "min": 100000,
-	        "max": 250000
-	      },
-	      "percent": 4
-	    },
-	    {
-	      "name": "3.5% revenue share for transactions between 250K and 750k in the last 9 charge periods",
-	      "applicableBaseRange": {
-	        "min": 250000,
-	        "max": 750000
-	      },
-	      "percent": 3.5
-	    },
-	    {
-	      "name": "3% revenue share for transactions between 750K and 1M in the last 9 charge periods",
-	      "applicableBaseRange": {
-	        "min": 750000,
-	        "max": 1000000
-	      },
-	      "percent": 3
-	    },
-	    {
-	      "name": "2.5% revenue share for transactions over 1M in the last 9 charge periods",
-	      "applicableBaseRange": {
-	        "min": 1000000
-	      },
-	      "percent": 2.5
-	    }
-	  ]
-	},
       {
-        "name": "End-of-period yearly fee (for dev purposes only)",        
+        "name": "Montly revenue-sharing based on transactions",
+        "type": "RECURRING_POSTPAID",
+        "recurringChargePeriodLength": 1,
+        "recurringChargePeriodType": "MONTH",
+        "applicableBaseReferencePeriod": "LAST_9_CHARGE_PERIODS",
+        "XXXXXXXX applicableFrom": "2025-01-01T00:00:00Z",
+        "validBetween": {
+          "startDateTime": "2025-01-01T00:00:00Z"
+        },
+        "applicableBase": "bills-no-taxes",
+        "computationBaseReferencePeriod": "CURRENT_CHARGE_PERIOD",
+        "computationBase": "bills-no-taxes",
+        "currency": "EUR",
+        "isBundle": true,
+        "bundleOp": "CUMULATIVE",
+        "discount": {
+          "name": "100% discount trial charge periods (revenue share)",
+          "isBundle": false,
+          "applicableBaseReferencePeriod": "FIRST_3_CHARGE_PERIODS",
+          "applicableBase": "bills-no-taxes",
+          "computationBase": "parent-price",
+          "percent": 100
+        },
+        "prices": [
+          {
+            "name": "Nothing to be shared with DOME for transactions below 100k",
+            "applicableBaseRange": {
+              "min": 0,
+              "max": 100000
+            },
+            "percent": 0
+          },
+          {
+            "name": "4% revenue share for transactions between 100k and 250k in the last 9 charge periods",
+            "applicableBaseRange": {
+              "min": 100000,
+              "max": 250000
+            },
+            "percent": 4,
+            "skipIfZero": "true"
+          },
+          {
+            "name": "3.5% revenue share for transactions between 250K and 750k in the last 9 charge periods",
+            "applicableBaseRange": {
+              "min": 250000,
+              "max": 750000
+            },
+            "percent": 3.5
+          },
+          {
+            "name": "3% revenue share for transactions between 750K and 1M in the last 9 charge periods",
+            "applicableBaseRange": {
+              "min": 750000,
+              "max": 1000000
+            },
+            "percent": 3
+          },
+          {
+            "name": "2.5% revenue share for transactions over 1M in the last 9 charge periods",
+            "applicableBaseRange": {
+              "min": 1000000
+            },
+            "percent": 2.5
+          }
+        ]
+      },
+      {
+        "name": "End-of-period yearly fee (for dev purposes only)",
         "type": "RECURRING_POSTPAID",
         "recurringChargePeriodLength": 1,
         "recurringChargePeriodType": "YEAR",
@@ -221,16 +214,5 @@
         "currency": "EUR"
       }
     ]
-  },
-
-
-  "": "OLD AND DEPRECATED STUFF BELOW",
-
-  "renewalTermLength": 1,
-  "renewalTermPeriodType": "YEAR",
-
-  "billingPeriodLength": "1",
-  "billingPeriodType": "MONTH",
-  "billingPeriodEnd": "LAST_DAY_OF_CALENDAR_MONTH"
-
+  }
 }
