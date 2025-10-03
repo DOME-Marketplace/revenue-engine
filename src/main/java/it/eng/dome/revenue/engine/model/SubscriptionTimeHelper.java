@@ -158,7 +158,7 @@ public class SubscriptionTimeHelper {
 				return this.getPreviousSubscriptionPeriod(time);
             }
             else {
-                Pattern p = Pattern.compile("^(FIRST|LAST|PREVIOUS)_(\\d+)_CHARGE_PERIODS$");
+                Pattern p = Pattern.compile("^(FIRST|LAST|PREVIOUS)_(\\d+)_CHARGE_PERIODS?$");
                 var matcher = p.matcher(keyword);
                 if(matcher.matches()) {
                     Integer howManyPeriods = Integer.parseInt(matcher.group(2));

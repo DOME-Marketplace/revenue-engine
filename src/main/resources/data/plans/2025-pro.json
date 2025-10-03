@@ -131,8 +131,6 @@
         "discount": {
           "name": "100% discount trial charge periods (fee)",
           "isBundle": false,
-          "XXX applicableBaseReferencePeriod": "FIRST_3_CHARGE_PERIODS",
-          "XXX applicableBase": "bills-no-taxes",
           "validPeriod" : "FIRST_3_CHARGE_PERIODS",
           "computationBase": "parent-price",
           "percent": 100

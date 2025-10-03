@@ -158,12 +158,11 @@ public abstract class AbstractCalculator implements Calculator {
 			return false;
 		}
 
-		// TODO: support for "ignorePeriod"
 		// now also check the 'ignorePeriod' property. Resolve it and check if the period is affected.
 		// FIXME: same considerations as above
 		SubscriptionTimeHelper sth = new SubscriptionTimeHelper(this.getSubscription());
 		if(this.item.getIgnorePeriod()!=null) {
-		    TimePeriod customPeriod = sth.getCustomPeriod(null, (Price)this.item, ((Price)this.item).getIgnorePeriod().getValue());
+		    TimePeriod customPeriod = sth.getCustomPeriod(null, (Price)this.item, this.item.getIgnorePeriod().getValue());
 			if(customPeriod!=null) {
 				logger.debug("For this price/discount, ignoring the period {} - {}", customPeriod.getStartDateTime(), customPeriod.getEndDateTime());
 				if(timePeriod.getStartDateTime().isBefore(customPeriod.getEndDateTime())) {
@@ -172,6 +171,19 @@ public abstract class AbstractCalculator implements Calculator {
 				}
 			}
 		}
+
+		// now also check the 'validPeriod' property. Resolve it and check if the period is affected.
+		// FIXME: same considerations as above
+		SubscriptionTimeHelper sth2 = new SubscriptionTimeHelper(this.getSubscription());
+		if(this.item.getValidPeriod()!=null) {
+		    TimePeriod validPeriod = sth2.getCustomPeriod(null, this.item.getReferencePrice(), this.item.getValidPeriod().getValue());
+			if(validPeriod!=null) {
+				if(!timePeriod.getStartDateTime().isBefore(validPeriod.getEndDateTime())) {
+					return false;
+				}
+			}
+		}
+
 
         return true;
     }

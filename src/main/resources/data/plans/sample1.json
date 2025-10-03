@@ -1,0 +1,60 @@
+{
+  "id": "urn:ngsi-ld:plan:55761it5-3d4q-2321-p009-44bro198re0q",
+  "name": "Sample Plan 1",
+  "description": "Some description for sample plan 1",
+  "validFor": {
+    "startDateTime": "2025-01-01T00:00:00Z",
+    "endDateTime": "2025-12-31T23:59:59Z"
+  },
+  "lifecycleStatus": "launched",
+  "billCycleSpecification": {
+    "billingPeriodLength": "1",
+    "billingPeriodType": "MONTH",
+    "billingPeriodEnd": "LAST_DAY_OF_CALENDAR_MONTH",
+    "billingDateShift": "5",
+    "paymentDueDateOffset": "15"
+  },
+  "subscriptionDurationLength": 6,
+  "subscriptionDurationPeriodType": "MONTH",
+  "agreements": [],
+  "price": {
+    "name": "Price components for Sample plan 1",
+    "isBundle": true,
+    "currency": "EUR",
+    "bundleOp": "CUMULATIVE",
+    "prices": [
+      {
+        "name": "Pre-paid Yearly Fee",
+        "type": "ONE_TIME_PREPAID",
+        "recurringChargePeriodLength": 1,
+        "recurringChargePeriodType": "YEAR",
+        "amount": 8000,
+        "currency": "EUR",
+        "ignore": false,
+        "discount": {
+          "name": "some discount",
+          "isBundle": false,
+          "computationBase": "parent-price",
+          "percent": 20
+        }
+      },
+      {
+        "name": "Monthly postpaid fee",
+        "type": "RECURRING_POSTPAID",
+        "recurringChargePeriodLength": 1,
+        "recurringChargePeriodType": "MONTH",
+        "amount": 150,
+        "currency": "EUR",
+        "ignore": false,
+        "collapse": false,
+        "discount": {
+          "name": "discount for the first two month",
+          "validPeriod": "FIRST_2_CHARGE_PERIOD",
+          "computationBase": "parent-price",
+          "skipIfZero": false,
+          "percent": 0
+        }
+      }
+    ]
+  }
+}
