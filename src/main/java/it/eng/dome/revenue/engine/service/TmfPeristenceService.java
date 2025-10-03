@@ -60,6 +60,9 @@ public class TmfPeristenceService implements InitializingBean {
 
         this.orgApi = new OrganizationApi(tmfApiFactory.getTMF632PartyManagementApiClient());
         logger.info("TmfPeristenceService initialized with OrganizationApis {}", this.orgApi);
+        
+        this.acbrAPI = new AppliedCustomerBillingRateApi(tmfApiFactory.getTMF678CustomerBillApiClient());
+        logger.info("TmfPeristenceService initialized with AppliedCustomerBillingRateApi {}", this.acbrAPI);
     }
 
     /**
