@@ -81,13 +81,22 @@ public class SubscriptionTimeHelper {
                     next = next.plusDays(1);
                 return next;
             }
-            else {
-                logger.warn("Unsupported modifier {}. Returning unchanged time", modifier);
-                return time;
-            }
+            logger.warn("Unsupported modifier {}. Returning unchanged time", modifier);
+            return time;
         }
         else if(modifier.endsWith("_OF_CALENDAR_MONTH")) {
-            // TODO
+            Pattern p = Pattern.compile("^([0-9]+)_OF_CALENDAR_MONTH$");
+            var matcher = p.matcher(modifier);
+            if(matcher.matches()) {
+                Integer targetDayOfTheMonth = Integer.parseInt(matcher.group(1));
+                if(targetDayOfTheMonth>=1 && targetDayOfTheMonth<=31) {
+                    // roll until we find that day
+                    OffsetDateTime next = time;
+                    while(next.getDayOfMonth()!=targetDayOfTheMonth)
+                        next = next.plusDays(1);
+                    return next;
+                }
+            }
             logger.warn("Unsupported modifier {}. Returning unchanged time", modifier);
             return time;
         }
