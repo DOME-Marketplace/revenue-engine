@@ -42,7 +42,6 @@ public class TmfDataRetriever implements InitializingBean {
     private ProductOfferingPriceApis popApis;
 
     public TmfDataRetriever() {
-        logger.info("TmfDataRetriever initialized with the following api: {}, {}, {}, {}, {}", billApi, productApis, orgApi, productOfferingApis, popApis);
     }
 
     @Override
@@ -50,7 +49,9 @@ public class TmfDataRetriever implements InitializingBean {
         this.billApi = new AppliedCustomerBillRateApis(tmfApiFactory.getTMF678CustomerBillApiClient());
         this.orgApi = new OrganizationApi(tmfApiFactory.getTMF632PartyManagementApiClient());
         this.productApis = new ProductApis(tmfApiFactory.getTMF637ProductInventoryApiClient());
-        logger.info("TmfDataRetriever initialized with billApi, productApis and orgApi");
+        this.productOfferingApis = new ProductOfferingApis(tmfApiFactory.getTMF620ProductCatalogManagementApiClient());
+        this.popApis = new ProductOfferingPriceApis(tmfApiFactory.getTMF620ProductCatalogManagementApiClient());
+        logger.info("TmfDataRetriever initialized with the following api: {}, {}, {}, {}, {}", billApi, productApis, orgApi, productOfferingApis, popApis);
     }
 
 
