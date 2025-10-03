@@ -112,8 +112,6 @@ public class PlanValidator {
 			issues.add(new PlanValidationIssue("applicableBaseRange max < 0", PlanValidationIssueSeverity.ERROR));
         if (item.getApplicableBaseReferencePeriod() != null && item.getApplicableBaseReferencePeriod().toString().isEmpty())
             issues.add(new PlanValidationIssue("applicableBaseReferencePeriod is empty", PlanValidationIssueSeverity.WARNING));
-        if (item.getApplicableFrom() != null && item.getApplicableFrom().toString().isEmpty())
-            issues.add(new PlanValidationIssue("applicableFrom is empty", PlanValidationIssueSeverity.WARNING));
         return issues;
     }
 
@@ -123,9 +121,6 @@ public class PlanValidator {
             issues.add(new PlanValidationIssue("computationBaseReferencePeriod is empty", PlanValidationIssueSeverity.WARNING));
         if (item.getComputationBase() != null && item.getComputationBase().isEmpty())
             issues.add(new PlanValidationIssue("computationBase is empty", PlanValidationIssueSeverity.WARNING));
-//        if (item.getComputationFrom() != null && item.getApplicableFrom() != null &&
-//            item.getComputationFrom().isBefore(item.getApplicableFrom()))
-            issues.add(new PlanValidationIssue("computationFrom is before applicableFrom", PlanValidationIssueSeverity.WARNING));
         return issues;
     }
 
