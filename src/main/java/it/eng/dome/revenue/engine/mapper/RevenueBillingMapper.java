@@ -42,6 +42,7 @@ public class RevenueBillingMapper {
 			// For each item, call a recursive helper method to find all "leaf" items and map them to AppliedCustomerBillingRate objects.
 	        collectLeafItemsAndMap(item, revenueBill, subscription, acbrList);
 	    }
+
 	    return acbrList;
 	}
 	
@@ -58,15 +59,22 @@ public class RevenueBillingMapper {
 	*/
 	private static void collectLeafItemsAndMap(RevenueItem item, RevenueBill revenueBill, Subscription subscription, List<AppliedCustomerBillingRate> acbrList) {
 		// Base case for the recursion: if the item is null, simply return.
-		if (item == null) return;
-		
+		if (item == null)
+			return;
+
+		if(item.getValue()!=null && item.getValue()!=0) {
+			acbrList.add(toACBR(item, revenueBill, subscription));
+		}
+
 		// if had a son, iterate
 		if (item.getItems() != null && !item.getItems().isEmpty()) {
 			for (RevenueItem child : item.getItems()) {
 				// if it has children, recursively call this method for each child.
 				collectLeafItemsAndMap(child, revenueBill, subscription, acbrList);
 			}
-		} else {
+		} 
+		/*
+		else {
 			// this is a leaf node (no children). Billable item that can be mapped to an ACBR.
 			try {
 //				if (item.getOverallValue() != null && item.getOverallValue() != 0.0) {
@@ -79,6 +87,7 @@ public class RevenueBillingMapper {
 				logger.error("Failed to map RevenueItem '{}' to AppliedCustomerBillingRate: {}", item.getName(), e.getMessage(), e);
 			}
 		}
+		*/
 	}
 
 	/**
@@ -124,17 +133,17 @@ public class RevenueBillingMapper {
 	    
 	    acbr.setBillingAccount(null); // set after
 
-	    if (item.getOverallValue() != null) {
+	    if (item.getValue() != null) {
 	        Money money = new Money();
-	        money.setValue(item.getOverallValue().floatValue());
+	        money.setValue(item.getValue().floatValue());
 	        money.setUnit(item.getCurrency());
 	        acbr.setTaxExcludedAmount(money);
 	    } else {
-	        logger.debug("RevenueItem '{}' has no overall value set", item.getName());
+	        logger.debug("RevenueItem '{}' has no value set", item.getName());
 	    }
 
 		acbr.appliedTax(null); // from invoice
-		acbr.setTaxIncludedAmount(null); //from invoice
+		acbr.setTaxIncludedAmount(acbr.getTaxExcludedAmount()); //from invoice
 
 	    return acbr;
 	}
