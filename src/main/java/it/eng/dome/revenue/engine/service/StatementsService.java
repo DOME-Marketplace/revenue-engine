@@ -19,6 +19,7 @@ import it.eng.dome.revenue.engine.model.SubscriptionTimeHelper;
 import it.eng.dome.revenue.engine.model.comparator.RevenueItemComparator;
 import it.eng.dome.revenue.engine.model.comparator.RevenueStatementTimeComparator;
 import it.eng.dome.revenue.engine.service.cached.CachedPlanService;
+import it.eng.dome.revenue.engine.service.cached.CachedSubscriptionService;
 import it.eng.dome.revenue.engine.service.compute.PriceCalculator;
 import it.eng.dome.tmforum.tmf678.v4.model.TimePeriod;
 
@@ -28,7 +29,7 @@ public class StatementsService implements InitializingBean {
 	private final Logger logger = LoggerFactory.getLogger(StatementsService.class);
 
 	@Autowired
-	private SubscriptionService subscriptionService;
+	private CachedSubscriptionService subscriptionService;
 
     @Autowired
 	private CachedPlanService planService;

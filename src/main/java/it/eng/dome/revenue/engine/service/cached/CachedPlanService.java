@@ -60,6 +60,7 @@ public class CachedPlanService extends PlanService {
             logger.debug("Cache MISS for " + key);
             List<Plan> plans = super.getAllPlans();
             this.planSetCache.put(key, plans);
+            logger.info("Caching {} plans", plans.size());
         }
         return this.planSetCache.get(key);
     }

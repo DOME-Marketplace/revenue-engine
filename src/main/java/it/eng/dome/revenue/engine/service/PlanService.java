@@ -94,28 +94,26 @@ public class PlanService implements InitializingBean{
                 plans.addAll(planList);
             }
         }
-
-        logger.info("Loaded {} plans and stored in cache", plans.size());
-
+        logger.info("Total plans fetched: {}", plans.size());
         return plans;
     }
     /*
      * Retrieves a plan by its ID.
      */
     public Plan getPlanById(String planId) {
+        /*
         String[] parts = IdUtils.unpack(planId, "plan");
         String offeringId = parts[0];
         String offeringPriceId = parts[1];
-        /*
+        */
         try {
-            return this.loadPlanFromFile(".../revenue-engine/src/main/resources/data/plans/2025-pro.json");
+            return this.loadPlanFromFile("./src/main/resources/data/plans/2025-pro.json");
         } catch(Exception e) {
             logger.error(e.getMessage(), e);
             return null;
         }
-        */
-
-        return this.findPlan(offeringId, offeringPriceId);
+ 
+//        return this.findPlan(offeringId, offeringPriceId);
     }
 
     public Plan getResolvedPlanById(String planId, Subscription sub) {

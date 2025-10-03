@@ -28,6 +28,7 @@ import it.eng.dome.revenue.engine.model.Subscription;
 import it.eng.dome.revenue.engine.model.SubscriptionTimeHelper;
 import it.eng.dome.revenue.engine.service.cached.CachedPlanService;
 import it.eng.dome.revenue.engine.service.cached.CachedStatementsService;
+import it.eng.dome.revenue.engine.service.cached.CachedSubscriptionService;
 import it.eng.dome.tmforum.tmf632.v4.ApiException;
 import it.eng.dome.tmforum.tmf678.v4.model.CustomerBill;
 import it.eng.dome.tmforum.tmf678.v4.model.TimePeriod;
@@ -39,7 +40,7 @@ public class ReportingService implements InitializingBean {
     protected final Logger logger = LoggerFactory.getLogger(ReportingService.class);
 
     @Autowired
-    private SubscriptionService subscriptionService;
+    private CachedSubscriptionService subscriptionService;
 
     @Autowired
     private CachedPlanService planService;
