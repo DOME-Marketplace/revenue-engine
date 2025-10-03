@@ -1,5 +1,6 @@
 package it.eng.dome.revenue.engine.model;
 
+import java.time.DayOfWeek;
 import java.time.OffsetDateTime;
 import java.util.HashSet;
 import java.util.Set;
@@ -68,8 +69,33 @@ public class SubscriptionTimeHelper {
             // advance one month
             modifiedTime = modifiedTime.plusMonths(1);
             return modifiedTime;
-        } else {
-            logger.warn("unknown modifier {}. Returning unchanged time");
+        } 
+        else if(modifier.startsWith("FOLLOWING_")) {
+            Pattern p = Pattern.compile("^FOLLOWING_(SUNDAY|MONDAY|TUESDAY|WEDNESDAY|THURSDAY|FRIDAY|SATURDAY)$");
+            var matcher = p.matcher(modifier);
+            if(matcher.matches()) {
+                // roll until we find that day
+                OffsetDateTime next = time;
+                DayOfWeek targetDoW = DayOfWeek.valueOf(matcher.group(1));
+                while(targetDoW!=null && !targetDoW.equals(next.getDayOfWeek()))
+                    next = next.plusDays(1);
+                return next;
+            }
+            else {
+                logger.warn("Unsupported modifier {}. Returning unchanged time", modifier);
+                return time;
+            }
+        }
+        else if(modifier.endsWith("_OF_CALENDAR_MONTH")) {
+            // TODO
+            logger.warn("Unsupported modifier {}. Returning unchanged time", modifier);
+            return time;
+        }
+        else if("COMPUTED_DAY".equals(modifier)) {
+            return time;
+        }
+        else {
+            logger.warn("Unknown modifier {}. Returning unchanged time", modifier);
             return time;
         }
     }
