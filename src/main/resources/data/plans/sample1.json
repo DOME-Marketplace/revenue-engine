@@ -60,6 +60,7 @@
           },
           {
             "name": "tier 1: 4% revenue sharing in the range 100-200K",
+            "computationBase": "bills-no-taxes",
             "percent": 4,
             "discount": {
               "comment": "this is the 'min' of the tier x tier percentage",
@@ -86,7 +87,8 @@
               "min": 0,
               "max": 9000
             },
-            "collapse": true
+            "collapse": true,
+            "skipIfZero": true
           },
           {
             "name": "tier 3: 2% revenue sharing in the range 500-800k",
@@ -101,7 +103,8 @@
               "min": 0,
               "max": 6000
             },
-            "collapse": true
+            "collapse": true,
+            "skipIfZero": true
           },
           {
             "name": "tier 4: 1% revenue sharing for transactions above 800k",
@@ -115,7 +118,8 @@
               "comment": "min is always zero. Max is the tier width x tier percentage (i.e. the max revenue for the tier window)",
               "min": 0
             },
-            "collapse": true
+            "collapse": true,
+            "skipIfZero": true
           }
 
         ]

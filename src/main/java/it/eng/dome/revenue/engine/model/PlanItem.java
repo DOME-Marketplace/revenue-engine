@@ -193,11 +193,16 @@ public abstract class PlanItem {
 		this.amount = amount;
 	}
 
+	/**
+	 * Propagated. Can be overridden.
+	 * @return
+	 */
     public String getComputationBase() {
-		if(this.getParentItem()!=null && this.getParentItem().getComputationBase()!=null)
-			return this.getParentItem().getComputationBase();
-		else
+		if(this.computationBase!=null)
 			return this.computationBase;
+		else if(this.getParentItem()!=null)
+			return this.getParentItem().getComputationBase();
+		return null;
 	}
 
 	public void setComputationBase(String computationBase) {
@@ -205,6 +210,13 @@ public abstract class PlanItem {
 	}
 
     public Range getApplicableBaseRange() {
+		/*
+		if(this.applicableBaseRange!=null)
+			return this.applicableBaseRange;
+		else if(this.getParentItem()!=null)
+			return this.getParentItem().getApplicableBaseRange();
+		return null;
+		*/
 		if(this.getParentItem()!=null && this.getParentItem().getApplicableBaseRange()!=null)
 			return this.getParentItem().getApplicableBaseRange();
 		else
@@ -258,11 +270,22 @@ public abstract class PlanItem {
 		this.applicableBaseReferencePeriod = applicableBaseReferencePeriod;
 	}
 
+	/**
+	 * Propagated. Can be overridden.
+	 * @return
+	 */
 	public ReferencePeriod getComputationBaseReferencePeriod() {
+		if(this.computationBaseReferencePeriod!=null)
+			return this.computationBaseReferencePeriod;
+		else if(this.getParentItem()!=null)
+			return this.getParentItem().getComputationBaseReferencePeriod();
+		return null;
+		/*
 		if(this.getParentItem()!=null && this.getParentItem().getComputationBaseReferencePeriod()!=null)
 			return this.getParentItem().getComputationBaseReferencePeriod();
 		else
 			return this.computationBaseReferencePeriod;
+		*/
 	}
 
 	public void setComputationBaseReferencePeriod(ReferencePeriod computationBaseReferencePeriod) {
@@ -284,6 +307,10 @@ public abstract class PlanItem {
 		this.validBetween = validBetween;
 	}
 
+	/**
+	 * Propagated. Inherited value hides the current (lower) setting.
+	 * @return
+	 */
 	public TimePeriod getValidBetween() {
 		if(this.getParentItem()!=null && this.getParentItem().getValidBetween()!=null)
 			return this.getParentItem().getValidBetween();
@@ -303,6 +330,10 @@ public abstract class PlanItem {
 	}
 	*/
 
+	/**
+	 * Propagated. Inherited value hides the current (lower) setting.
+	 * @return
+	 */
 	public ReferencePeriod getIgnorePeriod() {
 		if(this.getParentItem()!=null && this.getParentItem().getIgnorePeriod()!=null)
 			return this.getParentItem().getIgnorePeriod();
@@ -311,6 +342,10 @@ public abstract class PlanItem {
 		}
 	}
 
+	/**
+	 * Propagated. Inherited value hides the current (lower) setting.
+	 * @return
+	 */
 	public ReferencePeriod getValidPeriod() {
 		if(this.getParentItem()!=null && this.getParentItem().getValidPeriod()!=null)
 			return this.getParentItem().getValidPeriod();
