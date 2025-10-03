@@ -18,16 +18,12 @@ import it.eng.dome.tmforum.tmf678.v4.model.TimePeriod;
 
 @Component(value = "metricsRetriever")
 @Scope(value = ConfigurableBeanFactory.SCOPE_PROTOTYPE)
-public class MetricsRetriever implements InitializingBean {
+public class MetricsRetriever {
 
     private final Logger logger = LoggerFactory.getLogger(MetricsRetriever.class);
 
     @Autowired
     private TmfCachedDataRetriever tmfDataRetriever;
-
-    @Override
-    public void afterPropertiesSet() throws Exception {
-    }
 
     public MetricsRetriever() {
     }

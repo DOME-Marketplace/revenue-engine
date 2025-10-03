@@ -1,5 +1,25 @@
 package it.eng.dome.revenue.engine.service;
 
+import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import it.eng.dome.revenue.engine.model.Plan;
+import it.eng.dome.revenue.engine.model.PlanResolver;
+import it.eng.dome.revenue.engine.model.Subscription;
+import it.eng.dome.revenue.engine.service.cached.TmfCachedDataRetriever;
+import it.eng.dome.revenue.engine.service.validation.PlanValidationReport;
+import it.eng.dome.revenue.engine.service.validation.PlanValidator;
+import it.eng.dome.revenue.engine.tmf.TmfApiFactory;
+import it.eng.dome.tmforum.tmf620.v4.model.ProductOffering;
+import it.eng.dome.tmforum.tmf620.v4.model.ProductOfferingPrice;
+import it.eng.dome.tmforum.tmf620.v4.model.ProductOfferingPriceRefOrValue;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Service;
+
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -11,38 +31,12 @@ import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import it.eng.dome.revenue.engine.utils.IdUtils;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.InitializingBean;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.stereotype.Service;
-
-import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationFeature;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
-
-import it.eng.dome.brokerage.api.ProductOfferingApis;
-import it.eng.dome.brokerage.api.ProductOfferingPriceApis;
-import it.eng.dome.revenue.engine.model.Plan;
-import it.eng.dome.revenue.engine.model.PlanResolver;
-import it.eng.dome.revenue.engine.model.Subscription;
-import it.eng.dome.revenue.engine.service.validation.PlanValidationReport;
-import it.eng.dome.revenue.engine.service.validation.PlanValidator;
-import it.eng.dome.revenue.engine.tmf.TmfApiFactory;
-import it.eng.dome.tmforum.tmf620.v4.model.ProductOffering;
-import it.eng.dome.tmforum.tmf620.v4.model.ProductOfferingPrice;
-import it.eng.dome.tmforum.tmf620.v4.model.ProductOfferingPriceRefOrValue;
-
 /**
  * Service responsible for loading and caching revenue engine plans defined as external JSON files.
  * Plans are retrieved from a GitHub repository and cached in memory using a shared CacheService.
  */
 @Service
-public class PlanService implements InitializingBean{
+public class PlanService {
 	
 	/** Dome Operator ID - now parametric via Spring property */
     @Value("${dome.operator.id}")
@@ -53,10 +47,9 @@ public class PlanService implements InitializingBean{
     // Factory for TMF APIss
     @Autowired
     private TmfApiFactory tmfApiFactory;
-    
-    private ProductOfferingApis productOfferingApis;
-    
-    private ProductOfferingPriceApis popApis;
+
+    @Autowired
+    TmfCachedDataRetriever tmfDataRetriever;
 
     private final ObjectMapper mapper;
 
@@ -70,22 +63,13 @@ public class PlanService implements InitializingBean{
                 .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
     }
     
-    @Override
-    public void afterPropertiesSet() throws Exception {
-        this.productOfferingApis = new ProductOfferingApis(tmfApiFactory.getTMF620ProductCatalogManagementApiClient());
-        this.popApis = new ProductOfferingPriceApis(tmfApiFactory.getTMF620ProductCatalogManagementApiClient()
-        );
-
-        logger.info("PlanService initialized with productOfferingApis and productOfferingPriceApis");
-    }
-    
     // retrieve all plans by offerings
     public List<Plan> getAllPlans() {
         logger.info("Fetching all plans...");
     	// FIXME: when the RP bug is fixed, filter only plans connected to DO.
         // Map<String, String> filter = new HashMap<String, String>();
         // filter.put("relatedParty.id", DOME_OPERATOR_ID);
-        List<ProductOffering> pos = productOfferingApis.getAllProductOfferings(null, null);
+        List<ProductOffering> pos = tmfDataRetriever.getAllProductOfferings(null, null);
         
         List<Plan> plans = new ArrayList<>();
         for (ProductOffering po : pos) {
@@ -134,7 +118,7 @@ public class PlanService implements InitializingBean{
             throw new IllegalArgumentException("Offering ID cannot be null or empty");
         }
 
-        ProductOffering po = productOfferingApis.getProductOffering(offeringId, null);
+        ProductOffering po = tmfDataRetriever.getProductOfferingById(offeringId, null);
         if (po == null) {
             throw new IllegalStateException("ProductOffering not found for id=" + offeringId);
         }
@@ -162,11 +146,8 @@ public class PlanService implements InitializingBean{
 
         for (ProductOfferingPriceRefOrValue ref : po.getProductOfferingPrice()) {
             if (ref.getId().equals(offeringPriceId)) {
-                ProductOfferingPrice pop = popApis.getProductOfferingPrice(ref.getId(), null);
-                if (pop == null) {
-                    //throw new IllegalStateException("ProductOfferingPrice not found for id=" + ref.getId());
-                }
-                return pop;
+                // if necessary, check null condition on pop
+                return tmfDataRetriever.getProductOfferingPrice(ref.getId(), null);
             }
         }
 
@@ -182,7 +163,7 @@ public class PlanService implements InitializingBean{
             throw new IllegalArgumentException("Offering ID cannot be null or empty");
         }
 
-        ProductOffering po = productOfferingApis.getProductOffering(offeringId, null);
+        ProductOffering po = tmfDataRetriever.getProductOfferingById(offeringId, null);
         if (po == null) {
             //throw new IllegalStateException("ProductOffering not found for id=" + offeringId);
         }
@@ -195,7 +176,7 @@ public class PlanService implements InitializingBean{
         List<Plan> plans = new ArrayList<>();
 
         for (ProductOfferingPriceRefOrValue popRef : po.getProductOfferingPrice()) {
-            ProductOfferingPrice pop = popApis.getProductOfferingPrice(popRef.getId(), null);
+            ProductOfferingPrice pop = tmfDataRetriever.getProductOfferingPrice(popRef.getId(), null);
             if (pop == null) {
                 //logger.error("ProductOfferingPrice not found for id={}", popRef.getId());
                 continue; //

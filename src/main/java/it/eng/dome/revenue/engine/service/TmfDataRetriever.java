@@ -2,8 +2,12 @@ package it.eng.dome.revenue.engine.service;
 
 import it.eng.dome.brokerage.api.AppliedCustomerBillRateApis;
 import it.eng.dome.brokerage.api.ProductApis;
+import it.eng.dome.brokerage.api.ProductOfferingApis;
+import it.eng.dome.brokerage.api.ProductOfferingPriceApis;
 import it.eng.dome.revenue.engine.tmf.TmfApiFactory;
 import it.eng.dome.revenue.engine.utils.TMFApiUtils;
+import it.eng.dome.tmforum.tmf620.v4.model.ProductOffering;
+import it.eng.dome.tmforum.tmf620.v4.model.ProductOfferingPrice;
 import it.eng.dome.tmforum.tmf632.v4.api.OrganizationApi;
 import it.eng.dome.tmforum.tmf632.v4.model.Characteristic;
 import it.eng.dome.tmforum.tmf632.v4.model.Organization;
@@ -34,9 +38,11 @@ public class TmfDataRetriever implements InitializingBean {
     private AppliedCustomerBillRateApis billApi;
     private OrganizationApi orgApi;
     private ProductApis productApis;
+    private ProductOfferingApis productOfferingApis;
+    private ProductOfferingPriceApis popApis;
 
     public TmfDataRetriever() {
-        logger.info("TmfDataRetriever initialized with the following api: {}, {}, {}", billApi, productApis, orgApi);
+        logger.info("TmfDataRetriever initialized with the following api: {}, {}, {}, {}, {}", billApi, productApis, orgApi, productOfferingApis, popApis);
     }
 
     @Override
@@ -358,5 +364,35 @@ public class TmfDataRetriever implements InitializingBean {
         return prod;
     }
 
+    // ======== PRODUCT OFFERING ========
+
+    public ProductOffering getProductOfferingById(String poId, String fields) {
+        logger.debug("Retrieving Product Offering from TMF API By Product Offering with id: {}", poId);
+
+        if (poId == null) {
+            logger.warn("Product Offering ID is null, cannot retrieve product offering.");
+            return null;
+        }
+
+        return this.productOfferingApis.getProductOffering(poId, fields);
+    }
+
+    public List<ProductOffering> getAllProductOfferings(String fields, Map<String, String> filter) {
+        logger.debug("Retrieving all Product Offerings from TMF API");
+
+        return this.productOfferingApis.getAllProductOfferings(fields, filter);
+    }
+
+    // ======== PRODUCT OFFERING PRICE ========
+    public ProductOfferingPrice getProductOfferingPrice(String popId, String fields) {
+//        logger.debug("Retrieving Product Offering Price from TMF API By Product Offering Price with id: {}", popId);
+
+        if (popId == null) {
+            logger.warn("Product Offering Price ID is null, cannot retrieve product offering price.");
+            return null;
+        }
+
+        return this.popApis.getProductOfferingPrice(popId, fields);
+    }
 }
 
