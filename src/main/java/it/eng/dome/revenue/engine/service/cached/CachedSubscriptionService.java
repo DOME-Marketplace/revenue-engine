@@ -7,6 +7,7 @@ import org.ehcache.Cache;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import it.eng.dome.revenue.engine.model.Subscription;
@@ -14,6 +15,9 @@ import it.eng.dome.revenue.engine.service.SubscriptionService;
 
 @Service
 public class CachedSubscriptionService extends SubscriptionService {
+
+    @Value("${caching.revenue.enabled}")
+    private Boolean REVENUE_CACHE_ENABLED;
 
     private final Logger logger = LoggerFactory.getLogger(CachedSubscriptionService.class);
 
@@ -46,7 +50,7 @@ public class CachedSubscriptionService extends SubscriptionService {
     @Override
     public List<Subscription> getAllSubscriptions() {
         String key = "all_subscriptions";
-        if (!this.subscriptionsCache.containsKey(key)) {
+        if (!REVENUE_CACHE_ENABLED || !this.subscriptionsCache.containsKey(key)) {
             logger.debug("Cache MISS for " + key);
             List<Subscription> subscriptions = super.getAllSubscriptions();
             this.subscriptionsCache.put(key, subscriptions);

@@ -6,6 +6,7 @@ import org.ehcache.Cache;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import it.eng.dome.revenue.engine.service.HealthService;
@@ -15,6 +16,9 @@ import it.eng.dome.revenue.engine.utils.health.Health;
 public class CachedHealthService extends HealthService {
 
     private final Logger logger = LoggerFactory.getLogger(CachedHealthService.class);
+
+    @Value("${caching.health.enabled}")
+    private Boolean HEALTH_CACHE_ENABLED;
 
     @Autowired
     CacheService cacheService;
@@ -42,7 +46,7 @@ public class CachedHealthService extends HealthService {
     @Override
     public Health getHealth() {
         String key = "health";
-        if (!this.healthCache.containsKey(key)) {
+        if (!HEALTH_CACHE_ENABLED || !this.healthCache.containsKey(key)) {
             logger.debug("Cache MISS for " + key);
             Health h = super.getHealth();
             this.healthCache.put(key, h);

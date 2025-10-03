@@ -8,6 +8,7 @@ import org.ehcache.Cache;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import it.eng.dome.revenue.engine.model.Report;
@@ -16,6 +17,9 @@ import it.eng.dome.tmforum.tmf632.v4.ApiException;
 
 @Service
 public class CachedReportingService extends ReportingService {
+
+    @Value("${caching.revenue.enabled}")
+    private Boolean REVENUE_CACHE_ENABLED;
 
     private final Logger logger = LoggerFactory.getLogger(CachedReportingService.class);
 
@@ -44,7 +48,7 @@ public class CachedReportingService extends ReportingService {
     @Override
     public List<Report> getDashboardReport(String partyId) throws ApiException, IOException {
         String key = partyId;
-        if (!this.reportCache.containsKey(key)) {
+        if (!REVENUE_CACHE_ENABLED || !this.reportCache.containsKey(key)) {
             logger.debug("Cache MISS for " + key);
             List<Report> plans = super.getDashboardReport(partyId);
             this.reportCache.put(key, plans);
