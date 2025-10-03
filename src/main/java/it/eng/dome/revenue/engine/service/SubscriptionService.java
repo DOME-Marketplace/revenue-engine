@@ -121,7 +121,7 @@ public class SubscriptionService implements InitializingBean {
 	 * @param role role of related party
 	 */
 	public List<Subscription> getSubscriptionsByRelatedPartyId(String id, String role) {
-		logger.debug("Retrieving subscriptions by related party id: {} with role: {}", id, role);
+		//logger.debug("Retrieving subscriptions by related party id: {} with role: {}", id, role);
 	    return getAllSubscriptions().stream()
 	            .filter(subscription -> subscription.getRelatedParties() != null)
 	            .filter(subscription -> subscription.getRelatedParties().stream()

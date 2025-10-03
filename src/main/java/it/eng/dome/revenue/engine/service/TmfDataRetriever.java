@@ -1,30 +1,25 @@
 package it.eng.dome.revenue.engine.service;
 
-import java.time.OffsetDateTime;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.TreeSet;
-import java.util.stream.Collectors;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.InitializingBean;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
-
 import it.eng.dome.brokerage.api.AppliedCustomerBillRateApis;
 import it.eng.dome.brokerage.api.ProductApis;
 import it.eng.dome.revenue.engine.tmf.TmfApiFactory;
+import it.eng.dome.revenue.engine.utils.TMFApiUtils;
 import it.eng.dome.tmforum.tmf632.v4.api.OrganizationApi;
 import it.eng.dome.tmforum.tmf632.v4.model.Characteristic;
 import it.eng.dome.tmforum.tmf632.v4.model.Organization;
 import it.eng.dome.tmforum.tmf637.v4.model.BillingAccountRef;
 import it.eng.dome.tmforum.tmf637.v4.model.Product;
 import it.eng.dome.tmforum.tmf678.v4.model.AppliedCustomerBillingRate;
+import it.eng.dome.tmforum.tmf678.v4.model.CustomerBill;
 import it.eng.dome.tmforum.tmf678.v4.model.TimePeriod;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.InitializingBean;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 public class TmfDataRetriever implements InitializingBean {
@@ -35,14 +30,13 @@ public class TmfDataRetriever implements InitializingBean {
     @Autowired
     private TmfApiFactory tmfApiFactory;
 
-    // TMForum API to retrieve bills
+    // TMForum API to retrieve bills, organizations and products
     private AppliedCustomerBillRateApis billApi;
     private OrganizationApi orgApi;
-
-    // API to retrieve product
     private ProductApis productApis;
 
     public TmfDataRetriever() {
+        logger.info("TmfDataRetriever initialized with the following api: {}, {}, {}", billApi, productApis, orgApi);
     }
 
     @Override
@@ -51,6 +45,51 @@ public class TmfDataRetriever implements InitializingBean {
         this.orgApi = new OrganizationApi(tmfApiFactory.getTMF632PartyManagementApiClient());
         this.productApis = new ProductApis(tmfApiFactory.getTMF637ProductInventoryApiClient());
         logger.info("TmfDataRetriever initialized with billApi, productApis and orgApi");
+    }
+
+
+    // ======= TMF Customer Bill ========
+
+    public CustomerBill getCustomerBillById(String customerBillId) {
+        logger.debug("Retrieving Customer Bill from TMF API By Customer Bill with id: {}", customerBillId);
+
+        if (customerBillId == null) {
+            logger.warn("Customer Bill ID is null, cannot retrieve Customer Bill.");
+            return null;
+        }
+
+        CustomerBill cb = this.billApi.getCustomerBill(customerBillId, null);
+
+        if(cb == null ) {
+            logger.info("No Customer Bill found for Customer Bill with id {}: ", customerBillId);
+            return null;
+        }
+
+        return cb;
+    }
+
+
+    // ======== TMF ACBRs ========
+
+    public List<AppliedCustomerBillingRate> getACBRsByCustomerBillId (String customerBillId) {
+        logger.info("Retrieving AppliedCustomerBillingRate from TMF API By Customer Bill with id: {}", customerBillId);
+
+        if (customerBillId == null) {
+            logger.warn("Customer Bill ID is null, cannot retrieve AppliedCustomerBillingRate.");
+            return Collections.emptyList();
+        }
+
+        Map<String, String> filter = new HashMap<>();
+        filter.put("bill.id", customerBillId);
+
+        List<AppliedCustomerBillingRate> acbrs = billApi.getAllAppliedCustomerBillingRates(null, filter);
+
+        if (acbrs == null || acbrs.isEmpty()) {
+            logger.info("No AppliedCustomerBillingRate found for Customer Bill with id {}.", customerBillId);
+            return Collections.emptyList();
+        }
+
+        return acbrs;
     }
 
     /**
@@ -105,6 +144,9 @@ public class TmfDataRetriever implements InitializingBean {
         return filtered;
     }
 
+
+    // ======== TMF ORGANIZATIONS ========
+
     /**
 	 * Retrieves active sellers from the TMF API based on the provided time period.
 	 * 
@@ -123,12 +165,12 @@ public class TmfDataRetriever implements InitializingBean {
         List<Organization> activeSellers = new ArrayList<>();
 
         // prepare the filter: only billed bills and in the given period
-        Map<String, String> filter = new HashMap<>();
-        filter.put("isBilled", "true");
-        if(timePeriod.getStartDateTime()!=null)
-            filter.put("date.gt", timePeriod.getStartDateTime().toString());
-        if(timePeriod.getEndDateTime()!=null)
-            filter.put("date.lt", timePeriod.getEndDateTime().toString());
+//        Map<String, String> filter = new HashMap<>();
+//        filter.put("isBilled", "true");
+//        if(timePeriod.getStartDateTime()!=null)
+//            filter.put("date.gt", timePeriod.getStartDateTime().toString());
+//        if(timePeriod.getEndDateTime()!=null)
+//            filter.put("date.lt", timePeriod.getEndDateTime().toString());
 
         // retrieve bills and extract seller ids
         List<AppliedCustomerBillingRate> bills = this.retrieveBills(null, timePeriod, true);
@@ -230,7 +272,18 @@ public class TmfDataRetriever implements InitializingBean {
         }
     }
 
-    public List<Organization> retrieveActiveSellersInLastMonth() throws Exception {
+    public List<Organization> getAllPaginatedOrg() throws Exception {
+        logger.info("Retrieving all organizations from TMF API");
+        // Optional filter can be set here
+        // Map<String, String> filter = new HashMap<>();
+        // filter.put("partyCharacteristic.name", "country");
+        // Fetch all organizations using the new TMFApiUtils method
+        List<Organization> allOrgs = TMFApiUtils.fetchAllOrganizations(orgApi, null, 20, null);
+        logger.info("Retrieved {} organizations from TMF API", allOrgs.size());
+        return allOrgs;
+    }
+
+    /*public List<Organization> retrieveActiveSellersInLastMonth() throws Exception {
         OffsetDateTime to = OffsetDateTime.now();
         OffsetDateTime from = to.plusMonths(-1);
         TimePeriod timePeriod = new TimePeriod();
@@ -255,7 +308,10 @@ public class TmfDataRetriever implements InitializingBean {
         timePeriod.setStartDateTime(from);
         timePeriod.setEndDateTime(to);
         return this.retrieveBills(null, timePeriod, true);
-    }
+    }*/
+
+
+    // ======== TMF BILLING ACCOUNTS ========
     
 	/** * Retrieves a billing account by product ID from the TMF API.
 	 *
@@ -281,5 +337,26 @@ public class TmfDataRetriever implements InitializingBean {
 	      
 		return ba;
 	}
+
+
+    // ======== TMF PRODUCTS ========
+    public Product getProductById(String productId) {
+        logger.debug("Retrieving Product from TMF API By Product with id: {}", productId);
+
+        if (productId == null) {
+            logger.warn("Product ID is null, cannot retrieve product.");
+            return null;
+        }
+
+        Product prod = this.productApis.getProduct(productId, null);
+
+        if(prod == null ) {
+            logger.info("No product found for product with id {}: ", productId);
+            return null;
+        }
+
+        return prod;
+    }
+
 }
 

@@ -4,6 +4,7 @@ import it.eng.dome.brokerage.api.AppliedCustomerBillRateApis;
 import it.eng.dome.revenue.engine.model.RevenueBill;
 import it.eng.dome.revenue.engine.model.Subscription;
 import it.eng.dome.revenue.engine.service.cached.CachedSubscriptionService;
+import it.eng.dome.revenue.engine.service.cached.TmfCachedDataRetriever;
 import it.eng.dome.revenue.engine.tmf.TmfApiFactory;
 import it.eng.dome.revenue.engine.utils.TMFApiUtils;
 import it.eng.dome.tmforum.tmf632.v4.api.OrganizationApi;
@@ -37,6 +38,9 @@ public class TmfPeristenceService implements InitializingBean {
     private TmfApiFactory tmfApiFactory;
 
     @Autowired
+    TmfCachedDataRetriever tmfDataRetriever;
+
+    @Autowired
     private BillsService billService;
 
     @Autowired
@@ -68,6 +72,7 @@ public class TmfPeristenceService implements InitializingBean {
     public List<CustomerBill> persistAllRevenueBills() throws Exception {
         List<CustomerBill> createdCustomerBills = new ArrayList<>();
 
+        logger.info("Starting persistence of all revenue bills for all organizations...");
         // Fetch organizations in batches and process each batch immediately
         TMFApiUtils.fetchByBatch(orgApi::listOrganization, null, 10, null, batch -> {
             for (Organization org : batch) {
@@ -169,7 +174,7 @@ public class TmfPeristenceService implements InitializingBean {
             String id = this.appliedCustomerBillRateApis.createCustomerBill(CustomerBillCreate.fromJson(cbToPersist.toJson()));
             logger.info("PERSISTENCE: created CB with id {}", id);
             // and return a fresh copy
-            return this.customerBillAPI.retrieveCustomerBill(id, null);
+            return this.tmfDataRetriever.getCustomerBillById(id);
 //            return existingCustomerBill;
         } else {
             logger.info("Local CB {} is already on TMF with id {}", cb.getId(), existingCustomerBill.getId());
@@ -380,8 +385,8 @@ public class TmfPeristenceService implements InitializingBean {
     		return true;
     	}
     	
-    	List<AppliedCustomerBillingRate> acbrs1 = billService.getACBRsByRevenueBillId(idCustomerBill1); // recupera da local
-    	List<AppliedCustomerBillingRate> acbrs2 = billService.getACBRsByCustomerBillId(idCustomerBill2);
+    	List<AppliedCustomerBillingRate> acbrs1 = billService.getACBRsByRevenueBillId(idCustomerBill1); // retieve from local
+    	List<AppliedCustomerBillingRate> acbrs2 = tmfDataRetriever.getACBRsByCustomerBillId(idCustomerBill2); // retrieve from TMF
     	
     	if(acbrs1 == null || acbrs2 == null || acbrs1.isEmpty() || acbrs2.isEmpty()) {
             logger.warn("NO ACBR found for at least one CB in {} {}", idCustomerBill1, idCustomerBill2);

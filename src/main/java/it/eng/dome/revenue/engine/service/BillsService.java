@@ -1,49 +1,31 @@
 package it.eng.dome.revenue.engine.service;
 
-import java.time.OffsetDateTime;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.TreeSet;
-
-import it.eng.dome.revenue.engine.utils.IdUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.InitializingBean;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
-
 import it.eng.dome.brokerage.api.AppliedCustomerBillRateApis;
-import it.eng.dome.brokerage.api.ProductApis;
 import it.eng.dome.revenue.engine.invoicing.InvoicingService;
 import it.eng.dome.revenue.engine.mapper.RevenueBillingMapper;
-import it.eng.dome.revenue.engine.model.Plan;
-import it.eng.dome.revenue.engine.model.PlanResolver;
-import it.eng.dome.revenue.engine.model.RevenueBill;
-import it.eng.dome.revenue.engine.model.RevenueItem;
-import it.eng.dome.revenue.engine.model.Subscription;
-import it.eng.dome.revenue.engine.model.SubscriptionTimeHelper;
+import it.eng.dome.revenue.engine.model.*;
 import it.eng.dome.revenue.engine.model.comparator.RevenueBillComparator;
 import it.eng.dome.revenue.engine.service.cached.CachedPlanService;
 import it.eng.dome.revenue.engine.service.cached.CachedStatementsService;
 import it.eng.dome.revenue.engine.service.cached.CachedSubscriptionService;
 import it.eng.dome.revenue.engine.service.cached.TmfCachedDataRetriever;
 import it.eng.dome.revenue.engine.tmf.TmfApiFactory;
+import it.eng.dome.revenue.engine.utils.IdUtils;
 import it.eng.dome.revenue.engine.utils.TmfConverter;
 import it.eng.dome.tmforum.tmf637.v4.model.BillingAccountRef;
 import it.eng.dome.tmforum.tmf637.v4.model.Product;
-import it.eng.dome.tmforum.tmf678.v4.model.AppliedBillingTaxRate;
-import it.eng.dome.tmforum.tmf678.v4.model.AppliedCustomerBillingRate;
-import it.eng.dome.tmforum.tmf678.v4.model.BillRef;
-import it.eng.dome.tmforum.tmf678.v4.model.CustomerBill;
-import it.eng.dome.tmforum.tmf678.v4.model.Money;
-import it.eng.dome.tmforum.tmf678.v4.model.TaxItem;
-import it.eng.dome.tmforum.tmf678.v4.model.TimePeriod;
+import it.eng.dome.tmforum.tmf678.v4.model.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.InitializingBean;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+import java.time.OffsetDateTime;
+import java.util.*;
 
 @Service
-public class BillsService implements InitializingBean {
+public class BillsService {
 	
 	private final Logger logger = LoggerFactory.getLogger(BillsService.class);
 
@@ -64,16 +46,6 @@ public class BillsService implements InitializingBean {
 
     @Autowired
 	private InvoicingService invoicingService;
-
-    private ProductApis productApis;
-    
-    private AppliedCustomerBillRateApis acbrApis;
-
-    @Override
-    public void afterPropertiesSet() throws Exception {
-        productApis = new ProductApis(tmfApiFactory.getTMF637ProductInventoryApiClient());
-        acbrApis = new AppliedCustomerBillRateApis(tmfApiFactory.getTMF678CustomerBillApiClient());
-    }
 
     /**
 	 * Retrieves a bill by its ID.
@@ -163,7 +135,7 @@ public class BillsService implements InitializingBean {
     /**
 	 * Builds a CustomerBill from a RevenueBill.
 	 * 
-	 * @param sb the RevenueBill to convert
+	 * @param rb the RevenueBill to convert
 	 * @return a CustomerBill object
 	 * @throws IllegalArgumentException if the RevenueBill is null or does not contain related party information
 	 */
@@ -349,7 +321,7 @@ public class BillsService implements InitializingBean {
             throw new IllegalArgumentException("AppliedCustomerBillingRate list cannot be null or empty");
         }
     	
-    	Float sum = 0.0f;
+    	float sum = 0.0f;
     	String unit = null;
     	
     	for (AppliedCustomerBillingRate acbr : acbrs) {
@@ -434,7 +406,7 @@ public class BillsService implements InitializingBean {
 
         // first, retrieve the product
         String productId = acbrs.get(0).getProduct().getId();
-        Product product = productApis.getProduct(productId, null);
+        Product product = tmfDataRetriever.getProductById(productId);
 
         // invoke the invoicing servi
         return this.invoicingService.applyTaxees(product, acbrs);
@@ -476,31 +448,5 @@ public class BillsService implements InitializingBean {
 	  }
 	  
 	  return acbrs;
-  }
-  
-  /**
-   * Retrieves the list of AppliedCustomerBillingRate for a given CustomerBill ID.
-   *
-   * @param cbId ID of CustomerBill object to retrieve ACBRs.
-   * @return List of AppliedCustomerBillingRate
-   * @throws IllegalArgumentException if the cbId is null/empty
-   */
-  public List<AppliedCustomerBillingRate> getACBRsByCustomerBillId(String cbId) {
-	if (cbId == null) {
-	      throw new IllegalArgumentException("CustomerBill ID cannot be null");
-	}
-  	
-  	logger.info("retrieve acbrs by cust id: {} ", cbId);
-  	
-  	Map<String, String> filter = new HashMap<>();
-	filter.put("bill.id", cbId);
-  	List<AppliedCustomerBillingRate> acbrs = acbrApis.getAllAppliedCustomerBillingRates(null, filter);
-
-  	if(acbrs == null || acbrs.isEmpty()) {
-  		logger.warn("No AppliedCustomerBillingRate found for CustomerBill ID: {}", cbId);
-  		return null;
-  	}
-      
-  	return acbrs;
   }
 }

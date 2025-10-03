@@ -1,9 +1,9 @@
 package it.eng.dome.revenue.engine.service.cached;
 
-import java.time.Duration;
-import java.util.List;
-
-
+import it.eng.dome.revenue.engine.service.TmfDataRetriever;
+import it.eng.dome.tmforum.tmf637.v4.model.BillingAccountRef;
+import it.eng.dome.tmforum.tmf678.v4.model.AppliedCustomerBillingRate;
+import it.eng.dome.tmforum.tmf678.v4.model.TimePeriod;
 import org.ehcache.Cache;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -11,10 +11,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
-import it.eng.dome.revenue.engine.service.TmfDataRetriever;
-import it.eng.dome.tmforum.tmf678.v4.model.AppliedCustomerBillingRate;
-import it.eng.dome.tmforum.tmf637.v4.model.BillingAccountRef;
-import it.eng.dome.tmforum.tmf678.v4.model.TimePeriod;
+import java.time.Duration;
+import java.util.List;
 
 @Service
 public class TmfCachedDataRetriever extends TmfDataRetriever {
@@ -61,7 +59,7 @@ public class TmfCachedDataRetriever extends TmfDataRetriever {
     public List<AppliedCustomerBillingRate> retrieveBills(String sellerId, TimePeriod timePeriod, Boolean isBilled) throws Exception {
         String key = sellerId + timePeriod.toString() + isBilled.toString();
         if (!TMF_CACHE_ENABLED || !this.acbrCache.containsKey(key)) {
-            logger.debug("Cache MISS for " + key);
+            logger.debug("Cache MISS for {}", key);
             List<AppliedCustomerBillingRate> acbrs = super.retrieveBills(sellerId, timePeriod, isBilled);
             this.acbrCache.put(key, acbrs);
         }
@@ -72,11 +70,21 @@ public class TmfCachedDataRetriever extends TmfDataRetriever {
     public BillingAccountRef retrieveBillingAccountByProductId(String productId) {
         String key = productId;
         if (!TMF_CACHE_ENABLED || !this.billingAccountCache.containsKey(key)) {
-            logger.debug("Cache MISS for " + key);
+            logger.debug("Cache MISS for {}", key);
             BillingAccountRef billingAccountRef = super.retrieveBillingAccountByProductId(productId);
             this.billingAccountCache.put(key, billingAccountRef);
         }
         return this.billingAccountCache.get(key);
     }
 
+    @Override
+    public List<AppliedCustomerBillingRate> getACBRsByCustomerBillId (String customerBillId) {
+        String key = customerBillId;
+        if (!TMF_CACHE_ENABLED || !this.acbrCache.containsKey(key)) {
+            logger.debug("Cache MISS for {}", key);
+            List<AppliedCustomerBillingRate> acbrs = super.getACBRsByCustomerBillId(customerBillId);
+            this.acbrCache.put(key, acbrs);
+    }
+        return this.acbrCache.get(key);
+    }
 }
