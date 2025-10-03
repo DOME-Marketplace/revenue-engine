@@ -21,6 +21,7 @@ import it.eng.dome.revenue.engine.model.comparator.RevenueStatementTimeComparato
 import it.eng.dome.revenue.engine.service.cached.CachedPlanService;
 import it.eng.dome.revenue.engine.service.cached.CachedSubscriptionService;
 import it.eng.dome.revenue.engine.service.compute.PriceCalculator;
+import it.eng.dome.revenue.engine.service.compute2.RevenueStatementBuilder;
 import it.eng.dome.tmforum.tmf678.v4.model.TimePeriod;
 
 @Service
@@ -35,7 +36,7 @@ public class StatementsService implements InitializingBean {
 	private CachedPlanService planService;
 
     @Autowired
-	private PriceCalculator priceCalculator;
+//	private PriceCalculator priceCalculator;
     
     public StatementsService() {}
 
@@ -109,14 +110,14 @@ public class StatementsService implements InitializingBean {
         sub.setPlan(plan);
 
         try {
-//            RevenueStatementBuilder rsb = new RevenueStatementBuilder(sub);
-            priceCalculator.setSubscription(sub);
+            RevenueStatementBuilder rsb = new RevenueStatementBuilder(sub);
+//            priceCalculator.setSubscription(sub);
 
 //            SubscriptionTimeHelper timeHelper = new SubscriptionTimeHelper(sub);
             for (TimePeriod tp : sub.getBillingCycles()) {
                 try {
-                    RevenueStatement statement = priceCalculator.compute(tp);
-//                    RevenueStatement statement = rsb.buildStatement(tp);
+//                    RevenueStatement statement = priceCalculator.compute(tp);
+                    RevenueStatement statement = rsb.buildStatement(tp);
 
                     if (statement != null) {
                         statement.clusterizeItems();
