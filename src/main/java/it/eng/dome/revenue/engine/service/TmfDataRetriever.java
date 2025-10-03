@@ -128,7 +128,7 @@ public class TmfDataRetriever implements InitializingBean {
 
         // --> FIX ME: be careful not to match attributes across different relatedParties
         if (sellerId != null) {
-            filter.put("relatedParty", sellerId);
+            filter.put("relatedParty.id", sellerId);
             filter.put("relatedParty.role", "Seller");
             logger.debug("Retrieving bills for seller with id: {}", sellerId);
         } else {
