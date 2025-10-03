@@ -75,12 +75,20 @@ public abstract class AbstractCalculator implements Calculator {
 		if(r!=null) {
 			logger.debug("enforcing resulting amount range...");
 			if(r.getMin()!=null) {
-				logger.debug("constraining min...");
-				outRevenueItem.setValue(Math.max(r.getMin(), outRevenueItem.getValue()));
+				logger.debug("constraining overallValue to be >= than {}", r.getMin());
+				if(outRevenueItem.getOverallValue()<r.getMin()) {
+					Double diff = r.getMin()-outRevenueItem.getOverallValue();
+					Double newVal = outRevenueItem.getValue()+diff;
+					outRevenueItem.setValue(newVal);
+				}
 			}
 			if(r.getMax()!=null) {
-				logger.debug("constraining max...");
-				outRevenueItem.setValue(Math.min(r.getMax(), outRevenueItem.getValue()));
+				logger.debug("constraining overallValue to be <= than {}", r.getMax());
+				if(outRevenueItem.getOverallValue()>r.getMax()) {
+					Double diff = outRevenueItem.getOverallValue()-r.getMax();
+					Double newVal = outRevenueItem.getValue()-diff;
+					outRevenueItem.setValue(newVal);
+				}
 			}
 		}
 
@@ -217,17 +225,30 @@ public abstract class AbstractCalculator implements Calculator {
 		String subscriberId = this.getSubscription().getSubscriberId();
 
 		Double applicableValue = this.getApplicableValue(subscriberId, timePeriod);
-		if (applicableValue == null) {
-			// if not exists an applicable or an computation then we had only amount price
-			return true;
-		}
 
-		// if value in range then computation
-		if (this.item.getApplicableBaseRange()!=null && this.item.getApplicableBaseRange().inRange(applicableValue)) {
-			logger.info("Applicable value: {}, for price: {}, in tp: {} - {}", applicableValue, this.item.getName(), timePeriod.getStartDateTime(), timePeriod.getEndDateTime());
-			return true;
+		// value & condition => check
+		// value & no condition => OK, with warning
+		// no value & condition => KO, with error
+		// no value & no condition => OK
+
+		if(applicableValue!=null) {
+			if (this.item.getApplicableBaseRange()!=null) {
+				return this.item.getApplicableBaseRange().inRange(applicableValue);
+			}
+			else {
+				logger.warn("The item {} specifies an applicability metric, but it sets no range for it");
+				return true;
+			}
 		}
-		return false;
+		else {
+			if (this.item.getApplicableBaseRange()!=null) {
+				logger.error("The item {} specifies an applicability range, but no metric is defined");
+				return false;
+			}
+			else {
+				return true;
+			}
+		}
 
 	}
 

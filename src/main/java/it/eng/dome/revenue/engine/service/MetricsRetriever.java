@@ -30,6 +30,8 @@ public class MetricsRetriever {
     
     // implement retriever for key 'bills-no-taxes'
     private Double computeBillsNoTaxes(String sellerId, TimePeriod timePeriod) throws Exception {
+
+        // TODO: when the new CB/ACBR approach will be done in the Billing Engine, retrieve CBs instead of ACBRs
     	
     	// retrieve all seller billed invoices in the period
         List<AppliedCustomerBillingRate> bills = tmfDataRetriever.retrieveBills(sellerId, timePeriod, true);
@@ -43,6 +45,7 @@ public class MetricsRetriever {
                 logger.debug("Bill {} contains no amount. Skipping it for the revenue computation", bill.getId());
            }
         }
+//        totalAmountNoTaxes = 1256000.0;
         return totalAmountNoTaxes;
     }
 
