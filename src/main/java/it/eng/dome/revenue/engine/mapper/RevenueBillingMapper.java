@@ -110,7 +110,7 @@ public class RevenueBillingMapper {
 	    acbr.setDescription("Applied Customer Billing Rate of " 
 	        + (subscription != null ? subscription.getName() : "") 
 	        + " for period " + revenueBill.getPeriod().getStartDateTime() + " - " + revenueBill.getPeriod().getEndDateTime());
-	    acbr.setDate(revenueBill.getBillTime());
+	    acbr.setDate(revenueBill.getPeriod().getEndDateTime());	// from specs, date is the acbr creation date. So, review this.
 	    acbr.setIsBilled(false); 
 	    acbr.setType(item.getType());
 	    acbr.setPeriodCoverage(revenueBill.getPeriod());
@@ -163,7 +163,7 @@ public class RevenueBillingMapper {
         String billId = revenueBill.getId();
         cb.setId(billId.replace("urn:ngsi-ld:revenuebill", "urn:ngsi-ld:customerbill"));
 //      cb.setHref(billId);
-        cb.setBillDate(revenueBill.getBillTime());
+//        cb.setBillDate(revenueBill.getBillTime());
         cb.setLastUpdate(OffsetDateTime.now()); //we can assume that the last update is now
 
         cb.setBillingPeriod(revenueBill.getPeriod());

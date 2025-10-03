@@ -103,12 +103,12 @@ public class RevenueBill {
         return false;
     }
 
-    public OffsetDateTime getBillTime() {
-        OffsetDateTime endDateTime = this.period.getEndDateTime();
-        if(endDateTime!=null)
-        	return endDateTime.plusDays(3);
-        return null;
-    }
+//    public OffsetDateTime getBillTime() {
+//        OffsetDateTime endDateTime = this.period.getEndDateTime();
+//        if(endDateTime!=null)
+//        	return endDateTime.plusDays(3);
+//        return null;
+//    }
 
     private String getRelatedPartyIdWithRole(String role) {
         if(this.getRelatedParties()==null || role==null)
@@ -143,7 +143,7 @@ public class RevenueBill {
         OffsetDateTime endDateTime = this.period.getEndDateTime();
         if (endDateTime != null)
             key += endDateTime.toString();
-        key += this.getBillTime().toString();
+//        key += this.getBillTime().toString();
         key += this.getRelatedPartyIdWithRole("buyer");
         key += this.getRelatedPartyIdWithRole("seller");
         key += this.getAmount().toString();

@@ -167,38 +167,49 @@ public class BillsService implements InitializingBean {
 	 * @return a CustomerBill object
 	 * @throws IllegalArgumentException if the RevenueBill is null or does not contain related party information
 	 */
-    public CustomerBill getCustomerBillByRevenueBill(RevenueBill sb) {
-    	if (sb == null) {
+    public CustomerBill getCustomerBillByRevenueBill(RevenueBill rb) {
+
+    	if (rb == null) {
             throw new IllegalArgumentException("RevenueBill cannot be null");
         }
-        if (sb.getRelatedParties() == null || sb.getRelatedParties().isEmpty()) {
+        if (rb.getRelatedParties() == null || rb.getRelatedParties().isEmpty()) {
             throw new IllegalArgumentException("Missing related party information in RevenueBill");
         }
-        if (sb.getPeriod() == null || sb.getPeriod().getEndDateTime() == null) {
+        if (rb.getPeriod() == null || rb.getPeriod().getEndDateTime() == null) {
             throw new IllegalArgumentException("RevenueBill period or endDateTime is missing");
         }
         
-        CustomerBill cb = RevenueBillingMapper.toCB(sb);
+        CustomerBill cb = RevenueBillingMapper.toCB(rb);
 
-		cb.setBillingAccount(TmfConverter.convertBillingAccountRefTo678(tmfDataRetriever.retrieveBillingAccountByProductId(sb.getSubscriptionId())));
+		cb.setBillingAccount(TmfConverter.convertBillingAccountRefTo678(tmfDataRetriever.retrieveBillingAccountByProductId(rb.getSubscriptionId())));
         
-		// NEXT Bill date and Payment Due Date
-		Subscription sub = subscriptionService.getSubscriptionByProductId(sb.getSubscriptionId());
+		// Next bill date and payment due date
+		Subscription sub = subscriptionService.getSubscriptionByProductId(rb.getSubscriptionId());
+        /*
 		Plan plan = planService.getPlanById(sub.getPlan().getId());
 		PlanResolver planResolver = new PlanResolver(sub);
 		Plan resolvedPlan = planResolver.resolve(plan);
+        */
+        Plan resolvedPlan = planService.getResolvedPlanById(sub.getPlan().getId(), sub);
 		sub.setPlan(resolvedPlan);
 		
 		SubscriptionTimeHelper th = new SubscriptionTimeHelper(sub);
-		
-		OffsetDateTime nextBillDate = th.rollBillPeriod(sb.getBillTime(), plan.getBillCycleSpecification().getBillingPeriodLength());
-		cb.setNextBillDate(nextBillDate); //?
 
-		OffsetDateTime paymentDueDate = cb.getBillDate().plusDays(plan.getBillCycleSpecification().getPaymentDueDateOffset());
+        OffsetDateTime billDate = rb.getPeriod().getEndDateTime();
+        if(resolvedPlan.getBillCycleSpecification()!=null && resolvedPlan.getBillCycleSpecification().getBillingDateShift()!=null)
+            billDate = billDate.plusDays(resolvedPlan.getBillCycleSpecification().getBillingDateShift());
+        cb.setBillDate(billDate);
+
+		OffsetDateTime nextBillDate = th.rollBillPeriod(billDate, resolvedPlan.getBillCycleSpecification().getBillingPeriodLength());
+		cb.setNextBillDate(nextBillDate);
+
+		OffsetDateTime paymentDueDate = billDate;
+        if(resolvedPlan.getBillCycleSpecification()!=null && resolvedPlan.getBillCycleSpecification().getPaymentDueDateOffset()!=null)
+            paymentDueDate = paymentDueDate.plusDays(resolvedPlan.getBillCycleSpecification().getPaymentDueDateOffset());
 		cb.setPaymentDueDate(paymentDueDate);
 		
 		//apply tax
-		List<AppliedCustomerBillingRate> acbrs = this.getACBRsByRevenueBill(sb);
+		List<AppliedCustomerBillingRate> acbrs = this.getACBRsByRevenueBill(rb);
 	
 		List<TaxItem> taxItems = this.getTaxItemListFromACBRs(acbrs);
     	

@@ -111,8 +111,8 @@ public class StatementsService implements InitializingBean {
 //            RevenueStatementBuilder rsb = new RevenueStatementBuilder(sub);
             priceCalculator.setSubscription(sub);
 
-            SubscriptionTimeHelper timeHelper = new SubscriptionTimeHelper(sub);
-            for (TimePeriod tp : timeHelper.getChargePeriodTimes()) {
+//            SubscriptionTimeHelper timeHelper = new SubscriptionTimeHelper(sub);
+            for (TimePeriod tp : sub.getBillingCycles()) {
                 try {
                     RevenueStatement statement = priceCalculator.compute(tp);
 //                    RevenueStatement statement = rsb.buildStatement(tp);

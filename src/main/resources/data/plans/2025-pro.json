@@ -14,9 +14,9 @@
     "": "When the bill cycle ends. Modifies the previous. Alternative values are COMPUTED_DAY, NEXT_FRIDAY, NEXT_MONDAY, 15_OF_CALENDAR_MONTH, ...",
     "billingPeriodEnd": "LAST_DAY_OF_CALENDAR_MONTH",
     "": "When the bill is computed and issued. Offset from the end of the billing cycle ",
-    "billingDateShift": "5",
+    "billingDateShift": "7",
     "": "When the bill is expected to be paid. Offset from the billDate",
-    "paymentDueDateOffset": "45"
+    "paymentDueDateOffset": "30"
   },
   "subscriptionDurationLength": 1,
   "subscriptionDurationPeriodType": "YEAR",

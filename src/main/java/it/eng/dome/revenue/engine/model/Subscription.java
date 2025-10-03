@@ -3,6 +3,7 @@ package it.eng.dome.revenue.engine.model;
 import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
@@ -10,6 +11,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 
 import it.eng.dome.tmforum.tmf637.v4.model.Product;
 import it.eng.dome.tmforum.tmf678.v4.model.RelatedParty;
+import it.eng.dome.tmforum.tmf678.v4.model.TimePeriod;
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class Subscription {
@@ -156,4 +158,12 @@ public class Subscription {
 	public void setProduct(Product product) {
 		this.product = product;
 	}
+
+    // TODO: create an new class BillCycle for this, instead of TimePeriod
+    // the BillCycle should also contain the billdate and the payment due date
+    public Set<TimePeriod> getBillingCycles() {
+        SubscriptionTimeHelper timeHelper = new SubscriptionTimeHelper(this);
+        return timeHelper.getChargePeriodTimes();
+    }
+
 }
