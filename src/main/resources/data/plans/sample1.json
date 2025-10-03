@@ -9,7 +9,7 @@
   "lifecycleStatus": "launched",
   "billCycleSpecification": {
     "billingPeriodLength": "1",
-    "billingPeriodType": "MONTH",
+    "billingPeriodType": "YEAR",
     "billingPeriodEnd": "LAST_DAY_OF_CALENDAR_MONTH",
     "billingDateShift": "5",
     "paymentDueDateOffset": "15"
@@ -136,10 +136,10 @@
         "ignore": false,
         "collapse": false,
         "discount": {
-          "name": "discount for the first two month",
+          "name": "discount for the first three charge periods",
           "validPeriod": "FIRST_3_CHARGE_PERIOD",
           "computationBase": "parent-price",
-          "percent": 90
+          "percent": 100
         }
       }
     ]
