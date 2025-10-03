@@ -1,37 +1,24 @@
 package it.eng.dome.revenue.engine.service;
 
-import java.io.IOException;
-import java.time.LocalDate;
-import java.time.OffsetDateTime;
-import java.time.temporal.ChronoUnit;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.stream.Collectors;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.InitializingBean;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
-
-import it.eng.dome.revenue.engine.model.Plan;
-import it.eng.dome.revenue.engine.model.Report;
-import it.eng.dome.revenue.engine.model.RevenueBill;
-import it.eng.dome.revenue.engine.model.RevenueItem;
-import it.eng.dome.revenue.engine.model.RevenueStatement;
-import it.eng.dome.revenue.engine.model.Subscription;
-import it.eng.dome.revenue.engine.model.SubscriptionTimeHelper;
+import it.eng.dome.revenue.engine.model.*;
 import it.eng.dome.revenue.engine.service.cached.CachedPlanService;
 import it.eng.dome.revenue.engine.service.cached.CachedStatementsService;
 import it.eng.dome.revenue.engine.service.cached.CachedSubscriptionService;
 import it.eng.dome.tmforum.tmf632.v4.ApiException;
 import it.eng.dome.tmforum.tmf678.v4.model.CustomerBill;
 import it.eng.dome.tmforum.tmf678.v4.model.TimePeriod;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.InitializingBean;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+import java.io.IOException;
+import java.time.LocalDate;
+import java.time.OffsetDateTime;
+import java.time.temporal.ChronoUnit;
+import java.util.*;
+import java.util.stream.Collectors;
 
 
 @Service
@@ -50,12 +37,10 @@ public class ReportingService implements InitializingBean {
     
     @Autowired
     private BillsService billsService;
+
+    public void afterPropertiesSet() {}
     
     public ReportingService() {}
-
-    public void afterPropertiesSet()  {
-    }
-
     /**
      * Retrieves the complete dashboard report for a given organization, using cache to avoid repeated computations.
      *

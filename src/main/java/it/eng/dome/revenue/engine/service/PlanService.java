@@ -16,6 +16,7 @@ import it.eng.dome.tmforum.tmf620.v4.model.ProductOfferingPrice;
 import it.eng.dome.tmforum.tmf620.v4.model.ProductOfferingPriceRefOrValue;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -36,7 +37,7 @@ import java.util.regex.Pattern;
  * Plans are retrieved from a GitHub repository and cached in memory using a shared CacheService.
  */
 @Service
-public class PlanService {
+public class PlanService implements InitializingBean {
 	
 	/** Dome Operator ID - now parametric via Spring property */
     @Value("${dome.operator.id}")
@@ -52,6 +53,8 @@ public class PlanService {
     TmfCachedDataRetriever tmfDataRetriever;
 
     private final ObjectMapper mapper;
+
+    public void afterPropertiesSet() throws Exception {}
 
     /**
      * Constructs the PlanService and initializes the plan cache and file list.

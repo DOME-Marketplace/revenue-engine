@@ -32,16 +32,12 @@ public class BillsService {
 
     @Autowired
 	private CachedStatementsService statementsService;
-
     @Autowired
 	private CachedSubscriptionService subscriptionService;
-    
     @Autowired
 	private CachedPlanService planService;
-    
     @Autowired
 	private TmfCachedDataRetriever tmfDataRetriever;
-
     @Autowired
 	private InvoicingService invoicingService;
 
@@ -404,7 +400,7 @@ public class BillsService {
 
         // first, retrieve the product
         String productId = acbrs.get(0).getProduct().getId();
-        Product product = tmfDataRetriever.getProductById(productId);
+        Product product = tmfDataRetriever.getProductById(productId, null);
 
         // invoke the invoicing servi
         return this.invoicingService.applyTaxees(product, acbrs);

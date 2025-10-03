@@ -3,6 +3,7 @@ package it.eng.dome.revenue.engine.service;
 import it.eng.dome.brokerage.api.ProductApis;
 import it.eng.dome.revenue.engine.mapper.RevenueProductMapper;
 import it.eng.dome.revenue.engine.model.Subscription;
+import it.eng.dome.revenue.engine.service.cached.TmfCachedDataRetriever;
 import it.eng.dome.revenue.engine.tmf.TmfApiFactory;
 import it.eng.dome.tmforum.tmf637.v4.model.Product;
 import it.eng.dome.tmforum.tmf637.v4.model.RelatedParty;
@@ -32,17 +33,14 @@ public class SubscriptionService implements InitializingBean {
     // Factory for TMF APIss
     private TmfApiFactory tmfApiFactory;
 
-    // API to retrieve product
-    private ProductApis productApis;
+	@Autowired
+	TmfCachedDataRetriever tmfDataRetriever;
+
+	public void afterPropertiesSet() throws Exception {}
    
 	public SubscriptionService() {
 	}
-    
-    @Override
-    public void afterPropertiesSet() throws Exception {
-        this.productApis = new ProductApis(tmfApiFactory.getTMF637ProductInventoryApiClient());
-        logger.info("SubscriptionService initialized with ProductApis {}", this.productApis);
-    }
+
 	/*
 	 * Retrieves a subscription by its product ID.
 	 */
@@ -54,7 +52,7 @@ public class SubscriptionService implements InitializingBean {
 
          logger.info("Fetching subscription from product id: {}", productId);
          
-         Product prod = this.productApis.getProduct(productId, null);
+         Product prod = this.tmfDataRetriever.getProductById(productId, null);
 
          return RevenueProductMapper.toSubscription(prod);
     }
@@ -71,14 +69,14 @@ public class SubscriptionService implements InitializingBean {
 		filter.put("relatedParty", DOME_OPERATOR_ID);
 		logger.info("Using filter: {}", filter);
 
-		List<Product> prods = productApis.getAllProducts(null, filter);
+		List<Product> prods = this.tmfDataRetriever.getAllProducts(null, filter);
 
 		List<Subscription> subs = new ArrayList<>();
         for (Product prod : prods) {
 			// FIXME: weak control con products to guess it's a subscription
 			if(prod.getName()!=null && prod.getName().toLowerCase().indexOf("subscription")!=-1) {
 				// FIXME: workaround for bug in tmf. Need to retrieve the product individually.
-				Product fullProduct = productApis.getProduct(prod.getId(), null);
+				Product fullProduct = this.tmfDataRetriever.getProductById(prod.getId(), null);
 	            
 				// FIXME: but be careful with last invoices... sub might not be active
 				if (!"active".equalsIgnoreCase(fullProduct.getStatus().getValue())) {

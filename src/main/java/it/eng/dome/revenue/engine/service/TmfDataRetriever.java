@@ -344,17 +344,16 @@ public class TmfDataRetriever implements InitializingBean {
 		return ba;
 	}
 
-
     // ======== TMF PRODUCTS ========
-    public Product getProductById(String productId) {
-        logger.debug("Retrieving Product from TMF API By Product with id: {}", productId);
+    public Product getProductById(String productId, String fields) {
+        //logger.debug("Retrieving Product from TMF API By Product with id: {}", productId);
 
         if (productId == null) {
             logger.warn("Product ID is null, cannot retrieve product.");
             return null;
         }
 
-        Product prod = this.productApis.getProduct(productId, null);
+        Product prod = this.productApis.getProduct(productId, fields);
 
         if(prod == null ) {
             logger.info("No product found for product with id {}: ", productId);
@@ -362,6 +361,12 @@ public class TmfDataRetriever implements InitializingBean {
         }
 
         return prod;
+    }
+
+    public List<Product> getAllProducts(String fields, Map<String, String> filter) {
+        logger.debug("Retrieving all Products from TMF API");
+
+        return this.productApis.getAllProducts(fields, filter);
     }
 
     // ======== PRODUCT OFFERING ========

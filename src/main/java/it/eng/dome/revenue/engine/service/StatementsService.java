@@ -1,28 +1,22 @@
 package it.eng.dome.revenue.engine.service;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Set;
-import java.util.TreeSet;
-
+import it.eng.dome.revenue.engine.model.*;
+import it.eng.dome.revenue.engine.model.comparator.RevenueItemComparator;
+import it.eng.dome.revenue.engine.model.comparator.RevenueStatementTimeComparator;
+import it.eng.dome.revenue.engine.service.cached.CachedPlanService;
+import it.eng.dome.revenue.engine.service.cached.CachedSubscriptionService;
+import it.eng.dome.revenue.engine.service.compute2.RevenueStatementBuilder;
+import it.eng.dome.tmforum.tmf678.v4.model.TimePeriod;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import it.eng.dome.revenue.engine.model.Plan;
-import it.eng.dome.revenue.engine.model.RevenueItem;
-import it.eng.dome.revenue.engine.model.RevenueStatement;
-import it.eng.dome.revenue.engine.model.Subscription;
-import it.eng.dome.revenue.engine.model.SubscriptionTimeHelper;
-import it.eng.dome.revenue.engine.model.comparator.RevenueItemComparator;
-import it.eng.dome.revenue.engine.model.comparator.RevenueStatementTimeComparator;
-import it.eng.dome.revenue.engine.service.cached.CachedPlanService;
-import it.eng.dome.revenue.engine.service.cached.CachedSubscriptionService;
-import it.eng.dome.revenue.engine.service.compute.PriceCalculator;
-import it.eng.dome.revenue.engine.service.compute2.RevenueStatementBuilder;
-import it.eng.dome.tmforum.tmf678.v4.model.TimePeriod;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Set;
+import java.util.TreeSet;
 
 @Service
 public class StatementsService implements InitializingBean {
@@ -31,18 +25,15 @@ public class StatementsService implements InitializingBean {
 
 	@Autowired
 	private CachedSubscriptionService subscriptionService;
-
     @Autowired
 	private CachedPlanService planService;
 
-    @Autowired
+//    @Autowired
 //	private PriceCalculator priceCalculator;
-    
-    public StatementsService() {}
 
-    @Override
-    public void afterPropertiesSet() throws Exception {
-    }
+    public void afterPropertiesSet() throws Exception {}
+
+    public StatementsService() {}
 
 	/*
 	 * Returns a list of RevenueItems for the subscription

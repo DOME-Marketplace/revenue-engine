@@ -36,13 +36,10 @@ public class TmfPeristenceService implements InitializingBean {
 
     @Autowired
     private TmfApiFactory tmfApiFactory;
-
     @Autowired
     TmfCachedDataRetriever tmfDataRetriever;
-
     @Autowired
     private BillsService billService;
-
     @Autowired
     private CachedSubscriptionService subscriptionService;
 
