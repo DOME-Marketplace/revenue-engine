@@ -84,7 +84,9 @@ public class PlanService implements InitializingBean {
         logger.info("Total plans fetched: {}", plans.size());
         return plans;
     }
-
+    /*
+     * Retrieves a plan by its ID.
+     */
     public Plan getPlanById(String planId) {
         /*
         String[] parts = IdUtils.unpack(planId, "plan");
@@ -92,13 +94,12 @@ public class PlanService implements InitializingBean {
         String offeringPriceId = parts[1];
         */
         try {
-//            return this.loadPlanFromFile("/Users/paolo/work/dev/dome/revenue-engine/src/main/resources/data/plans/2025-pro.json");
-            return this.loadPlanFromFile("/Users/paolo/work/dev/dome/revenue-engine/src/main/resources/data/plans/sample1.json");
+            return this.loadPlanFromFile("./src/main/resources/data/plans/2025-pro.json");
         } catch(Exception e) {
             logger.error(e.getMessage(), e);
             return null;
         }
-
+ 
 //        return this.findPlan(offeringId, offeringPriceId);
     }
 
