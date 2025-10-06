@@ -76,6 +76,11 @@ public class TmfDataRetriever implements InitializingBean {
 
         return cb;
     }
+    
+    public List<CustomerBill> getAllCustomerBills(String fields, Map<String, String> filter) {
+
+		return this.billApi.getAllCustomerBills(fields, filter);
+	}
 
 
     // ======== TMF ACBRs ========

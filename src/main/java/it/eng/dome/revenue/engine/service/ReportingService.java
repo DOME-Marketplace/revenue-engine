@@ -1,24 +1,36 @@
 package it.eng.dome.revenue.engine.service;
 
-import it.eng.dome.revenue.engine.model.*;
-import it.eng.dome.revenue.engine.service.cached.CachedPlanService;
-import it.eng.dome.revenue.engine.service.cached.CachedStatementsService;
-import it.eng.dome.revenue.engine.service.cached.CachedSubscriptionService;
-import it.eng.dome.tmforum.tmf632.v4.ApiException;
-import it.eng.dome.tmforum.tmf678.v4.model.CustomerBill;
-import it.eng.dome.tmforum.tmf678.v4.model.TimePeriod;
+import java.io.IOException;
+import java.time.LocalDate;
+import java.time.OffsetDateTime;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.stream.Collectors;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.io.IOException;
-import java.time.LocalDate;
-import java.time.OffsetDateTime;
-import java.time.temporal.ChronoUnit;
-import java.util.*;
-import java.util.stream.Collectors;
+import it.eng.dome.revenue.engine.model.Plan;
+import it.eng.dome.revenue.engine.model.Report;
+import it.eng.dome.revenue.engine.model.RevenueItem;
+import it.eng.dome.revenue.engine.model.Subscription;
+import it.eng.dome.revenue.engine.model.SubscriptionTimeHelper;
+import it.eng.dome.revenue.engine.service.cached.CachedPlanService;
+import it.eng.dome.revenue.engine.service.cached.CachedStatementsService;
+import it.eng.dome.revenue.engine.service.cached.CachedSubscriptionService;
+import it.eng.dome.revenue.engine.service.cached.TmfCachedDataRetriever;
+import it.eng.dome.tmforum.tmf632.v4.ApiException;
+import it.eng.dome.tmforum.tmf678.v4.model.CustomerBill;
 
 
 @Service
@@ -36,7 +48,7 @@ public class ReportingService implements InitializingBean {
     private CachedStatementsService statementsService;
     
     @Autowired
-    private BillsService billsService;
+    private TmfCachedDataRetriever tmfDataRetriever;
 
     public void afterPropertiesSet() {}
     
@@ -108,94 +120,62 @@ public class ReportingService implements InitializingBean {
     }
     
     /**
-	 * Retrieves the billing history section for the given relatedPartyId.
-	 * 
-	 * @param relatedPartyId the ID of the related party
-	 * @return a Report object containing billing history details
-	*/
+     * Retrieves the billing history section for the given relatedPartyId.
+     *
+     * @param relatedPartyId the ID of the related party
+     * @return a Report object containing billing history details
+     */
     public Report getBillingHistorySection(String relatedPartyId) {
-    	String subscriptionId;
-        try {
-            subscriptionId = subscriptionService.getSubscriptionByRelatedPartyId(relatedPartyId).getId();
-        } catch (Exception e) {
-            logger.error("Failed to retrieve subscriptionId for relatedPartyId: {}", relatedPartyId, e);
-            return new Report(
-                "Billing History",
-                List.of(new Report("Error", "Unable to retrieve subscription information"))
-            );
-        }
-        // check null or empty subscriptionId
-        if (subscriptionId == null || subscriptionId.isEmpty()) {
-            logger.warn("Subscription ID is null or not found for Organization with ID: {}", relatedPartyId);
-            return new Report("Billing History", List.of(new Report("Error", "Invalid subscription ID")));
-        }
-
-        // retrieve Subscription
-        Subscription subscription = subscriptionService.getSubscriptionByProductId(subscriptionId);
-        
-        if (subscription == null || subscription.getStartDate() == null) {
-            logger.warn("Subscription not found or missing start date for ID: {}", subscriptionId);
-            return new Report("Billing History", "No billing data available");
-        }
 
         // retrieve all bills
-        List<RevenueBill> allBills;
-        try {
-            allBills = billsService.getSubscriptionBills(subscriptionId);
-        } catch (Exception e) {
-            logger.error("Failed to retrieve bills for subscription with ID: {}", subscriptionId, e);
-            return new Report("Billing History", "No billing data available");
-        }
-        
-        // sort bills by end date descending (most recent first)
-        allBills.sort(
-            Comparator.comparing(
-                b -> b.getPeriod() != null ? b.getPeriod().getEndDateTime() : OffsetDateTime.MIN,
-                Comparator.reverseOrder()
-            )
-        );
+        Map<String, String> filter = new HashMap<>();
+        filter.put("relatedParty.id", relatedPartyId);
+        List<CustomerBill> allBills = tmfDataRetriever.getAllCustomerBills(null, filter);
 
-        OffsetDateTime now = OffsetDateTime.now();
+        List<CustomerBill> buyerBills = allBills.stream()
+            .filter(cb -> cb.getRelatedParty() != null &&
+                          cb.getRelatedParty().stream()
+                            .anyMatch(rp -> rp != null &&
+                                            relatedPartyId.equals(rp.getId()) &&
+                                            "buyer".equalsIgnoreCase(rp.getRole())))
+            .sorted(Comparator.comparing(
+                cb -> cb.getBillDate() != null ? cb.getBillDate() : OffsetDateTime.MIN
+            ))
+            .toList();
+
         List<Report> invoiceReports = new ArrayList<>();
 
-        // iterate over all bills to filter and build the billing history
-        for (RevenueBill bill : allBills) {
-        	
-        	// skip malformed or incomplete bills
-            if (bill == null || bill.getPeriod() == null || bill.getPeriod().getEndDateTime() == null) {
-            	logger.warn("Skipping bill with missing or invalid period: {}", bill);
-            	continue;
+        for (CustomerBill cb : buyerBills) {
+            List<Report> details = new ArrayList<>();
+
+            // bill status
+            if (cb.getRemainingAmount() != null) {
+                double remaining = cb.getRemainingAmount().getValue();
+                if (remaining > 0.0) {
+                    details.add(new Report("Status", "Unpaid"));
+                } else if (remaining == 0.0) {
+                    details.add(new Report("Status", "Paid"));
+                } else {
+                    details.add(new Report("Status", "Unknown"));
+                }
+            } else if (cb.getTaxIncludedAmount() != null && cb.getAmountDue() != null &&
+                       cb.getTaxIncludedAmount().getValue() - cb.getAmountDue().getValue() > 0.0) {
+                details.add(new Report("Status", "Partially Paid"));
             }
 
-            OffsetDateTime billEnd = bill.getPeriod().getEndDateTime();
-           
-            // include only past bills: those that ended before 'now'
-            if (!billEnd.isBefore(now)) continue; // skip non-past bills
-            CustomerBill cb = billsService.getCustomerBillByRevenueBill(bill);
-            List<Report> details = new ArrayList<>();
-            
-            if(cb.getRemainingAmount()!=null && cb.getRemainingAmount().getValue()>0.0) {
-            	details.add(new Report("Status", "Unpaid"));           	
-			}else if(cb.getRemainingAmount()!=null && cb.getRemainingAmount().getValue()==0.0) {
-				details.add(new Report("Status", "Paid"));
-			}else if(cb.getTaxIncludedAmount().getValue()-cb.getAmountDue().getValue()>0.0) {
-				details.add(new Report("Status", "Partially Paid"));
-			}
-            
-            // format billing period for readability
-            String periodText = String.format(
-                "%s - %s",
-                bill.getPeriod().getStartDateTime() != null ? bill.getPeriod().getStartDateTime().toLocalDate() : "-",
-                billEnd.toLocalDate()
-            );
-            details.add(new Report("Period", periodText));
+            // amount
+            if (cb.getTaxIncludedAmount() != null) {
+                Float amount = cb.getTaxIncludedAmount().getValue();
+                String unit = cb.getTaxIncludedAmount().getUnit() != null ? cb.getTaxIncludedAmount().getUnit() : "";
+                details.add(new Report("Amount", String.format("%.2f %s", amount, unit)));
+            }
 
-            Double amount = bill.getAmount() != null ? bill.getAmount() : 0.0;
-            details.add(new Report("Amount", String.format("%.2f EUR", amount)));
+            // billing period
+            String periodText = cb.getBillDate() != null
+                    ? cb.getBillDate().toLocalDate().toString()
+                    : "Unknown Date";
 
-            String label = "Invoice - " +
-                (bill.getPeriod().getStartDateTime() != null ? bill.getPeriod().getStartDateTime().toLocalDate() : "Unknown");
-
+            String label = "Invoice - " + periodText;
             invoiceReports.add(new Report(label, details));
         }
 
@@ -206,6 +186,8 @@ public class ReportingService implements InitializingBean {
         return new Report("Billing History", invoiceReports);
     }
 
+
+
     /**	Retrieves the revenue section for the given relatedPartyId.
 	 * 
 	 * @param relatedPartyId the ID of the related party
@@ -213,67 +195,67 @@ public class ReportingService implements InitializingBean {
 	 * @throws ApiException if there is an error retrieving data from the API
 	 * @throws IOException if there is an error reading data from files
 	*/
-    public Report getRevenueSection(String relatedPartyId) throws ApiException, IOException {
-    	List<RevenueStatement> statements = getRevenueStatements(relatedPartyId);
+    public Report getRevenueSection(String relatedPartyId) {
     	
-        if (statements == null || statements.isEmpty()) {
+    	String subscriptionId = subscriptionService.getSubscriptionByRelatedPartyId(relatedPartyId).getId();
+		if (subscriptionId == null || subscriptionId.isEmpty()) {
+			logger.warn("Subscription ID is null or not found for Organization with ID: {}", relatedPartyId);
+			return new Report(
+				"Revenue Volume Monitoring",
+				List.of(new Report("Error", "Invalid subscription ID"))
+			);
+		}
+
+		List<RevenueItem> items;
+		try {
+			items = statementsService.getItemsForSubscription(subscriptionId);
+		} catch (Exception e) {
+			logger.error("Failed to retrieve items for subscription {}: {}", subscriptionId, e.getMessage(), e);
+			return new Report("Revenue Volume Monitoring", "No revenue data available");
+		}
+
+        if (items == null || items.isEmpty()) {
             return new Report("Revenue Volume Monitoring", "No revenue data available");
         }
 
-        LocalDate today = OffsetDateTime.now().toLocalDate();
-        Report monthly = null;
-        Report yearly = null;
-        Report tier = null;
+        LocalDate today = LocalDate.now();
+        double yearlyTotal = 0.0;
+        double monthlyTotal = 0.0;
+        String currency = "";
 
-        for (RevenueStatement rs : statements) {
-            RevenueItem root = rs.getRevenueItems() != null && !rs.getRevenueItems().isEmpty()
-                ? rs.getRevenueItems().get(0)
-                : null;
-            if (root == null) continue;
+        String currentTier = "0% commission";
 
-            TimePeriod period = rs.getPeriod();
-            OffsetDateTime start = period.getStartDateTime();
-            OffsetDateTime end = period.getEndDateTime();
-            if (start == null || end == null) continue;
+        for (RevenueItem ri : items) {
+            LocalDate chargeDate = ri.getChargeTime().toLocalDate();
+            if (chargeDate.isAfter(today)) continue; // skip future charges
 
-            LocalDate startDate = start.toLocalDate();
-            LocalDate endDate = end.toLocalDate();
-            long duration = ChronoUnit.DAYS.between(startDate, endDate);
-            double value = root.getOverallValue();
-            String currency = root.getCurrency() != null ? root.getCurrency() + " " : "";
+            if (currency.isEmpty() && ri.getCurrency() != null) {
+                currency = ri.getCurrency() + " ";
+            }
 
-            boolean containsToday = !today.isBefore(startDate) && today.isBefore(endDate);
-            String revenueSharePercentage = extractRevenueSharePercentage(root);
+            yearlyTotal += ri.getOverallValue();
 
-            // Check if the period is within the current month or year
-            // FIXME: this is a bit of a hack(ONLY FOR CURRENT MONTH AND YEAR), but it works for now
-            if (containsToday && (duration < 32 && duration >= 28)) {
-                
-                monthly = new Report("Current Monthly Revenue: ", currency + format(value));
-                tier = new Report("Current Tier: ", revenueSharePercentage + " commission");
+            if (chargeDate.getMonth() == today.getMonth() && chargeDate.getYear() == today.getYear()) {
+                monthlyTotal += ri.getOverallValue();
 
-                
-            } else if (startDate.getMonth() == today.getMonth()
-                    && startDate.getYear() == today.getYear()
-                    && duration >= 364 && duration <= 366) {
-                
-                yearly = new Report(
-                    String.format("Yearly Total: "),
-                    currency + format(value)
-                );
+                RevenueItem tierItem = ri.getItems().stream()
+                        .flatMap(i -> i.getItems().stream())
+                        .filter(i -> i.getOverallValue() > 0)
+                        .findFirst()
+                        .orElse(null);
+                if (tierItem != null) {
+                    currentTier = extractRevenueSharePercentage(tierItem) + " commission";
+                }
             }
         }
 
-        List<Report> items = new ArrayList<>();
-        if (monthly != null) items.add(monthly);
-        if (tier != null) items.add(tier);
-        if (yearly != null) items.add(yearly);
-        
+        List<Report> reportItems = new ArrayList<>();
+        reportItems.add(new Report("Current Monthly Revenue: ", currency + format(monthlyTotal)));
+        reportItems.add(new Report("Current Tier: ", currentTier));
+        reportItems.add(new Report("Yearly Total: ", currency + format(yearlyTotal)));
 
-        return new Report("Revenue Volume Monitoring", items);
+        return new Report("Revenue Volume Monitoring", reportItems);
     }
-    
-
 
     /**
 	 * Retrieves revenue statements for the given relatedPartyId.
@@ -283,14 +265,14 @@ public class ReportingService implements InitializingBean {
 	 * @throws ApiException if there is an error retrieving data from the API
 	 * @throws IOException if there is an error reading data from files
 	 */
-    public List<RevenueStatement> getRevenueStatements(String relatedPartyId) throws ApiException, IOException {
+    public List<RevenueItem> getRevenueStatements(String relatedPartyId) throws ApiException, IOException {
     	logger.info("Call getRevenueStatements with relatedPartyId: {}", relatedPartyId);
 
         String subscriptionId = subscriptionService.getSubscriptionByRelatedPartyId(relatedPartyId).getId();
         logger.debug("Retrieved subscriptionId: {}", subscriptionId);
 
         try {
-            return statementsService.getStatementsForSubscription(subscriptionId);
+            return statementsService.getItemsForSubscription(subscriptionId);
         } catch (ApiException | IOException e) {
             // Propagate specific declared exceptions
             logger.error("Error retrieving statements for subscription with ID {}: {}", subscriptionId, e.getMessage(), e);
@@ -303,23 +285,29 @@ public class ReportingService implements InitializingBean {
     }
 
     private String extractRevenueSharePercentage(RevenueItem item) {
-        if (item == null) return "N/A";
-        
-        if (item.getName() != null && item.getName().contains("% revenue share")) {
-            return item.getName().split("%")[0] + "%";
+        if (item == null) return "0%";
+
+        if (item.getValue() != null && item.getValue() > 0 && item.getName() != null && item.getName().contains("%")) {
+            String name = item.getName();
+            int percentIndex = name.indexOf("%");
+            if (percentIndex > 0) {
+                String beforePercent = name.substring(0, percentIndex);
+                String[] parts = beforePercent.split(" ");
+                return parts[parts.length - 1] + "%";
+            }
         }
-        
         if (item.getItems() != null) {
             for (RevenueItem subItem : item.getItems()) {
                 String percentage = extractRevenueSharePercentage(subItem);
-                if (!("N/A".equals(percentage))) {
-                	return percentage;
+                if (!"0%".equals(percentage)) {
+                    return percentage;
                 }
             }
         }
-        
-        return "N/A";
+
+        return "0%";
     }
+
     
     private String format(Double value) {
         if (value == null) return "-";
