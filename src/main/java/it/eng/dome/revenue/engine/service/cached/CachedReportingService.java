@@ -24,7 +24,7 @@ public class CachedReportingService extends ReportingService {
     private final Logger logger = LoggerFactory.getLogger(CachedReportingService.class);
 
     @Autowired
-    CacheService cacheService;
+    private CacheService cacheService;
 
     private Cache<String, List<Report>> reportCache;
 
