@@ -13,7 +13,7 @@ import org.springframework.web.client.RestClient;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-import it.eng.dome.revenue.engine.utils.health.Info;
+import it.eng.dome.brokerage.observability.info.Info;
 import it.eng.dome.tmforum.tmf637.v4.model.Product;
 import it.eng.dome.tmforum.tmf678.v4.model.AppliedCustomerBillingRate;
 

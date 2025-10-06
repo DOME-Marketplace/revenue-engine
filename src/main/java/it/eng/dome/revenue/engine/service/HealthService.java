@@ -1,30 +1,26 @@
 package it.eng.dome.revenue.engine.service;
 
 import java.time.OffsetDateTime;
-import java.time.ZoneId;
-import java.time.ZonedDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.info.BuildProperties;
 import org.springframework.stereotype.Service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import it.eng.dome.brokerage.observability.AbstractHealthService;
+import it.eng.dome.brokerage.observability.health.Check;
+import it.eng.dome.brokerage.observability.health.Health;
+import it.eng.dome.brokerage.observability.health.HealthStatus;
+import it.eng.dome.brokerage.observability.info.Info;
 import it.eng.dome.revenue.engine.invoicing.InvoicingService;
 import it.eng.dome.revenue.engine.tmf.TmfApiFactory;
-import it.eng.dome.revenue.engine.utils.health.Check;
-import it.eng.dome.revenue.engine.utils.health.Health;
-import it.eng.dome.revenue.engine.utils.health.HealthStatus;
-import it.eng.dome.revenue.engine.utils.health.Info;
 import it.eng.dome.tmforum.tmf632.v4.api.OrganizationApi;
 
-
 @Service
-public class HealthService implements InitializingBean {
+public class HealthService extends AbstractHealthService implements InitializingBean {
 
     @Autowired
     private InvoicingService invoicingService;
@@ -34,27 +30,10 @@ public class HealthService implements InitializingBean {
 
     private OrganizationApi orgApi;
 
-    @Autowired
-    private BuildProperties buildProperties;
-
     @Override
     public void afterPropertiesSet() throws Exception {
         // create an API for each of the used TMF APIs ... or just one?
         this.orgApi = new OrganizationApi(tmfApiFactory.getTMF632PartyManagementApiClient());
-    }
-
-    public Info getInfo() {
-        Info info = new Info();
-
-        info.setName(buildProperties.getName());
-        
-        info.setVersion(buildProperties.getVersion());
-
-    	DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd-MM-yyyy HH:mm:ss");
-        ZonedDateTime zonedDateTime = buildProperties.getTime().atZone(ZoneId.of("Europe/Rome"));
-        info.setReleaseTime(zonedDateTime.format(formatter));
-
-        return info;
     }
 
     public Health getHealth() {
@@ -152,6 +131,9 @@ public class HealthService implements InitializingBean {
         // first, some notes about the Revenue Service itself
         for(Check c: hlt.getChecks("self", null)) {
             switch(c.getStatus()) {
+                case UNKNOWN:
+                    notes.add("Revenue Sharing Service status is UNKNOWN. It might not behave as expected.");
+                    break;
                 case PASS:
                     break;
                 case WARN:
@@ -160,6 +142,8 @@ public class HealthService implements InitializingBean {
                 case FAIL:
                     notes.add("Revenue Sharing Service has some major internal troubles");
                     break;
+                default:
+                    notes.add("The Revenue Sharing Service reported an unknown status: " + c.getStatus());
             }
         }
 

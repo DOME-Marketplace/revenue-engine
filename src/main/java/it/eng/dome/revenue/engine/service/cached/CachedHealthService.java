@@ -9,8 +9,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
+import it.eng.dome.brokerage.observability.health.Health;
 import it.eng.dome.revenue.engine.service.HealthService;
-import it.eng.dome.revenue.engine.utils.health.Health;
 
 @Service
 public class CachedHealthService extends HealthService {
