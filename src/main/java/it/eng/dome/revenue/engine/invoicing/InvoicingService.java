@@ -8,20 +8,45 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
-import org.springframework.web.client.RestTemplate;
+import org.springframework.web.client.RestClient;
 
-import it.eng.dome.brokerage.invoicing.dto.ApplyTaxesRequestDTO;
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 import it.eng.dome.revenue.engine.utils.health.Info;
 import it.eng.dome.tmforum.tmf637.v4.model.Product;
-import it.eng.dome.tmforum.tmf678.v4.JSON;
 import it.eng.dome.tmforum.tmf678.v4.model.AppliedCustomerBillingRate;
+
+@JsonInclude(JsonInclude.Include.NON_NULL)
+class LocalApplyTaxesRequestDTO {
+	
+	@JsonProperty("product")
+	private Product product;
+   
+	@JsonProperty("appliedCustomerBillingRate")
+	private List<AppliedCustomerBillingRate> appliedCustomerBillingRate;
+
+	public Product getProduct() {
+		return product;
+	}
+
+	public void setProduct(Product product) {
+		this.product = product;
+	}
+
+	public List<AppliedCustomerBillingRate> getAppliedCustomerBillingRate() {
+		return appliedCustomerBillingRate;
+	}
+
+	public void setAppliedCustomerBillingRate(List<AppliedCustomerBillingRate> appliedCustomerBillingRate) {
+		this.appliedCustomerBillingRate = appliedCustomerBillingRate;
+	}
+}
 
 @Service
 public class InvoicingService {
 
     private static final Logger logger = LoggerFactory.getLogger(InvoicingService.class);
-
-    RestTemplate restTemplate = new RestTemplate();
 
     @Value("${billing.invoicing_service}")
     public String invoicingService;
@@ -32,81 +57,42 @@ public class InvoicingService {
      * which is a list of enriched ACBRs.
      */
     public List<AppliedCustomerBillingRate> applyTaxees(Product product, List<AppliedCustomerBillingRate> acbrs) {
+
         // Prepare DTO
-        ApplyTaxesRequestDTO dto = new ApplyTaxesRequestDTO(product, acbrs);
-
-        // Call invoicing service
-        String json = this.billApplyTaxes(dto.toJson());
-
-        if (json == null || json.isEmpty()) {
-            logger.warn("No response received. Returning original ACBRs.");
-            return acbrs;
-        }
+        LocalApplyTaxesRequestDTO dto = new LocalApplyTaxesRequestDTO();
+        dto.setProduct(product);
+        dto.setAppliedCustomerBillingRate(acbrs);
 
         try {
-            // Deserialize JSON array directly
-            AppliedCustomerBillingRate[] enrichedAcbrs = JSON.getGson().fromJson(json, AppliedCustomerBillingRate[].class);
-            return Arrays.asList(enrichedAcbrs);
+            RestClient defaultClient = RestClient.create();
+            ResponseEntity<AppliedCustomerBillingRate[]> response = defaultClient.post()
+                .uri(invoicingService + "/invoicing/applyTaxes")
+                .contentType(MediaType.APPLICATION_JSON)
+                .body(dto)
+                .accept(MediaType.APPLICATION_JSON)
+                .retrieve()
+                .toEntity(AppliedCustomerBillingRate[].class);
+
+            return Arrays.asList(response.getBody());
         } catch (Exception e) {
             logger.error("Failed to parse JSON response from invoicing service: {}", e.getMessage());
             return acbrs;
         }
     }
 
-    /**
-     * Calls the invoicing service endpoint for applying taxes.
-     */
-    private String billApplyTaxes(String bill) {
-        if (bill == null || bill.isBlank()) {
-            logger.warn("Cannot apply taxes: bill payload is null or empty");
-            return null;
-        }
-
-        HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.APPLICATION_JSON);
-        HttpEntity<String> request = new HttpEntity<>(bill, headers);
-
-        logger.debug("Payload bill apply taxes received:\n {}", bill);
-
-        try {
-            ResponseEntity<String> response = restTemplate.postForEntity(
-                    invoicingService + "/invoicing/applyTaxes",
-                    request,
-                    String.class
-            );
-
-            HttpStatus status = HttpStatus.valueOf(response.getStatusCode().value());
-            String body = response.getBody();
-
-            if (status.is2xxSuccessful() && body != null) {
-                logger.debug("Response headers: {}", response.getHeaders());
-                logger.debug("Response body:\n{}", body);
-                return body;
-            } else {
-                logger.warn("Unexpected response from invoicing service. Status: {}, Body: {}", status, body);
-                return null;
-            }
-        } catch (Exception e) {
-            logger.error("Exception calling invoicing service: ", e);
-            return null;
-        }
-    }
 
     /**
      * Calls the invoicing service endpoint for getting info.
      */
     public Info getInfo() throws Exception {
-
-        HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.APPLICATION_JSON);
-
         try {
-            ResponseEntity<Info> response = restTemplate.getForEntity(
-                    invoicingService + "/invoicing/info",
-                    Info.class
-            );
-            Info body = response.getBody();
-            return body;
+            RestClient defaultClient = RestClient.create();
+            ResponseEntity<Info> response = defaultClient.get()
+                .uri(invoicingService + "/invoicing/info")
+                .accept(MediaType.APPLICATION_JSON)
+                .retrieve()
+                .toEntity(Info.class);
+            return response.getBody();
         } catch (Exception e) {
             logger.error("Exception calling invoicing service: ", e);
             throw(e);
