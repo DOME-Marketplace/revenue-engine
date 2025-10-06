@@ -113,24 +113,26 @@ public class MetricsRetriever {
         }
     }
 
-    public List<String> getDistinctValuesForKey(String key, String subscriberId, TimePeriod timePeriod) {
+    public List<String> getDistinctValuesForKey(String key, String subscriberId, TimePeriod timePeriod) throws Exception {
         switch(key) {
             case "seller":
-                return this.getActiveSellersBehindMarketplace(subscriberId, timePeriod);
+                List<Organization> orgs = this.getActiveSellersBehindMarketplace(subscriberId, timePeriod);
+                List<String> orgIds = new ArrayList<>();
+                for(Organization o: orgs) {
+                    orgIds.add(o.getId());
+                }
+                return orgIds;
             default:
                 throw new IllegalArgumentException("Unknown metric key: " + key);
         }
     }
 
-    private List<String> getActiveSellersBehindMarketplace(String marketplaceId, TimePeriod timePeriod) {
-        // we need distinct values of 'seller.id' in transactions where the 'referenceMarketplace' role is played by 'marketplaceId'
-        // if nothing is found, then add only marketplaceId (?)
-        // TODO: complete this implementation
-        List<String> out = new ArrayList<>();
-        out.add(marketplaceId);
+    private List<Organization> getActiveSellersBehindMarketplace(String marketplaceId, TimePeriod timePeriod) throws Exception {
+        List<Organization> out = new ArrayList<>();
+        out.addAll(this.tmfDataRetriever.listActiveSellersBehindFederatedMarketplace(marketplaceId, timePeriod));
+        // TODO: should we also add the marketplace itself?
         return out;
     }
-
 
 }
 

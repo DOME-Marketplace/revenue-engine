@@ -8,6 +8,7 @@ import it.eng.dome.revenue.engine.tmf.TmfApiFactory;
 import it.eng.dome.revenue.engine.utils.TMFApiUtils;
 import it.eng.dome.tmforum.tmf620.v4.model.ProductOffering;
 import it.eng.dome.tmforum.tmf620.v4.model.ProductOfferingPrice;
+import it.eng.dome.tmforum.tmf632.v4.ApiException;
 import it.eng.dome.tmforum.tmf632.v4.api.OrganizationApi;
 import it.eng.dome.tmforum.tmf632.v4.model.Characteristic;
 import it.eng.dome.tmforum.tmf632.v4.model.Organization;
@@ -15,6 +16,7 @@ import it.eng.dome.tmforum.tmf637.v4.model.BillingAccountRef;
 import it.eng.dome.tmforum.tmf637.v4.model.Product;
 import it.eng.dome.tmforum.tmf678.v4.model.AppliedCustomerBillingRate;
 import it.eng.dome.tmforum.tmf678.v4.model.CustomerBill;
+import it.eng.dome.tmforum.tmf678.v4.model.RelatedParty;
 import it.eng.dome.tmforum.tmf678.v4.model.TimePeriod;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -151,6 +153,55 @@ public class TmfDataRetriever implements InitializingBean {
         return filtered;
     }
 
+    private List<AppliedCustomerBillingRate> retrieveACBRs(String participantId, String participantRole, TimePeriod timePeriod, Boolean isBilled) throws Exception {
+        logger.debug("Retrieving bills from TMF API between {} and {}", timePeriod.getStartDateTime(), timePeriod.getEndDateTime());
+
+        Map<String, String> filter = new HashMap<>();
+
+        // Add isBilled filter if specified
+        if (isBilled != null) {
+            filter.put("isBilled", isBilled.toString());
+        }
+
+        // Add time period filters if available
+        if (timePeriod.getStartDateTime() != null) {
+            filter.put("date.gt", timePeriod.getStartDateTime().toString());
+        }
+        if (timePeriod.getEndDateTime() != null) {
+            filter.put("date.lt", timePeriod.getEndDateTime().toString());
+        }
+
+        // --> FIX ME: be careful not to match attributes across different relatedParties
+        if (participantId != null) {
+            filter.put("relatedParty.id", participantId);
+            logger.debug("Retrieving bills for participant with id: {}", participantId);
+        } else {
+            logger.debug("No participant ID specified");
+        }
+        if (participantRole != null) {
+            filter.put("relatedParty.role", participantRole);
+            logger.debug("FIXME:Retrieving bills for participant with role: {}", participantRole);
+        } else {
+            logger.debug("No participant role specified");
+        }
+
+        List<AppliedCustomerBillingRate> out = billApi.getAllAppliedCustomerBillingRates(null, filter);
+
+        // Further filter results to be sure id and role are in the same RelatedParty (see fixme above)
+        if(participantId!=null && participantRole!=null) {
+            List<AppliedCustomerBillingRate> filteredOut = new ArrayList<>();
+            for(AppliedCustomerBillingRate acbr: out) {
+                for(RelatedParty rp: acbr.getRelatedParty()) {
+                    if(participantId.equalsIgnoreCase(rp.getId()) && participantRole.equalsIgnoreCase(rp.getRole()))
+                        filteredOut.add(acbr);
+                }
+            }
+            out = filteredOut;
+        }
+
+        logger.debug("Found {} bills in the specified period after role/id filter", out.size());
+        return out;
+    }
 
     // ======== TMF ORGANIZATIONS ========
 
@@ -195,7 +246,7 @@ public class TmfDataRetriever implements InitializingBean {
         for(String s:sellersIds) {
             logger.debug("Retrieving organisation with id: {}", s);
             try {
-                Organization org = orgApi.retrieveOrganization(s, null);
+                Organization org = this.getOrganization(s);
                 if(org!=null) {
                     logger.debug("{} {} {}", org.getTradingName(), org.getName(), org.getId());
                     activeSellers.add(org);
@@ -255,7 +306,7 @@ public class TmfDataRetriever implements InitializingBean {
     	logger.info("Get referrer for Organization with ID {}", referralOrganizationId);
     	try {
             // get the id of the refferrer organization, if any
-            Organization referralOrg = orgApi.retrieveOrganization(referralOrganizationId, null);
+            Organization referralOrg = this.getOrganization(referralOrganizationId);
             // retrieve the referrefer organization from the referral organization
             if(referralOrg!=null && referralOrg.getPartyCharacteristic()!=null) {
                 // find the 'referredBy' characteristic
@@ -268,7 +319,7 @@ public class TmfDataRetriever implements InitializingBean {
                 }
                 // if found, retrieve the organization
                 if(referrerId!=null) {
-                    return orgApi.retrieveOrganization(referrerId, null);
+                    return this.getOrganization(referrerId);
                 }
             }
             // otherwise, return null
@@ -400,5 +451,48 @@ public class TmfDataRetriever implements InitializingBean {
 
         return this.popApis.getProductOfferingPrice(popId, fields);
     }
+
+    public Organization getOrganization(String organizationId) throws ApiException {
+        return this.orgApi.retrieveOrganization(organizationId, null);        
+    }
+
+    public List<Organization> listActiveSellersBehindFederatedMarketplace(String federatedMarketplaceId, TimePeriod timePeriod) throws Exception {
+        // we need distinct values of 'seller.id' in transactions where the 'referenceMarketplace' role is played by 'marketplaceId'
+        // in the given timePeriod
+
+        // retrieve bills and extract seller ids
+        List<AppliedCustomerBillingRate> bills = this.retrieveACBRs(federatedMarketplaceId, "referenceMarketplace", timePeriod, true);
+        Set<String> sellersIds = new TreeSet<>();
+        for(AppliedCustomerBillingRate acbr: bills) {
+            if(acbr==null || acbr.getRelatedParty()==null)
+                continue;
+            for(it.eng.dome.tmforum.tmf678.v4.model.RelatedParty rp: acbr.getRelatedParty()) {
+                if("Seller".equals(rp.getRole())) {
+                    sellersIds.add(rp.getId());
+                }
+            }
+        }
+
+        // retrieve the organisations
+        List<Organization> activeSellers = new ArrayList<>();
+        for(String s:sellersIds) {
+            logger.debug("Retrieving organisation with id: {}", s);
+            try {
+                // fixme: put this under caching
+                Organization org = this.getOrganization(s);
+                if(org!=null) {
+                    logger.debug("{} {} {}", org.getTradingName(), org.getName(), org.getId());
+                    activeSellers.add(org);
+                }
+            } catch(Exception e) {
+                logger.error("unable to retrieve organisation with id {} appearing as seller", s);
+                logger.error("", e);
+            }
+        }        
+
+        return activeSellers;
+    }
+
+
 }
 

@@ -21,6 +21,7 @@ public class ForEachCalculator extends AbstractCalculator {
     }
 
     public RevenueItem doCompute(TimePeriod timePeriod, Map<String, Double> computeContext) {
+
 		// prepare the output
 		RevenueItem outputItem = new RevenueItem(this.item.getName(), this.item.getCurrency());
 
@@ -30,25 +31,42 @@ public class ForEachCalculator extends AbstractCalculator {
 			logger.error("Found a 'foreach' price bundle without a 'forEachMetric' property. Skipping the whole bundle price");
 			return null;
 		}
-		// retrieve the possible values
-		List<String> sellerIds = new MetricsRetriever().getDistinctValuesForKey(iterateOver, this.getSubscription().getSubscriberId(), timePeriod);
 
-		// foreach 'iterator' property, build a sub-revenueItem with all child prices computed with the 'iterator' property.
-		for(String sellerId: sellerIds) {
-			RevenueItem sellerRevenueItem = new RevenueItem(this.item.getName() + " for seller " + sellerId, this.item.getCurrency());
-			if(this.item.getType()!=null)
-				sellerRevenueItem.setType(this.item.getType().toString());
-			for (PlanItem childItem : this.item.getBundleItems()) {
-				// Below, we need to pass a map o properties to be used as a filter
-				// normal...... look for 'seller' (which is in the subscription)
-				// federated... look for 'referenceMarketplace' and iterate over 'seller'
-				Calculator childCalc = CalculatorFactory.getCalculatorFor(this.getSubscription(), childItem);
-				RevenueItem childRevenueItem = childCalc.compute(timePeriod, computeContext);
-				if (childRevenueItem != null) {
-					sellerRevenueItem.addRevenueItem(childRevenueItem);
+		// only 'marketplaceSeller' is currently supported
+		if(!"marketplaceSeller".equalsIgnoreCase(iterateOver)) {
+			logger.error("{} is not supported. Currently, only 'marketplaceSeller' metric is supported.");
+			return null;
+		}
+
+		if("marketplaceSeller".equalsIgnoreCase(iterateOver)) {
+			// retrieve the possible values
+			try {
+				List<String> sellerIds = new MetricsRetriever().getDistinctValuesForKey(iterateOver, this.getSubscription().getSubscriberId(), timePeriod);
+
+				// foreach 'iterator' property, build a sub-revenueItem with all child prices computed with the 'iterator' property.
+				for(String sellerId: sellerIds) {
+					RevenueItem sellerRevenueItem = new RevenueItem(this.item.getName() + " for seller " + sellerId, this.item.getCurrency());
+					if(this.item.getType()!=null)
+						sellerRevenueItem.setType(this.item.getType().toString());
+					for (PlanItem childItem : this.item.getBundleItems()) {
+						// TODO: Below, we need to pass a map o properties to be used as a filter
+						// normal...... look for 'seller' (which is in the subscription)
+						// federated... look for 'referenceMarketplace' and iterate over 'seller'
+						Calculator childCalc = CalculatorFactory.getCalculatorFor(this.getSubscription(), childItem);
+						RevenueItem childRevenueItem = childCalc.compute(timePeriod, computeContext);
+						if (childRevenueItem != null) {
+							sellerRevenueItem.addRevenueItem(childRevenueItem);
+						}
+					}
+					outputItem.addRevenueItem(sellerRevenueItem);
 				}
+			} catch(Exception e) {
+				logger.error("Unable to retrieve bills for sellers behind marketplace {}", this.getSubscription().getSubscriberId());
+				logger.error(e.getStackTrace().toString());
 			}
-			outputItem.addRevenueItem(sellerRevenueItem);
+		}
+		else {
+			// implement here other potential forEachMetrics
 		}
 
 		return outputItem;

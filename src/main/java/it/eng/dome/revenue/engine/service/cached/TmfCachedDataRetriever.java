@@ -3,6 +3,7 @@ package it.eng.dome.revenue.engine.service.cached;
 import it.eng.dome.revenue.engine.service.TmfDataRetriever;
 import it.eng.dome.tmforum.tmf620.v4.model.ProductOffering;
 import it.eng.dome.tmforum.tmf620.v4.model.ProductOfferingPrice;
+import it.eng.dome.tmforum.tmf632.v4.ApiException;
 import it.eng.dome.tmforum.tmf632.v4.model.Organization;
 import it.eng.dome.tmforum.tmf637.v4.model.BillingAccountRef;
 import it.eng.dome.tmforum.tmf637.v4.model.Product;
@@ -252,6 +253,21 @@ public class TmfCachedDataRetriever extends TmfDataRetriever {
     }
 
     @Override
+    public Organization getOrganization(String organizationId) throws ApiException{
+        String key = organizationId;
+        if (!TMF_CACHE_ENABLED || !this.organizationCache.containsKey(key)) {
+            logger.debug("Cache MISS for {}", key);
+            Organization org = super.getOrganization(organizationId);
+            if (org != null) {
+                this.organizationCache.put(key, org);
+            } else {
+                logger.warn("Organization not found for id {}", organizationId);
+                return null;
+            }
+        }
+        return this.organizationCache.get(key);
+    }
+    /*
     public Organization getReferrerProvider(String referralOrganizationId) throws Exception {
         String key = referralOrganizationId;
         if (!TMF_CACHE_ENABLED || !this.organizationCache.containsKey(key)) {
@@ -266,5 +282,6 @@ public class TmfCachedDataRetriever extends TmfDataRetriever {
         }
         return this.organizationCache.get(key);
     }
+    */
 
 }
