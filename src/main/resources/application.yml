@@ -9,7 +9,7 @@ server:
 # Logging Configuration
 logging:
   level:
-    it.eng.dome: ${LOG_LEVEL:DEBUG}
+    it.eng.dome: ${LOG_LEVEL:INFO}
     org.apache.coyote.http11: ERROR
   pattern:
     console: "%d{yyyy-MM-dd HH:mm:ss} [%-5level] %logger{36} - %msg%n" 
@@ -68,6 +68,9 @@ caching:
   tmf:
     enabled: true
   revenue:
-    enabled: false
+    enabled: true
   health:
-    enabled: false
+    enabled: true
+
+persistence:
+  monthsBack: ${MONTHS_BACK:1}

@@ -1,5 +1,22 @@
 package it.eng.dome.revenue.engine.service;
 
+import java.net.URI;
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
+import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.InitializingBean;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Service;
+
 import it.eng.dome.brokerage.api.AppliedCustomerBillRateApis;
 import it.eng.dome.revenue.engine.model.RevenueBill;
 import it.eng.dome.revenue.engine.model.Subscription;
@@ -11,17 +28,13 @@ import it.eng.dome.tmforum.tmf632.v4.api.OrganizationApi;
 import it.eng.dome.tmforum.tmf632.v4.model.Organization;
 import it.eng.dome.tmforum.tmf678.v4.api.AppliedCustomerBillingRateApi;
 import it.eng.dome.tmforum.tmf678.v4.api.CustomerBillApi;
-import it.eng.dome.tmforum.tmf678.v4.model.*;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.InitializingBean;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
-
-import java.net.URI;
-import java.time.OffsetDateTime;
-import java.time.format.DateTimeFormatter;
-import java.util.*;
+import it.eng.dome.tmforum.tmf678.v4.model.AppliedCustomerBillingRate;
+import it.eng.dome.tmforum.tmf678.v4.model.AppliedCustomerBillingRateCreate;
+import it.eng.dome.tmforum.tmf678.v4.model.BillRef;
+import it.eng.dome.tmforum.tmf678.v4.model.CustomerBill;
+import it.eng.dome.tmforum.tmf678.v4.model.CustomerBillCreate;
+import it.eng.dome.tmforum.tmf678.v4.model.ProductRef;
+import it.eng.dome.tmforum.tmf678.v4.model.RelatedParty;
 
 /**
  * FIXME: Enhancemets and fixes:
@@ -36,13 +49,19 @@ public class TmfPeristenceService implements InitializingBean {
 
     @Autowired
     private TmfApiFactory tmfApiFactory;
-    @Autowired
-    TmfCachedDataRetriever tmfDataRetriever;
+
     @Autowired
     private BillsService billService;
+
     @Autowired
     private CachedSubscriptionService subscriptionService;
 
+    @Autowired
+    private TmfCachedDataRetriever tmfDataRetriever;
+    
+    @Value("${persistence.monthsBack:1}")
+    private int monthsBack;
+    
     private CustomerBillApi customerBillAPI;
     private AppliedCustomerBillingRateApi acbrAPI;
 	private AppliedCustomerBillRateApis appliedCustomerBillRateApis;
@@ -61,8 +80,10 @@ public class TmfPeristenceService implements InitializingBean {
         this.orgApi = new OrganizationApi(tmfApiFactory.getTMF632PartyManagementApiClient());
         logger.info("TmfPeristenceService initialized with OrganizationApis {}", this.orgApi);
         
-        this.acbrAPI = new AppliedCustomerBillingRateApi(tmfApiFactory.getTMF678CustomerBillApiClient());
-        logger.info("TmfPeristenceService initialized with AppliedCustomerBillingRateApi {}", this.acbrAPI);
+		this.acbrAPI = new AppliedCustomerBillingRateApi(tmfApiFactory.getTMF678CustomerBillApiClient());
+		logger.info("TmfPeristenceService initialized with AppliedCustomerBillingRateApi {}", this.acbrAPI);
+		
+		
     }
 
     /**
@@ -72,11 +93,9 @@ public class TmfPeristenceService implements InitializingBean {
     public List<CustomerBill> persistAllRevenueBills() throws Exception {
         List<CustomerBill> createdCustomerBills = new ArrayList<>();
 
-        logger.info("Starting persistence of all revenue bills for all organizations...");
-        // Fetch organizations in batches and process each batch immediately
+
         TMFApiUtils.fetchByBatch(orgApi::listOrganization, null, 10, null, batch -> {
             for (Organization org : batch) {
-                // Persist provider revenue bills for each organization
                 createdCustomerBills.addAll(this.persistProviderRevenueBills(org.getId()));
             }
             return true; // continue fetching next batch
@@ -85,36 +104,48 @@ public class TmfPeristenceService implements InitializingBean {
         return createdCustomerBills;
     }
 
+
     /**
      * Persist all revenue bills for a provider; where needed and applicable.
      * @param providerId the provider id
      */
     public List<CustomerBill> persistProviderRevenueBills(String providerId) throws Exception {
-        // iterate over subscriptions for the given provider
         List<CustomerBill> createdCustomerBills = new ArrayList<>();
-        for(Subscription sub: this.subscriptionService.getSubscriptionsByRelatedPartyId(providerId, "Buyer")) {
+        for (Subscription sub : this.subscriptionService.getSubscriptionsByRelatedPartyId(providerId, "Buyer")) {
             createdCustomerBills.addAll(this.persistSubscriptionRevenueBills(sub.getId()));
         }
         return createdCustomerBills;
     }
+
 
     /*
      * Persist all revenue bills for a subscription; where needed and applicable.
      * @param subscriptionId
      */
     public List<CustomerBill> persistSubscriptionRevenueBills(String subscriptionId) throws Exception {
-        // iterate over revenue bills for the given subscription
         List<CustomerBill> createdCustomerBills = new ArrayList<>();
-        for(RevenueBill sb: this.billService.getSubscriptionBills(subscriptionId)) {
+        
+        OffsetDateTime now = OffsetDateTime.now(ZoneOffset.UTC);
+        OffsetDateTime firstDayOfCurrentMonth = now.withDayOfMonth(1)
+                                                   .toLocalDate()
+                                                   .atStartOfDay()
+                                                   .atOffset(now.getOffset());
+        OffsetDateTime startDate = firstDayOfCurrentMonth.minusMonths(monthsBack);
+        
+        for (RevenueBill sb : this.billService.getSubscriptionBills(subscriptionId)) {
+            if (sb.getPeriod()!= null && sb.getPeriod().getEndDateTime().isBefore(startDate)) {
+                logger.info("Skipping CB {} because older than {}", sb.getId(), startDate);
+                continue;
+            }
             CustomerBill createdCustomerBill = this.persistRevenueBill(sb.getId());
-            if(createdCustomerBill!=null) {
+            if (createdCustomerBill != null) {
                 createdCustomerBills.add(createdCustomerBill);
-            } else {
-                logger.info("CB {} was not created", sb.getId());
             }
         }
+
         return createdCustomerBills;
     }
+
 
     /**
 	 * Persist a revenue bill; where needed and applicable.
@@ -122,7 +153,6 @@ public class TmfPeristenceService implements InitializingBean {
 	 */
     public CustomerBill persistRevenueBill(String revenueBillId) throws Exception {
 
-        logger.info("PERSISTENCE - persisting revenue bill {}", revenueBillId);
 
         // retrieve the local cb
         CustomerBill localCb = this.billService.getCustomerBillByRevenueBillId(revenueBillId);
@@ -385,7 +415,7 @@ public class TmfPeristenceService implements InitializingBean {
     		return true;
     	}
     	
-    	List<AppliedCustomerBillingRate> acbrs1 = billService.getACBRsByRevenueBillId(idCustomerBill1); // retieve from local
+    	List<AppliedCustomerBillingRate> acbrs1 = billService.getACBRsByRevenueBillId(idCustomerBill1); // recupera da local
     	List<AppliedCustomerBillingRate> acbrs2 = tmfDataRetriever.getACBRsByCustomerBillId(idCustomerBill2); // retrieve from TMF
     	
     	if(acbrs1 == null || acbrs2 == null || acbrs1.isEmpty() || acbrs2.isEmpty()) {
