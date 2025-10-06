@@ -22,7 +22,7 @@ public class CachedPlanService extends PlanService {
     private Boolean REVENUE_CACHE_ENABLED;
 
     @Autowired
-    CacheService cacheService;
+    private CacheService cacheService;
 
     private Cache<String, List<Plan>> planSetCache;
     private Cache<String, Plan> planCache;

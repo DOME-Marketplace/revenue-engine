@@ -8,7 +8,6 @@ import it.eng.dome.revenue.engine.service.cached.CachedPlanService;
 import it.eng.dome.revenue.engine.service.cached.CachedStatementsService;
 import it.eng.dome.revenue.engine.service.cached.CachedSubscriptionService;
 import it.eng.dome.revenue.engine.service.cached.TmfCachedDataRetriever;
-import it.eng.dome.revenue.engine.tmf.TmfApiFactory;
 import it.eng.dome.revenue.engine.utils.IdUtils;
 import it.eng.dome.revenue.engine.utils.TmfConverter;
 import it.eng.dome.tmforum.tmf637.v4.model.BillingAccountRef;
@@ -28,16 +27,17 @@ public class BillsService {
 	private final Logger logger = LoggerFactory.getLogger(BillsService.class);
 
     @Autowired
-    private TmfApiFactory tmfApiFactory;
+	private CachedStatementsService statementsService;
 
     @Autowired
-	private CachedStatementsService statementsService;
-    @Autowired
 	private CachedSubscriptionService subscriptionService;
+
     @Autowired
 	private CachedPlanService planService;
+
     @Autowired
 	private TmfCachedDataRetriever tmfDataRetriever;
+
     @Autowired
 	private InvoicingService invoicingService;
 

@@ -10,7 +10,6 @@ import it.eng.dome.revenue.engine.model.Subscription;
 import it.eng.dome.revenue.engine.service.cached.TmfCachedDataRetriever;
 import it.eng.dome.revenue.engine.service.validation.PlanValidationReport;
 import it.eng.dome.revenue.engine.service.validation.PlanValidator;
-import it.eng.dome.revenue.engine.tmf.TmfApiFactory;
 import it.eng.dome.tmforum.tmf620.v4.model.ProductOffering;
 import it.eng.dome.tmforum.tmf620.v4.model.ProductOfferingPrice;
 import it.eng.dome.tmforum.tmf620.v4.model.ProductOfferingPriceRefOrValue;
@@ -47,12 +46,8 @@ public class PlanService implements InitializingBean {
 
     private static final Logger logger = LoggerFactory.getLogger(PlanService.class);
     
-    // Factory for TMF APIss
     @Autowired
-    private TmfApiFactory tmfApiFactory;
-
-    @Autowired
-    TmfCachedDataRetriever tmfDataRetriever;
+    private TmfCachedDataRetriever tmfDataRetriever;
 
     private final ObjectMapper mapper;
 

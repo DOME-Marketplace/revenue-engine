@@ -29,17 +29,16 @@ public class SubscriptionService implements InitializingBean {
     @Value("${dome.operator.id}")
     private String DOME_OPERATOR_ID;
 
-    @Autowired
-    // Factory for TMF APIss
-    private TmfApiFactory tmfApiFactory;
-
 	@Autowired
-	TmfCachedDataRetriever tmfDataRetriever;
+	private TmfCachedDataRetriever tmfDataRetriever;
 
-	public void afterPropertiesSet() throws Exception {}
-   
 	public SubscriptionService() {
 	}
+
+	@Override
+	public void afterPropertiesSet() throws Exception {
+	}
+   
 
 	/*
 	 * Retrieves a subscription by its product ID.
