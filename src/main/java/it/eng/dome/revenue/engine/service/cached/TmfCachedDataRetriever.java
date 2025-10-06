@@ -34,6 +34,7 @@ public class TmfCachedDataRetriever extends TmfDataRetriever {
     private Cache<String, List<AppliedCustomerBillingRate>> acbrCache;
     private Cache<String, BillingAccountRef> billingAccountCache;
     private Cache<String, CustomerBill> customerBillCache;
+    private Cache<String, List<CustomerBill>> customerBillListCache;
     private Cache<String, Product> productCache;
     private Cache<String, List<Product>> productListCache;
     private Cache<String, ProductOffering> productOfferingCache;
@@ -105,6 +106,11 @@ public class TmfCachedDataRetriever extends TmfDataRetriever {
                 String.class,
                 Organization.class,
                 Duration.ofHours(1));
+        this.customerBillListCache = this.cacheService.getOrCreateCache(
+				"customerBillListCache",
+				String.class,
+				(Class<List<CustomerBill>>)(Class<?>)List.class,
+				Duration.ofMinutes(30));
     }
 
     @Override
@@ -154,6 +160,8 @@ public class TmfCachedDataRetriever extends TmfDataRetriever {
         }
         return this.acbrCache.get(key);
     }
+    
+
 
     @Override
     public CustomerBill getCustomerBillById(String customerBillId) {
@@ -169,6 +177,23 @@ public class TmfCachedDataRetriever extends TmfDataRetriever {
             }
         }
         return this.customerBillCache.get(key);
+    }
+    
+    @Override
+    public List<CustomerBill> getAllCustomerBills(String fields, Map<String, String> filter) {
+		String key = "all-customer-bills" + fields + filter.toString();
+		if (!TMF_CACHE_ENABLED || !this.customerBillListCache.containsKey(key)) {
+			
+			logger.debug("Cache MISS for {}", key);
+			List<CustomerBill> cbs = super.getAllCustomerBills(fields, filter);
+			if (cbs != null) {
+				this.customerBillListCache.put(key, cbs);
+			} else {
+				logger.warn("CustomerBills not found");
+				return null;
+			}
+		}
+		return (List<CustomerBill>) this.customerBillListCache.get(key);
     }
 
     @Override
@@ -189,7 +214,7 @@ public class TmfCachedDataRetriever extends TmfDataRetriever {
 
     @Override
     public List<Product> getAllProducts(String fields, Map<String, String> filter) {
-        String key = "all-products";
+        String key = "all-products" + fields + filter.toString();
         if (!TMF_CACHE_ENABLED || !this.productListCache.containsKey(key)) {
             logger.debug("Cache MISS for {}", key);
             List<Product> prods = super.getAllProducts(fields, filter);
@@ -221,7 +246,7 @@ public class TmfCachedDataRetriever extends TmfDataRetriever {
 
     @Override
     public List<ProductOffering> getAllProductOfferings(String fields, Map<String, String> filter) {
-        String key = "all-product-offerings";
+        String key = "all-product-offerings" + fields + filter.toString();
         if (!TMF_CACHE_ENABLED || !this.productOfferingListCache.containsKey(key)) {
             logger.debug("Cache MISS for {}", key);
             List<ProductOffering> pos = super.getAllProductOfferings(fields, filter);
