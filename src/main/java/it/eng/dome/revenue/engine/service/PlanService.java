@@ -28,7 +28,9 @@ import java.io.InputStream;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -70,9 +72,9 @@ public class PlanService implements InitializingBean {
     public List<Plan> getAllPlans() {
         logger.info("Fetching all plans...");
     	// FIXME: when the RP bug is fixed, filter only plans connected to DO.
-        // Map<String, String> filter = new HashMap<String, String>();
-        // filter.put("relatedParty.id", DOME_OPERATOR_ID);
-        List<ProductOffering> pos = tmfDataRetriever.getAllProductOfferings(null, null);
+        Map<String, String> filter = new HashMap<String, String>();
+//        filter.put("relatedParty", DOME_OPERATOR_ID);
+        List<ProductOffering> pos = tmfDataRetriever.getAllProductOfferings(null, filter);
         
         List<Plan> plans = new ArrayList<>();
         for (ProductOffering po : pos) {
@@ -81,6 +83,7 @@ public class PlanService implements InitializingBean {
                 plans.addAll(planList);
             }
         }
+
         logger.info("Total plans fetched: {}", plans.size());
         return plans;
     }
@@ -186,7 +189,7 @@ public class PlanService implements InitializingBean {
             }
 
             try {
-                String link = extractLinkFromDescription(pop.getDescription());
+                String link = this.extractLinkFromDescription(pop.getDescription());
                 Plan plan;
                 try {
                     plan = loadPlanFromLink(link);
@@ -211,8 +214,7 @@ public class PlanService implements InitializingBean {
         if (description == null || description.isEmpty()) {
             throw new IllegalStateException("Description is null or empty");
         }
-
-        Pattern pattern = Pattern.compile("https?://\\S+");
+        Pattern pattern = Pattern.compile("https?://raw\\.githubusercontent\\.com\\S+");
         Matcher matcher = pattern.matcher(description);
         if (matcher.find()) {
             return matcher.group();
