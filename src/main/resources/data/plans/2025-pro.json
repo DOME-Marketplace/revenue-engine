@@ -30,13 +30,7 @@
         "recurringChargePeriodType": "YEAR",
         "amount": 8000,
         "currency": "EUR",
-        "ignore": false,
-        "discount": {
-          "name": "some discount",
-          "isBundle": false,
-          "computationBase": "parent-price",
-          "percent": 20
-        }
+		"ignore": "${subscription.characteristics.marketplaceSubscription}"
       },
       {
         "name": "Revenue on transactions",
@@ -48,10 +42,16 @@
         "computationBaseReferencePeriod": "CURRENT_CHARGE_PERIOD",
         "computationBase": "bills-no-taxes",
         "currency": "EUR",
-        "ignore": false,
+        "ignore": "${subscription.characteristics.marketplaceSubscription}",
         "collapse": false,
         "isBundle": true,
         "bundleOp": "CUMULATIVE",
+		"discount": {
+		  "name": "discount for the first three charge periods (revenue share)",
+		  "validPeriod": "FIRST_3_CHARGE_PERIOD",
+		  "computationBase": "parent-price",
+		  "percent": 100
+		},
         "prices": [
           {
             "name": "tier 0: no revenue sharing for transactions below 100K",
@@ -133,10 +133,10 @@
         "recurringChargePeriodType": "MONTH",
         "amount": 150,
         "currency": "EUR",
-        "ignore": false,
+        "ignore": "${subscription.characteristics.marketplaceSubscription}",
         "collapse": false,
         "discount": {
-          "name": "discount for the first three charge periods",
+          "name": "discount for the first three charge periods (fee)",
           "validPeriod": "FIRST_3_CHARGE_PERIOD",
           "computationBase": "parent-price",
           "percent": 100
