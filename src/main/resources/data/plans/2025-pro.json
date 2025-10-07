@@ -9,7 +9,7 @@
   "lifecycleStatus": "launched",
   "billCycleSpecification": {
     "billingPeriodLength": "1",
-    "billingPeriodType": "YEAR",
+    "billingPeriodType": "MONTH",
     "billingPeriodEnd": "LAST_DAY_OF_CALENDAR_MONTH",
     "billingDateShift": "5",
     "paymentDueDateOffset": "15"
@@ -115,10 +115,7 @@
             "collapse": true,
             "skipIfZero": true
           }
-
         ]
-
-
       },
       {
         "name": "Monthly postpaid fee....",
