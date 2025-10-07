@@ -182,7 +182,7 @@ public class TmfCachedDataRetriever extends TmfDataRetriever {
     
     @Override
     public List<CustomerBill> getAllCustomerBills(String fields, Map<String, String> filter) {
-        String key = "all-customer-bills";
+        String key = "all-customer-bills" + fields + filter.toString();
         if(fields!=null)
             key += fields;
         if(filter!=null)
@@ -219,7 +219,7 @@ public class TmfCachedDataRetriever extends TmfDataRetriever {
 
     @Override
     public List<Product> getAllProducts(String fields, Map<String, String> filter) {
-        String key = "all-products";
+        String key = "all-products" + fields + filter.toString();
         if(fields!=null)
             key += fields;
         if(filter!=null)
@@ -255,7 +255,7 @@ public class TmfCachedDataRetriever extends TmfDataRetriever {
 
     @Override
     public List<ProductOffering> getAllProductOfferings(String fields, Map<String, String> filter) {
-        String key = "all-product-offerings";
+        String key = "all-product-offerings" + fields + filter.toString();
         if(fields!=null)
             key += fields;
         if(filter!=null)
