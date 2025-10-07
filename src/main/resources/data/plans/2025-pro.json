@@ -30,13 +30,7 @@
         "recurringChargePeriodType": "YEAR",
         "amount": 8000,
         "currency": "EUR",
-        "ignore": false,
-        "discount": {
-          "name": "some discount",
-          "isBundle": false,
-          "computationBase": "parent-price",
-          "percent": 20
-        }
+        "ignore": "${subscription.characteristics.marketplaceSubscription}"
       },
       {
         "name": "Revenue on transactions",
@@ -44,7 +38,7 @@
         "recurringChargePeriodLength": 1,
         "recurringChargePeriodType": "MONTH",
         "applicableBase": "bills-no-taxes",
-        "applicableBaseReferencePeriod": "LAST_9_CHARGE_PERIODS",
+        "applicableBaseReferencePeriod": "LAST_1_CHARGE_PERIODS",
         "computationBaseReferencePeriod": "CURRENT_CHARGE_PERIOD",
         "computationBase": "bills-no-taxes",
         "currency": "EUR",
