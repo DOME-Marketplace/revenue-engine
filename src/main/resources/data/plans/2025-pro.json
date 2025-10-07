@@ -38,7 +38,7 @@
         "recurringChargePeriodLength": 1,
         "recurringChargePeriodType": "MONTH",
         "applicableBase": "bills-no-taxes",
-        "applicableBaseReferencePeriod": "LAST_1_CHARGE_PERIODS",
+        "applicableBaseReferencePeriod": "CURRENT_CHARGE_PERIOD",
         "computationBaseReferencePeriod": "CURRENT_CHARGE_PERIOD",
         "computationBase": "bills-no-taxes",
         "currency": "EUR",
