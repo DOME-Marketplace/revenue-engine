@@ -115,19 +115,23 @@ public class TmfCachedDataRetriever extends TmfDataRetriever {
     }
 
     @Override
-    public List<AppliedCustomerBillingRate> retrieveBills(String sellerId, TimePeriod timePeriod, Boolean isBilled) throws Exception {
-        String key = "bills:" + sellerId + ":" + timePeriod.toString() + ":" + isBilled;
-        if (!TMF_CACHE_ENABLED || !this.acbrCache.containsKey(key)) {
+    public List<CustomerBill> retrieveBills(String sellerId, TimePeriod timePeriod) throws Exception {
+        String key = "all-bills";
+        if(sellerId!=null)
+			key  += sellerId;
+		if(timePeriod!=null)
+			key  += timePeriod.toString();
+        if (!TMF_CACHE_ENABLED || !this.customerBillListCache.containsKey(key)) {
             logger.debug("Cache MISS for {}", key);
-            List<AppliedCustomerBillingRate> acbrs = super.retrieveBills(sellerId, timePeriod, isBilled);
+            List<CustomerBill> acbrs = super.retrieveBills(sellerId, timePeriod);
             if (acbrs != null) {
-                this.acbrCache.put(key, acbrs);
+                this.customerBillListCache.put(key, acbrs);
             } else {
-                logger.warn("AppliedCustomerBillingRates not found for {}", key);
+                logger.warn("CustomerBills not found for {}", key);
                 return null;
             }
         }
-        return this.acbrCache.get(key);
+        return this.customerBillListCache.get(key);
     }
 
     @Override

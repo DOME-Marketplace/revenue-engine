@@ -115,22 +115,18 @@ public class TmfDataRetriever implements InitializingBean {
 	 * @return A list of AppliedCustomerBillingRate objects representing the retrieved bills.
 	 * @throws Exception If an error occurs during retrieval.
 	 */
-    public List<AppliedCustomerBillingRate> retrieveBills(String sellerId, TimePeriod timePeriod, Boolean isBilled) throws Exception {
+    public List<CustomerBill> retrieveBills(String sellerId, TimePeriod timePeriod) throws Exception {
         logger.debug("Retrieving bills from TMF API between {} and {}", timePeriod.getStartDateTime(), timePeriod.getEndDateTime());
 
         Map<String, String> filter = new HashMap<>();
 
-        // Add isBilled filter if specified
-        if (isBilled != null) {
-            filter.put("isBilled", isBilled.toString());
-        }
 
         // Add time period filters if available
         if (timePeriod.getStartDateTime() != null) {
-            filter.put("date.gt", timePeriod.getStartDateTime().toString());
+            filter.put("billDate.gt", timePeriod.getStartDateTime().toString());
         }
         if (timePeriod.getEndDateTime() != null) {
-            filter.put("date.lt", timePeriod.getEndDateTime().toString());
+            filter.put("billDate.lt", timePeriod.getEndDateTime().toString());
         }
 
         // --> FIX ME: be careful not to match attributes across different relatedParties
@@ -142,11 +138,13 @@ public class TmfDataRetriever implements InitializingBean {
             logger.debug("Retrieving all bills in the specified period");
         }
 
-        List<AppliedCustomerBillingRate> out = billApi.getAllAppliedCustomerBillingRates(null, filter);
+//        List<AppliedCustomerBillingRate> out = billApi.getAllAppliedCustomerBillingRates(null, filter);
+        List<CustomerBill> out = billApi.getAllCustomerBills(null, filter);
+
 
         // DONE --> further filter results to be sure id and role are in the sameRelatedParties (see fix me above)
         // Filter to ensure same RelatedParty has both id and role
-        List<AppliedCustomerBillingRate> filtered = out.stream()
+        List<CustomerBill> filtered = out.stream()
                 .filter(bill -> bill.getRelatedParty() != null && bill.getRelatedParty().stream()
                                 .anyMatch(rp -> sellerId == null || (sellerId.equals(rp.getId()) && "Seller".equalsIgnoreCase(rp.getRole())))
                 )
@@ -236,8 +234,8 @@ public class TmfDataRetriever implements InitializingBean {
 //            filter.put("date.lt", timePeriod.getEndDateTime().toString());
 
         // retrieve bills and extract seller ids
-        List<AppliedCustomerBillingRate> bills = this.retrieveBills(null, timePeriod, true);
-        for(AppliedCustomerBillingRate acbr: bills) {
+        List<CustomerBill> bills = this.retrieveBills(null, timePeriod);
+        for(CustomerBill acbr: bills) {
             if(acbr==null || acbr.getRelatedParty()==null)
                 continue;
             for(it.eng.dome.tmforum.tmf678.v4.model.RelatedParty rp: acbr.getRelatedParty()) {

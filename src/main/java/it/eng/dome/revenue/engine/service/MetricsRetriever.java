@@ -12,7 +12,7 @@ import org.springframework.stereotype.Component;
 
 import it.eng.dome.revenue.engine.service.cached.TmfCachedDataRetriever;
 import it.eng.dome.tmforum.tmf632.v4.model.Organization;
-import it.eng.dome.tmforum.tmf678.v4.model.AppliedCustomerBillingRate;
+import it.eng.dome.tmforum.tmf678.v4.model.CustomerBill;
 import it.eng.dome.tmforum.tmf678.v4.model.TimePeriod;
 
 @Component(value = "metricsRetriever")
@@ -33,11 +33,11 @@ public class MetricsRetriever {
         // TODO: when the new CB/ACBR approach will be done in the Billing Engine, retrieve CBs instead of ACBRs
     	
     	// retrieve all seller billed invoices in the period
-        List<AppliedCustomerBillingRate> bills = tmfDataRetriever.retrieveBills(sellerId, timePeriod, true);
+        List<CustomerBill> bills = tmfDataRetriever.retrieveBills(sellerId, timePeriod);
 
         // sum taxExcludedAmount.value
         double totalAmountNoTaxes = 0.0;
-        for (AppliedCustomerBillingRate bill : bills) {
+        for (CustomerBill bill : bills) {
             if (bill.getTaxExcludedAmount() != null && bill.getTaxExcludedAmount().getValue() != null) {
             	totalAmountNoTaxes += bill.getTaxExcludedAmount().getValue();
             } else {
