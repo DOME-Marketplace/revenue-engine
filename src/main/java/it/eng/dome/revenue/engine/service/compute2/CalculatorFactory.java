@@ -23,6 +23,7 @@ public class CalculatorFactory implements InitializingBean{
     private MetricsRetriever mr;
 
     public static Calculator getCalculatorFor(Subscription subscription, PlanItem item) {
+        logger.debug("*************** Calculator FACTORY **************");
         Calculator c = null;
         if(item.getIsBundle()) {
             c = getBundleCalculatorFor(subscription, item);

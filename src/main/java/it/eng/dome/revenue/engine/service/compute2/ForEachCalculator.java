@@ -33,19 +33,23 @@ public class ForEachCalculator extends AbstractCalculator {
 			return null;
 		}
 
-		// only 'marketplaceSeller' is currently supported
-		if(!"marketplaceSeller".equalsIgnoreCase(iterateOver)) {
+		// only 'activeMarketplaceSeller' is currently supported
+		if(!"activeMarketplaceSeller".equalsIgnoreCase(iterateOver)) {
 			logger.error("{} is not supported. Currently, only 'marketplaceSeller' metric is supported.");
 			return null;
 		}
 
-		if("marketplaceSeller".equalsIgnoreCase(iterateOver)) {
+		// now process them
+		if("activeMarketplaceSeller".equalsIgnoreCase(iterateOver)) {
 			// retrieve the possible values
 			try {
-				List<String> sellerIds = new MetricsRetriever().getDistinctValuesForKey(iterateOver, this.getSubscription().getSubscriberId(), timePeriod);
+				List<String> sellerIds = this.metricsRetriever.getDistinctValuesForKey(iterateOver, this.getSubscription().getSubscriberId(), timePeriod);
+
+				logger.debug("Found {} sellers behind marketplace {} in period {}", sellerIds.size(), this.getSubscription().getSubscriberId(), timePeriod);
 
 				// foreach 'iterator' property, build a sub-revenueItem with all child prices computed with the 'iterator' property.
 				for(String sellerId: sellerIds) {
+					logger.debug("looking for transactions of seller {} in period {}", sellerId, timePeriod);
 					RevenueItem sellerRevenueItem = new RevenueItem(this.item.getName() + " for seller " + sellerId, this.item.getCurrency());
 					if(this.item.getType()!=null)
 						sellerRevenueItem.setType(this.item.getType().toString());
@@ -67,6 +71,7 @@ public class ForEachCalculator extends AbstractCalculator {
 				}
 			} catch(Exception e) {
 				logger.error("Unable to retrieve bills for sellers behind marketplace {}", this.getSubscription().getSubscriberId());
+				logger.error(e.getMessage());
 				logger.error(e.getStackTrace().toString());
 			}
 		}
@@ -74,6 +79,9 @@ public class ForEachCalculator extends AbstractCalculator {
 			// implement here other potential forEachMetrics
 		}
 
-		return outputItem;
+//		if(outputItem.getItems()!=null && !outputItem.getItems().isEmpty())
+//			return outputItem;
+//		else
+			return null;
 	}
 }

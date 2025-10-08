@@ -32,16 +32,16 @@ public class TmfCachedDataRetriever extends TmfDataRetriever {
     @Autowired
     CacheService cacheService;
 
-    private Cache<String, List<AppliedCustomerBillingRate>> acbrCache;
     private Cache<String, BillingAccountRef> billingAccountCache;
     private Cache<String, CustomerBill> customerBillCache;
-    private Cache<String, List<CustomerBill>> customerBillListCache;
-    private Cache<String, Product> productCache;
-    private Cache<String, List<Product>> productListCache;
-    private Cache<String, ProductOffering> productOfferingCache;
-    private Cache<String, List<ProductOffering>> productOfferingListCache;
-    private Cache<String, ProductOfferingPrice> productOfferingPriceCache;
     private Cache<String, Organization> organizationCache;
+    private Cache<String, Product> productCache;
+    private Cache<String, ProductOffering> productOfferingCache;
+    private Cache<String, ProductOfferingPrice> productOfferingPriceCache;
+    private Cache<String, List<AppliedCustomerBillingRate>> acbrCache;
+    private Cache<String, List<CustomerBill>> customerBillListCache;
+    private Cache<String, List<Product>> productListCache;
+    private Cache<String, List<ProductOffering>> productOfferingListCache;
 
     public TmfCachedDataRetriever() {
         super();

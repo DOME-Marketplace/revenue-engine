@@ -180,7 +180,7 @@ public class TmfDataRetriever implements InitializingBean {
         }
         if (participantRole != null) {
             filter.put("relatedParty.role", participantRole);
-            logger.debug("FIXME:Retrieving bills for participant with role: {}", participantRole);
+            logger.debug("Retrieving bills for participant with role: {}", participantRole);
         } else {
             logger.debug("No participant role specified");
         }

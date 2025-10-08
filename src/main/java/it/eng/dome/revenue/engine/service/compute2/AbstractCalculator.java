@@ -46,16 +46,19 @@ public abstract class AbstractCalculator implements Calculator {
 		if(!this.checkPreconditions(timePeriod)) {
 			return null;
 		}
+		logger.debug("preconditions OK");
 
 		logger.debug("checking computability...");
 		if(!this.checkComputability(timePeriod)) {
 			return null;
 		}
+		logger.debug("computability OK");
 
 		logger.debug("checking applicability...");
 		if(!this.checkApplicability(timePeriod)) {
 			return null;
 		}
+		logger.debug("applicability OK");
 
 		// check if it has to be zeroed (although we keep the structure)
 		boolean zeroIt = this.checkZeroIt(timePeriod);
@@ -71,8 +74,10 @@ public abstract class AbstractCalculator implements Calculator {
 			return null;
 
 		// zero the item, if needed
-		if(outRevenueItem!=null && zeroIt)
+		if(outRevenueItem!=null && zeroIt) {
+			logger.debug("zero-ing the item");
 			outRevenueItem.zeroAmountsRecursively();
+		}
 
 		// constrain the resulting value, if needed
 		Range r = this.item.getResultingAmountRange();
@@ -102,10 +107,10 @@ public abstract class AbstractCalculator implements Calculator {
 			return null;
 		}
 
-		// variable vallues for future items lead to estimaed revenueItems
+		// variable values for future items lead to estimaed revenueItems
 		// FIXME: the second check below is to move ahead with development, but shouldn't be there
 		if (outRevenueItem!=null && outRevenueItem.getChargeTime()!=null) {
-			logger.debug("setting the charge time...");
+			logger.debug("setting the estimated flag...");
 			if(this.item.isVariable() && outRevenueItem.getChargeTime().isAfter(OffsetDateTime.now())) {
 				outRevenueItem.setEstimated(true);
 			} else {
@@ -123,6 +128,7 @@ public abstract class AbstractCalculator implements Calculator {
 		}
 
 		logger.debug("returing {} for addition", outRevenueItem);
+
 		return outRevenueItem;
 	}
 
@@ -139,21 +145,28 @@ public abstract class AbstractCalculator implements Calculator {
     private boolean checkPreconditions(TimePeriod timePeriod) {
 
 		// check that the charge time period for the price corresponds with the one as parameter (only if not a bundle)
-		if(!this.item.getIsBundle()) {
+		// Q: why not applicable to bundles? if the bundle sets the periodicity and it doesn't match the timePeriod, skip it entirely
+		// FIXME: check the true below (i.e. removing the condition) works. If so, remove it definitely
+		if(true || !this.item.getIsBundle()) {
 			TimePeriod tp = this.getChargeTimePeriod(timePeriod.getStartDateTime().plusSeconds(1));
 			logger.debug("price/discount charge period is {}", tp);
-			if (tp == null || tp.getStartDateTime()==null || !tp.getStartDateTime().equals(timePeriod.getStartDateTime())
+			if (tp == null 
+					|| tp.getStartDateTime()==null 
+					|| tp.getEndDateTime()==null
+					|| !tp.getStartDateTime().equals(timePeriod.getStartDateTime())
 					|| !tp.getEndDateTime().equals(timePeriod.getEndDateTime())) {
 				logger.debug("This item '{}' period {} does not match the statements period {}. Skipping.", this.item.getName(), tp, timePeriod);
 				return false;
 			}
 		}
+		logger.debug("This item '{}' period matches the statements period {}.", this.item.getName(), timePeriod);
 
 		// check the item is not to ignore
 	    if ("true".equalsIgnoreCase(this.item.getIgnore())) {
 	        logger.info("Ignoring price/discount {} based on ignore flag {}", this.item.getName(), this.item.getIgnore());
 			return false;
 	    }
+		logger.info("The price/discount {} is not to be ignored", this.item.getName());
 
 
 		// TODO: replace the following with a full support for "validFor"
@@ -169,33 +182,36 @@ public abstract class AbstractCalculator implements Calculator {
 					this.item.getApplicableFrom());
 			return false;
 		}
+		logger.debug("[FIXME] Price {} is applicable for time period {} (applicable from {})", this.item.getName(), timePeriod, this.item.getApplicableFrom());
 
 		// now also check the 'ignorePeriod' property. Resolve it and check if the period is affected.
 		// FIXME: same considerations as above
 		SubscriptionTimeHelper sth = new SubscriptionTimeHelper(this.getSubscription());
 		if(this.item.getIgnorePeriod()!=null) {
-		    TimePeriod customPeriod = sth.getCustomPeriod(null, (Price)this.item, this.item.getIgnorePeriod().getValue());
-			if(customPeriod!=null) {
-				logger.debug("For this price/discount, ignoring the period {} - {}", customPeriod.getStartDateTime(), customPeriod.getEndDateTime());
-				if(timePeriod.getStartDateTime().isBefore(customPeriod.getEndDateTime())) {
-					logger.debug("Ignoring the price/discount entirely as it sarts within the period");
+		    TimePeriod ignorePeriod = sth.getCustomPeriod(null, (Price)this.item, this.item.getIgnorePeriod().getValue());
+			if(ignorePeriod!=null) {
+				logger.debug("For this price/discount, ignoring the period {} - {}", ignorePeriod.getStartDateTime(), ignorePeriod.getEndDateTime());
+				if(timePeriod.getStartDateTime().isBefore(ignorePeriod.getEndDateTime())) {
+					logger.debug("Ignoring the price/discount entirely as it starts within the ignorePeriod");
 					return false;
 				}
 			}
+			logger.debug("The price/discount starts outside the ignorePeriod {}", this.item.getIgnorePeriod());
 		}
 
 		// now also check the 'validPeriod' property. Resolve it and check if the period is affected.
 		// FIXME: same considerations as above
-		SubscriptionTimeHelper sth2 = new SubscriptionTimeHelper(this.getSubscription());
 		if(this.item.getValidPeriod()!=null) {
-		    TimePeriod validPeriod = sth2.getCustomPeriod(null, this.item.getReferencePrice(), this.item.getValidPeriod().getValue());
+		    TimePeriod validPeriod = sth.getCustomPeriod(null, this.item.getReferencePrice(), this.item.getValidPeriod().getValue());
 			if(validPeriod!=null) {
+				logger.debug("For this price/discount, only considering the period {} - {}", validPeriod.getStartDateTime(), validPeriod.getEndDateTime());
 				if(!timePeriod.getStartDateTime().isBefore(validPeriod.getEndDateTime())) {
+					logger.debug("Ignoring the price/discount entirely as it starts after the validPeriod");
 					return false;
 				}
 			}
+			logger.debug("The price/discount starts before the validPeriod {}", this.item.getValidPeriod());
 		}
-
 
         return true;
     }
@@ -434,24 +450,25 @@ public abstract class AbstractCalculator implements Calculator {
 
 	private Double getApplicableValue(String subscriberId, TimePeriod tp) {
 
+		// TODO: the applicable base can also be 'parent-price'. This is not currently supported.
+		// In general, the context is not considered here. Shuould it?
+
 		if (this.item.getApplicableBase() == null || this.item.getApplicableBase().isEmpty()) {
 			return null;
 		}
 
 		try {
-			TimePeriod actualTp = tp;
-			actualTp = this.getApplicableTimePeriod(tp.getEndDateTime());
+			TimePeriod applicabilityTimePeriod = this.getApplicableTimePeriod(tp.getEndDateTime());
 
-			if(actualTp!=null) {
-				// FIXME: this was not under the above condition... is it needed?
-				Double applicableValue = this.metricsRetriever.computeValueForKey(this.item.getApplicableBase(), subscriberId, actualTp);
+			if(applicabilityTimePeriod!=null) {
+				Double applicableValue = this.metricsRetriever.computeValueForKey(this.item.getApplicableBase(), subscriberId, applicabilityTimePeriod);
 				return applicableValue;
 			} else {
+				logger.debug("There's no applicableTimePeriod for {}. No applicableValue can be computed", this.item.getName());
 				return null;
 			}
 		} catch (Exception e) {
-			logger.error("Error computing applicable value for base '{}': {}", this.item.getApplicableBase(),
-					e.getMessage(), e);
+			logger.error("Error computing applicable value for base '{}': {}", this.item.getApplicableBase(), e.getMessage(), e);
 			return null;
 		}
 	}

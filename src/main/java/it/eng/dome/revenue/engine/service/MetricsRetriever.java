@@ -115,7 +115,7 @@ public class MetricsRetriever {
 
     public List<String> getDistinctValuesForKey(String key, String subscriberId, TimePeriod timePeriod) throws Exception {
         switch(key) {
-            case "seller":
+            case "activeMarketplaceSeller":
                 List<Organization> orgs = this.getActiveSellersBehindMarketplace(subscriberId, timePeriod);
                 List<String> orgIds = new ArrayList<>();
                 for(Organization o: orgs) {

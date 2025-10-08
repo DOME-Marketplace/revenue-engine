@@ -159,11 +159,12 @@ public class Subscription {
 		this.product = product;
 	}
 
-    // TODO: create an new class BillCycle for this, instead of TimePeriod
-    // the BillCycle should also contain the billdate and the payment due date
-    public Set<TimePeriod> getBillingCycles() {
+    public Set<TimePeriod> getChargePeriods() {
         SubscriptionTimeHelper timeHelper = new SubscriptionTimeHelper(this);
         return timeHelper.getChargePeriodTimes();
     }
+
+    // TODO: create an new class BillCycle for this, instead of TimePeriod
+    // the BillCycle should also contain the billdate and the payment due date
 
 }

@@ -102,20 +102,16 @@ public class StatementsService implements InitializingBean {
 
         try {
             RevenueStatementBuilder rsb = new RevenueStatementBuilder(sub);
-//            priceCalculator.setSubscription(sub);
-
-//            SubscriptionTimeHelper timeHelper = new SubscriptionTimeHelper(sub);
-            for (TimePeriod tp : sub.getBillingCycles()) {
+            for (TimePeriod chargePeriod : sub.getChargePeriods()) {
+                logger.debug("\n***************************** BILLING CYCLE ***************************\n {} \n************************************************************************", chargePeriod);
                 try {
-//                    RevenueStatement statement = priceCalculator.compute(tp);
-                    RevenueStatement statement = rsb.buildStatement(tp);
-
+                    RevenueStatement statement = rsb.buildStatement(chargePeriod);
                     if (statement != null) {
                         statement.clusterizeItems();
                         statements.add(statement);
                     }
                 } catch (Exception ex) {
-                    logger.warn("Failed to compute statement for period {} in subscription {}: {}", tp, subscriptionId, ex.getMessage(), ex);
+                    logger.warn("Failed to compute statement for period {} in subscription {}: {}", chargePeriod, subscriptionId, ex.getMessage(), ex);
                     // Continue processing other periods
                 }
             }
