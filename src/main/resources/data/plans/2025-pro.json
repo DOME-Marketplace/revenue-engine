@@ -38,7 +38,7 @@
         "recurringChargePeriodLength": 1,
         "recurringChargePeriodType": "MONTH",
         "applicableBase": "bills-no-taxes",
-        "applicableBaseReferencePeriod": "LAST_1_CHARGE_PERIODS",
+        "applicableBaseReferencePeriod": "CURRENT_CHARGE_PERIOD",
         "computationBaseReferencePeriod": "CURRENT_CHARGE_PERIOD",
         "computationBase": "bills-no-taxes",
         "currency": "EUR",
@@ -50,88 +50,34 @@
           {
             "name": "tier 0: no revenue sharing for transactions below 100K",
             "amount": 0,
-            "skipIfZero": false
+            "skipIfZero": false,
+            "collapse": false
           },
           {
             "name": "tier 1: 4% revenue sharing in the range 100-200K",
-            "computationBase": "bills-no-taxes",
             "percent": 4,
-            "discount": {
-              "comment": "this is the 'min' of the tier x tier percentage",
-              "amount": 4000
-            },
-            "resultingAmountRange": {
-              "comment": "min is always zero. Max is the tier width x tier percentage (i.e. the max revenue for the tier window)",
-              "min": 0,
-              "max": 4000
-            },
-            "collapse": true,
-            "skipIfZero": true
+            "skipIfZero": false,
+            "collapse": false
           },
           {
-            "name": "tier 2: 3% revenue sharing in the range 200-500k",
+            "name": "tier 2: 3% revenue sharing in the range 200-500K",
             "percent": 3,
-            "discount": {
-              "name": "removing the lower part",
-              "comment": "this is the 'min' of the tier x tier percentage",
-              "amount": 6000
-            },
-            "resultingAmountRange": {
-              "comment": "min is always zero. Max is the tier width x tier percentage (i.e. the max revenue for the tier window)",
-              "min": 0,
-              "max": 9000
-            },
-            "collapse": true,
-            "skipIfZero": true
+            "skipIfZero": false,
+            "collapse": false
           },
           {
-            "name": "tier 3: 2% revenue sharing in the range 500-800k",
+            "name": "tier 3: 2% revenue sharing in the range 500-800K",
             "percent": 2,
-            "discount": {
-              "name": "removing the lower part",
-              "comment": "this is the 'min' of the tier x tier percentage",
-              "amount": 10000
-            },
-            "resultingAmountRange": {
-              "comment": "min is always zero. Max is the tier width x tier percentage (i.e. the max revenue for the tier window)",
-              "min": 0,
-              "max": 6000
-            },
-            "collapse": true,
-            "skipIfZero": true
+            "skipIfZero": false,
+            "collapse": false
           },
           {
-            "name": "tier 4: 1% revenue sharing for transactions above 800k",
+            "name": "tier 4: 1% revenue sharing for transactions above 800K",
             "percent": 1,
-            "discount": {
-              "name": "removing the lower part",
-              "comment": "this is the 'min' of the tier x tier percentage",
-              "amount": 8000
-            },
-            "resultingAmountRange": {
-              "comment": "min is always zero. Max is the tier width x tier percentage (i.e. the max revenue for the tier window)",
-              "min": 0
-            },
-            "collapse": true,
-            "skipIfZero": true
+            "skipIfZero": false,
+            "collapse": false
           }
         ]
-      },
-      {
-        "name": "Monthly postpaid fee....",
-        "type": "RECURRING_POSTPAID",
-        "recurringChargePeriodLength": 1,
-        "recurringChargePeriodType": "MONTH",
-        "amount": 150,
-        "currency": "EUR",
-        "ignore": false,
-        "collapse": false,
-        "discount": {
-          "name": "discount for the first three charge periods",
-          "validPeriod": "FIRST_3_CHARGE_PERIOD",
-          "computationBase": "parent-price",
-          "percent": 100
-        }
       }
     ]
   }
