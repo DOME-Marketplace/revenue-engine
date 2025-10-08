@@ -24,8 +24,13 @@ public class Discount extends PlanItem{
 
 	public void setDiscounts(List<Discount> discounts) {
 		this.discounts = discounts;
+		if (discounts != null) {
+			for (Discount discount : discounts) {
+				discount.setParentItem(this);
+			}
+		}	
 	}
-	
+
 	@JsonIgnore
 	public boolean isVariable() {
 		if(this.discounts!=null) {
