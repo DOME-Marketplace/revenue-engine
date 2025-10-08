@@ -12,4 +12,6 @@ public interface Calculator {
 
     public void setMetricsRetriever(MetricsRetriever mr);
 
+    public void setCalculatorContext(Map<String, String> calculatorContext);
+
 }

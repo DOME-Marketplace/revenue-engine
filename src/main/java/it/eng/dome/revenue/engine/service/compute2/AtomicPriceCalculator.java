@@ -64,9 +64,12 @@ public class AtomicPriceCalculator extends AbstractCalculator {
 
 		logger.debug("Computing atomic price for '{}' for time period {}", this.item.getName(), timePeriod);
 
-		String subscriberId = this.getSubscription().getSubscriberId();
-		// the subscriber can be either a Seller or a ReferenceMarketplace)
-		Double priceValue = this.computePriceValue(subscriberId, timePeriod);
+        // seller id is the subscriber, by default. But can be overridden using the calculator context
+        String sellerId = this.getSubscription().getSubscriberId();
+        if(this.getCalculatorContext()!=null && this.getCalculatorContext().get("sellerId")!=null)
+            sellerId = this.getCalculatorContext().get("sellerId");
+
+		Double priceValue = this.computePriceValue(sellerId, timePeriod);
 
 		if (priceValue == null) {
 			logger.debug("Atomic price for {} is null or zero, returning null", this.item.getName());
@@ -82,7 +85,7 @@ public class AtomicPriceCalculator extends AbstractCalculator {
 	}
 
 
-	private Double computePriceValue(String subscriberId, TimePeriod tp) {
+	private Double computePriceValue(String sellerId, TimePeriod tp) {
 		try {
 			if (this.item.getPercent() != null) {
 				TimePeriod computationPeriod = this.getComputationTimePeriod(tp.getEndDateTime());
@@ -91,14 +94,14 @@ public class AtomicPriceCalculator extends AbstractCalculator {
 					return null;
 				}
 				logger.debug("Using custom period for {}: {} - {}, based on reference: {}", this.item.getComputationBaseReferencePeriod(), computationPeriod.getStartDateTime(), computationPeriod.getEndDateTime());
-				Double computationValue = this.metricsRetriever.computeValueForKey(this.item.getComputationBase(), subscriberId, computationPeriod);
-				if(computationValue==null) {
+				Double computationBase = this.metricsRetriever.computeValueForKey(this.item.getComputationBase(), sellerId, computationPeriod);
+				if(computationBase==null) {
 					logger.debug("Computation value is null");
 					return null;
 				}
-				logger.info("Computation value computed: {} for base '{}' in period: {} - {}, based on reference: {}",
-					computationValue, this.item.getComputationBase(), computationPeriod.getStartDateTime(), computationPeriod.getEndDateTime());				
-				return computationValue * (this.item.getPercent() / 100);
+				logger.info("Computation base {} for metric '{}' in period {} - {}",
+					computationBase, this.item.getComputationBase(), computationPeriod.getStartDateTime(), computationPeriod.getEndDateTime());				
+				return computationBase * (this.item.getPercent() / 100);
 			} 
 			else {
 				return this.item.getAmount();
@@ -107,6 +110,7 @@ public class AtomicPriceCalculator extends AbstractCalculator {
 			logger.error("Error computing value for base '{}': {}", this.item.getComputationBase(), e.getMessage(), e);
 			return null;
 		}
+
 	}
 
 }

@@ -115,6 +115,8 @@ public class TmfDataRetriever implements InitializingBean {
 	 * @return A list of AppliedCustomerBillingRate objects representing the retrieved bills.
 	 * @throws Exception If an error occurs during retrieval.
 	 */
+
+    // FIXME: consider implementing this just as a call to the following one, by setting the participantRole to "Seller"
     public List<CustomerBill> retrieveBills(String sellerId, TimePeriod timePeriod) throws Exception {
         logger.debug("Retrieving bills from TMF API between {} and {}", timePeriod.getStartDateTime(), timePeriod.getEndDateTime());
 
@@ -156,22 +158,17 @@ public class TmfDataRetriever implements InitializingBean {
         return filtered;
     }
 
-    private List<AppliedCustomerBillingRate> retrieveACBRs(String participantId, String participantRole, TimePeriod timePeriod, Boolean isBilled) throws Exception {
+    private List<CustomerBill> retrieveBills(String participantId, String participantRole, TimePeriod timePeriod) throws Exception {
         logger.debug("Retrieving bills from TMF API between {} and {}", timePeriod.getStartDateTime(), timePeriod.getEndDateTime());
 
         Map<String, String> filter = new HashMap<>();
 
-        // Add isBilled filter if specified
-        if (isBilled != null) {
-            filter.put("isBilled", isBilled.toString());
-        }
-
         // Add time period filters if available
         if (timePeriod.getStartDateTime() != null) {
-            filter.put("date.gt", timePeriod.getStartDateTime().toString());
+            filter.put("billDate.gt", timePeriod.getStartDateTime().toString());
         }
         if (timePeriod.getEndDateTime() != null) {
-            filter.put("date.lt", timePeriod.getEndDateTime().toString());
+            filter.put("billDate.lt", timePeriod.getEndDateTime().toString());
         }
 
         // --> FIX ME: be careful not to match attributes across different relatedParties
@@ -188,15 +185,16 @@ public class TmfDataRetriever implements InitializingBean {
             logger.debug("No participant role specified");
         }
 
-        List<AppliedCustomerBillingRate> out = billApi.getAllAppliedCustomerBillingRates(null, filter);
+//        List<CustomerBill> out = billApi.getAllAppliedCustomerBillingRates(null, filter);
+        List<CustomerBill> out = billApi.getAllCustomerBills(null, filter);
 
         // Further filter results to be sure id and role are in the same RelatedParty (see fixme above)
         if(participantId!=null && participantRole!=null) {
-            List<AppliedCustomerBillingRate> filteredOut = new ArrayList<>();
-            for(AppliedCustomerBillingRate acbr: out) {
-                for(RelatedParty rp: acbr.getRelatedParty()) {
+            List<CustomerBill> filteredOut = new ArrayList<>();
+            for(CustomerBill cb: out) {
+                for(RelatedParty rp: cb.getRelatedParty()) {
                     if(participantId.equalsIgnoreCase(rp.getId()) && participantRole.equalsIgnoreCase(rp.getRole()))
-                        filteredOut.add(acbr);
+                        filteredOut.add(cb);
                 }
             }
             out = filteredOut;
@@ -463,6 +461,7 @@ public class TmfDataRetriever implements InitializingBean {
         // we need distinct values of 'seller.id' in transactions where the 'referenceMarketplace' role is played by 'marketplaceId'
         // in the given timePeriod
 
+        /*
         // retrieve bills and extract seller ids
         List<AppliedCustomerBillingRate> bills = this.retrieveACBRs(federatedMarketplaceId, "referenceMarketplace", timePeriod, true);
         Set<String> sellersIds = new TreeSet<>();
@@ -475,13 +474,26 @@ public class TmfDataRetriever implements InitializingBean {
                 }
             }
         }
+        */
+
+        // retrieve bills and extract seller ids
+        List<CustomerBill> bills = this.retrieveBills(federatedMarketplaceId, "referenceMarketplace", timePeriod);
+        Set<String> sellersIds = new TreeSet<>();
+        for(CustomerBill cb: bills) {
+            if(cb==null || cb.getRelatedParty()==null)
+                continue;
+            for(it.eng.dome.tmforum.tmf678.v4.model.RelatedParty rp: cb.getRelatedParty()) {
+                if("Seller".equals(rp.getRole())) {
+                    sellersIds.add(rp.getId());
+                }
+            }
+        }
 
         // retrieve the organisations
         List<Organization> activeSellers = new ArrayList<>();
         for(String s:sellersIds) {
             logger.debug("Retrieving organisation with id: {}", s);
             try {
-                // fixme: put this under caching
                 Organization org = this.getOrganization(s);
                 if(org!=null) {
                     logger.debug("{} {} {}", org.getTradingName(), org.getName(), org.getId());

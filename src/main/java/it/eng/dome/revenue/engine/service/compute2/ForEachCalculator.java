@@ -1,5 +1,6 @@
 package it.eng.dome.revenue.engine.service.compute2;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -49,10 +50,14 @@ public class ForEachCalculator extends AbstractCalculator {
 					if(this.item.getType()!=null)
 						sellerRevenueItem.setType(this.item.getType().toString());
 					for (PlanItem childItem : this.item.getBundleItems()) {
-						// TODO: Below, we need to pass a map o properties to be used as a filter
-						// normal...... look for 'seller' (which is in the subscription)
-						// federated... look for 'referenceMarketplace' and iterate over 'seller'
+
+						// create a new context, to force the calculator to consider the sub-seller, instead of the subscriber
+						Map<String, String> context = new HashMap<>();
+						context.put("sellerId", sellerId);
+
 						Calculator childCalc = CalculatorFactory.getCalculatorFor(this.getSubscription(), childItem);
+						childCalc.setCalculatorContext(context);						
+
 						RevenueItem childRevenueItem = childCalc.compute(timePeriod, computeContext);
 						if (childRevenueItem != null) {
 							sellerRevenueItem.addRevenueItem(childRevenueItem);

@@ -2,6 +2,7 @@ package it.eng.dome.revenue.engine.service.compute2;
 
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Map;
 
 import org.slf4j.Logger;
@@ -26,9 +27,12 @@ public abstract class AbstractCalculator implements Calculator {
 
     private Subscription subscription;
 
-    public AbstractCalculator(Subscription subscription, PlanItem item) {
+	private Map<String, String> calculatorContext;
+
+	public AbstractCalculator(Subscription subscription, PlanItem item) {
         this.subscription = subscription;
         this.item = item;
+		this.calculatorContext = new HashMap<>();
     }
 
 	public void setMetricsRetriever(MetricsRetriever mr) {
@@ -455,5 +459,17 @@ public abstract class AbstractCalculator implements Calculator {
 	protected Subscription getSubscription() {
         return this.subscription;
     }
+
+    public Map<String, String> getCalculatorContext() {
+		return calculatorContext;
+	}
+
+	public void setCalculatorContext(Map<String, String> calculatorContext) {
+		this.calculatorContext = calculatorContext;
+	}
+
+	public void addCalculatorContext(String key, String value) {
+		this.calculatorContext.put(key, value);
+	}
 
 }

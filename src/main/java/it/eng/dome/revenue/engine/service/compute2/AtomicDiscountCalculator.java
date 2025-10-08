@@ -8,7 +8,6 @@ import org.slf4j.LoggerFactory;
 import it.eng.dome.revenue.engine.model.Discount;
 import it.eng.dome.revenue.engine.model.RevenueItem;
 import it.eng.dome.revenue.engine.model.Subscription;
-import it.eng.dome.revenue.engine.service.MetricsRetriever;
 import it.eng.dome.tmforum.tmf678.v4.model.TimePeriod;
 
 public class AtomicDiscountCalculator extends AbstractCalculator {
@@ -23,8 +22,12 @@ public class AtomicDiscountCalculator extends AbstractCalculator {
     public RevenueItem doCompute(TimePeriod timePeriod, Map<String, Double> computeContext) {
         logger.debug("Computing atomic discount for: {}", this.item.getName());
 
-        String subscriberId = this.getSubscription().getSubscriberId();
-        Double discountValue = this.computeDiscountValue(subscriberId, timePeriod, computeContext);
+        // seller id is the subscriber, by default. But can be overridden using the calculator context
+        String sellerId = this.getSubscription().getSubscriberId();
+        if(this.getCalculatorContext()!=null && this.getCalculatorContext().get("sellerId")!=null)
+            sellerId = this.getCalculatorContext().get("sellerId");
+
+        Double discountValue = this.computeDiscountValue(sellerId, timePeriod, computeContext);
 
         if (discountValue == null) {
             logger.debug("Atomic discount for {} is null, returning null", this.item.getName());
@@ -34,7 +37,7 @@ public class AtomicDiscountCalculator extends AbstractCalculator {
         return new RevenueItem(this.item.getName(), -discountValue, "EUR");
     }
 
-	private Double computeDiscountValue(String subscriberId, TimePeriod tp, Map<String, Double> computeContext) {
+	private Double computeDiscountValue(String sellerId, TimePeriod tp, Map<String, Double> computeContext) {
 		try {
 			if (this.item.getPercent() != null) {
 
@@ -50,7 +53,7 @@ public class AtomicDiscountCalculator extends AbstractCalculator {
                         return null;
                     }
                     logger.debug("Using custom period for {}: {} - {}, based on reference: {}", this.item.getComputationBaseReferencePeriod(), computationPeriod.getStartDateTime(), computationPeriod.getEndDateTime());
-                    computationBase = this.metricsRetriever.computeValueForKey(this.item.getComputationBase(), subscriberId, computationPeriod);
+                    computationBase = this.metricsRetriever.computeValueForKey(this.item.getComputationBase(), sellerId, computationPeriod);
                     logger.info("Computation base computed as: {} in tp: {}", computationBase, computationPeriod);
                 }
 
