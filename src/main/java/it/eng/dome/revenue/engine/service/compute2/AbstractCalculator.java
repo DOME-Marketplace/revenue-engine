@@ -120,11 +120,17 @@ public abstract class AbstractCalculator implements Calculator {
 
 		// as a final step, if needed, collapse the revenueItem
 		if(outRevenueItem!=null && this.item.getCollapse()) {
-			logger.debug("collapsing...");
-			// set the value to be the same as getOverallValue() 
-			outRevenueItem.setValue(outRevenueItem.getOverallValue());
-			// remove all child items
-			outRevenueItem.setItems(new ArrayList<>());
+			// an item can be collapsed only if it has a chargeTime
+			if(outRevenueItem.getChargeTime()!=null) {
+				logger.debug("collapsing...");
+				// set the value to be the same as getOverallValue() 
+				outRevenueItem.setValue(outRevenueItem.getOverallValue());
+				// remove all child items
+				outRevenueItem.setItems(new ArrayList<>());
+			}
+			else {
+				logger.warn("can't collapse {} because the item has no charge time", outRevenueItem.getName());
+			}
 		}
 
 		logger.debug("returing {} for addition", outRevenueItem);
@@ -147,6 +153,7 @@ public abstract class AbstractCalculator implements Calculator {
 		// check that the charge time period for the price corresponds with the one as parameter (only if not a bundle)
 		// Q: why not applicable to bundles? if the bundle sets the periodicity and it doesn't match the timePeriod, skip it entirely
 		// FIXME: check the true below (i.e. removing the condition) works. If so, remove it definitely
+		/*
 		if(true || !this.item.getIsBundle()) {
 			TimePeriod tp = this.getChargeTimePeriod(timePeriod.getStartDateTime().plusSeconds(1));
 			logger.debug("price/discount charge period is {}", tp);
@@ -156,6 +163,21 @@ public abstract class AbstractCalculator implements Calculator {
 					|| !tp.getStartDateTime().equals(timePeriod.getStartDateTime())
 					|| !tp.getEndDateTime().equals(timePeriod.getEndDateTime())) {
 				logger.debug("This item '{}' period {} does not match the statements period {}. Skipping.", this.item.getName(), tp, timePeriod);
+				return false;
+			}
+		}
+		*/
+
+		TimePeriod tp = this.getChargeTimePeriod(timePeriod.getStartDateTime().plusSeconds(1));
+		logger.debug("price/discount charge period is {}", tp);
+		if(tp!=null && tp.getStartDateTime()!=null && tp.getEndDateTime()!=null) {
+			if(!tp.getStartDateTime().equals(timePeriod.getStartDateTime()) || !tp.getEndDateTime().equals(timePeriod.getEndDateTime())) {
+				logger.debug("This item '{}' period {} does not match the statements period {}. Skipping.", this.item.getName(), tp, timePeriod);
+				return false;
+			}
+		} else {
+			if(!this.item.getIsBundle()) {
+				logger.debug("not a bundle, but missing tp information. Skipping.");
 				return false;
 			}
 		}
