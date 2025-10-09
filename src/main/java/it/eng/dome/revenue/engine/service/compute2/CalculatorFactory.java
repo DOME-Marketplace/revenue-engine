@@ -4,23 +4,28 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
+import org.springframework.stereotype.Component;
 
 import it.eng.dome.revenue.engine.model.Discount;
 import it.eng.dome.revenue.engine.model.PlanItem;
 import it.eng.dome.revenue.engine.model.Price;
 import it.eng.dome.revenue.engine.model.Subscription;
 import it.eng.dome.revenue.engine.service.MetricsRetriever;
+import it.eng.dome.revenue.engine.service.cached.TmfCachedDataRetriever;
 
-@Service
+@Component
 public class CalculatorFactory implements InitializingBean{
 
     private static final Logger logger = LoggerFactory.getLogger(CalculatorFactory.class);
 
     private static MetricsRetriever staticMR;
+    private static TmfCachedDataRetriever staticTDR;
 
     @Autowired
     private MetricsRetriever mr;
+
+    @Autowired
+    private TmfCachedDataRetriever tdr;
 
     public static Calculator getCalculatorFor(Subscription subscription, PlanItem item) {
         logger.debug("*************** Calculator FACTORY **************");
@@ -30,8 +35,10 @@ public class CalculatorFactory implements InitializingBean{
         } else {
             c = getAtomicCalculatorFor(subscription, item);
         }
-        if(c!=null)
+        if(c!=null) {
             c.setMetricsRetriever(CalculatorFactory.staticMR);
+            c.setTmfDataRetriever(CalculatorFactory.staticTDR);
+        }
         return c;
     }
 
@@ -73,6 +80,7 @@ public class CalculatorFactory implements InitializingBean{
     @Override
     public void afterPropertiesSet() throws Exception {
         CalculatorFactory.staticMR = this.mr;
+        CalculatorFactory.staticTDR = this.tdr;
     }
 
 }

@@ -15,6 +15,7 @@ import it.eng.dome.revenue.engine.model.RevenueItem;
 import it.eng.dome.revenue.engine.model.Subscription;
 import it.eng.dome.revenue.engine.model.SubscriptionTimeHelper;
 import it.eng.dome.revenue.engine.service.MetricsRetriever;
+import it.eng.dome.revenue.engine.service.TmfDataRetriever;
 import it.eng.dome.tmforum.tmf678.v4.model.TimePeriod;
 
 public abstract class AbstractCalculator implements Calculator {
@@ -24,6 +25,8 @@ public abstract class AbstractCalculator implements Calculator {
 	protected PlanItem item;
 
 	MetricsRetriever metricsRetriever;
+
+	TmfDataRetriever tmfDataRetriever;
 
     private Subscription subscription;
 
@@ -37,6 +40,10 @@ public abstract class AbstractCalculator implements Calculator {
 
 	public void setMetricsRetriever(MetricsRetriever mr) {
 		this.metricsRetriever = mr;
+	}
+
+	public void setTmfDataRetriever(TmfDataRetriever tdr) {
+		this.tmfDataRetriever = tdr;
 	}
 
 	public final RevenueItem compute(TimePeriod timePeriod, Map<String, Double> computeContext) {
@@ -73,8 +80,13 @@ public abstract class AbstractCalculator implements Calculator {
 		if(outRevenueItem==null)
 			return null;
 
+		if(this.item instanceof Price) {
+			// TODO: if this works here, remove the setting done in atomic calculators
+			outRevenueItem.setChargeTime(new SubscriptionTimeHelper(this.getSubscription()).getChargeTime(timePeriod, this.item.getReferencePrice()));
+		}
+
 		// zero the item, if needed
-		if(outRevenueItem!=null && zeroIt) {
+		if(zeroIt) {
 			logger.debug("zero-ing the item");
 			outRevenueItem.zeroAmountsRecursively();
 		}

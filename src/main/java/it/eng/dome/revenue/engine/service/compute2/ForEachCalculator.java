@@ -10,7 +10,7 @@ import org.slf4j.LoggerFactory;
 import it.eng.dome.revenue.engine.model.PlanItem;
 import it.eng.dome.revenue.engine.model.RevenueItem;
 import it.eng.dome.revenue.engine.model.Subscription;
-import it.eng.dome.revenue.engine.service.MetricsRetriever;
+import it.eng.dome.tmforum.tmf632.v4.model.Organization;
 import it.eng.dome.tmforum.tmf678.v4.model.TimePeriod;
 
 public class ForEachCalculator extends AbstractCalculator {
@@ -49,8 +49,11 @@ public class ForEachCalculator extends AbstractCalculator {
 
 				// foreach 'iterator' property, build a sub-revenueItem with all child prices computed with the 'iterator' property.
 				for(String sellerId: sellerIds) {
-					logger.debug("looking for transactions of seller {} in period {}", sellerId, timePeriod);
-					RevenueItem sellerRevenueItem = new RevenueItem(this.item.getName() + " for seller " + sellerId, this.item.getCurrency());
+
+					String orgLabel = this.getOrganisationLabel(sellerId);
+
+					logger.debug("looking for transactions of seller {} in period {}", orgLabel, timePeriod);
+					RevenueItem sellerRevenueItem = new RevenueItem(this.item.getName() + " - Share from '" + orgLabel + "'", this.item.getCurrency());
 					if(this.item.getType()!=null)
 						sellerRevenueItem.setType(this.item.getType().toString());
 					for (PlanItem childItem : this.item.getBundleItems()) {
@@ -80,8 +83,22 @@ public class ForEachCalculator extends AbstractCalculator {
 		}
 
 //		if(outputItem.getItems()!=null && !outputItem.getItems().isEmpty())
-//			return outputItem;
+			return outputItem;
 //		else
-			return null;
+//			return null;
 	}
+
+	private String getOrganisationLabel(String orgId) throws Exception {
+		String orgLabel = "";
+		Organization seller = this.tmfDataRetriever.getOrganization(orgId);
+		if(seller!=null) {
+			if(seller.getName()!=null)
+				orgLabel = seller.getName();
+			if(seller.getTradingName()!=null)
+				orgLabel = seller.getTradingName();
+		}
+		orgLabel += " ("+orgId+")";
+		return orgLabel.trim();
+	}
+
 }
