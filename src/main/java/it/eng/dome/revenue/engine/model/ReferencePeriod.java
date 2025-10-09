@@ -10,7 +10,6 @@ public class ReferencePeriod {
     String value;
     
     public ReferencePeriod() {
-    	
     }
 
     public ReferencePeriod(String value) {
@@ -25,8 +24,4 @@ public class ReferencePeriod {
         this.value = value;
     }
 
-//    CURRENT_BILLING_PERIOD,
-//    PREVIOUS_BILLING_PERIOD,
-//    CURRENT_SUBSCRIPTION_PERIOD,
-//    PREVIOUS_SUBSCRIPTION_PERIOD
 }

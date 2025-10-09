@@ -7,6 +7,7 @@ import org.ehcache.Cache;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import it.eng.dome.revenue.engine.model.Plan;
@@ -17,8 +18,11 @@ public class CachedPlanService extends PlanService {
 
     private final Logger logger = LoggerFactory.getLogger(CachedPlanService.class);
 
+    @Value("${caching.revenue.enabled}")
+    private Boolean REVENUE_CACHE_ENABLED;
+
     @Autowired
-    CacheService cacheService;
+    private CacheService cacheService;
 
     private Cache<String, List<Plan>> planSetCache;
     private Cache<String, Plan> planCache;
@@ -52,10 +56,11 @@ public class CachedPlanService extends PlanService {
     @Override
     public List<Plan> getAllPlans() {
         String key = "all-plans";
-        if (!this.planSetCache.containsKey(key)) {
+        if (!REVENUE_CACHE_ENABLED || !this.planSetCache.containsKey(key)) {
             logger.debug("Cache MISS for " + key);
             List<Plan> plans = super.getAllPlans();
             this.planSetCache.put(key, plans);
+            logger.info("Caching {} plans", plans.size());
         }
         return this.planSetCache.get(key);
     }
@@ -63,7 +68,7 @@ public class CachedPlanService extends PlanService {
     @Override
     public Plan getPlanById(String planId) {
         String key = planId;
-        if (!this.planCache.containsKey(key)) {
+        if (!REVENUE_CACHE_ENABLED || !this.planCache.containsKey(key)) {
             logger.debug("Cache MISS for " + key);
             Plan plan = super.getPlanById(planId);
             this.planCache.put(key, plan);
@@ -74,7 +79,7 @@ public class CachedPlanService extends PlanService {
     @Override
     public Plan findPlan(String offeringId, String offeringPriceId) {
         String key = offeringId+offeringPriceId;
-        if (!this.planCache.containsKey(key)) {
+        if (!REVENUE_CACHE_ENABLED || !this.planCache.containsKey(key)) {
             logger.debug("Cache MISS for " + key);
             Plan plan = super.findPlan(offeringId, offeringPriceId);
             this.planCache.put(key, plan);

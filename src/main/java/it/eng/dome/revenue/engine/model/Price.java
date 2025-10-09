@@ -1,7 +1,9 @@
 package it.eng.dome.revenue.engine.model;
 
+import java.util.ArrayList;
 import java.util.List;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
@@ -35,16 +37,15 @@ public class Price extends PlanItem {
 
 	/* Return the inherited type, if any. Otherwise the local value. */
 	public PriceType getType() {
-		PriceType inheritedType;
+		PriceType inheritedType = null;
 		if(this.getParentPrice() != null) {
 			inheritedType = this.getParentPrice().getType();
-		} else {
-			inheritedType = null;
 		}
 		if(inheritedType != null) {
 			return inheritedType;
-		} else {}
+		} else {
 			return this.type;
+		}
 	}
 
 
@@ -60,9 +61,17 @@ public class Price extends PlanItem {
 		this.prices = prices;
 		if (prices != null) {
 			for (Price price : prices) {
-				price.setParentPrice(this);
+				price.setParentItem(this);
 			}
 		}	
+	}
+
+	@JsonIgnore
+	public Price getParentPrice() {
+		PlanItem parent = this.getParentItem();
+		if(parent!=null && parent instanceof Price)
+			return (Price)parent;
+		return null;
 	}
 
 	/* Return the inherited length, if any. Otherwise the local value. */
@@ -108,7 +117,7 @@ public class Price extends PlanItem {
 	public void setDiscount(Discount discount) {
 		this.discount = discount;
 		if (discount != null) {
-			discount.setParentPrice(this);
+			discount.setParentItem(this);
 		}
 	}
 
@@ -123,6 +132,31 @@ public class Price extends PlanItem {
 		if(this.isConditional())
 			return true;
 		return false;
+	}
+
+	@JsonIgnore
+	public List<PlanItem> getBundleItems() {
+	    List<PlanItem> out = new ArrayList<>();
+	    if (this.getPrices() != null) {
+	        out.addAll(this.getPrices());
+	    }
+	    return out;
+	}
+
+
+	@JsonIgnore
+	public List<PlanItem> getChildItems() {
+	    List<PlanItem> out = new ArrayList<>(this.getBundleItems());
+	    if (this.getDiscount() != null) {
+	        out.add(this.getDiscount());
+	    }
+	    return out;
+	}
+
+
+	@JsonIgnore
+	public Price getReferencePrice() {
+		return this;
 	}
 
 	@Override

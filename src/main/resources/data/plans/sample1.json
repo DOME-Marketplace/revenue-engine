@@ -14,7 +14,7 @@
     "billingDateShift": "5",
     "paymentDueDateOffset": "15"
   },
-  "subscriptionDurationLength": 12,
+  "subscriptionDurationLength": 6,
   "subscriptionDurationPeriodType": "MONTH",
   "agreements": [],
   "price": {
@@ -30,22 +30,12 @@
         "recurringChargePeriodType": "YEAR",
         "amount": 8000,
         "currency": "EUR",
-        "ignore": "${subscription.characteristics.marketplaceSubscription}",
+        "ignore": false,
         "discount": {
-	      "name": "some discount",
-	      "isBundle": true,
-	      "computationBase": "parent-price",
-	      "bundleOp": "ALTERNATIVE_HIGHER",
-		  	"discounts":[
-				          		{
-          			"name":"Sub discount1",
-          			"percent":10
-          		},
-          		{
-          			"name":"Sub discount2",
-          			"percent":50
-          		}
-			]
+          "name": "some discount",
+          "isBundle": false,
+          "computationBase": "parent-price",
+          "percent": 20
         }
       },
       {
@@ -136,22 +126,22 @@
 
 
       },
-	  {
-	    "name": "Monthly postpaid fee....",
-	    "type": "RECURRING_POSTPAID",
-	    "recurringChargePeriodLength": 1,
-	    "recurringChargePeriodType": "MONTH",
-	    "amount": 150,
-	    "currency": "EUR",
-	    "ignore": false,
-	    "collapse": false,
-	    "discount": {
-	      "name": "discount for the first three charge periods",
-	      "validPeriod": "FIRST_3_CHARGE_PERIOD",
-	      "computationBase": "parent-price",
-	      "percent": 100
-	    }
-	  }
+      {
+        "name": "Monthly postpaid fee....",
+        "type": "RECURRING_POSTPAID",
+        "recurringChargePeriodLength": 1,
+        "recurringChargePeriodType": "MONTH",
+        "amount": 150,
+        "currency": "EUR",
+        "ignore": false,
+        "collapse": false,
+        "discount": {
+          "name": "discount for the first three charge periods",
+          "validPeriod": "FIRST_3_CHARGE_PERIOD",
+          "computationBase": "parent-price",
+          "percent": 100
+        }
+      }
     ]
   }
 }

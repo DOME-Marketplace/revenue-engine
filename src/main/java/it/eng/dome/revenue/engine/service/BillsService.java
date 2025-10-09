@@ -1,77 +1,45 @@
 package it.eng.dome.revenue.engine.service;
 
-import java.time.OffsetDateTime;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.TreeSet;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.InitializingBean;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
-
-import it.eng.dome.brokerage.api.AppliedCustomerBillRateApis;
-import it.eng.dome.brokerage.api.ProductApis;
 import it.eng.dome.revenue.engine.invoicing.InvoicingService;
 import it.eng.dome.revenue.engine.mapper.RevenueBillingMapper;
-import it.eng.dome.revenue.engine.model.Plan;
-import it.eng.dome.revenue.engine.model.RevenueBill;
-import it.eng.dome.revenue.engine.model.RevenueItem;
-import it.eng.dome.revenue.engine.model.Subscription;
-import it.eng.dome.revenue.engine.model.SubscriptionTimeHelper;
+import it.eng.dome.revenue.engine.model.*;
 import it.eng.dome.revenue.engine.model.comparator.RevenueBillComparator;
 import it.eng.dome.revenue.engine.service.cached.CachedPlanService;
 import it.eng.dome.revenue.engine.service.cached.CachedStatementsService;
 import it.eng.dome.revenue.engine.service.cached.CachedSubscriptionService;
 import it.eng.dome.revenue.engine.service.cached.TmfCachedDataRetriever;
-import it.eng.dome.revenue.engine.tmf.TmfApiFactory;
+import it.eng.dome.revenue.engine.utils.IdUtils;
 import it.eng.dome.revenue.engine.utils.TmfConverter;
 import it.eng.dome.tmforum.tmf637.v4.model.BillingAccountRef;
 import it.eng.dome.tmforum.tmf637.v4.model.Product;
-import it.eng.dome.tmforum.tmf678.v4.model.AppliedBillingTaxRate;
-import it.eng.dome.tmforum.tmf678.v4.model.AppliedCustomerBillingRate;
-import it.eng.dome.tmforum.tmf678.v4.model.BillRef;
-import it.eng.dome.tmforum.tmf678.v4.model.CustomerBill;
-import it.eng.dome.tmforum.tmf678.v4.model.Money;
-import it.eng.dome.tmforum.tmf678.v4.model.TaxItem;
-import it.eng.dome.tmforum.tmf678.v4.model.TimePeriod;
+import it.eng.dome.tmforum.tmf678.v4.model.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+import java.time.OffsetDateTime;
+import java.util.*;
 
 @Service
-public class BillsService implements InitializingBean {
+public class BillsService {
 	
 	private final Logger logger = LoggerFactory.getLogger(BillsService.class);
-
-    @Autowired
-    private TmfApiFactory tmfApiFactory;
 
     @Autowired
 	private CachedStatementsService statementsService;
 
     @Autowired
 	private CachedSubscriptionService subscriptionService;
-    
+
     @Autowired
 	private CachedPlanService planService;
-    
+
     @Autowired
 	private TmfCachedDataRetriever tmfDataRetriever;
 
     @Autowired
 	private InvoicingService invoicingService;
-
-    private ProductApis productApis;
-    
-    private AppliedCustomerBillRateApis acbrApis;
-
-    @Override
-    public void afterPropertiesSet() throws Exception {
-        productApis = new ProductApis(tmfApiFactory.getTMF637ProductInventoryApiClient());
-        acbrApis = new AppliedCustomerBillRateApis(tmfApiFactory.getTMF678CustomerBillApiClient());
-    }
 
     /**
 	 * Retrieves a bill by its ID.
@@ -82,9 +50,9 @@ public class BillsService implements InitializingBean {
 	*/
     public RevenueBill getRevenueBillById(String billId) throws Exception {
     	logger.info("Fetch bill with ID {}", billId);
-        // FIXME: temporary... until we have proper persistence
-        // extract the subscription id
-        String subscriptionId = "urn:ngsi-ld:product:"+billId.substring(24, 24+36);
+
+        String[] parts = IdUtils.unpack(billId, "revenuebill");
+        String subscriptionId = parts[0];
 
         // iterate over bills for that subscription, until found
         for(RevenueBill bill: this.getSubscriptionBills(subscriptionId)) {
@@ -105,6 +73,10 @@ public class BillsService implements InitializingBean {
         try {
             Set<RevenueBill> bills = new TreeSet<>(new RevenueBillComparator());
             Subscription subscription = this.subscriptionService.getSubscriptionByProductId(subscriptionId);
+
+            Plan plan = planService.getResolvedPlanById(subscription.getPlan().getId(),subscription);
+	        subscription.setPlan(plan);
+
             List<RevenueItem> items = this.statementsService.getItemsForSubscription(subscriptionId);
             for(TimePeriod tp: this.statementsService.getBillPeriods(subscriptionId)) {
                 RevenueBill bill = new RevenueBill();
@@ -123,11 +95,10 @@ public class BillsService implements InitializingBean {
         }
     }
     
-    /** Retrieve an Customer Bill (CB) for a given RevenueBill ID.
+    /** Retrieve a Customer Bill (CB) for a given RevenueBill ID.
 	 * 
 	 * @param revenueBillId the ID of the RevenueBill for which to retrieve CB
-	 * @return an Customer Bill objects representing the RevenueBill for tmf
-	 * @throws Exception if an error occurs during retrieval
+	 * @return a Customer Bill objects representing the RevenueBill for tmf
 	*/
     public CustomerBill getCustomerBillByRevenueBillId(String revenueBillId) {
     	RevenueBill rb = new RevenueBill();
@@ -136,15 +107,13 @@ public class BillsService implements InitializingBean {
 		} catch (Exception e) {
 			logger.error("Failed to retrieve Revenue Bill with ID {}: {}", revenueBillId, e.getMessage(), e);
 		}
-        CustomerBill cb = this.getCustomerBillByRevenueBill(rb);
-        return cb;
+        return this.getCustomerBillByRevenueBill(rb);
     }
     
     /** Retrieves Applied Customer Billing Rate (ACBR) for a given RevenueBill ID.
  	 * 
  	 * @param revenueBillId the ID of the RevenueBill for which to retrieve ACBR
  	 * @return a List of ACBR objects representing the bills of RevenueBill for tmf
- 	 * @throws Exception if an error occurs during retrieval
  	*/
     public List<AppliedCustomerBillingRate> getACBRsByRevenueBillId(String revenueBillId) {
     	RevenueBill rb = new RevenueBill();
@@ -152,51 +121,61 @@ public class BillsService implements InitializingBean {
 			rb = this.getRevenueBillById(revenueBillId);
 		} catch (Exception e) {
 			logger.error("Failed to retrieve Revenue Bill with ID {}: {}", revenueBillId, e.getMessage(), e);
-		}		
-		List<AppliedCustomerBillingRate> acbrs = this.getACBRsByRevenueBill(rb);
-		
-		return acbrs;
+		}
+
+        return this.getACBRsByRevenueBill(rb);
     }
     
     /**
 	 * Builds a CustomerBill from a RevenueBill.
 	 * 
-	 * @param sb the RevenueBill to convert
+	 * @param rb the RevenueBill to convert
 	 * @return a CustomerBill object
 	 * @throws IllegalArgumentException if the RevenueBill is null or does not contain related party information
 	 */
-    public CustomerBill getCustomerBillByRevenueBill(RevenueBill sb) {
-    	if (sb == null) {
+    public CustomerBill getCustomerBillByRevenueBill(RevenueBill rb) {
+
+    	if (rb == null) {
             throw new IllegalArgumentException("RevenueBill cannot be null");
         }
-        if (sb.getRelatedParties() == null || sb.getRelatedParties().isEmpty()) {
+        if (rb.getRelatedParties() == null || rb.getRelatedParties().isEmpty()) {
             throw new IllegalArgumentException("Missing related party information in RevenueBill");
         }
-        if (sb.getPeriod() == null || sb.getPeriod().getEndDateTime() == null) {
+        if (rb.getPeriod() == null || rb.getPeriod().getEndDateTime() == null) {
             throw new IllegalArgumentException("RevenueBill period or endDateTime is missing");
         }
         
-        CustomerBill cb = RevenueBillingMapper.toCB(sb);
-        if (cb == null) {
-            throw new IllegalStateException("Failed to map RevenueBill to CustomerBill");
-        }
+        CustomerBill cb = RevenueBillingMapper.toCB(rb);
 
-		cb.setBillingAccount(TmfConverter.convertBillingAccountRefTo678(tmfDataRetriever.retrieveBillingAccountByProductId(sb.getSubscriptionId())));
+		cb.setBillingAccount(TmfConverter.convertBillingAccountRefTo678(tmfDataRetriever.retrieveBillingAccountByProductId(rb.getSubscriptionId())));
         
-		// NEXT Bill date and Payment Due Date
-		Subscription sub = subscriptionService.getSubscriptionByProductId(sb.getSubscriptionId());
+		// Next bill date and payment due date
+		Subscription sub = subscriptionService.getSubscriptionByProductId(rb.getSubscriptionId());
+        /*
 		Plan plan = planService.getPlanById(sub.getPlan().getId());
-		sub.setPlan(plan);
-		SubscriptionTimeHelper th = new SubscriptionTimeHelper(sub);
+		PlanResolver planResolver = new PlanResolver(sub);
+		Plan resolvedPlan = planResolver.resolve(plan);
+        */
+        Plan resolvedPlan = planService.getResolvedPlanById(sub.getPlan().getId(), sub);
+		sub.setPlan(resolvedPlan);
 		
-		OffsetDateTime nextBillDate = th.rollBillPeriod(sb.getBillTime(), plan.getBillCycleSpecification().getBillingPeriodLength());
-		cb.setNextBillDate(nextBillDate); //?
+		SubscriptionTimeHelper th = new SubscriptionTimeHelper(sub);
 
-		OffsetDateTime paymentDueDate = cb.getBillDate().plusDays(plan.getBillCycleSpecification().getPaymentDueDateOffset());
+        OffsetDateTime billDate = rb.getPeriod().getEndDateTime();
+        if(resolvedPlan.getBillCycleSpecification()!=null && resolvedPlan.getBillCycleSpecification().getBillingDateShift()!=null)
+            billDate = billDate.plusDays(resolvedPlan.getBillCycleSpecification().getBillingDateShift());
+        cb.setBillDate(billDate);
+
+		OffsetDateTime nextBillDate = th.rollBillPeriod(billDate, resolvedPlan.getBillCycleSpecification().getBillingPeriodLength());
+		cb.setNextBillDate(nextBillDate);
+
+		OffsetDateTime paymentDueDate = billDate;
+        if(resolvedPlan.getBillCycleSpecification()!=null && resolvedPlan.getBillCycleSpecification().getPaymentDueDateOffset()!=null)
+            paymentDueDate = paymentDueDate.plusDays(resolvedPlan.getBillCycleSpecification().getPaymentDueDateOffset());
 		cb.setPaymentDueDate(paymentDueDate);
 		
 		//apply tax
-		List<AppliedCustomerBillingRate> acbrs = this.getACBRsByRevenueBill(sb);
+		List<AppliedCustomerBillingRate> acbrs = this.getACBRsByRevenueBill(rb);
 	
 		List<TaxItem> taxItems = this.getTaxItemListFromACBRs(acbrs);
     	
@@ -204,9 +183,6 @@ public class BillsService implements InitializingBean {
         
     	//amounts
     	Money taxIncludedTaxes = this.computeTaxIncludedAmount(acbrs);
-    	if (taxIncludedTaxes == null) {
-            throw new IllegalStateException("Failed to compute tax included amount");
-        }
         cb.setTaxIncludedAmount(taxIncludedTaxes);
 		cb.setAmountDue(taxIncludedTaxes);
 		cb.setRemainingAmount(taxIncludedTaxes);
@@ -245,7 +221,7 @@ public class BillsService implements InitializingBean {
 
                 TaxItem newItem = this.getTaxItemFromABTR(abtr, acbr.getTaxExcludedAmount());
 
-                if (newItem == null || newItem.getTaxCategory() == null || newItem.getTaxRate() == null) {
+                if (newItem.getTaxCategory() == null || newItem.getTaxRate() == null) {
                     throw new IllegalArgumentException("Generated TaxItem or its key fields cannot be null");
                 }
 
@@ -284,6 +260,9 @@ public class BillsService implements InitializingBean {
 
         Money result = new Money();
         result.setUnit(a.getUnit());
+        if (a.getValue() == null || b.getValue() == null) {
+            throw new IllegalArgumentException("Cannot sum Money: one of the values is null");
+        }
         result.setValue(a.getValue() + b.getValue());
         return result;
     }
@@ -311,6 +290,9 @@ public class BillsService implements InitializingBean {
 		TaxItem taxItem = RevenueBillingMapper.toTaxItem(abtr);
 		
 		// calculate tax amount
+        if(taxItem.getTaxRate() == null) {
+        	throw new IllegalArgumentException("AppliedBillingTaxRate must have a non-null taxRate");
+        }
 		Float taxAmount = (taxExcludedAmount.getValue() * taxItem.getTaxRate());
 		Money taxAmountMoney = new Money();
         taxAmountMoney.setUnit(taxExcludedAmount.getUnit());
@@ -333,18 +315,21 @@ public class BillsService implements InitializingBean {
             throw new IllegalArgumentException("AppliedCustomerBillingRate list cannot be null or empty");
         }
     	
-    	Float sum = 0.0f;
+    	float sum = 0.0f;
     	String unit = null;
     	
     	for (AppliedCustomerBillingRate acbr : acbrs) {
-    		sum = sum + acbr.getTaxIncludedAmount().getValue();
+            if(acbr.getTaxIncludedAmount() == null || acbr.getTaxIncludedAmount().getValue() == null) {
+                	throw new IllegalArgumentException("Each AppliedCustomerBillingRate must have a non-null taxIncludedAmount with a value");
+            }
+            sum = sum + acbr.getTaxIncludedAmount().getValue();
     		if(unit == null || !unit.equals(acbr.getTaxIncludedAmount().getUnit())) {
     			unit = acbr.getTaxIncludedAmount().getUnit();
     		}
 		}
     	
     	Money m = new Money();
-    	m.setUnit(unit);;
+    	m.setUnit(unit);
     	m.setValue(sum);
     	
     	return m;
@@ -355,12 +340,12 @@ public class BillsService implements InitializingBean {
      * Performs mapping from RevenueBill and Subscription, sets billing account reference,
      * customer bill reference, and applies taxes.
      *
-     * @param sb RevenueBill object (must not be null and must have related parties)
+     * @param rb RevenueBill object (must not be null and must have related parties)
      * @return List of AppliedCustomerBillingRate
      * @throws IllegalArgumentException if the RevenueBill or its related parties are null/empty
      * @throws IllegalStateException if required data (Subscription, Buyer party, etc.) cannot be retrieved
      */
-    public List<AppliedCustomerBillingRate> getACBRsByRevenueBill(RevenueBill rb) {
+    private List<AppliedCustomerBillingRate> getACBRsByRevenueBill(RevenueBill rb) {
     	if (rb == null) {
             throw new IllegalArgumentException("RevenueBill cannot be null");
         }
@@ -369,12 +354,18 @@ public class BillsService implements InitializingBean {
         }
         
         Subscription subscription = subscriptionService.getSubscriptionByProductId(rb.getSubscriptionId());
+        
         if (subscription == null) {
             throw new IllegalStateException("Subscription not found for subscriptionId: " + rb.getSubscriptionId());
         }
         
-        List<AppliedCustomerBillingRate> acbrList = RevenueBillingMapper.toACBRList(rb, subscription);
-        if (acbrList == null) {
+		Plan plan = planService.getPlanById(subscription.getPlan().getId());
+		PlanResolver planResolver = new PlanResolver(subscription);
+		Plan resolvedPlan = planResolver.resolve(plan);
+		subscription.setPlan(resolvedPlan);
+        
+		List<AppliedCustomerBillingRate> acbrList = RevenueBillingMapper.toACBRList(rb, subscription);
+        if (acbrList.isEmpty()) {
             throw new IllegalStateException("Failed to map RevenueBill and Subscription to AppliedCustomerBillingRate list");
         }
         
@@ -383,12 +374,12 @@ public class BillsService implements InitializingBean {
 		}
         
         acbrList = this.setBillingAccountRef(acbrList, subscription.getId());
-        if (acbrList == null) {
+        if (acbrList == null || acbrList.isEmpty()) {
             throw new IllegalStateException("Failed to set billing account reference on AppliedCustomerBillingRate list");
         }
         
         acbrList = this.setCustomerBillRef(acbrList, rb);
-        if (acbrList == null) {
+        if (acbrList == null || acbrList.isEmpty()) {
             throw new IllegalStateException("Failed to set customer bill reference on AppliedCustomerBillingRate list");
         }
         
@@ -405,11 +396,11 @@ public class BillsService implements InitializingBean {
  	 * @param acbrs is a list of ACBR
  	 * @return a list of ACBR with AppliedBillingTaxRate attribute for each object.
  	*/
-    public List<AppliedCustomerBillingRate> applyTaxes(List<AppliedCustomerBillingRate> acbrs) {
+    private List<AppliedCustomerBillingRate> applyTaxes(List<AppliedCustomerBillingRate> acbrs) {
 
         // first, retrieve the product
         String productId = acbrs.get(0).getProduct().getId();
-        Product product = productApis.getProduct(productId, null);
+        Product product = tmfDataRetriever.getProductById(productId, null);
 
         // invoke the invoicing servi
         return this.invoicingService.applyTaxees(product, acbrs);
@@ -418,10 +409,10 @@ public class BillsService implements InitializingBean {
     /** Set Customer Bill Ref for each object in a List of Applied Customer Billing Rate
  	 * 
  	 * @param acbrs is a list of ACBR
- 	 * @param rb is a RevenueBill used to generate a CustomerBill Id
+ 	 * @param rb is a RevenueBill used to generate a CustomerBill id
  	 * @return a list of ACBR with Customer Bill Ref attribute for each object.
  	*/
-    public List<AppliedCustomerBillingRate> setCustomerBillRef(List<AppliedCustomerBillingRate> acbrs, RevenueBill rb){
+    private List<AppliedCustomerBillingRate> setCustomerBillRef(List<AppliedCustomerBillingRate> acbrs, RevenueBill rb){
 		// this acbr id is for local istance of acbr. When we persist the acbr, we provide another id.
 		BillRef billRef = new BillRef();
 		String billId = rb.getId();
@@ -440,7 +431,7 @@ public class BillsService implements InitializingBean {
  	 * @param subscriptionId is a Subscription ID used to retrieve Billing Account
  	 * @return a list of ACBR with Billing Account Ref attribute for each object.
  	*/
-  public List<AppliedCustomerBillingRate> setBillingAccountRef(List<AppliedCustomerBillingRate> acbrs, String subscriptionId){
+  private List<AppliedCustomerBillingRate> setBillingAccountRef(List<AppliedCustomerBillingRate> acbrs, String subscriptionId){
 	  BillingAccountRef billingAccountRef = tmfDataRetriever.retrieveBillingAccountByProductId(subscriptionId);
 	  if (billingAccountRef == null) {
 		  logger.warn("toCB: billingAccountRef is null, CustomerBill will have null billingAccount");
@@ -451,31 +442,5 @@ public class BillsService implements InitializingBean {
 	  }
 	  
 	  return acbrs;
-  }
-  
-  /**
-   * Retrieves the list of AppliedCustomerBillingRate for a given CustomerBill ID.
-   *
-   * @param cbId ID of CustomerBill object to retrieve ACBRs.
-   * @return List of AppliedCustomerBillingRate
-   * @throws IllegalArgumentException if the cbId is null/empty
-   */
-  public List<AppliedCustomerBillingRate> getACBRsByCustomerBillId(String cbId) {
-	if (cbId == null) {
-	      throw new IllegalArgumentException("CustomerBill ID cannot be null");
-	}
-  	
-  	logger.info("retrieve acbrs by cust id: {} " + cbId);
-  	
-  	Map<String, String> filter = new HashMap<>();
-	filter.put("bill.id", cbId);
-  	List<AppliedCustomerBillingRate> acbrs = acbrApis.getAllAppliedCustomerBillingRates(null, filter);
-
-  	if(acbrs == null || acbrs.isEmpty()) {
-  		logger.warn("No AppliedCustomerBillingRate found for CustomerBill ID: {}", cbId);
-  		return null;
-  	}
-      
-  	return acbrs;
   }
 }

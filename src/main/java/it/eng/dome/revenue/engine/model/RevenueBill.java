@@ -1,15 +1,13 @@
 package it.eng.dome.revenue.engine.model;
 
-import java.nio.charset.StandardCharsets;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import it.eng.dome.revenue.engine.utils.IdUtils;
+import it.eng.dome.tmforum.tmf678.v4.model.RelatedParty;
+import it.eng.dome.tmforum.tmf678.v4.model.TimePeriod;
+
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.UUID;
-
-import com.fasterxml.jackson.annotation.JsonProperty;
-
-import it.eng.dome.tmforum.tmf678.v4.model.RelatedParty;
-import it.eng.dome.tmforum.tmf678.v4.model.TimePeriod;
 
 public class RevenueBill {
 
@@ -105,12 +103,12 @@ public class RevenueBill {
         return false;
     }
 
-    public OffsetDateTime getBillTime() {
-        OffsetDateTime endDateTime = this.period.getEndDateTime();
-        if(endDateTime!=null)
-        	return endDateTime.plusDays(3);
-        return null;
-    }
+//    public OffsetDateTime getBillTime() {
+//        OffsetDateTime endDateTime = this.period.getEndDateTime();
+//        if(endDateTime!=null)
+//        	return endDateTime.plusDays(3);
+//        return null;
+//    }
 
     private String getRelatedPartyIdWithRole(String role) {
         if(this.getRelatedParties()==null || role==null)
@@ -137,7 +135,7 @@ public class RevenueBill {
     }
 
     private String generateId() {
-        // FIXME: temporary... until we have proper persistence
+
         String key = "";
         OffsetDateTime startDateTime = this.period.getStartDateTime();
         if (startDateTime != null)
@@ -145,15 +143,15 @@ public class RevenueBill {
         OffsetDateTime endDateTime = this.period.getEndDateTime();
         if (endDateTime != null)
             key += endDateTime.toString();
-        key += this.getBillTime().toString();
+//        key += this.getBillTime().toString();
         key += this.getRelatedPartyIdWithRole("buyer");
         key += this.getRelatedPartyIdWithRole("seller");
         key += this.getAmount().toString();
         key += this.getDescriptions();
-        // include the subscription id (buyer and plan) + the bill nr
-        return "urn:ngsi-ld:revenuebill:" + this.subscriptionId.substring(20) + "-" +
-               UUID.nameUUIDFromBytes(key.getBytes(StandardCharsets.UTF_8)).toString();
-    }
 
+        // include the subscription id (buyer and plan) + the bill nr
+        String billUuid = IdUtils.uuidFromKey(key.toString());
+        return IdUtils.pack("revenuebill", this.subscriptionId, billUuid);
+    }
 
 }

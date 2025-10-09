@@ -20,7 +20,7 @@ public class PlanValidationReport {
     }
 
     public List<PlanValidationIssue> getIssues() {
-        // TODO: return issues sorted by severity
+        issues.sort((i1, i2) -> i1.getSeverity().ordinal() - i2.getSeverity().ordinal());
         return issues;
     }
 

@@ -11,6 +11,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -83,6 +85,19 @@ public class PlansController {
             logger.error("Unexpected error validating plan with ID {}: {}", planId, e.getMessage(), e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
+    }
+    
+    //TODO: remove this test endpoint,when not needed anymore
+    @PostMapping("/validate")
+    public ResponseEntity<PlanValidationReport> validatePlan(@RequestBody Plan plan) {
+        PlanValidationReport report;
+		try {
+			report = subscriptionPlanService.validatePlanTest(plan);
+		} catch (IOException e) {
+            logger.error("Unexpected error validating plan with ID {}: {}", plan, e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+		}
+        return ResponseEntity.ok(report);
     }
 
 }

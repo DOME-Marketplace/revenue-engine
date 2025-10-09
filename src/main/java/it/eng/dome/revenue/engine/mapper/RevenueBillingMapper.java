@@ -30,7 +30,6 @@ public class RevenueBillingMapper {
 	 * to be converted into AppliedCustomerBillingRate objects.
 	 * @param revenueBill The RevenueBill object containing the revenue data.
 	 * @param subscription The Subscription object related to the billing.
-	 * @param billingAccountRef The BillingAccountRef object for the billing account.
 	 * @return A List of AppliedCustomerBillingRate objects, or an empty list if the input RevenueBill is null or has no revenue items.
 	*/
 	public static List<AppliedCustomerBillingRate> toACBRList(RevenueBill revenueBill, Subscription subscription) {
@@ -43,6 +42,7 @@ public class RevenueBillingMapper {
 			// For each item, call a recursive helper method to find all "leaf" items and map them to AppliedCustomerBillingRate objects.
 	        collectLeafItemsAndMap(item, revenueBill, subscription, acbrList);
 	    }
+
 	    return acbrList;
 	}
 	
@@ -55,20 +55,26 @@ public class RevenueBillingMapper {
 	 * @param item The current RevenueItem in the traversal.
 	 * @param revenueBill The RevenueBill object from which the item originates.
 	 * @param subscription The Subscription object related to the billing.
-	 * @param billingAccountRef The BillingAccountRef for the billing account.
 	 * @param acbrList The list to which the generated AppliedCustomerBillingRate objects will be added.
 	*/
 	private static void collectLeafItemsAndMap(RevenueItem item, RevenueBill revenueBill, Subscription subscription, List<AppliedCustomerBillingRate> acbrList) {
 		// Base case for the recursion: if the item is null, simply return.
-		if (item == null) return;
-		
+		if (item == null)
+			return;
+
+		if(item.getValue()!=null && item.getValue()!=0) {
+			acbrList.add(toACBR(item, revenueBill, subscription));
+		}
+
 		// if had a son, iterate
 		if (item.getItems() != null && !item.getItems().isEmpty()) {
 			for (RevenueItem child : item.getItems()) {
 				// if it has children, recursively call this method for each child.
 				collectLeafItemsAndMap(child, revenueBill, subscription, acbrList);
 			}
-		} else {
+		} 
+		/*
+		else {
 			// this is a leaf node (no children). Billable item that can be mapped to an ACBR.
 			try {
 //				if (item.getOverallValue() != null && item.getOverallValue() != 0.0) {
@@ -81,6 +87,7 @@ public class RevenueBillingMapper {
 				logger.error("Failed to map RevenueItem '{}' to AppliedCustomerBillingRate: {}", item.getName(), e.getMessage(), e);
 			}
 		}
+		*/
 	}
 
 	/**
@@ -91,7 +98,6 @@ public class RevenueBillingMapper {
 	 * @param item The RevenueItem to be mapped. This is expected to be a "leaf" item from the bill's hierarchy.
 	 * @param revenueBill The RevenueBill object from which the RevenueItem and other context (like the billing period) originate.
 	 * @param subscription The Subscription related to this billing rate, used to enrich the ACBR's details.
-	 * @param billingAccountRef A reference to the billing account, to be included in the ACBR.
 	 * @return A new AppliedCustomerBillingRate object populated with the provided data, or null if the input item is null.
 	 * @throws IllegalArgumentException if the RevenueBill or its period are null, as these are mandatory for the ACBR.
 	*/
@@ -107,15 +113,13 @@ public class RevenueBillingMapper {
 
 		//id and base data
 	    AppliedCustomerBillingRate acbr = new AppliedCustomerBillingRate();
-	    acbr.setId("urn:ngsi-ld:applied-customer-billing-rate:" + UUID.randomUUID().toString());
+	    acbr.setId("urn:ngsi-ld:applied-customer-billing-rate:" + UUID.randomUUID());
 	    acbr.setHref(acbr.getId());
 	    acbr.setName("Applied Customer Billing Rate of " + item.getName());
 	    acbr.setDescription("Applied Customer Billing Rate of " 
 	        + (subscription != null ? subscription.getName() : "") 
 	        + " for period " + revenueBill.getPeriod().getStartDateTime() + " - " + revenueBill.getPeriod().getEndDateTime());
-	    acbr.setDate(revenueBill.getBillTime());
-		// FIXME: can we assume that it is false at start?
-		// A: Yes, but should be set to true when persisting
+	    acbr.setDate(revenueBill.getPeriod().getEndDateTime());	// from specs, date is the acbr creation date. So, review this.
 	    acbr.setIsBilled(false); 
 	    acbr.setType(item.getType());
 	    acbr.setPeriodCoverage(revenueBill.getPeriod());
@@ -129,17 +133,17 @@ public class RevenueBillingMapper {
 	    
 	    acbr.setBillingAccount(null); // set after
 
-	    if (item.getOverallValue() != null) {
+	    if (item.getValue() != null) {
 	        Money money = new Money();
-	        money.setValue(item.getOverallValue().floatValue());
+	        money.setValue(item.getValue().floatValue());
 	        money.setUnit(item.getCurrency());
 	        acbr.setTaxExcludedAmount(money);
 	    } else {
-	        logger.debug("RevenueItem '{}' has no overall value set", item.getName());
+	        logger.debug("RevenueItem '{}' has no value set", item.getName());
 	    }
 
 		acbr.appliedTax(null); // from invoice
-		acbr.setTaxIncludedAmount(null); //from invoice
+		acbr.setTaxIncludedAmount(acbr.getTaxExcludedAmount()); //from invoice
 
 	    return acbr;
 	}
@@ -154,7 +158,6 @@ public class RevenueBillingMapper {
 	 * amounts, taxes, and related parties based on the provided RevenueBill.
 	 *
 	 * @param revenueBill The RevenueBill object containing the source data.
-	 * @param billingAccountRef A reference to the billing account associated with this bill.
 	 * @return A new CustomerBill object populated with the mapped data.
 	 * @throws IllegalArgumentException if the provided RevenueBill is null.
 	*/
@@ -169,7 +172,7 @@ public class RevenueBillingMapper {
         String billId = revenueBill.getId();
         cb.setId(billId.replace("urn:ngsi-ld:revenuebill", "urn:ngsi-ld:customerbill"));
 //      cb.setHref(billId);
-        cb.setBillDate(revenueBill.getBillTime());
+//        cb.setBillDate(revenueBill.getBillTime());
         cb.setLastUpdate(OffsetDateTime.now()); //we can assume that the last update is now
 
         cb.setBillingPeriod(revenueBill.getPeriod());
@@ -179,7 +182,7 @@ public class RevenueBillingMapper {
 
 		// amounts
         Money taxExcludedAmount = new Money();
-        taxExcludedAmount.setUnit("EUR");
+        taxExcludedAmount.setUnit(revenueBill.getRevenueItems().get(0).getCurrency());
         taxExcludedAmount.setValue(revenueBill.getAmount().floatValue());
         cb.setTaxExcludedAmount(taxExcludedAmount);
 

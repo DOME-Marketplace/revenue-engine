@@ -4,6 +4,7 @@ import java.util.List;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 
+import it.eng.dome.revenue.engine.utils.IdUtils;
 import it.eng.dome.tmforum.tmf678.v4.model.TimePeriod;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
@@ -35,8 +36,8 @@ public class Plan {
 
 	// terms
 	@Positive
-	private Integer contractDurationLength; // es. 12
-	private RecurringPeriod contractDurationPeriodType; // es. MONTH
+	private Integer subscriptionDurationLength; // es. 12
+	private RecurringPeriod subscriptionDurationPeriodType; // es. MONTH
 
 	@Positive
 	private Integer renewalTermLength; // es. 1
@@ -117,22 +118,22 @@ public class Plan {
 		this.price = price;
 	}
 
-	public Integer getContractDurationLength() {
-		return contractDurationLength;
+	public Integer getSubscriptionDurationLength() {
+		return subscriptionDurationLength;
 	}
 
-	public void setContractDurationLength(Integer contractDurationLength) {
-		this.contractDurationLength = contractDurationLength;
+	public void setSubscriptionDurationLength(Integer subscriptionDurationLength) {
+		this.subscriptionDurationLength = subscriptionDurationLength;
 	}
 
-	public RecurringPeriod getContractDurationPeriodType() {
-		return contractDurationPeriodType;
+	public RecurringPeriod getSubscriptionDurationPeriodType() {
+		return subscriptionDurationPeriodType;
 	}
 
-	public void setContractDurationPeriodType(RecurringPeriod contractDurationPeriodType) {
-		this.contractDurationPeriodType = contractDurationPeriodType;
+	public void setSubscriptionDurationPeriodType(RecurringPeriod subscriptionDurationPeriodType) {
+		this.subscriptionDurationPeriodType = subscriptionDurationPeriodType;
 	}
-
+	
 	public Integer getRenewalTermLength() {
 		return renewalTermLength;
 	}
@@ -172,14 +173,10 @@ public class Plan {
 		this.billCycleSpecification = billCycle;
 	}
 
-	@Override
-	public String toString() {
-		return "SubscriptionPlan [id=" + id + ", name=" + name + ", description=" + description + ", validFor="
-				+ validFor + ", lifecycleStatus=" + lifecycleStatus + ", price=" + price
-				+ ", contractDurationLength=" + contractDurationLength + ", contractDurationPeriodType="
-				+ contractDurationPeriodType + ", renewalTermLength=" + renewalTermLength
-				+ ", renewalTermPeriodType=" + renewalTermPeriodType + ", billingPeriodLength=" + this.getBillCycleSpecification().getBillingPeriodLength()
-				+ ", agreements=" + agreements + "]";
+	public String generateId(String offeringId, String priceId) {
+		return IdUtils.pack("plan", offeringId, priceId);
 	}
+
+
 
 }

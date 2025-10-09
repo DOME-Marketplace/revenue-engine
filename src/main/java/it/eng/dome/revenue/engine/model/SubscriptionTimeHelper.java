@@ -1,8 +1,8 @@
 package it.eng.dome.revenue.engine.model;
 
+import java.time.DayOfWeek;
 import java.time.OffsetDateTime;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.regex.Pattern;
@@ -36,12 +36,15 @@ public class SubscriptionTimeHelper {
         }
     }
 
+    /**
+     * For a given subscription, computes the expected billing cycles
+     * @return
+     */
     public Set<TimePeriod> getBillingTimePeriods() {
         Set<TimePeriod> billingPeriodTimes = new TreeSet<>(new TimePeriodComparator());       
         if(this.subscription != null && this.subscription.getPlan() != null) {
             OffsetDateTime start = this.subscription.getStartDate();
-            // build a preview for the next 1 year
-//            OffsetDateTime stopAt = OffsetDateTime.now().plusYears(1);
+            // build a preview for the entire subscription duration
             OffsetDateTime stopAt = this.rollSubscriptionPeriod(start, 1).minusSeconds(1);
             while(!start.isAfter(stopAt)) {
                 OffsetDateTime end = this.rollBillPeriod(start, 1).minusSeconds(1);
@@ -66,11 +69,44 @@ public class SubscriptionTimeHelper {
             // advance one month
             modifiedTime = modifiedTime.plusMonths(1);
             return modifiedTime;
-        } else {
-            logger.warn("unknown modifier {}. Returning unchanged time");
+        } 
+        else if(modifier.startsWith("FOLLOWING_")) {
+            Pattern p = Pattern.compile("^FOLLOWING_(SUNDAY|MONDAY|TUESDAY|WEDNESDAY|THURSDAY|FRIDAY|SATURDAY)$");
+            var matcher = p.matcher(modifier);
+            if(matcher.matches()) {
+                // roll until we find that day
+                OffsetDateTime next = time;
+                DayOfWeek targetDoW = DayOfWeek.valueOf(matcher.group(1));
+                while(targetDoW!=null && !targetDoW.equals(next.getDayOfWeek()))
+                    next = next.plusDays(1);
+                return next;
+            }
+            logger.warn("Unsupported modifier {}. Returning unchanged time", modifier);
             return time;
         }
-
+        else if(modifier.endsWith("_OF_CALENDAR_MONTH")) {
+            Pattern p = Pattern.compile("^([0-9]+)_OF_CALENDAR_MONTH$");
+            var matcher = p.matcher(modifier);
+            if(matcher.matches()) {
+                Integer targetDayOfTheMonth = Integer.parseInt(matcher.group(1));
+                if(targetDayOfTheMonth>=1 && targetDayOfTheMonth<=31) {
+                    // roll until we find that day
+                    OffsetDateTime next = time;
+                    while(next.getDayOfMonth()!=targetDayOfTheMonth)
+                        next = next.plusDays(1);
+                    return next;
+                }
+            }
+            logger.warn("Unsupported modifier {}. Returning unchanged time", modifier);
+            return time;
+        }
+        else if("COMPUTED_DAY".equals(modifier)) {
+            return time;
+        }
+        else {
+            logger.warn("Unknown modifier {}. Returning unchanged time", modifier);
+            return time;
+        }
     }
 
     private Set<TimePeriod> getChargePeriodTimes(Price price) {
@@ -91,12 +127,8 @@ public class SubscriptionTimeHelper {
                 chargePeriodTimes.add(tp);
                 logger.debug("One-time prepaid price, returning single charge period: " + tp + " for price: " + price.getName());
             } else {
-                // iterate over the charge periods, until reaching the current time
-                // or a year in the future
-//                OffsetDateTime stopAt = OffsetDateTime.now(); // .plusYears(1).plusMonths(1);
-
+                // iterate over the charge periods, up to the end of the subscription
                 OffsetDateTime stopAt = this.rollSubscriptionPeriod(start, 1).minusSeconds(1);
-
                 while(start.isBefore(stopAt)) {
                     OffsetDateTime end = this.rollChargePeriod(start, price, 1);
                     TimePeriod tp = new TimePeriod();
@@ -151,32 +183,43 @@ public class SubscriptionTimeHelper {
     public TimePeriod getCustomPeriod(OffsetDateTime time, Price price, String keyword) {
         // if the keyword is null or empty, return null
         if(keyword != null && !keyword.isEmpty()) {
-            Pattern p = Pattern.compile("^(FIRST|LAST|PREVIOUS)_(\\d+)_CHARGE_PERIODS$");
-            var matcher = p.matcher(keyword);
-            if(matcher.matches()) {
-                Integer howManyPeriods = Integer.parseInt(matcher.group(2));
-                String timeWindowEndType = matcher.group(1);
-                TimePeriod startPeriod = null;
-                TimePeriod endPeriod = null;
-                if("LAST".equals(timeWindowEndType)) {
-                    startPeriod = this.getChargePeriodByOffset(time, price, -howManyPeriods+1);
-                    endPeriod = this.getChargePeriodAt(time, price);
-                } else if("PREVIOUS".equals(timeWindowEndType)) {
-                    startPeriod = this.getChargePeriodByOffset(time, price, -howManyPeriods);
-                    endPeriod = this.getPreviousChargePeriod(time, price);
-                } else if("FIRST".equals(timeWindowEndType)) {
-                    startPeriod = this.getChargePeriodAt(this.subscription.getStartDate(), price);
-                    endPeriod = this.getChargePeriodByOffset(startPeriod.getStartDateTime(), price, howManyPeriods-1);
-                }
-                if(startPeriod==null) {
-                    // the period is before the subscription, constraining to the start of the subscription
-                    startPeriod = this.getChargePeriodAt(this.subscription.getStartDate(), price);
-                }
-                if(startPeriod != null && endPeriod != null) {
-                	TimePeriod tp = new TimePeriod();
-                	tp.setStartDateTime(startPeriod.getStartDateTime());
-                	tp.setEndDateTime(endPeriod.getEndDateTime());
-                    return tp;
+            if("CURRENT_CHARGE_PERIOD".equals(keyword)) {
+				return this.getChargePeriodAt(time, price);
+            }
+            else if("CURRENT_SUBSCRIPTION_PERIOD".equals(keyword)) {
+				return this.getSubscriptionPeriodAt(time);
+            } 
+            else if("PREVIOUS_SUBSCRIPTION_PERIOD".equals(keyword)) {
+				return this.getPreviousSubscriptionPeriod(time);
+            }
+            else {
+                Pattern p = Pattern.compile("^(FIRST|LAST|PREVIOUS)_(\\d+)_CHARGE_PERIODS?$");
+                var matcher = p.matcher(keyword);
+                if(matcher.matches()) {
+                    Integer howManyPeriods = Integer.parseInt(matcher.group(2));
+                    String timeWindowEndType = matcher.group(1);
+                    TimePeriod startPeriod = null;
+                    TimePeriod endPeriod = null;
+                    if("LAST".equals(timeWindowEndType)) {
+                        startPeriod = this.getChargePeriodByOffset(time, price, -howManyPeriods+1);
+                        endPeriod = this.getChargePeriodAt(time, price);
+                    } else if("PREVIOUS".equals(timeWindowEndType)) {
+                        startPeriod = this.getChargePeriodByOffset(time, price, -howManyPeriods);
+                        endPeriod = this.getPreviousChargePeriod(time, price);
+                    } else if("FIRST".equals(timeWindowEndType)) {
+                        startPeriod = this.getChargePeriodAt(this.subscription.getStartDate(), price);
+                        endPeriod = this.getChargePeriodByOffset(startPeriod.getStartDateTime(), price, howManyPeriods-1);
+                    }
+                    if(startPeriod==null) {
+                        // the period is before the subscription, constraining to the start of the subscription
+                        startPeriod = this.getChargePeriodAt(this.subscription.getStartDate(), price);
+                    }
+                    if(startPeriod != null && endPeriod != null) {
+                        TimePeriod tp = new TimePeriod();
+                        tp.setStartDateTime(startPeriod.getStartDateTime());
+                        tp.setEndDateTime(endPeriod.getEndDateTime());
+                        return tp;
+                    }
                 }
             }
         }
@@ -223,12 +266,11 @@ public class SubscriptionTimeHelper {
         return this.getChargePeriodByOffset(time, price, 1);
     }
 
-
     private OffsetDateTime rollSubscriptionPeriod(OffsetDateTime time, int howManyPeriods) {
         // retrive subscriptino length unit
-        RecurringPeriod pType = this.subscription.getPlan().getContractDurationPeriodType();
+        RecurringPeriod pType = this.subscription.getPlan().getSubscriptionDurationPeriodType();
         // retrieve subscription length
-        Integer pLength = this.subscription.getPlan().getContractDurationLength();
+        Integer pLength = this.subscription.getPlan().getSubscriptionDurationLength();
         // increase according to pType and pLength and howManyPeriods
         pType = (pType != null) ? pType : RecurringPeriod.YEAR; // default to YEAR if not set
         pLength = (pLength != null) ? pLength : 1; // default to 1 if not set
@@ -294,58 +336,21 @@ public class SubscriptionTimeHelper {
         }
     }
 
+    public OffsetDateTime getChargeTime(TimePeriod timePeriod, Price price) {
+		if (price.getType() == null) {
+			return null;
+		}
+		switch (price.getType()) {
+		case RECURRING_PREPAID:
+		case ONE_TIME_PREPAID:
+			return timePeriod.getStartDateTime();
+		case RECURRING_POSTPAID:
+			return timePeriod.getEndDateTime().minusSeconds(1);
+		default:
+            logger.warn("Unknown price type for charge time: {}", price.getType());
+			return null;
+		}
+	}
 
-    public static void main(String[] args) throws Exception{
-
-        final Logger logger = LoggerFactory.getLogger(SubscriptionTimeHelper.class);
-
-        // create a fake subscription plan
-        Plan plan = new Plan();
-        plan.setContractDurationPeriodType(RecurringPeriod.YEAR);
-        plan.setContractDurationLength(1);
-
-        Subscription subscription = new Subscription();
-        subscription.setPlan(plan);
-        subscription.setStartDate(OffsetDateTime.now().minusYears(8)); // start 8 months ago
-        logger.debug("Subscription start date: " + subscription.getStartDate());
-        // create an helper
-        SubscriptionTimeHelper helper = new SubscriptionTimeHelper(subscription);
-
-        // go ahead one subscription period from now
-        OffsetDateTime now = OffsetDateTime.now();
-        OffsetDateTime rolledTime = helper.rollSubscriptionPeriod(now, 2);
-        logger.debug(rolledTime.toString());
-
-        Price bundle = new Price();
-        bundle.setName("Bundle Price");
-        bundle.setIsBundle(true);
-
-        // now create a price with a charge period
-        Price price = new Price();
-        price.setRecurringChargePeriodType(RecurringPeriod.YEAR);
-        price.setRecurringChargePeriodLength(1);
-
-        Price anotherPrice = new Price();
-        anotherPrice.setRecurringChargePeriodType(RecurringPeriod.MONTH);
-        anotherPrice.setRecurringChargePeriodLength(13);
-
-        List<Price> prices = List.of(price, anotherPrice);
-        bundle.setPrices(prices);
-        plan.setPrice(bundle);
-
-        Thread.sleep(100);
-        now = OffsetDateTime.now();
-
-        Set<TimePeriod> chargePeriods = helper.getChargePeriodTimes();
-        for(TimePeriod t : chargePeriods) {
-            logger.debug("Charge period: " + t);
-        }
-
-        TimePeriod tp = helper.getCustomPeriod(now, price, "PREVIOUS_1_BILLING_PERIODS");
-        logger.debug("Custom period: " + tp);
-
-        logger.debug(helper.getPreviousChargePeriod(now, price).toString());
-        logger.debug(helper.getCurrentChargePeriod(price).toString());
-    }
 
 }

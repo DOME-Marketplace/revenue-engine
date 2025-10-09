@@ -2,6 +2,7 @@ package it.eng.dome.revenue.engine.service;
 
 import java.net.URI;
 import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -13,16 +14,19 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import it.eng.dome.brokerage.api.AppliedCustomerBillRateApis;
 import it.eng.dome.revenue.engine.model.RevenueBill;
 import it.eng.dome.revenue.engine.model.Subscription;
 import it.eng.dome.revenue.engine.service.cached.CachedSubscriptionService;
+import it.eng.dome.revenue.engine.service.cached.TmfCachedDataRetriever;
 import it.eng.dome.revenue.engine.tmf.TmfApiFactory;
+import it.eng.dome.revenue.engine.utils.TMFApiUtils;
 import it.eng.dome.tmforum.tmf632.v4.api.OrganizationApi;
 import it.eng.dome.tmforum.tmf632.v4.model.Organization;
-import it.eng.dome.tmforum.tmf678.v4.ApiException;
+import it.eng.dome.tmforum.tmf678.v4.api.AppliedCustomerBillingRateApi;
 import it.eng.dome.tmforum.tmf678.v4.api.CustomerBillApi;
 import it.eng.dome.tmforum.tmf678.v4.model.AppliedCustomerBillingRate;
 import it.eng.dome.tmforum.tmf678.v4.model.AppliedCustomerBillingRateCreate;
@@ -34,9 +38,7 @@ import it.eng.dome.tmforum.tmf678.v4.model.RelatedParty;
 
 /**
  * FIXME: Enhancemets and fixes:
- * [L] properly manage limits
- * [M] comparison of CB should consider also attached acbrs
- * [H] only consider past & consolidated entities (cb and acbrs). Filter here based on dates, state, etc...
+ * [H] consider parameter to limit the number of bills to persist (e.g. only last month/ last 2 months)
  * [H] only consider active subscriptions ([L] but be careful with last invoices... sub might not be active)
  */
 
@@ -54,7 +56,14 @@ public class TmfPeristenceService implements InitializingBean {
     @Autowired
     private CachedSubscriptionService subscriptionService;
 
+    @Autowired
+    private TmfCachedDataRetriever tmfDataRetriever;
+    
+    @Value("${persistence.monthsBack:1}")
+    private int monthsBack;
+    
     private CustomerBillApi customerBillAPI;
+    private AppliedCustomerBillingRateApi acbrAPI;
 	private AppliedCustomerBillRateApis appliedCustomerBillRateApis;
     private OrganizationApi orgApi;
 
@@ -69,60 +78,81 @@ public class TmfPeristenceService implements InitializingBean {
         logger.info("TmfPeristenceService initialized with AppliedCustomerBillRateApis {}", this.appliedCustomerBillRateApis);
 
         this.orgApi = new OrganizationApi(tmfApiFactory.getTMF632PartyManagementApiClient());
-        logger.info("TmfPeristenceService initialized with OrganizationApi {}", this.orgApi);
+        logger.info("TmfPeristenceService initialized with OrganizationApis {}", this.orgApi);
+        
+		this.acbrAPI = new AppliedCustomerBillingRateApi(tmfApiFactory.getTMF678CustomerBillApiClient());
+		logger.info("TmfPeristenceService initialized with AppliedCustomerBillingRateApi {}", this.acbrAPI);
+		
+		
     }
 
     /**
-     * Persist all revenue bills that needs to.
+     * Persists all revenue bills for all organizations.
+     * Uses batch processing to fetch organizations and persist bills on the fly.
      */
-    public List<CustomerBill> persistAllRevenueBills() throws ApiException, Exception {
-        // iterate over providers in tmforum
-        // FIXME: replace limit with proper paging management (while, offset check size equals limit)
+    public List<CustomerBill> persistAllRevenueBills() throws Exception {
         List<CustomerBill> createdCustomerBills = new ArrayList<>();
-        for(Organization organization : orgApi.listOrganization(null, null, null, null)) {
-            createdCustomerBills.addAll(this.persistProviderRevenueBills(organization.getId()));
-        }
+
+
+        TMFApiUtils.fetchByBatch(orgApi::listOrganization, null, 10, null, batch -> {
+            for (Organization org : batch) {
+                createdCustomerBills.addAll(this.persistProviderRevenueBills(org.getId()));
+            }
+            return true; // continue fetching next batch
+        });
+
         return createdCustomerBills;
     }
 
+
     /**
      * Persist all revenue bills for a provider; where needed and applicable.
-     * @param providerId
+     * @param providerId the provider id
      */
-    public List<CustomerBill> persistProviderRevenueBills(String providerId) throws ApiException, Exception {
-        // iterate over subscriptions for the given provider
+    public List<CustomerBill> persistProviderRevenueBills(String providerId) throws Exception {
         List<CustomerBill> createdCustomerBills = new ArrayList<>();
-        for(Subscription sub: this.subscriptionService.getSubscriptionsByRelatedPartyId(providerId, "Buyer")) {
+        for (Subscription sub : this.subscriptionService.getSubscriptionsByRelatedPartyId(providerId, "Buyer")) {
             createdCustomerBills.addAll(this.persistSubscriptionRevenueBills(sub.getId()));
         }
         return createdCustomerBills;
     }
 
+
     /*
      * Persist all revenue bills for a subscription; where needed and applicable.
      * @param subscriptionId
      */
-    public List<CustomerBill> persistSubscriptionRevenueBills(String subscriptionId) throws ApiException, Exception {
-        // iterate over revenue bills for the given subscription
+    public List<CustomerBill> persistSubscriptionRevenueBills(String subscriptionId) throws Exception {
         List<CustomerBill> createdCustomerBills = new ArrayList<>();
-        for(RevenueBill sb: this.billService.getSubscriptionBills(subscriptionId)) {
+        
+        OffsetDateTime now = OffsetDateTime.now(ZoneOffset.UTC);
+        OffsetDateTime firstDayOfCurrentMonth = now.withDayOfMonth(1)
+                                                   .toLocalDate()
+                                                   .atStartOfDay()
+                                                   .atOffset(now.getOffset());
+        OffsetDateTime startDate = firstDayOfCurrentMonth.minusMonths(monthsBack);
+        
+        for (RevenueBill sb : this.billService.getSubscriptionBills(subscriptionId)) {
+            if (sb.getPeriod()!= null && sb.getPeriod().getEndDateTime().isBefore(startDate)) {
+                logger.info("Skipping CB {} because older than {}", sb.getId(), startDate);
+                continue;
+            }
             CustomerBill createdCustomerBill = this.persistRevenueBill(sb.getId());
-            if(createdCustomerBill!=null) {
+            if (createdCustomerBill != null) {
                 createdCustomerBills.add(createdCustomerBill);
-            } else {
-                logger.info("CB {} was not created", sb.getId());
             }
         }
+
         return createdCustomerBills;
     }
 
+
     /**
 	 * Persist a revenue bill; where needed and applicable.
-	 * @param revenueBillId
+	 * @param revenueBillId the revenue bill id
 	 */
-    public CustomerBill persistRevenueBill(String revenueBillId) throws ApiException, Exception {
+    public CustomerBill persistRevenueBill(String revenueBillId) throws Exception {
 
-        logger.info("PERSISTENCE - persisting revenue bill {}", revenueBillId);
 
         // retrieve the local cb
         CustomerBill localCb = this.billService.getCustomerBillByRevenueBillId(revenueBillId);
@@ -141,7 +171,8 @@ public class TmfPeristenceService implements InitializingBean {
 	        for(AppliedCustomerBillingRate acbr: acbrs) {
 	            // set the reference to the new persisted cb
 	            BillRef bref = new BillRef();
-	            bref.setId(persistedCB.getId());
+                if (persistedCB.getId() != null)
+	                bref.setId(persistedCB.getId());
 	            acbr.setBill(bref);
 	            // mark it as billed
 	            acbr.setIsBilled(true);
@@ -158,7 +189,7 @@ public class TmfPeristenceService implements InitializingBean {
     /*
      * Persist a CustomerBill if not already present on TMF. 
      */
-    public CustomerBill persistCustomerBill(CustomerBill cb, String revenueBillId) throws ApiException, Exception {
+    public CustomerBill persistCustomerBill(CustomerBill cb, String revenueBillId) throws Exception {
         // check if exist on tmf
         logger.debug("PERSISTENCE - look for existing CB");
         CustomerBill existingCustomerBill = this.isCbAlreadyInTMF(cb, revenueBillId);
@@ -173,7 +204,7 @@ public class TmfPeristenceService implements InitializingBean {
             String id = this.appliedCustomerBillRateApis.createCustomerBill(CustomerBillCreate.fromJson(cbToPersist.toJson()));
             logger.info("PERSISTENCE: created CB with id {}", id);
             // and return a fresh copy
-            return this.customerBillAPI.retrieveCustomerBill(id, null);
+            return this.tmfDataRetriever.getCustomerBillById(id);
 //            return existingCustomerBill;
         } else {
             logger.info("Local CB {} is already on TMF with id {}", cb.getId(), existingCustomerBill.getId());
@@ -185,7 +216,7 @@ public class TmfPeristenceService implements InitializingBean {
     /*
 	 * Persist an AppliedCustomerBillingRate if not already present on TMF. 
 	 */
-    public AppliedCustomerBillingRate persistAppliedCustomerBillingRate(AppliedCustomerBillingRate acbr) throws ApiException, Exception {
+    public void persistAppliedCustomerBillingRate(AppliedCustomerBillingRate acbr) throws Exception {
         // check if exist on tmf
         AppliedCustomerBillingRate existingACBR = this.isAcbrAlreadyInTMF(acbr);
 
@@ -204,104 +235,76 @@ public class TmfPeristenceService implements InitializingBean {
             
             logger.info("PERSISTENCE: created ACBR with id {}", createdACBR.getId());
             // and return a fresh copy
-            return createdACBR;
+//            return createdACBR;
         } else {
             logger.info("Local ACBR {} is already on TMF with id {}", acbr.getId(), existingACBR.getId());
-            return existingACBR;
+//            return existingACBR;
         }
     }
 
     /**
-     * Retrieve CBs on TMF that, potentially match the local CB. We can't use the id, as we do not know.
-     * It would be useful to query by related parties (e.g. with role and id) but the query feature for tmf may match across different parties.
-     * Also, querying by amount.value gives an internal server error.
-     * So, we're querying by some date which should be safe and efficient.
-     * However, we'll filter locally on the returned set.
-     * @param cb
-     * @return
-     * @throws ApiException
-     * @throws Exception
+     * Checks if a given CustomerBill already exists in TMF.
+     * Uses early-stop fetching: stops as soon as a match is found.
+     *
+     * @param cb the local CustomerBill to check
+     * @param revenueBillId the associated revenue bill ID for product comparison
+     * @return the matched CustomerBill from TMF, or null if none found
+     * @throws Exception if any API call fails
+     * Checks if a given CustomerBill already exists in TMF.
+     * Stops fetching batches as soon as a match is found (early stop).
      */
-    private CustomerBill isCbAlreadyInTMF(CustomerBill cb, String revenueBillId) throws ApiException, Exception {
+    private CustomerBill isCbAlreadyInTMF(CustomerBill cb, String revenueBillId) throws Exception {
+        // Optional filter can be set here
+/*         Map<String, String> filter = new HashMap<>();
+         filter.put("relatedParty.id", cb.getRelatedParty().getId());
+         filter.put("billingAccount.id", "urn:ngsi-ld:billing-account:...");*/
+        final CustomerBill[] found = new CustomerBill[1];
+        // Fetch customer bills in batches with early stop
+        TMFApiUtils.fetchCustomerBillsByBatch(customerBillAPI, null, 10, null, batch -> {
+            for (CustomerBill candidate : batch) {
+                boolean basicMatch = TmfPeristenceService.match(cb, candidate);
+                boolean productMatch = compareCBsProduct(revenueBillId, candidate.getId());
+                boolean rlMatch = relatedPartyMatch(cb.getRelatedParty(), candidate.getRelatedParty());
 
-        // prepare a filter
-//        Map<String, String> filter = new HashMap<>();
-//        filter.put("relatedParty.id", cb.getRelatedParty().getId())
-//        filter.put("billingAccount.id", "urn:ngsi-ld:billing-account:d8f73230-fe44-4594-9cc0-6c2b76107187");
-        
-        // retrieve matches (shouldn't be a large set)
-        // FIXME: properly manage limit and paging
-        List<CustomerBill> candidates = this.customerBillAPI.listCustomerBill(null, null, 1000, null);
-        logger.info("PERSISTENCE - FOUND {} cb matching initial criteria", candidates.size());
-
-        // compare candidates with the local CustomerBill
-        List<CustomerBill> matchedCandidates = new ArrayList<>();
-        for(CustomerBill candidate: candidates) {
-        	boolean basicMatch = TmfPeristenceService.match(cb, candidate);
-            boolean productMatch = this.compareCBsProduct(revenueBillId, candidate.getId());
-            boolean rlMatch = this.relatedPartyMatch(cb.getRelatedParty(), candidate.getRelatedParty());
-
-            //&& productMatch
-            if (basicMatch && productMatch && rlMatch) {
-                matchedCandidates.add(candidate);
+                if (basicMatch && productMatch && rlMatch) {
+                    found[0] = candidate;
+                    return false; // stop fetching immediately
+                }
             }
-//            else {
-//                logger.debug("isCbAlreadyInTMF - Candidate {} discarded. basicMatch={}, productMatch={}", 
-//                             candidate.getId(), basicMatch, productMatch);
-//            }
-        }
+            return true; // continue fetching next batch
+        });
 
-        // ok if there's one match. null if no match. Exception if more matches (non).
-        if(matchedCandidates.size()==1) {
-        	logger.debug("**********CB machedCandidates size is 1");
-            return matchedCandidates.get(0);
-        }
-        else if(matchedCandidates.isEmpty()) {
-        	logger.debug("******CB machedCandidates is Empty");
-            return null;
-        }
-        else {
-            //throw new Exception(String.format("Found {} CustomerBills already on TMF matching the given CustomerBill with local id {}", matchedCandidates.size(), cb.getId()));
-            String msg = String.format("Found %d CustomerBills already on TMF matching the given CustomerBill with local id %s", matchedCandidates.size(), cb.getId());
-            logger.error(msg);
-            return matchedCandidates.get(0);
-        }
+        return found[0]; // null if no match found
     }
 
     /**
 	 * Retrieve ACBRs on TMF that, potentially match the local ACBR. 
-	 * @param acbr
-	 * @return
-	 * @throws ApiException
-	 * @throws Exception
+	 * @param acbr the local AppliedCustomerBillingRate
+	 * @return the matched ACBR, or null if no match.
+     * If more than one match is found, an exception is raised.
+     *
+     * @throws Exception exception in case of error
 	 */
-    private AppliedCustomerBillingRate isAcbrAlreadyInTMF(AppliedCustomerBillingRate acbr) throws ApiException, Exception {
+    private AppliedCustomerBillingRate isAcbrAlreadyInTMF(AppliedCustomerBillingRate acbr) throws Exception {
         // prepare a filter
         Map<String, String> filter = new HashMap<>();
         filter.put("periodCoverage.startDateTime", acbr.getPeriodCoverage().getStartDateTime().toString());
 
-        // retrieve matches (shouldn't be a large set)
-        List<AppliedCustomerBillingRate> candidates = this.appliedCustomerBillRateApis.getAllAppliedCustomerBillingRates(null, filter);
+        final AppliedCustomerBillingRate[] found = new AppliedCustomerBillingRate[1];
 
-        // compare candidates with the local CustomerBill
-        List<AppliedCustomerBillingRate> matches = new ArrayList<>();
-        for(AppliedCustomerBillingRate candidate: candidates) {
-            if(TmfPeristenceService.match(acbr, candidate))
-                matches.add(candidate);
-        }
+        TMFApiUtils.fetchAppliedCustomerBillingRateByBatch(acbrAPI, null, 10, filter, batch -> {
+            for (AppliedCustomerBillingRate candidate : batch) {
+                boolean basicMatch = TmfPeristenceService.match(acbr, candidate);
+                // match criteria
+                if (basicMatch) {
+                    found[0] = candidate;
+                    return false; // stop fetching immediately
+                }
+            }
+            return true; // continue fetching next batch
+        });
 
-        // ok if there's one match. null if no match. Exception if more matches.
-        if(matches.size()==1) {
-        	logger.debug("&&&&&&&&&& ACBR matches size is 1");
-            return matches.get(0);
-        }
-        else if(matches.isEmpty()) {
-        	logger.debug("&&&&&&& ACBR matches is Empty");
-            return null;
-        }
-        else {
-            throw new Exception(String.format("Found {} AppliedCustomerBillingRates already on TMF matching the given AppliedCustomerBillingRate with local id {}", matches.size(), acbr.getId()));
-        }    
+        return found[0]; // null if no match found
     }
 
     /**
@@ -413,7 +416,7 @@ public class TmfPeristenceService implements InitializingBean {
     	}
     	
     	List<AppliedCustomerBillingRate> acbrs1 = billService.getACBRsByRevenueBillId(idCustomerBill1); // recupera da local
-    	List<AppliedCustomerBillingRate> acbrs2 = billService.getACBRsByCustomerBillId(idCustomerBill2);
+    	List<AppliedCustomerBillingRate> acbrs2 = tmfDataRetriever.getACBRsByCustomerBillId(idCustomerBill2); // retrieve from TMF
     	
     	if(acbrs1 == null || acbrs2 == null || acbrs1.isEmpty() || acbrs2.isEmpty()) {
             logger.warn("NO ACBR found for at least one CB in {} {}", idCustomerBill1, idCustomerBill2);
@@ -427,10 +430,8 @@ public class TmfPeristenceService implements InitializingBean {
             logger.warn("One of the products is null. productRef1={}, productRef2={}", productRef1, productRef2);
             return false;
         }
-        
-        boolean areEqual = Objects.equals(productRef1.getId(), productRef2.getId());
-        
-        return areEqual;
+
+        return Objects.equals(productRef1.getId(), productRef2.getId());
     }
     
     private boolean relatedPartyMatch(List<RelatedParty> rl1, List<RelatedParty> rl2) {
@@ -440,11 +441,8 @@ public class TmfPeristenceService implements InitializingBean {
 			rlId1 = this.filterRelatedPartyPerRole(rl1, "Buyer").getId();
 		if(rl2 != null && this.filterRelatedPartyPerRole(rl2, "Buyer")!=null)
 			rlId2 = this.filterRelatedPartyPerRole(rl2, "Buyer").getId();
-    	
-		if(rlId1!=null && rlId2!=null && rlId1.equals(rlId2))
-			return true;
-		else
-			return false;
+
+        return rlId1 != null && rlId1.equals(rlId2);
     }
     
     public RelatedParty filterRelatedPartyPerRole(List<RelatedParty> relatedParties, String role) {

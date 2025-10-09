@@ -1,11 +1,15 @@
 package it.eng.dome.revenue.engine.service;
 
+import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -21,12 +25,13 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 
-import it.eng.dome.brokerage.api.ProductOfferingApis;
-import it.eng.dome.brokerage.api.ProductOfferingPriceApis;
 import it.eng.dome.revenue.engine.model.Plan;
+import it.eng.dome.revenue.engine.model.PlanResolver;
+import it.eng.dome.revenue.engine.model.Subscription;
+import it.eng.dome.revenue.engine.service.cached.TmfCachedDataRetriever;
 import it.eng.dome.revenue.engine.service.validation.PlanValidationReport;
 import it.eng.dome.revenue.engine.service.validation.PlanValidator;
-import it.eng.dome.revenue.engine.tmf.TmfApiFactory;
+import it.eng.dome.revenue.engine.utils.IdUtils;
 import it.eng.dome.tmforum.tmf620.v4.model.ProductOffering;
 import it.eng.dome.tmforum.tmf620.v4.model.ProductOfferingPrice;
 import it.eng.dome.tmforum.tmf620.v4.model.ProductOfferingPriceRefOrValue;
@@ -36,7 +41,7 @@ import it.eng.dome.tmforum.tmf620.v4.model.ProductOfferingPriceRefOrValue;
  * Plans are retrieved from a GitHub repository and cached in memory using a shared CacheService.
  */
 @Service
-public class PlanService implements InitializingBean{
+public class PlanService implements InitializingBean {
 	
 	/** Dome Operator ID - now parametric via Spring property */
     @Value("${dome.operator.id}")
@@ -44,20 +49,15 @@ public class PlanService implements InitializingBean{
 
     private static final Logger logger = LoggerFactory.getLogger(PlanService.class);
     
-    // Factory for TMF APIss
     @Autowired
-    private TmfApiFactory tmfApiFactory;
-    
-    private ProductOfferingApis productOfferingApis;
-    
-    private ProductOfferingPriceApis popApis;
+    private TmfCachedDataRetriever tmfDataRetriever;
 
     private final ObjectMapper mapper;
 
+    public void afterPropertiesSet() throws Exception {}
+
     /**
      * Constructs the PlanService and initializes the plan cache and file list.
-     *
-     * @param cacheService shared cache service for creating and retrieving plan cache.
      */
     public PlanService() {
         this.mapper = new ObjectMapper()
@@ -66,22 +66,13 @@ public class PlanService implements InitializingBean{
                 .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
     }
     
-    @Override
-    public void afterPropertiesSet() throws Exception {
-        this.productOfferingApis = new ProductOfferingApis(tmfApiFactory.getTMF620ProductCatalogManagementApiClient());
-        this.popApis = new ProductOfferingPriceApis(tmfApiFactory.getTMF620ProductCatalogManagementApiClient()
-        );
-
-        logger.info("PlanService initialized with productOfferingApis and productOfferingPriceApis");
-    }
-    
     // retrieve all plans by offerings
     public List<Plan> getAllPlans() {
-    	
-    	//FIXME: when the RP bug is fixed, filter only plans connected to DO.
-//    	Map<String, String> filter = new HashMap<String, String>();
-//    	filter.put("relatedParty.id", DOME_OPERATOR_ID);
-        List<ProductOffering> pos = productOfferingApis.getAllProductOfferings(null, null);
+        logger.info("Fetching all plans...");
+    	// FIXME: when the RP bug is fixed, filter only plans connected to DO.
+        Map<String, String> filter = new HashMap<String, String>();
+//        filter.put("relatedParty", DOME_OPERATOR_ID);
+        List<ProductOffering> pos = tmfDataRetriever.getAllProductOfferings(null, filter);
         
         List<Plan> plans = new ArrayList<>();
         for (ProductOffering po : pos) {
@@ -91,22 +82,36 @@ public class PlanService implements InitializingBean{
             }
         }
 
-        logger.info("Loaded {} plans and stored in cache", plans.size());
-
+        logger.info("Total plans fetched: {}", plans.size());
         return plans;
     }
     /*
      * Retrieves a plan by its ID.
      */
     public Plan getPlanById(String planId) {
-
-        // FIXME: make this unpack more robust.
-        int offeringStart = planId.indexOf("urn:ngsi-ld:product-offering");
-        int priceStart = planId.indexOf("urn:ngsi-ld:product-offering-price");
-        String offeringId = planId.substring(offeringStart, priceStart);
-        String offeringPriceId = planId.substring(priceStart);
         
+        String[] parts = IdUtils.unpack(planId, "plan");
+        String offeringId = parts[0];
+        String offeringPriceId = parts[1];
+        
+//        try {
+//            return this.loadPlanFromFile("./src/main/resources/data/plans/sample1.json");
+//        } catch(Exception e) {
+//            logger.error(e.getMessage(), e);
+//            return null;
+//        }
+ 
         return this.findPlan(offeringId, offeringPriceId);
+    }
+
+    public Plan getResolvedPlanById(String planId, Subscription sub) {
+        PlanResolver planResolver = new PlanResolver(sub);
+        Plan plan = this.getPlanById(planId);
+        if(plan!=null) {
+            return planResolver.resolve(plan);
+        } else {
+            return null;
+        }        
     }
 
     /*
@@ -116,9 +121,8 @@ public class PlanService implements InitializingBean{
     	if (offeringId == null || offeringId.isEmpty()) {
             throw new IllegalArgumentException("Offering ID cannot be null or empty");
         }
-        logger.info("Fetching plan for offering id: {}", offeringId);
 
-        ProductOffering po = productOfferingApis.getProductOffering(offeringId, null);
+        ProductOffering po = tmfDataRetriever.getProductOfferingById(offeringId, null);
         if (po == null) {
             throw new IllegalStateException("ProductOffering not found for id=" + offeringId);
         }
@@ -128,7 +132,8 @@ public class PlanService implements InitializingBean{
 
         try {
             Plan plan = this.loadPlanFromLink(link);
-            return this.overwritingPlanByProductOffering(plan, po, pop);
+            this.overwritingPlanByProductOffering(plan, po, pop);
+            return plan;
 		} catch (IOException e) {
 			logger.error("Failed to load Plan from link={}", link, e);
             return null;
@@ -145,11 +150,8 @@ public class PlanService implements InitializingBean{
 
         for (ProductOfferingPriceRefOrValue ref : po.getProductOfferingPrice()) {
             if (ref.getId().equals(offeringPriceId)) {
-                ProductOfferingPrice pop = popApis.getProductOfferingPrice(ref.getId(), null);
-                if (pop == null) {
-                    //throw new IllegalStateException("ProductOfferingPrice not found for id=" + ref.getId());
-                }
-                return pop;
+                // if necessary, check null condition on pop
+                return tmfDataRetriever.getProductOfferingPrice(ref.getId(), null);
             }
         }
 
@@ -164,9 +166,8 @@ public class PlanService implements InitializingBean{
         if (offeringId == null || offeringId.isEmpty()) {
             throw new IllegalArgumentException("Offering ID cannot be null or empty");
         }
-        logger.info("Fetching plans for offering id: {}", offeringId);
 
-        ProductOffering po = productOfferingApis.getProductOffering(offeringId, null);
+        ProductOffering po = tmfDataRetriever.getProductOfferingById(offeringId, null);
         if (po == null) {
             //throw new IllegalStateException("ProductOffering not found for id=" + offeringId);
         }
@@ -179,14 +180,14 @@ public class PlanService implements InitializingBean{
         List<Plan> plans = new ArrayList<>();
 
         for (ProductOfferingPriceRefOrValue popRef : po.getProductOfferingPrice()) {
-            ProductOfferingPrice pop = popApis.getProductOfferingPrice(popRef.getId(), null);
+            ProductOfferingPrice pop = tmfDataRetriever.getProductOfferingPrice(popRef.getId(), null);
             if (pop == null) {
                 //logger.error("ProductOfferingPrice not found for id={}", popRef.getId());
                 continue; //
             }
 
             try {
-                String link = extractLinkFromDescription(pop.getDescription());
+                String link = this.extractLinkFromDescription(pop.getDescription());
                 Plan plan;
                 try {
                     plan = loadPlanFromLink(link);
@@ -195,10 +196,10 @@ public class PlanService implements InitializingBean{
                     continue;
                 }
                 
-                plan = this.overwritingPlanByProductOffering(plan, po, pop);
+                this.overwritingPlanByProductOffering(plan, po, pop);
 
                 plans.add(plan);
-                logger.info("Plan loaded for offeringId={}, priceId={}", offeringId, pop.getId());
+//                logger.info("Plan loaded for offeringId={}, priceId={}", offeringId, pop.getId());
             } catch (IllegalStateException e) {
                 logger.error("Skipping ProductOfferingPrice id={} due to error: {}", popRef.getId(), e.getMessage());
             }
@@ -211,8 +212,7 @@ public class PlanService implements InitializingBean{
         if (description == null || description.isEmpty()) {
             throw new IllegalStateException("Description is null or empty");
         }
-
-        Pattern pattern = Pattern.compile("https?://\\S+");
+        Pattern pattern = Pattern.compile("https?://raw\\.githubusercontent\\.com\\S+");
         Matcher matcher = pattern.matcher(description);
         if (matcher.find()) {
             return matcher.group();
@@ -230,33 +230,33 @@ public class PlanService implements InitializingBean{
         }
     }
 
-    private Plan overwritingPlanByProductOffering(Plan plan, ProductOffering po, ProductOfferingPrice pop) {
-    	plan.setId("urn:ngsi-ld:plan:"+po.getId()+pop.getId());
+    protected Plan loadPlanFromFile(String path) throws IOException {
+        File file = new File(path);
+        try (InputStream is = new FileInputStream(file)) {
+            Plan plan = mapper.readValue(is, Plan.class);
+            return plan;
+        }
+
+    }
+
+    private void overwritingPlanByProductOffering(Plan plan, ProductOffering po, ProductOfferingPrice pop) {
+    	plan.setId(plan.generateId(po.getId(), pop.getId()));
         plan.setLifecycleStatus(po.getLifecycleStatus());
         plan.setDescription(po.getDescription());
-        
-        return plan;
     }
     
     /**
      * Validates the plan corresponding to the offering ID.
      *
-     * @param offeringId the ID of the offering
      * @return a PlanValidationReport with validation results
      */
-    public PlanValidationReport validatePlan(String planId) throws IOException {
+    public PlanValidationReport validatePlan(String planId) {
         Plan plan = getPlanById(planId);
         return new PlanValidator().validate(plan);
     }
     
-    /**
-     * Validates the plan corresponding to the given ID.
-     *
-     * @param planId the ID of the plan
-     * @return a PlanValidationReport with validation results
-     */
-//    public PlanValidationReport validatePlan(String planId) throws IOException {
-//        Plan plan = findPlanById(planId);
-//        return new PlanValidator().validate(plan);
-//    }
+    //TODO: to be removed when not needed anymore
+    public PlanValidationReport validatePlanTest(Plan plan) throws IOException {
+        return new PlanValidator().validate(plan);
+    }
 }

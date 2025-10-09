@@ -1,5 +1,6 @@
 package it.eng.dome.revenue.engine.model;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
@@ -23,8 +24,13 @@ public class Discount extends PlanItem{
 
 	public void setDiscounts(List<Discount> discounts) {
 		this.discounts = discounts;
+		if (discounts != null) {
+			for (Discount discount : discounts) {
+				discount.setParentItem(this);
+			}
+		}	
 	}
-	
+
 	@JsonIgnore
 	public boolean isVariable() {
 		if(this.discounts!=null) {
@@ -36,6 +42,34 @@ public class Discount extends PlanItem{
 		if(this.isConditional())
 			return true;
 		return false;
+	}
+
+	@JsonIgnore
+	public List<PlanItem> getChildItems() {
+		return this.getBundleItems();
+	}
+
+	@JsonIgnore
+	public List<PlanItem> getBundleItems() {
+	    List<PlanItem> out = new ArrayList<>();
+	    if (this.getDiscounts() != null) {
+	        out.addAll(this.getDiscounts());
+	    }
+	    return out;
+	}
+
+
+	@JsonIgnore
+	public Price getReferencePrice() {
+		PlanItem parent = this.getParentItem();
+		if(parent!=null) {
+			if(parent instanceof Price)
+				return (Price)parent;
+			else
+				return parent.getReferencePrice();
+		} else {
+			return null;
+		}
 	}
 
 	@Override

@@ -1,38 +1,78 @@
 package it.eng.dome.revenue.engine.model;
 
 import java.time.OffsetDateTime;
+import java.util.List;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
+import it.eng.dome.tmforum.tmf620.v4.model.TimePeriod;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.PositiveOrZero;
 
+@JsonInclude(JsonInclude.Include.NON_NULL)
 public abstract class PlanItem {
 
+	/**
+	 * Descriptive field. Will appear in reports.
+	 */
     @JsonProperty("name")
 	private String name;
 
+	/**
+	 * A description for the benefit of the DOME operator only, not disclosed to subscribers within bills. 
+	 * This might be useful to describe the rationale of the Plan Item, to provide references to external documentation.
+	 */
+	@JsonProperty("comment")
+	private String comment;
+
+	/**
+	 * Bundle management
+	 */
     @JsonProperty("isBundle")
     private Boolean isBundle;
     
     @JsonProperty("bundleOp")
     private BundleOperator bundleOp;
 
-    // For not bundle elements
+	@JsonProperty("forEachMetric")
+	private String forEachMetric;
+
+	/**
+	 * The following property provide information about the due amount, either as absolute value or in perc.
+	 */
     @JsonProperty("amount")
     @PositiveOrZero
     private Double amount;
 
-    @JsonProperty("percent")
-    @PositiveOrZero
-    @Max(100)
-    private Double percent;
-
     @JsonProperty("currency")
     private String currency;
     
+	/**
+	 * Items satisfying the following properties are completely skipped from the computation and reports.
+	 * - ignore (Boolean)
+	 * - ignorePeriod (String)
+	 * - validFor (Range)
+	 * - validForPeriod (String) 
+	 */
+	@JsonProperty("ignore")
+	private String ignore;
+
+	@JsonProperty("ignorePeriod")
+	private ReferencePeriod ignorePeriod;
+
+	@JsonProperty("validBetween")
+	private TimePeriod validBetween;
+
+	@JsonProperty("validPeriod")
+	private ReferencePeriod validPeriod;
+
+	/**
+	 * The following properties are used to check if the computation is applicable. If not, the item
+	 * is skipped from computation (and not included in the report? To be confirmed).
+	 */
     @JsonProperty("applicableBase")
     private String applicableBase;
 
@@ -44,28 +84,63 @@ public abstract class PlanItem {
 	@Deprecated 
     private ReferencePeriod applicableBaseReferencePeriod;
 
-	@JsonProperty("ignorePeriod")
-	private ReferencePeriod ignorePeriod;
 
-	@JsonProperty("applicableFrom")
-	private OffsetDateTime applicableFrom;
+//	@JsonProperty("applicableFrom")
+//	@Deprecated
+//	private OffsetDateTime applicableFrom;
 	
+	/**
+	 * These properties drive the computation, in particular when the price/discount is expressed as a percentage.
+	 */
 	@JsonProperty("computationBase")
 	private String computationBase;
 	
 	@JsonProperty("computationBaseReferencePeriod")
-	@Deprecated 
     private ReferencePeriod computationBaseReferencePeriod;
 
-	@JsonProperty("computationFrom")
-	private OffsetDateTime computationFrom;
+	@JsonProperty("percent")
+    @PositiveOrZero
+    @Max(100)
+    private Double percent;
 
-    @JsonProperty("ignore")
-	private String ignore;
+	/**
+	 * this is to force the resulting amount in the given range
+	 */
+	@JsonProperty("resultingAmountRange")
+	private Range resultingAmountRange;
+
+	/**
+	 * when true, the descendent items are discarded and the resulting item is like an atomic item.
+	 * 
+	 */
+	@JsonProperty("collapse")
+	private Boolean collapse;
+
+	/**
+	 * Whenever the resulting value of the computation is zero, this item (and all its descendants) is discarded
+	 */
+	@JsonProperty("skipIfZero")
+	private Boolean skipIfZero;
+
+	/**
+	 * Items satisfying the following properties are included in reports, but their amount is zeroed.
+	 * Either zero or compute fields are allowed in the same item. If more than one is specified, their
+	 * union is considered.
+	 * - zero (Boolean)
+	 * - zeroPeriod (String)
+	 * - zeroBetween (TimePeriod)
+	 * - computePeriod (String)
+	 * - computeBetween (TimePeriod)
+	 */
+	// TODO: implement the above
+
+//	@JsonProperty("computationFrom")
+//	private OffsetDateTime computationFrom;
+
 
 	// reference to the parent price, if any
 	@JsonIgnore
-	private Price parentPrice;
+	private PlanItem parentItem;
 	
 	public String getIgnore() {
 			return this.ignore;
@@ -76,8 +151,8 @@ public abstract class PlanItem {
 	}
 
 	public String getApplicableBase() {
-		if(this.getParentPrice()!=null && this.getParentPrice().getApplicableBase()!=null)
-			return this.getParentPrice().getApplicableBase();
+		if(this.getParentItem()!=null && this.getParentItem().getApplicableBase()!=null)
+			return this.getParentItem().getApplicableBase();
 		else
 			return this.applicableBase;
 	}
@@ -118,11 +193,16 @@ public abstract class PlanItem {
 		this.amount = amount;
 	}
 
+	/**
+	 * Propagated. Can be overridden.
+	 * @return
+	 */
     public String getComputationBase() {
-		if(this.getParentPrice()!=null && this.getParentPrice().getComputationBase()!=null)
-			return this.getParentPrice().getComputationBase();
-		else
+		if(this.computationBase!=null)
 			return this.computationBase;
+		else if(this.getParentItem()!=null)
+			return this.getParentItem().getComputationBase();
+		return null;
 	}
 
 	public void setComputationBase(String computationBase) {
@@ -130,8 +210,15 @@ public abstract class PlanItem {
 	}
 
     public Range getApplicableBaseRange() {
-		if(this.getParentPrice()!=null && this.getParentPrice().getApplicableBaseRange()!=null)
-			return this.getParentPrice().getApplicableBaseRange();
+		/*
+		if(this.applicableBaseRange!=null)
+			return this.applicableBaseRange;
+		else if(this.getParentItem()!=null)
+			return this.getParentItem().getApplicableBaseRange();
+		return null;
+		*/
+		if(this.getParentItem()!=null && this.getParentItem().getApplicableBaseRange()!=null)
+			return this.getParentItem().getApplicableBaseRange();
 		else
 			return this.applicableBaseRange;
 	}
@@ -141,8 +228,8 @@ public abstract class PlanItem {
 	}
 
 	public String getCurrency() {
-		if(this.getParentPrice()!=null && this.getParentPrice().getCurrency()!=null)
-			return this.getParentPrice().getCurrency();
+		if(this.getParentItem()!=null && this.getParentItem().getCurrency()!=null)
+			return this.getParentItem().getCurrency();
 		else
 			return this.currency;
 	}
@@ -151,16 +238,21 @@ public abstract class PlanItem {
 		this.currency = currency;
 	}
 
-    public void setParentPrice(Price parentPrice) {
-		this.parentPrice = parentPrice;
+    public void setParentItem(PlanItem parentItem) {
+		this.parentItem = parentItem;
 	}
 
-	public Price getParentPrice() {
-		return parentPrice;
+	@JsonIgnore
+	public PlanItem getParentItem() {
+		return this.parentItem;
 	}
 	
 	public Double getPercent() {
 		return percent;
+	}
+
+	public PriceType getType() {
+		return null;
 	}
 
 	public void setPercent(Double percent) {
@@ -168,8 +260,8 @@ public abstract class PlanItem {
 	}
 
 	public ReferencePeriod getApplicableBaseReferencePeriod() {
-		if(this.getParentPrice()!=null && this.getParentPrice().getApplicableBaseReferencePeriod()!=null)
-			return this.getParentPrice().getApplicableBaseReferencePeriod();
+		if(this.getParentItem()!=null && this.getParentItem().getApplicableBaseReferencePeriod()!=null)
+			return this.getParentItem().getApplicableBaseReferencePeriod();
 		else
 			return this.applicableBaseReferencePeriod;
 	}
@@ -178,31 +270,57 @@ public abstract class PlanItem {
 		this.applicableBaseReferencePeriod = applicableBaseReferencePeriod;
 	}
 
+	/**
+	 * Propagated. Can be overridden.
+	 * @return
+	 */
 	public ReferencePeriod getComputationBaseReferencePeriod() {
-		if(this.getParentPrice()!=null && this.getParentPrice().getComputationBaseReferencePeriod()!=null)
-			return this.getParentPrice().getComputationBaseReferencePeriod();
+		if(this.computationBaseReferencePeriod!=null)
+			return this.computationBaseReferencePeriod;
+		else if(this.getParentItem()!=null)
+			return this.getParentItem().getComputationBaseReferencePeriod();
+		return null;
+		/*
+		if(this.getParentItem()!=null && this.getParentItem().getComputationBaseReferencePeriod()!=null)
+			return this.getParentItem().getComputationBaseReferencePeriod();
 		else
 			return this.computationBaseReferencePeriod;
+		*/
 	}
 
 	public void setComputationBaseReferencePeriod(ReferencePeriod computationBaseReferencePeriod) {
 		this.computationBaseReferencePeriod = computationBaseReferencePeriod;
 	}
 
+	/**
+	 * @deprecated getValidBetween().getStartDateTime()
+	 */
 	public OffsetDateTime getApplicableFrom() {
-		if(this.getParentPrice()!=null && this.getParentPrice().getApplicableFrom()!=null)
-			return this.getParentPrice().getApplicableFrom();
+		TimePeriod validBetween = this.getValidBetween();
+		if(validBetween!=null)
+			return validBetween.getStartDateTime();
 		else
-			return this.applicableFrom;
+			return null;
 	}
 
-	public void setApplicableFrom(OffsetDateTime applicableFrom) {
-		this.applicableFrom = applicableFrom;
+	public void setValidBetween(TimePeriod validBetween) {
+		this.validBetween = validBetween;
 	}
 
+	/**
+	 * Propagated. Inherited value hides the current (lower) setting.
+	 * @return
+	 */
+	public TimePeriod getValidBetween() {
+		if(this.getParentItem()!=null && this.getParentItem().getValidBetween()!=null)
+			return this.getParentItem().getValidBetween();
+		return this.validBetween;
+	}
+
+	/*
 	public OffsetDateTime getComputationFrom() {
-		if(this.getParentPrice()!=null && this.getParentPrice().getComputationFrom()!=null)
-			return this.getParentPrice().getComputationFrom();
+		if(this.getParentItem()!=null && this.getParentItem().getComputationFrom()!=null)
+			return this.getParentItem().getComputationFrom();
 		else
 			return this.computationFrom;
 	}
@@ -210,12 +328,29 @@ public abstract class PlanItem {
 	public void setComputationFrom(OffsetDateTime computationFrom) {
 		this.computationFrom = computationFrom;
 	}
+	*/
 
+	/**
+	 * Propagated. Inherited value hides the current (lower) setting.
+	 * @return
+	 */
 	public ReferencePeriod getIgnorePeriod() {
-		if(this.getParentPrice()!=null && this.getParentPrice().getIgnorePeriod()!=null)
-			return this.getParentPrice().getIgnorePeriod();
+		if(this.getParentItem()!=null && this.getParentItem().getIgnorePeriod()!=null)
+			return this.getParentItem().getIgnorePeriod();
 		else {
-				return this.ignorePeriod;
+			return this.ignorePeriod;
+		}
+	}
+
+	/**
+	 * Propagated. Inherited value hides the current (lower) setting.
+	 * @return
+	 */
+	public ReferencePeriod getValidPeriod() {
+		if(this.getParentItem()!=null && this.getParentItem().getValidPeriod()!=null)
+			return this.getParentItem().getValidPeriod();
+		else {
+			return this.validPeriod;
 		}
 	}
 
@@ -234,4 +369,70 @@ public abstract class PlanItem {
 
 	public abstract boolean isVariable();
 
+	public String getForEachMetric() {
+		return forEachMetric;
+	}
+
+	public void setForEachMetric(String forEachMetric) {
+		this.forEachMetric = forEachMetric;
+	}
+
+	/**
+	 * Return the bundled prices/discounts, depending on the specific type of the item
+	 * @return
+	 */
+	@JsonIgnore
+	public abstract List<PlanItem> getBundleItems();
+
+	/**
+	 * Return all child items (thus including prices AND discount)
+	 * @return
+	 */
+	@JsonIgnore
+	public abstract List<PlanItem> getChildItems();
+
+	/**
+	 * The closest ancestor reference price.
+	 * @return
+	 */
+	@JsonIgnore
+	public abstract Price getReferencePrice();
+
+
+	public String getComment() {
+		return comment;
+	}
+
+	public void setComment(String comment) {
+		this.comment = comment;
+	}
+
+	public Range getResultingAmountRange() {
+		return resultingAmountRange;
+	}
+
+	public void setResultingAmountRange(Range resultingAmountRange) {
+		this.resultingAmountRange = resultingAmountRange;
+	}
+
+	public Boolean getCollapse() {
+		return Boolean.TRUE.equals(collapse);
+	}
+
+	public void setCollapse(Boolean collapse) {
+		this.collapse = collapse;
+	}
+
+	public Boolean getSkipIfZero() {
+		return Boolean.TRUE.equals(skipIfZero);
+	}
+
+	public void setSkipIfZero(Boolean skipIfZero) {
+		this.skipIfZero = skipIfZero;
+	}
+
+	public void setValidPeriod(ReferencePeriod validPeriod) {
+		this.validPeriod = validPeriod;
+	}
+	
 }

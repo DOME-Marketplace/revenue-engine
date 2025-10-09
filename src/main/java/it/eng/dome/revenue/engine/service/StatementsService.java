@@ -1,27 +1,22 @@
 package it.eng.dome.revenue.engine.service;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Set;
-import java.util.TreeSet;
-
+import it.eng.dome.revenue.engine.model.*;
+import it.eng.dome.revenue.engine.model.comparator.RevenueItemComparator;
+import it.eng.dome.revenue.engine.model.comparator.RevenueStatementTimeComparator;
+import it.eng.dome.revenue.engine.service.cached.CachedPlanService;
+import it.eng.dome.revenue.engine.service.cached.CachedSubscriptionService;
+import it.eng.dome.revenue.engine.service.compute2.RevenueStatementBuilder;
+import it.eng.dome.tmforum.tmf678.v4.model.TimePeriod;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import it.eng.dome.revenue.engine.model.Plan;
-import it.eng.dome.revenue.engine.model.PlanResolver;
-import it.eng.dome.revenue.engine.model.RevenueItem;
-import it.eng.dome.revenue.engine.model.RevenueStatement;
-import it.eng.dome.revenue.engine.model.Subscription;
-import it.eng.dome.revenue.engine.model.SubscriptionTimeHelper;
-import it.eng.dome.revenue.engine.model.comparator.RevenueItemComparator;
-import it.eng.dome.revenue.engine.model.comparator.RevenueStatementTimeComparator;
-import it.eng.dome.revenue.engine.service.cached.CachedPlanService;
-import it.eng.dome.revenue.engine.service.compute.PriceCalculator;
-import it.eng.dome.tmforum.tmf678.v4.model.TimePeriod;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Set;
+import java.util.TreeSet;
 
 @Service
 public class StatementsService implements InitializingBean {
@@ -29,25 +24,19 @@ public class StatementsService implements InitializingBean {
 	private final Logger logger = LoggerFactory.getLogger(StatementsService.class);
 
 	@Autowired
-	private SubscriptionService subscriptionService;
-
+	private CachedSubscriptionService subscriptionService;
     @Autowired
 	private CachedPlanService planService;
 
-    @Autowired
-	private PriceCalculator priceCalculator;
-    
+//    @Autowired
+//	private PriceCalculator priceCalculator;
+
+    public void afterPropertiesSet() throws Exception {}
+
     public StatementsService() {}
 
-    @Override
-    public void afterPropertiesSet() throws Exception {
-    }
-
-	/**
+	/*
 	 * Returns a list of RevenueItems for the subscription
-	 * @param subscriptionId
-	 * @return
-	 * @throws Exception
 	 */
     public List<RevenueItem> getItemsForSubscription(String subscriptionId) throws Exception {    	
         List<RevenueStatement> statements = this.getStatementsForSubscription(subscriptionId);
@@ -65,25 +54,15 @@ public class StatementsService implements InitializingBean {
 	 * 
 	 * @param subscriptionId The ID of the subscription for which to retrieve billing periods.
 	 * @return A set of TimePeriod objects representing the billing periods.
-	 * @throws Exception If an error occurs during retrieval.
 	 */
-    public Set<TimePeriod> getBillPeriods(String subscriptionId) throws Exception {
+    public Set<TimePeriod> getBillPeriods(String subscriptionId) {
 
             // retrieve the subscription by id
             Subscription sub = subscriptionService.getSubscriptionByProductId(subscriptionId);
 
-            // retrive the plan for the subscription
-            Plan plan = this.planService.getPlanById(sub.getPlan().getId());
-
-            // resolve the plan
-            PlanResolver planResolver = new PlanResolver(sub);
-            plan = planResolver.resolve(plan);
-
-            // add the full plan to the subscription
-            sub.setPlan(plan);
-
-            // configure the price calculator
-            priceCalculator.setSubscription(sub);
+            // retrieve the resolved plan for the subscription
+            Plan plan = planService.getResolvedPlanById(sub.getPlan().getId(), sub);
+	        sub.setPlan(plan);
 
             // build all statements
             SubscriptionTimeHelper timeHelper = new SubscriptionTimeHelper(sub);
@@ -113,31 +92,26 @@ public class StatementsService implements InitializingBean {
 
         Plan plan;
         try {
-            plan = planService.getPlanById(sub.getPlan().getId());
+            plan = planService.getResolvedPlanById(sub.getPlan().getId(), sub);
         } catch (Exception ex) {
             logger.error("Failed to retrieve plan for subscription {}: {}", subscriptionId, ex.getMessage(), ex);
             throw new RuntimeException("Failed to retrieve plan for subscription: " + subscriptionId, ex);
         }
 
-        // resolve the plan
-        PlanResolver planResolver = new PlanResolver(sub);
-        plan = planResolver.resolve(plan);
-
         sub.setPlan(plan);
 
         try {
-            priceCalculator.setSubscription(sub);
-
-            SubscriptionTimeHelper timeHelper = new SubscriptionTimeHelper(sub);
-            for (TimePeriod tp : timeHelper.getChargePeriodTimes()) {
+            RevenueStatementBuilder rsb = new RevenueStatementBuilder(sub);
+            for (TimePeriod chargePeriod : sub.getChargePeriods()) {
+                logger.debug("\n***************************** BILLING CYCLE ***************************\n {} \n************************************************************************", chargePeriod);
                 try {
-                    RevenueStatement statement = priceCalculator.compute(tp);
+                    RevenueStatement statement = rsb.buildStatement(chargePeriod);
                     if (statement != null) {
                         statement.clusterizeItems();
                         statements.add(statement);
                     }
                 } catch (Exception ex) {
-                    logger.warn("Failed to compute statement for period {} in subscription {}: {}", tp, subscriptionId, ex.getMessage(), ex);
+                    logger.warn("Failed to compute statement for period {} in subscription {}: {}", chargePeriod, subscriptionId, ex.getMessage(), ex);
                     // Continue processing other periods
                 }
             }
@@ -150,9 +124,7 @@ public class StatementsService implements InitializingBean {
             sub.setPlan(plan.buildRef());
         }
 
-        List<RevenueStatement> result = new ArrayList<>(statements);
-
-        return result;
+        return new ArrayList<>(statements);
     }
     
 }

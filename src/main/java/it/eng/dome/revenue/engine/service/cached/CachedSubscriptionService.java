@@ -7,6 +7,7 @@ import org.ehcache.Cache;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import it.eng.dome.revenue.engine.model.Subscription;
@@ -15,12 +16,17 @@ import it.eng.dome.revenue.engine.service.SubscriptionService;
 @Service
 public class CachedSubscriptionService extends SubscriptionService {
 
+    @Value("${caching.revenue.enabled}")
+    private Boolean REVENUE_CACHE_ENABLED;
+
     private final Logger logger = LoggerFactory.getLogger(CachedSubscriptionService.class);
 
     @Autowired
     CacheService cacheService;
 
     private Cache<String, List<Subscription>> subscriptionsCache;
+
+	private Cache<String, Subscription> subscriptionCache;
 
     public CachedSubscriptionService() {
         super();
@@ -38,7 +44,13 @@ public class CachedSubscriptionService extends SubscriptionService {
 				String.class,
 				(Class<List<Subscription>>)(Class<?>)List.class,
 				Duration.ofHours(1));
+        this.subscriptionCache = this.cacheService.getOrCreateCache(
+				"subscriptionCache",
+				String.class,
+				Subscription.class,
+				Duration.ofHours(1));
     }
+    
 
     /*
      * Retrieve bills from cache or from the parent class if not cached.
@@ -46,12 +58,34 @@ public class CachedSubscriptionService extends SubscriptionService {
     @Override
     public List<Subscription> getAllSubscriptions() {
         String key = "all_subscriptions";
-        if (!this.subscriptionsCache.containsKey(key)) {
+        if (!REVENUE_CACHE_ENABLED || !this.subscriptionsCache.containsKey(key)) {
             logger.debug("Cache MISS for " + key);
             List<Subscription> subscriptions = super.getAllSubscriptions();
             this.subscriptionsCache.put(key, subscriptions);
         }
         return this.subscriptionsCache.get(key);
     }
+
+    @Override
+    public Subscription getSubscriptionByProductId(String productId) {
+    	String key = productId;
+		if (!REVENUE_CACHE_ENABLED || !this.subscriptionsCache.containsKey(key)) {
+			logger.debug("Cache MISS for " + key);
+			Subscription subscription = super.getSubscriptionByProductId(productId);
+			this.subscriptionCache.put(key, subscription);
+		}
+		return this.subscriptionCache.get(key);
+    }
+    
+    @Override
+    public Subscription getSubscriptionByRelatedPartyId(String relatedPartyId) {
+		String key = relatedPartyId;
+		if (!REVENUE_CACHE_ENABLED || !this.subscriptionsCache.containsKey(key)) {
+			logger.debug("Cache MISS for " + key);
+			Subscription subscription = super.getSubscriptionByRelatedPartyId(relatedPartyId);
+			this.subscriptionCache.put(key, subscription);
+		}
+		return this.subscriptionCache.get(key);
+	}
 
 }

@@ -9,7 +9,7 @@ import java.util.TreeSet;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-@JsonInclude(JsonInclude.Include.NON_NULL)
+@JsonInclude(JsonInclude.Include.NON_EMPTY)
 public class RevenueItem {
 
     private String name;
@@ -118,10 +118,10 @@ public class RevenueItem {
 
     public Set<OffsetDateTime> extractChargeTimes() {
         Set<OffsetDateTime> out = new TreeSet<>();
-        if(this.getItems()==null || this.getItems().isEmpty()) {
-            if(this.getChargeTime()!=null)
-                out.add(this.getChargeTime());
-        } else {
+        if(this.getChargeTime()!=null) {
+            out.add(this.getChargeTime());
+        } 
+        else if(this.getItems()!=null) {
             for(RevenueItem i:this.getItems()) {
                 out.addAll(i.extractChargeTimes());
             }
