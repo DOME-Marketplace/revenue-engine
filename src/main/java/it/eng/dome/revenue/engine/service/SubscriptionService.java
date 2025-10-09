@@ -63,7 +63,7 @@ public class SubscriptionService implements InitializingBean {
     	logger.info("Fetching subscriptions from tmf products");
 
 		Map<String, String> filter = new HashMap<>();
-		filter.put("relatedParty", DOME_OPERATOR_ID);
+		filter.put("relatedParty.id", DOME_OPERATOR_ID);
 		logger.info("Using filter: {}", filter);
 
 		List<Product> prods = this.tmfDataRetriever.getAllProducts(null, filter);

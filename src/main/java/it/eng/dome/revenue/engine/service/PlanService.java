@@ -1,25 +1,5 @@
 package it.eng.dome.revenue.engine.service;
 
-import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationFeature;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
-import it.eng.dome.revenue.engine.model.Plan;
-import it.eng.dome.revenue.engine.model.PlanResolver;
-import it.eng.dome.revenue.engine.model.Subscription;
-import it.eng.dome.revenue.engine.service.cached.TmfCachedDataRetriever;
-import it.eng.dome.revenue.engine.service.validation.PlanValidationReport;
-import it.eng.dome.revenue.engine.service.validation.PlanValidator;
-import it.eng.dome.tmforum.tmf620.v4.model.ProductOffering;
-import it.eng.dome.tmforum.tmf620.v4.model.ProductOfferingPrice;
-import it.eng.dome.tmforum.tmf620.v4.model.ProductOfferingPriceRefOrValue;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.InitializingBean;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.stereotype.Service;
-
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -32,6 +12,29 @@ import java.util.List;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.InitializingBean;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Service;
+
+import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+
+import it.eng.dome.revenue.engine.model.Plan;
+import it.eng.dome.revenue.engine.model.PlanResolver;
+import it.eng.dome.revenue.engine.model.Subscription;
+import it.eng.dome.revenue.engine.service.cached.TmfCachedDataRetriever;
+import it.eng.dome.revenue.engine.service.validation.PlanValidationReport;
+import it.eng.dome.revenue.engine.service.validation.PlanValidator;
+import it.eng.dome.revenue.engine.utils.IdUtils;
+import it.eng.dome.tmforum.tmf620.v4.model.ProductOffering;
+import it.eng.dome.tmforum.tmf620.v4.model.ProductOfferingPrice;
+import it.eng.dome.tmforum.tmf620.v4.model.ProductOfferingPriceRefOrValue;
 
 /**
  * Service responsible for loading and caching revenue engine plans defined as external JSON files.
@@ -86,19 +89,19 @@ public class PlanService implements InitializingBean {
      * Retrieves a plan by its ID.
      */
     public Plan getPlanById(String planId) {
-        /*
+        
         String[] parts = IdUtils.unpack(planId, "plan");
         String offeringId = parts[0];
         String offeringPriceId = parts[1];
-        */
-        try {
-            return this.loadPlanFromFile("./src/main/resources/data/plans/2025-pro.json");
-        } catch(Exception e) {
-            logger.error(e.getMessage(), e);
-            return null;
-        }
+        
+//        try {
+//            return this.loadPlanFromFile("./src/main/resources/data/plans/sample1.json");
+//        } catch(Exception e) {
+//            logger.error(e.getMessage(), e);
+//            return null;
+//        }
  
-//        return this.findPlan(offeringId, offeringPriceId);
+        return this.findPlan(offeringId, offeringPriceId);
     }
 
     public Plan getResolvedPlanById(String planId, Subscription sub) {
