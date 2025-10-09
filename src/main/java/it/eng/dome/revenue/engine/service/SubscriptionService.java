@@ -1,10 +1,8 @@
 package it.eng.dome.revenue.engine.service;
 
-import it.eng.dome.brokerage.api.ProductApis;
 import it.eng.dome.revenue.engine.mapper.RevenueProductMapper;
 import it.eng.dome.revenue.engine.model.Subscription;
 import it.eng.dome.revenue.engine.service.cached.TmfCachedDataRetriever;
-import it.eng.dome.revenue.engine.tmf.TmfApiFactory;
 import it.eng.dome.tmforum.tmf637.v4.model.Product;
 import it.eng.dome.tmforum.tmf637.v4.model.RelatedParty;
 import org.slf4j.Logger;
