@@ -24,7 +24,7 @@ public class CalculatorFactory implements InitializingBean{
 
     public static Calculator getCalculatorFor(Subscription subscription, PlanItem item) {
         logger.debug("*************** Calculator FACTORY **************");
-        Calculator c = null;
+        Calculator c;
         if(item.getIsBundle()) {
             c = getBundleCalculatorFor(subscription, item);
         } else {
@@ -38,7 +38,6 @@ public class CalculatorFactory implements InitializingBean{
     private static Calculator getBundleCalculatorFor(Subscription subscription, PlanItem item) {
         if(item==null || !item.getIsBundle() || item.getBundleOp()==null)
             return null;
-        Calculator c = null;
         switch(item.getBundleOp()) {
     		case CUMULATIVE:
                 logger.debug("creating CUMULATIVE calculator for {}", item.getName());

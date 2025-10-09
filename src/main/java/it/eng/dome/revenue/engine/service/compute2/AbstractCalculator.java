@@ -49,7 +49,7 @@ public abstract class AbstractCalculator implements Calculator {
 		logger.debug("preconditions OK");
 
 		logger.debug("checking computability...");
-		if(!this.checkComputability(timePeriod)) {
+		if(!this.checkComputability()) {
 			return null;
 		}
 		logger.debug("computability OK");
@@ -61,7 +61,7 @@ public abstract class AbstractCalculator implements Calculator {
 		logger.debug("applicability OK");
 
 		// check if it has to be zeroed (although we keep the structure)
-		boolean zeroIt = this.checkZeroIt(timePeriod);
+		boolean zeroIt = this.checkZeroIt();
 		logger.debug("zeroIt? {}", zeroIt);
 
 		// do build the structure and value
@@ -238,7 +238,7 @@ public abstract class AbstractCalculator implements Calculator {
         return true;
     }
 
-	private boolean checkZeroIt(TimePeriod timePeriod) {
+	private boolean checkZeroIt(/*TimePeriod timePeriod*/) {
 
 		// TODO: support for zero (Boolean)
 
@@ -296,10 +296,9 @@ public abstract class AbstractCalculator implements Calculator {
 
     /**
      * Make sure that properties for computation are correctly set and are available
-     * @param tp
      * @return
      */
-    private boolean checkComputability(TimePeriod tp) {
+    private boolean checkComputability() {
 
 		if(this.item.getIsBundle())
 			return true;

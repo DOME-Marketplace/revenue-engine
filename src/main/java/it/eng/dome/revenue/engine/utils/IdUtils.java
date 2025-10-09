@@ -1,5 +1,6 @@
 package it.eng.dome.revenue.engine.utils;
 
+import java.nio.charset.StandardCharsets;
 import java.util.UUID;
 
 public class IdUtils {
@@ -42,6 +43,7 @@ public class IdUtils {
     }
 
     public static String uuidFromKey(String key) {
-        return UUID.nameUUIDFromBytes(key.getBytes()).toString();
+        return UUID.nameUUIDFromBytes(key.getBytes(StandardCharsets.UTF_8)).toString();
     }
+
 }

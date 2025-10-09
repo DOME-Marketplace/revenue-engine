@@ -41,7 +41,7 @@ public class AtomicDiscountCalculator extends AbstractCalculator {
 		try {
 			if (this.item.getPercent() != null) {
 
-                Double computationBase = null;
+                Double computationBase;
                 if ("parent-price".equals(this.item.getComputationBase()) && computeContext.containsKey("parent-price")) {
                     // TODO: make this more generic to look for any key in the map first; and only after ask the metrics retriever.
                     computationBase = computeContext.get("parent-price");
