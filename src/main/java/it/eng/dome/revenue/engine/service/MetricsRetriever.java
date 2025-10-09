@@ -49,7 +49,7 @@ public class MetricsRetriever {
     }
 
     // implement retriever for key 'referred-providers-number'
-    private Integer computeReferralsProvidersNumber(String sellerId) throws Exception {
+    private Integer computeReferralsProvidersNumber(String sellerId, TimePeriod timePeriod) throws Exception {
     	// retrieves the list of providers referenced by the seller
         List<Organization> referred = tmfDataRetriever.listReferralsProviders(sellerId);
         
@@ -103,7 +103,7 @@ public class MetricsRetriever {
             case "bills-no-taxes":
                 return computeBillsNoTaxes(sellerId, timePeriod);
             case "referred-providers-number":
-                return (double)computeReferralsProvidersNumber(sellerId);
+                return (double)computeReferralsProvidersNumber(sellerId, timePeriod);
             case "referred-providers-transaction-volume":
                 return computeReferralsProvidersTransactionVolume(sellerId, timePeriod);
             case "referred-provider-max-transaction-volume":
