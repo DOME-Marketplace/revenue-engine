@@ -44,12 +44,18 @@
           {
             "name": "SubFee2",
             "type": "RECURRING_POSTPAID",
-            "amount": 250,
+            "percent": 5,
+            "computationBaseReferencePeriod": "CURRENT_CHARGE_PERIOD",
+            "computationBase": "bills-no-taxes",
             "currency": "EUR",
             "collapse": false,
             "discount": {
               "name": "hello discount",
-              "amount": 10
+              "percent": 1,
+              "computationBase": "parent-price",
+              "resultingAmountRange" : {
+                "min": 0, "max": 1000
+              }
             }
           }
         ]

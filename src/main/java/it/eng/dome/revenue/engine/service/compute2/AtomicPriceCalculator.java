@@ -88,7 +88,7 @@ public class AtomicPriceCalculator extends AbstractCalculator {
 	private Double computePriceValue(String sellerId, TimePeriod tp) {
 		try {
 			if (this.item.getPercent() != null) {
-				TimePeriod computationPeriod = this.getComputationTimePeriod(tp.getEndDateTime());
+				TimePeriod computationPeriod = this.getComputationTimePeriod(tp.getEndDateTime().minusSeconds(1));
 				if (computationPeriod == null) {
 					logger.debug("Could not compute custom period for reference: {}", this.item.getComputationBaseReferencePeriod());
 					return null;

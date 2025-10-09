@@ -8,6 +8,7 @@ import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import it.eng.dome.revenue.engine.model.Discount;
 import it.eng.dome.revenue.engine.model.PlanItem;
 import it.eng.dome.revenue.engine.model.Price;
 import it.eng.dome.revenue.engine.model.Range;
@@ -93,6 +94,10 @@ public abstract class AbstractCalculator implements Calculator {
 
 		// constrain the resulting value, if needed
 		Range r = this.item.getResultingAmountRange();
+		if(this.item instanceof Discount) {
+			// for discounts, reverse the prices, since values in items are negative for discounts
+			r = new Range(-r.getMax(), -r.getMin());
+		}
 		if(r!=null) {
 			logger.debug("enforcing resulting amount range...");
 			if(r.getMin()!=null) {
