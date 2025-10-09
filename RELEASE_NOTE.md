@@ -2,6 +2,25 @@
  
 **Release Notes** of the *Revenue Engine* software:
 
+### <code>1.2.4</code> :calendar: 09/10/2025
+**Bug Fixing**
+- General bug fixing and cleanup:
+  - Refactored and cleaned up legacy code.
+  - Minor fixes across multiple services.
+
+**New Features**
+- Added `InvoicingService` for apply taxes.
+- Added `compute2` package for enhanced computational logic.
+- Introduced `HealthService` for system health monitoring.
+- Added `TmfPersistenceService` for data persistence.
+- Developed `planResolver` to support dynamic token resolution in plans.
+- Implemented tiering logic to support tax brackets.
+- Added `IdUtils`.
+
+**Improvements**
+- Improved validation logic in `PlanValidator`.
+- Improved cache usage.
+
 ### <code>1.2.3</code> :calendar: 23/09/2025
 **Bug Fixing**
 - General bug fixing:
