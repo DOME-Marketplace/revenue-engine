@@ -50,16 +50,11 @@ public class CumulativeCalculator extends AbstractCalculator {
 		}
 		
 	    if (this.item instanceof Discount) {
-	        Discount parentDiscount = (Discount) this.item;
-	        for (PlanItem subItem : parentDiscount.getBundleItems()) {
-	            if (subItem instanceof Discount) {
-	                subItem.setParentItem(parentDiscount);
-
-	                Calculator childCalc = CalculatorFactory.getCalculatorFor(this.getSubscription(), subItem);
-	                RevenueItem childRev = childCalc.compute(timePeriod, computeContext);
-	                if (childRev != null)
-	                    cumulativeRevenueItem.addRevenueItem(childRev);
-	            }
+	        for (PlanItem subItem : this.item.getBundleItems()) {
+                Calculator childCalc = CalculatorFactory.getCalculatorFor(this.getSubscription(), subItem);
+                RevenueItem childRev = childCalc.compute(timePeriod, computeContext);
+                if (childRev != null)
+                    cumulativeRevenueItem.addRevenueItem(childRev);
 	        }
 	    }
 
