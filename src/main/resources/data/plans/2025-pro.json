@@ -1,7 +1,7 @@
 {
   "id": "urn:ngsi-ld:plan:55761it5-3d4q-2321-p009-44bro198re0q",
-  "name": "Sample Plan 1",
-  "description": "Some description for sample plan 1",
+  "name": "DOME Advanced Subscription plan for 2025",
+  "description": "DOME Advanced Subscription plan for 2025",
   "validFor": {
     "startDateTime": "2025-01-01T00:00:00Z",
     "endDateTime": "2025-12-31T23:59:59Z"
@@ -9,47 +9,84 @@
   "lifecycleStatus": "launched",
   "billCycleSpecification": {
     "billingPeriodLength": "1",
-    "billingPeriodType": "YEAR",
+    "billingPeriodType": "MONTH",
     "billingPeriodEnd": "LAST_DAY_OF_CALENDAR_MONTH",
     "billingDateShift": "5",
-    "paymentDueDateOffset": "15"
+    "paymentDueDateOffset": "45"
   },
   "subscriptionDurationLength": 12,
   "subscriptionDurationPeriodType": "MONTH",
   "agreements": [],
   "price": {
-    "name": "Price components for Sample plan 1",
+    "name": "Price components for Advanced Subscription plan 2025",
     "isBundle": true,
     "currency": "EUR",
     "bundleOp": "CUMULATIVE",
     "prices": [
       {
-        "name": "Pre-paid Yearly Fee",
-        "type": "ONE_TIME_PREPAID",
+        "name": "Pre-paid Initial Fee",
+        "type": "RECURRING_PREPAID",
         "recurringChargePeriodLength": 1,
         "recurringChargePeriodType": "YEAR",
         "amount": 8000,
         "currency": "EUR",
         "ignore": "${subscription.characteristics.marketplaceSubscription}",
         "discount": {
-	      "name": "some discount",
-	      "isBundle": true,
-	      "computationBase": "parent-price",
-	      "bundleOp": "ALTERNATIVE_HIGHER",
-		  	"discounts":[
-				          		{
-          			"name":"Sub discount1",
-          			"percent":10
-          		},
-          		{
-          			"name":"Sub discount2",
-          			"percent":50
-          		}
-			]
+          "name": "Discount based on previous year's sales",
+          "isBundle": true,
+          "bundleOp": "ALTERNATIVE_HIGHER",
+          "applicableBaseReferencePeriod": "PREVIOUS_SUBSCRIPTION_PERIOD",
+          "applicableBase": "bills-no-taxes",
+          "discounts": [
+            {
+              "name": "No discunt for previous-period transactions under 100k",
+              "applicableBaseRange": {
+                "min": 0,
+                "max": 100000
+              },
+              "computationBase": "parent-price",
+              "percent": 0
+            },
+            {
+              "name": "15% discount for previous-period transactions between 100k and 250k",
+              "applicableBaseRange": {
+                "min": 100001,
+                "max": 250000
+              },
+              "computationBase": "parent-price",
+              "percent": 15
+            },
+            {
+              "name": "30% discount for previous-period transactions between 250k and 750k",
+              "applicableBaseRange": {
+                "min": 250001,
+                "max": 750000
+              },
+              "computationBase": "parent-price",
+              "percent": 30
+            },
+            {
+              "name": "50% discount for previous-period transctions between 750k and 1M",
+              "applicableBaseRange": {
+                "min": 750001,
+                "max": 1000000
+              },
+              "computationBase": "parent-price",
+              "percent": 50
+            },
+            {
+              "name": "80% discount for previous-period transctions over 1M",
+              "applicableBaseRange": {
+                "min": 1000001
+              },
+              "computationBase": "parent-price",
+              "percent": 80
+            }
+          ]
         }
       },
       {
-        "name": "Revenue on transactions",
+        "name": "Revenue on transactions in the current period",
         "type": "RECURRING_POSTPAID",
         "recurringChargePeriodLength": 1,
         "recurringChargePeriodType": "MONTH",
@@ -131,27 +168,8 @@
             "collapse": true,
             "skipIfZero": true
           }
-
         ]
-
-
-      },
-	  {
-	    "name": "Monthly postpaid fee....",
-	    "type": "RECURRING_POSTPAID",
-	    "recurringChargePeriodLength": 1,
-	    "recurringChargePeriodType": "MONTH",
-	    "amount": 150,
-	    "currency": "EUR",
-	    "ignore": false,
-	    "collapse": false,
-	    "discount": {
-	      "name": "discount for the first three charge periods",
-	      "validPeriod": "FIRST_3_CHARGE_PERIOD",
-	      "computationBase": "parent-price",
-	      "percent": 100
-	    }
-	  }
+      }
     ]
   }
 }
