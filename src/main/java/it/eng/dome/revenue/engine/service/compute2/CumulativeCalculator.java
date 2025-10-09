@@ -4,6 +4,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import it.eng.dome.revenue.engine.model.Discount;
 import it.eng.dome.revenue.engine.model.PlanItem;
 import it.eng.dome.revenue.engine.model.Price;
 import it.eng.dome.revenue.engine.model.RevenueItem;
@@ -47,6 +48,20 @@ public class CumulativeCalculator extends AbstractCalculator {
 				}
 			}
 		}
+		
+	    if (this.item instanceof Discount) {
+	        Discount parentDiscount = (Discount) this.item;
+	        for (PlanItem subItem : parentDiscount.getBundleItems()) {
+	            if (subItem instanceof Discount) {
+	                subItem.setParentItem(parentDiscount);
+
+	                Calculator childCalc = CalculatorFactory.getCalculatorFor(this.getSubscription(), subItem);
+	                RevenueItem childRev = childCalc.compute(timePeriod, computeContext);
+	                if (childRev != null)
+	                    cumulativeRevenueItem.addRevenueItem(childRev);
+	            }
+	        }
+	    }
 
 		if (cumulativeRevenueItem.getItems().isEmpty()) {
 			return null;
