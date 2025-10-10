@@ -31,10 +31,14 @@ import it.eng.dome.revenue.engine.model.Subscription;
 import it.eng.dome.revenue.engine.service.cached.TmfCachedDataRetriever;
 import it.eng.dome.revenue.engine.service.validation.PlanValidationReport;
 import it.eng.dome.revenue.engine.service.validation.PlanValidator;
+import it.eng.dome.revenue.engine.tmf.TmfApiFactory;
 import it.eng.dome.revenue.engine.utils.IdUtils;
+import it.eng.dome.tmforum.tmf620.v4.model.Category;
 import it.eng.dome.tmforum.tmf620.v4.model.ProductOffering;
 import it.eng.dome.tmforum.tmf620.v4.model.ProductOfferingPrice;
 import it.eng.dome.tmforum.tmf620.v4.model.ProductOfferingPriceRefOrValue;
+import it.eng.dome.tmforum.tmf620.v4.ApiException;
+import it.eng.dome.tmforum.tmf620.v4.api.CategoryApi;
 
 /**
  * Service responsible for loading and caching revenue engine plans defined as external JSON files.
@@ -51,9 +55,12 @@ public class PlanService implements InitializingBean {
     
     @Autowired
     private TmfCachedDataRetriever tmfDataRetriever;
-
+    
+    @Autowired
+    private TmfApiFactory tmfApiFactory;
+    
     private final ObjectMapper mapper;
-
+       
     public void afterPropertiesSet() throws Exception {}
 
     /**
@@ -69,9 +76,24 @@ public class PlanService implements InitializingBean {
     // retrieve all plans by offerings
     public List<Plan> getAllPlans() {
         logger.info("Fetching all plans...");
-    	// FIXME: when the RP bug is fixed, filter only plans connected to DO.
+        
+       //FIXME: implement and use APIS in brokerage-utils
+        CategoryApi categoryApi = new CategoryApi(tmfApiFactory.getTMF620ProductCatalogManagementApiClient());
+        List<Category> listCategory = new ArrayList<>();
+        
+		try {
+			listCategory = categoryApi.listCategory(null, null, 1000, null);
+		} catch (ApiException e) {
+			logger.warn("No categories found");
+		}
+        
         Map<String, String> filter = new HashMap<String, String>();
-//        filter.put("relatedParty", DOME_OPERATOR_ID);
+        for (Category c : listCategory) {
+            if (c.getName() != null && c.getName().equalsIgnoreCase("DOME OPERATOR Plan")) {
+                filter.put("category.id", c.getId());
+            }
+        }
+        
         List<ProductOffering> pos = tmfDataRetriever.getAllProductOfferings(null, filter);
         
         List<Plan> plans = new ArrayList<>();
@@ -90,18 +112,18 @@ public class PlanService implements InitializingBean {
      */
     public Plan getPlanById(String planId) {
         
-        String[] parts = IdUtils.unpack(planId, "plan");
-        String offeringId = parts[0];
-        String offeringPriceId = parts[1];
+//        String[] parts = IdUtils.unpack(planId, "plan");
+//        String offeringId = parts[0];
+//        String offeringPriceId = parts[1];
         
-//        try {
-//            return this.loadPlanFromFile("./src/main/resources/data/plans/sample1.json");
-//        } catch(Exception e) {
-//            logger.error(e.getMessage(), e);
-//            return null;
-//        }
+        try {
+            return this.loadPlanFromFile("./src/main/resources/data/plans/2025-pro.json");
+        } catch(Exception e) {
+            logger.error(e.getMessage(), e);
+            return null;
+        }
  
-        return this.findPlan(offeringId, offeringPriceId);
+//        return this.findPlan(offeringId, offeringPriceId);
     }
 
     public Plan getResolvedPlanById(String planId, Subscription sub) {
