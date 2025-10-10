@@ -94,10 +94,11 @@ public abstract class AbstractCalculator implements Calculator {
 
 		// constrain the resulting value, if needed
 		Range r = this.item.getResultingAmountRange();
-		if(this.item instanceof Discount) {
+		if (r != null && this.item instanceof Discount) {
 			// for discounts, reverse the prices, since values in items are negative for discounts
-			r = new Range(-r.getMax(), -r.getMin());
+		    r = new Range(-r.getMax(), -r.getMin());
 		}
+
 		if(r!=null) {
 			logger.debug("enforcing resulting amount range...");
 			if(r.getMin()!=null) {
