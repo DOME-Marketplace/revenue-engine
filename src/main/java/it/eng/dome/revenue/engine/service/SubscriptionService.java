@@ -70,7 +70,6 @@ public class SubscriptionService implements InitializingBean {
 
 		List<Subscription> subs = new ArrayList<>();
         for (Product prod : prods) {
-				// FIXME: workaround for bug in tmf. Need to retrieve the product individually.
 				Product fullProduct = this.tmfDataRetriever.getProductById(prod.getId(), null);
 	            
 				// FIXME: but be careful with last invoices... sub might not be active

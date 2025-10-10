@@ -1,8 +1,12 @@
 package it.eng.dome.revenue.engine.controller;
 
-import java.util.ArrayList;
-import java.util.List;
-
+import it.eng.dome.revenue.engine.model.RevenueBill;
+import it.eng.dome.revenue.engine.model.RevenueItem;
+import it.eng.dome.revenue.engine.model.RevenueStatement;
+import it.eng.dome.revenue.engine.model.Subscription;
+import it.eng.dome.revenue.engine.service.BillsService;
+import it.eng.dome.revenue.engine.service.cached.CachedStatementsService;
+import it.eng.dome.revenue.engine.service.cached.CachedSubscriptionService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -10,21 +14,11 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import it.eng.dome.revenue.engine.mapper.RevenueProductMapper;
-import it.eng.dome.revenue.engine.model.RevenueBill;
-import it.eng.dome.revenue.engine.model.RevenueItem;
-import it.eng.dome.revenue.engine.model.RevenueStatement;
-import it.eng.dome.revenue.engine.model.Subscription;
-import it.eng.dome.revenue.engine.service.BillsService;
-import it.eng.dome.revenue.engine.service.TmfDataRetriever;
-import it.eng.dome.revenue.engine.service.cached.CachedStatementsService;
-import it.eng.dome.revenue.engine.service.cached.CachedSubscriptionService;
-import it.eng.dome.tmforum.tmf637.v4.model.Product;
+import java.util.ArrayList;
+import java.util.List;
 
 @RestController
 @RequestMapping("revenue/subscriptions")
@@ -40,9 +34,6 @@ public class SubscriptionsController {
 
 	@Autowired
 	private BillsService billsService;
-
-	@Autowired
-	TmfDataRetriever tmfDataRetriever;
 
 	public SubscriptionsController() {
 	}
@@ -136,44 +127,4 @@ public class SubscriptionsController {
 	        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
 	    }
 	}
-	    // TODO: remove this test method when not needed anymore
-	    @PostMapping("/fromProduct")
-	    public ResponseEntity<Subscription> convertFromProduct(@RequestBody Product product) {
-	        logger.info("Request received to convert Product {} to Subscription", product != null ? product.getId() : "null");
-
-	        if (product == null) {
-	            logger.warn("Product is null in request body");
-	            return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
-	        }
-
-	        try {
-	            Subscription subscription = RevenueProductMapper.toSubscription(product);
-	            if (subscription == null) {
-	                logger.warn("Conversion failed for Product {}", product.getId());
-	                return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
-	            }
-	            return ResponseEntity.ok(subscription);
-	        } catch (Exception e) {
-	            logger.error("Error converting Product {} to Subscription: {}", product.getId(), e.getMessage(), e);
-	            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
-	        }
-	    }
-	}
-
-//	@GetMapping("{subscriptionId}/customerBills")
-//	public ResponseEntity<List<CustomerBill>> getCustomerBills(@PathVariable String subscriptionId) {
-//	    logger.info("Request received: get customer bills for subscription {}", subscriptionId);
-//	    List<RevenueBill> revenueBills;
-//	    try {
-//	        revenueBills = billsService.getSubscriptionBills(subscriptionId);
-//	    } catch (Exception e) {
-//	        logger.error("Failed to retrieve revenue bills  for subscription {}: {}", subscriptionId, e.getMessage(), e);
-//	        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
-//	    }
-//
-//	    List<CustomerBill> customerBills = revenueBills.stream()
-//	            .map(billsService::getCustomerBillByRevenueBill)
-//	            .toList();
-//
-//	    return ResponseEntity.ok(customerBills);
-//	}
+}

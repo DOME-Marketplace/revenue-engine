@@ -115,7 +115,7 @@ public class PlanResolver {
                 case "startdate":
                     return subscription.getStartDate().toString();
                 default:
-                    break; // TODO: add more subscription properties
+                    break; // TODO: add more subscription properties if needed
             }
         }
 
@@ -127,7 +127,7 @@ public class PlanResolver {
                 case "name":
                     return subscription.getPlan().getName();
                 default:
-                    break; // TODO: add more plan properties
+                    break; // TODO: add more plan properties if needed
             }
         }
         

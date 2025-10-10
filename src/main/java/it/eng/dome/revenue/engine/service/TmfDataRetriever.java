@@ -111,7 +111,6 @@ public class TmfDataRetriever implements InitializingBean {
 	 *
 	 * @param sellerId The ID of the seller to filter bills by, or null to retrieve all bills.
 	 * @param timePeriod The time period within which to retrieve bills.
-	 * @param isBilled If true, retrieves only billed bills; if false, retrieves only unbilled bills; if null, retrieves all.
 	 * @return A list of AppliedCustomerBillingRate objects representing the retrieved bills.
 	 * @throws Exception If an error occurs during retrieval.
 	 */
@@ -121,7 +120,6 @@ public class TmfDataRetriever implements InitializingBean {
         logger.debug("Retrieving bills from TMF API between {} and {}", timePeriod.getStartDateTime(), timePeriod.getEndDateTime());
 
         Map<String, String> filter = new HashMap<>();
-
 
         // Add time period filters if available
         if (timePeriod.getStartDateTime() != null) {
@@ -142,7 +140,6 @@ public class TmfDataRetriever implements InitializingBean {
 
 //        List<AppliedCustomerBillingRate> out = billApi.getAllAppliedCustomerBillingRates(null, filter);
         List<CustomerBill> out = billApi.getAllCustomerBills(null, filter);
-
 
         // DONE --> further filter results to be sure id and role are in the sameRelatedParties (see fix me above)
         // Filter to ensure same RelatedParty has both id and role
@@ -185,21 +182,19 @@ public class TmfDataRetriever implements InitializingBean {
             logger.debug("No participant role specified");
         }
 
-//        List<CustomerBill> out = billApi.getAllAppliedCustomerBillingRates(null, filter);
         List<CustomerBill> out = billApi.getAllCustomerBills(null, filter);
 
-        // Further filter results to be sure id and role are in the same RelatedParty (see fixme above)
+        // check that id and role are in the same RelatedParty
         if(participantId!=null && participantRole!=null) {
             List<CustomerBill> filteredOut = new ArrayList<>();
             for(CustomerBill cb: out) {
-                for(RelatedParty rp: cb.getRelatedParty()) {
-                    if(participantId.equalsIgnoreCase(rp.getId()) && participantRole.equalsIgnoreCase(rp.getRole()))
+                for (RelatedParty rp : Objects.requireNonNull(cb.getRelatedParty())) {
+                    if (participantId.equalsIgnoreCase(rp.getId()) && participantRole.equalsIgnoreCase(rp.getRole()))
                         filteredOut.add(cb);
                 }
             }
             out = filteredOut;
         }
-
         logger.debug("Found {} bills in the specified period after role/id filter", out.size());
         return out;
     }

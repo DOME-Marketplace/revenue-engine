@@ -38,7 +38,6 @@ import it.eng.dome.tmforum.tmf678.v4.model.RelatedParty;
 
 /**
  * FIXME: Enhancemets and fixes:
- * [H] consider parameter to limit the number of bills to persist (e.g. only last month/ last 2 months)
  * [H] only consider active subscriptions ([L] but be careful with last invoices... sub might not be active)
  */
 
