@@ -1,10 +1,11 @@
 package it.eng.dome.revenue.engine.service;
 
-import it.eng.dome.revenue.engine.mapper.RevenueProductMapper;
-import it.eng.dome.revenue.engine.model.Subscription;
-import it.eng.dome.revenue.engine.service.cached.TmfCachedDataRetriever;
-import it.eng.dome.tmforum.tmf637.v4.model.Product;
-import it.eng.dome.tmforum.tmf637.v4.model.RelatedParty;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.InitializingBean;
@@ -12,11 +13,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
+import it.eng.dome.revenue.engine.mapper.RevenueProductMapper;
+import it.eng.dome.revenue.engine.model.Subscription;
+import it.eng.dome.revenue.engine.service.cached.TmfCachedDataRetriever;
+import it.eng.dome.tmforum.tmf637.v4.model.Product;
 
 @Service
 public class SubscriptionService implements InitializingBean {
@@ -63,15 +63,13 @@ public class SubscriptionService implements InitializingBean {
     	logger.info("Fetching subscriptions from tmf products");
 
 		Map<String, String> filter = new HashMap<>();
-		filter.put("relatedParty.id", DOME_OPERATOR_ID);
+		filter.put("productCharacteristic.name", "type");
 		logger.info("Using filter: {}", filter);
 
 		List<Product> prods = this.tmfDataRetriever.getAllProducts(null, filter);
 
 		List<Subscription> subs = new ArrayList<>();
         for (Product prod : prods) {
-			// FIXME: weak control con products to guess it's a subscription
-			if(prod.getName()!=null && prod.getName().toLowerCase().indexOf("subscription")!=-1) {
 				// FIXME: workaround for bug in tmf. Need to retrieve the product individually.
 				Product fullProduct = this.tmfDataRetriever.getProductById(prod.getId(), null);
 	            
@@ -79,17 +77,9 @@ public class SubscriptionService implements InitializingBean {
 				if (!"active".equalsIgnoreCase(fullProduct.getStatus().getValue())) {
 	                continue;
 	            }
+				subs.add(RevenueProductMapper.toSubscription(fullProduct));				
+        }	
 				
-				if(fullProduct.getRelatedParty()!=null) {
-					for(RelatedParty rp: fullProduct.getRelatedParty()) {
-						if(rp!=null && DOME_OPERATOR_ID.equals(rp.getId()) && "seller".equalsIgnoreCase(rp.getRole())) {
-							subs.add(RevenueProductMapper.toSubscription(fullProduct));
-						}
-					}
-				}
-			}
-		}
-        
         return subs;
     }
 
