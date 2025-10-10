@@ -12,7 +12,6 @@ import it.eng.dome.revenue.engine.model.Price;
 import it.eng.dome.revenue.engine.model.RecurringPeriod;
 
 //TODO: check other possible validations
-
 public class PlanValidator {
 
     public PlanValidationReport validate(Plan plan) {
@@ -33,7 +32,8 @@ public class PlanValidator {
 
         return issues;
     }
-    
+
+    // ---------- PLAN LEVEL ----------
     private List<PlanValidationIssue> validateCommonProperties(Plan plan) {
         List<PlanValidationIssue> issues = new ArrayList<>();
         if (plan.getName() == null || plan.getName().isEmpty())
@@ -41,11 +41,11 @@ public class PlanValidator {
         if (plan.getDescription() == null || plan.getDescription().isEmpty())
             issues.add(new PlanValidationIssue("the plan must include a description", PlanValidationIssueSeverity.WARNING));
         if (plan.getValidFor() == null || plan.getValidFor().getStartDateTime().isAfter(plan.getValidFor().getEndDateTime()))
-			issues.add(new PlanValidationIssue("the plan must include a validFor period with startDateTime before endDateTime", PlanValidationIssueSeverity.ERROR));
+            issues.add(new PlanValidationIssue("the plan must include a validFor period with startDateTime before endDateTime", PlanValidationIssueSeverity.ERROR));
         if (plan.getLifecycleStatus() == null || plan.getLifecycleStatus().isEmpty())
             issues.add(new PlanValidationIssue("the plan must include a lifecycle status", PlanValidationIssueSeverity.ERROR));
         if(plan.getSubscriptionDurationLength() != null && plan.getSubscriptionDurationLength() < 0)
-			issues.add(new PlanValidationIssue("contractDurationLength must be >= 0", PlanValidationIssueSeverity.WARNING));
+            issues.add(new PlanValidationIssue("subscriptionDurationLength must be >= 0", PlanValidationIssueSeverity.WARNING));
         return issues;
     }
 
@@ -67,10 +67,11 @@ public class PlanValidator {
         if (plan.getBillCycleSpecification().getPaymentDueDateOffset() != null && plan.getBillCycleSpecification().getPaymentDueDateOffset() < 0)
             issues.add(new PlanValidationIssue("paymentDueDateOffset must be >= 0", PlanValidationIssueSeverity.WARNING));
         if(plan.getBillCycleSpecification().getBillingPeriodLength() != null && plan.getBillCycleSpecification().getBillingPeriodLength() < 0)
-			issues.add(new PlanValidationIssue("billingPeriodLength must be >= 0", PlanValidationIssueSeverity.WARNING));
+            issues.add(new PlanValidationIssue("billingPeriodLength must be >= 0", PlanValidationIssueSeverity.WARNING));
         return issues;
     }
 
+    // ---------- PLAN ITEM LEVEL ----------
     private List<PlanValidationIssue> validatePlanItem(PlanItem item) {
         List<PlanValidationIssue> issues = new ArrayList<>();
         issues.addAll(validatePlanItemCommon(item));
@@ -102,14 +103,6 @@ public class PlanValidator {
             item.getApplicableBaseRange().getMin() != null &&
             item.getApplicableBaseRange().getMax() < item.getApplicableBaseRange().getMin()) 
             issues.add(new PlanValidationIssue("applicableBaseRange min > max", PlanValidationIssueSeverity.ERROR));
-        if (item.getApplicableBaseRange() != null &&
-			item.getApplicableBaseRange().getMin() != null &&
-			item.getApplicableBaseRange().getMin() < 0) 
-			issues.add(new PlanValidationIssue("applicableBaseRange min < 0", PlanValidationIssueSeverity.ERROR));
-        if (item.getApplicableBaseRange() != null && 
-        		item.getApplicableBaseRange().getMax() != null && 
-        		item.getApplicableBaseRange().getMax() < 0)
-			issues.add(new PlanValidationIssue("applicableBaseRange max < 0", PlanValidationIssueSeverity.ERROR));
         if (item.getApplicableBaseReferencePeriod() != null && item.getApplicableBaseReferencePeriod().toString().isEmpty())
             issues.add(new PlanValidationIssue("applicableBaseReferencePeriod is empty", PlanValidationIssueSeverity.WARNING));
         return issues;
@@ -143,6 +136,8 @@ public class PlanValidator {
                 issues.add(new PlanValidationIssue("Price must have a currency", PlanValidationIssueSeverity.ERROR));
         } else if (item instanceof Discount) {
             Discount discount = (Discount) item;
+            if (discount.getName() == null || discount.getName().isEmpty())
+                issues.add(new PlanValidationIssue("Discount must have a name", PlanValidationIssueSeverity.WARNING));
             if (discount.getPercent() != null && (discount.getPercent() < 0 || discount.getPercent() > 100))
                 issues.add(new PlanValidationIssue("Discount percent must be between 0 and 100", PlanValidationIssueSeverity.ERROR));
             if (discount.getAmount() != null && discount.getAmount() < 0)
@@ -176,7 +171,6 @@ public class PlanValidator {
         if (item.getIsBundle()) {
             if (item.getBundleOp() == null)
                 issues.add(new PlanValidationIssue("Bundle item must have bundleOp defined", PlanValidationIssueSeverity.ERROR));
-
             if (item.getBundleItems() != null) {
                 for (PlanItem child : item.getBundleItems()) {
                     issues.addAll(validatePlanItem(child));
