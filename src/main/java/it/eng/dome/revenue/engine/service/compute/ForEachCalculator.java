@@ -1,4 +1,4 @@
-package it.eng.dome.revenue.engine.service.compute2;
+package it.eng.dome.revenue.engine.service.compute;
 
 import java.util.HashMap;
 import java.util.List;

@@ -5,7 +5,7 @@ import it.eng.dome.revenue.engine.model.comparator.RevenueItemComparator;
 import it.eng.dome.revenue.engine.model.comparator.RevenueStatementTimeComparator;
 import it.eng.dome.revenue.engine.service.cached.CachedPlanService;
 import it.eng.dome.revenue.engine.service.cached.CachedSubscriptionService;
-import it.eng.dome.revenue.engine.service.compute2.RevenueStatementBuilder;
+import it.eng.dome.revenue.engine.service.compute.RevenueStatementBuilder;
 import it.eng.dome.tmforum.tmf678.v4.model.TimePeriod;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
