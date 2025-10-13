@@ -47,6 +47,9 @@ public class PlanService implements InitializingBean {
     @Value("${dome.operator.id}")
     private String DOME_OPERATOR_ID;
 
+    @Value("${dev.use-local-plans}")
+    private Boolean DEV_USE_LOCAL_PLANS;
+
     private static final Logger logger = LoggerFactory.getLogger(PlanService.class);
     
     @Autowired
@@ -90,17 +93,10 @@ public class PlanService implements InitializingBean {
      */
     public Plan getPlanById(String planId) {
         
-        String[] parts = IdUtils.unpack(planId, "plan");
-        String offeringId = parts[0];
-        String offeringPriceId = parts[1];
-        
-//        try {
-//            return this.loadPlanFromFile("./src/main/resources/data/plans/sample1.json");
-//        } catch(Exception e) {
-//            logger.error(e.getMessage(), e);
-//            return null;
-//        }
- 
+         String[] parts = IdUtils.unpack(planId, "plan");
+         String offeringId = parts[0];
+         String offeringPriceId = parts[1];
+         
         return this.findPlan(offeringId, offeringPriceId);
     }
 
@@ -222,12 +218,24 @@ public class PlanService implements InitializingBean {
     }
 
     private Plan loadPlanFromLink(String link) throws IOException {
-        URL planUrl = new URL(link);
-        try (InputStream is = planUrl.openStream()) {
-            Plan plan = mapper.readValue(is, Plan.class);
-            logger.debug("Loaded plan '{}' with ID '{}'", link, plan.getId());
-            return plan;
+
+        if(DEV_USE_LOCAL_PLANS) {
+            // get the last part of the link
+            String[] parts = link.split("/");
+            String planFileName = parts[parts.length-1];
+            // search it within src/main/resources/data/plans
+            return this.loadPlanFromFile("./src/main/resources/data/plans/"+planFileName);
         }
+        else {
+            URL planUrl = new URL(link);
+            try (InputStream is = planUrl.openStream()) {
+                Plan plan = mapper.readValue(is, Plan.class);
+                logger.debug("Loaded plan '{}' with ID '{}'", link, plan.getId());
+                return plan;
+            }
+
+        }
+
     }
 
     protected Plan loadPlanFromFile(String path) throws IOException {

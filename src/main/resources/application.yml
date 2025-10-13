@@ -68,9 +68,18 @@ caching:
   tmf:
     enabled: true
   revenue:
-    enabled: true
+    enabled: false
   health:
     enabled: true
 
 persistence:
   monthsBack: ${MONTHS_BACK:2}
+
+spring:
+  web:
+    resources:
+      static-locations: file:./src/main/resources/public
+
+dev:
+  use-local-plans: true
+  enable-web-dashboard: false
