@@ -311,8 +311,11 @@ public class BillsService {
      * @throws IllegalArgumentException if the list is null, empty, or contains invalid Money objects
      */
     private Money computeTaxIncludedAmount(List<AppliedCustomerBillingRate> acbrs) {
-    	if (acbrs == null || acbrs.isEmpty()) {
-            throw new IllegalArgumentException("AppliedCustomerBillingRate list cannot be null or empty");
+
+        if (acbrs == null || acbrs.isEmpty()) {
+            logger.debug("empty or null acbr list. Returning amount of zero");
+//            throw new IllegalArgumentException("AppliedCustomerBillingRate list cannot be null or empty");
+            return new Money().value(0f);
         }
     	
     	float sum = 0.0f;
@@ -366,7 +369,7 @@ public class BillsService {
         
 		List<AppliedCustomerBillingRate> acbrList = RevenueBillingMapper.toACBRList(rb, subscription);
         if (acbrList.isEmpty()) {
-            throw new IllegalStateException("Failed to map RevenueBill and Subscription to AppliedCustomerBillingRate list");
+//            throw new IllegalStateException("Failed to map RevenueBill and Subscription to AppliedCustomerBillingRate list");
         }
         
         for (AppliedCustomerBillingRate acbr : acbrList) {
@@ -374,19 +377,19 @@ public class BillsService {
 		}
         
         acbrList = this.setBillingAccountRef(acbrList, subscription.getId());
-        if (acbrList == null || acbrList.isEmpty()) {
-            throw new IllegalStateException("Failed to set billing account reference on AppliedCustomerBillingRate list");
-        }
+//        if (acbrList == null || acbrList.isEmpty()) {
+//            throw new IllegalStateException("Failed to set billing account reference on AppliedCustomerBillingRate list");
+//        }
         
         acbrList = this.setCustomerBillRef(acbrList, rb);
-        if (acbrList == null || acbrList.isEmpty()) {
-            throw new IllegalStateException("Failed to set customer bill reference on AppliedCustomerBillingRate list");
-        }
+//        if (acbrList == null || acbrList.isEmpty()) {
+//            throw new IllegalStateException("Failed to set customer bill reference on AppliedCustomerBillingRate list");
+//        }
         
         acbrList = this.applyTaxes(acbrList);
-        if (acbrList == null) {
-            throw new IllegalStateException("Failed to apply taxes to AppliedCustomerBillingRate list");
-        }
+//        if (acbrList == null) {
+//            throw new IllegalStateException("Failed to apply taxes to AppliedCustomerBillingRate list");
+//        }
         
         return acbrList;
     }
@@ -398,12 +401,19 @@ public class BillsService {
  	*/
     private List<AppliedCustomerBillingRate> applyTaxes(List<AppliedCustomerBillingRate> acbrs) {
 
-        // first, retrieve the product
-        String productId = acbrs.get(0).getProduct().getId();
-        Product product = tmfDataRetriever.getProductById(productId, null);
+        if(acbrs==null || acbrs.isEmpty()) {
+            logger.info("no acbrs received, no taxes to apply");
+            return acbrs;
+        }
+        else {
+            // first, retrieve the product
+            String productId = acbrs.get(0).getProduct().getId();
+            Product product = tmfDataRetriever.getProductById(productId, null);
 
-        // invoke the invoicing servi
-        return this.invoicingService.applyTaxees(product, acbrs);
+            // invoke the invoicing servi
+            return this.invoicingService.applyTaxees(product, acbrs);
+        }
+
     }
     
     /** Set Customer Bill Ref for each object in a List of Applied Customer Billing Rate
