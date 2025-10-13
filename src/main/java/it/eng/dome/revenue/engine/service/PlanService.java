@@ -25,13 +25,16 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 
+import it.eng.dome.brokerage.api.CategoryApis;
 import it.eng.dome.revenue.engine.model.Plan;
 import it.eng.dome.revenue.engine.model.PlanResolver;
 import it.eng.dome.revenue.engine.model.Subscription;
 import it.eng.dome.revenue.engine.service.cached.TmfCachedDataRetriever;
 import it.eng.dome.revenue.engine.service.validation.PlanValidationReport;
 import it.eng.dome.revenue.engine.service.validation.PlanValidator;
+import it.eng.dome.revenue.engine.tmf.TmfApiFactory;
 import it.eng.dome.revenue.engine.utils.IdUtils;
+import it.eng.dome.tmforum.tmf620.v4.model.Category;
 import it.eng.dome.tmforum.tmf620.v4.model.ProductOffering;
 import it.eng.dome.tmforum.tmf620.v4.model.ProductOfferingPrice;
 import it.eng.dome.tmforum.tmf620.v4.model.ProductOfferingPriceRefOrValue;
@@ -54,9 +57,12 @@ public class PlanService implements InitializingBean {
     
     @Autowired
     private TmfCachedDataRetriever tmfDataRetriever;
-
+    
+    @Autowired
+    private TmfApiFactory tmfApiFactory;
+    
     private final ObjectMapper mapper;
-
+       
     public void afterPropertiesSet() throws Exception {}
 
     /**
@@ -72,9 +78,19 @@ public class PlanService implements InitializingBean {
     // retrieve all plans by offerings
     public List<Plan> getAllPlans() {
         logger.info("Fetching all plans...");
-    	// FIXME: when the RP bug is fixed, filter only plans connected to DO.
+        
+        CategoryApis categoryApis = new CategoryApis(tmfApiFactory.getTMF620ProductCatalogManagementApiClient());
+        List<Category> listCategory = new ArrayList<>();
+
+		listCategory = categoryApis.getAllCategory(null, null);
+        
         Map<String, String> filter = new HashMap<String, String>();
-//        filter.put("relatedParty", DOME_OPERATOR_ID);
+        for (Category c : listCategory) {
+            if (c.getName() != null && c.getName().equalsIgnoreCase("DOME OPERATOR Plan")) {
+                filter.put("category.id", c.getId());
+            }
+        }
+        
         List<ProductOffering> pos = tmfDataRetriever.getAllProductOfferings(null, filter);
         
         List<Plan> plans = new ArrayList<>();
