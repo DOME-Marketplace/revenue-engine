@@ -51,7 +51,7 @@
                 <button onclick="fetchAndShowBills(this.parentNode);">bills</button>
                 <button onclick="inspectBillCycles(this.parentNode);" disabled>bill cycles</button>
                 <button onclick="fetchAndShowCustomerBills(this.parentNode);">CBs</button>
-                <button onclick="fetchAndShowARaw(this.parentNode);">raw</button>
+                <button onclick="fetchAndShowRaw(this.parentNode);">raw</button>
             </div>
 
             <div name="generic_template" class="generic">
@@ -66,7 +66,7 @@
                 <div name="period"></div>
                 <div name="revenueItems"></div>
                 <hr/>
-                <button onclick="fetchAndShowARaw(this.parentNode);" disabled>raw</button>
+                <button onclick="fetchAndShowRaw(this.parentNode);" disabled>raw</button>
             </div>
 
             <div name="bill_short_summary_template" class="bill">
@@ -77,7 +77,7 @@
                 <hr/>
                 <button onclick="fetchAndShowCustomerBill(this.parentNode);">CB</button>
                 <button onclick="fetchAndShowACBRs(this.parentNode);" disabled>ACBRs</button>
-                <button onclick="fetchAndShowARaw(this.parentNode);">raw</button>
+                <button onclick="fetchAndShowRaw(this.parentNode);">raw</button>
             </div>
 
             <div name="cb_summary_template" class="cb">
@@ -92,8 +92,20 @@
                 <div name="taxItem"></div>
                 <hr/>
                 <button onclick="fetchAndShowACBRs(this.parentNode);">show ACBRs</button>
-                <button onclick="fetchAndShowARaw(this.parentNode);">raw</button>
+                <button onclick="fetchAndShowRaw(this.parentNode);">raw</button>
             </div>
+
+            <div name="acbr_short_summary_template" class="acbr">
+                <h3>Applied Customer Billing Rate</h3>
+                <i name="id" style="font-size:8pt"></i><br/>
+                <b name="name"></b><br/>
+                <div name="periodCoverage" use_template="period"></div>
+                <div name="appliedTax" use_template="taxItem"></div>
+                With taxes:
+                <div name="taxExcludedAmount" use_template="amountDue"></div>
+                Without taxes:
+                <div name="taxIncludedAmount" use_template="amountDue"></div>
+            </div>            
 
             <div name="taxItem_item_template">
                 Catetory: <span name="taxCategory"></span>

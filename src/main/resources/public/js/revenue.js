@@ -20,10 +20,19 @@ function getEndpointFor(resourceType, resourceId) {
         return baseURL + "subscriptions/"+resourceId+"/bills";        
     else if("bill"==resourceType)
         return baseURL + "bills/"+resourceId;        
-    else if("customerBill"==resourceType)
+    else if("customerBill"==resourceType) {
+        resourceId = resourceId.replace("customerbill", "revenuebill");
         return baseURL + "bills/"+resourceId+"/cb";        
-    else if("acbrs"==resourceType)
-        return baseURL + "bills/"+resourceId+"/acbr";        
+    }
+    else if("acbrs"==resourceType) {
+        resourceId = resourceId.replace("customerbill", "revenuebill");
+        return baseURL + "bills/"+resourceId+"/acbr";
+    }
+    else if("acbr"==resourceType) {
+        console.log("ERROR: retrieval of a single ACBR not yet supported. Showing all ACBRs for the corresponding CB");
+        resourceId = resourceId.replace("customerbill", "revenuebill");
+        return baseURL + "bills/"+resourceId+"/acbr";
+    }
     else
         console.log("ERROR: unable to return an endpoint for " + resourceType + ":" + resourceId);
     return null;
@@ -77,7 +86,7 @@ function fetchAndShowACBRs(clickedDOM) {
     genericFetchAndShow("acbrs", clickedDOM.getAttribute("objectId"), showACBRs, clickedDOM);
 }
 
-function fetchAndShowARaw(clickedDOM) {
+function fetchAndShowRaw(clickedDOM) {
     showRaw(clickedDOM.getAttribute("objectId"), clickedDOM);
 }
 
@@ -137,8 +146,9 @@ function showCustomerBill(customerBill, clickedDOM) {
 function showACBRs(acbrs, clickedDOM) {
     getLanes().cleanAfter(clickedDOM);
     getLanes().pushLane("some title");
-    for(var acbr of acbrs)
-        getLanes().addToCurrentLane(getNodeFor("generic_template", acbr));
+    for(var acbr of acbrs) {
+        getLanes().addToCurrentLane(getNodeFor("acbr_short_summary", acbr));
+    }
     if(acbrs.length==0)
         getLanes().addToCurrentLane(getNodeForMessage("No acbrs found"));
 }
