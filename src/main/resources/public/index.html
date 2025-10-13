@@ -1,0 +1,194 @@
+<html>
+    <head>
+        <title>Revenue Sharing Dev Dashboards</title>
+        <link rel="stylesheet" type="text/css" href="css/revenue.css">
+        <script type="text/javascript" src="js/revenue.js"></script>
+
+    </head>
+    
+    <body onload="getLanes()">
+
+        <div id="lanesContainer"></div>
+
+        <!-- TEMPLATES -->
+        <div id="templates" style="display:none">
+
+            <div name="plan_summary_template" class="plan">
+                <b name="name"></b> - <i><span name="description"></span></i><br>
+                <i name="id" style="font-size:8pt"></i><br/>
+                <div name="price"></div>
+                Status: <span name="lifecycleStatus"></span>
+                <div name="billCycleSpecification"></div>
+                <div name="agreements"></div>
+                <div name="validFor"></div>
+                <button onclick="fetchAndShowSubscriptions(this.parentNode);">subscribers</button>
+            </div>
+
+            <div name="plan_short_summary_template" class="plan">
+                <h3>Plan</h3>
+                <b name="name"></b><br/>
+                <i name="id" style="font-size:8pt"></i>
+                <div></div>
+                Status: <span name="lifecycleStatus"></span>
+                <span name="validFor"></span>
+                <hr/>
+                <button onclick="fetchAndShowSubscriptions(this.parentNode);">subscribers</button>
+                <button onclick="fetchAndShowPlan(this.parentNode);">details</button>
+                <button onclick="fetchAndShowRaw(this.parentNode);" disabled>raw</button>
+            </div>
+
+            <div name="subscription_short_summary_template" class="subscription">
+                <h3>Subscription</h3>
+                <b name="name"></b><br/>
+                <i name="id" style="font-size:8pt"></i>
+                <div></div>
+                Status: <span name="status"></span>
+                <div>
+                Subscribed on: <b name="startDate"></b>
+                </div>
+                <hr/>
+                <button onclick="fetchAndShowStatements(this.parentNode);">statements</button>
+                <button onclick="fetchAndShowBills(this.parentNode);">bills</button>
+                <button onclick="inspectBillCycles(this.parentNode);" disabled>bill cycles</button>
+                <button onclick="fetchAndShowCustomerBills(this.parentNode);">CBs</button>
+                <button onclick="fetchAndShowARaw(this.parentNode);">raw</button>
+            </div>
+
+            <div name="generic_template" class="generic">
+                <h3>Generic viewer<h3>
+                <span name="name"></span><br/>
+                <span name="description"></span></span><br/>
+                <span name="id"></span></span>
+            </div>
+
+            <div name="statement_short_summary_template" class="statement">
+                <h3>Revenue Statement</h3>
+                <div name="period"></div>
+                <div name="revenueItems"></div>
+                <hr/>
+                <button onclick="fetchAndShowARaw(this.parentNode);" disabled>raw</button>
+            </div>
+
+            <div name="bill_short_summary_template" class="bill">
+                <h3>Revenue Bill</h3>
+                <i name="id" style="font-size:8pt"></i>
+                <div name="period"></div>
+                <div name="revenueItems"></div>
+                <hr/>
+                <button onclick="fetchAndShowCustomerBill(this.parentNode);">CB</button>
+                <button onclick="fetchAndShowACBRs(this.parentNode);" disabled>ACBRs</button>
+                <button onclick="fetchAndShowARaw(this.parentNode);">raw</button>
+            </div>
+
+            <div name="cb_summary_template" class="cb">
+                <h3>Customer Bill</h3>
+                <i name="id" style="font-size:8pt"></i>
+                <div name="period"></div>
+                <div>Bill date: <b name="billDate"></b></div>
+                <div>Payment due date: <b name="paymentDueDate"></b></div>
+                <div>Next bill date: <b name="nextBillDate"></b></div>
+                <div name="amountDue"></div>
+                <div name="remainingAmount"></div>
+                <div name="taxItem"></div>
+                <hr/>
+                <button onclick="fetchAndShowACBRs(this.parentNode);">show ACBRs</button>
+                <button onclick="fetchAndShowARaw(this.parentNode);">raw</button>
+            </div>
+
+            <div name="taxItem_item_template">
+                Catetory: <span name="taxCategory"></span>
+                <div name="taxAmount"></div>
+            </div>            
+
+            <div name="taxItem_template">        
+                <b>Taxes</b>
+                <ol name="content"></ol>
+            </div>
+
+            <div name="amountDue_template">        
+                Total amount: <b name="value"></b> €
+            </div>
+
+            <div name="remainingAmount_template">
+                Remaining amount: <b name="value"></b> €
+            </div>
+
+            <div name="taxAmount_template">        
+                Tax amount: <b name="value"></b> €
+            </div>
+
+            <div name="price_template">        
+                <u>This plan has a very complex price</u>
+            </div>
+
+            <div name="period_template" style="font-size:0.8em; padding:0">
+                <span>From <span name="startDateTime"></span></span>
+                <span>To <span name="endDateTime"></span></span>
+            </div>
+
+            <div name="validFor_template">        
+                Can be subscribed between
+                <b name="startDateTime"></b>
+                and
+                <b name="endDateTime"></b>
+            </div>
+
+            <div name="health_template">        
+                Status: <span name="status"></span>
+            </div>
+
+            <div name="agreements_template">
+                <b>Agreements list</b>
+                <ol name="content"></ol>
+            </div>            
+
+            <li name="agreements_item_template">
+                <span name="text"></span>
+            </li>            
+
+            <div name="revenueItems_template">
+                <b>Revenue Items</b>
+                <div name="content"></div>
+            </div>            
+
+            <!-- this is the topmost element -->
+            <div name="revenueItems_item_template" style="font-size:0.8em;">
+                
+                <div style="display:flex;">
+                    <span style="width:90%; margin-right:auto;" class="indent">
+                        [<span name="chargeTime"></span>]
+                        <span name="name"></span>
+                    </span>
+                    <span style="font-weight:bold; white-space:nowrap"><span name="overallValue"></span> €</span>
+                </div>
+                <div name="items" style="background-color:rgba(0, 0, 0, 0.05);" class="revenueItem"></div>
+            </div>            
+
+            <div name="items_item_template">
+                <div style="display:flex;">
+                    <span style="width:90%; margin-right:auto;" class="indent">&bull; <span name="name"></span></span>
+                    <span style="white-space:nowrap"><span name="overallValue"></span> €</span>
+                </div>
+                <div style="background-color:rgba(0, 0, 0, 0.05); opacity:0.8" class="revenueItem">
+                    <div style="display:flex;">
+                        <span style="margin-right:auto">&bull; Base value:</span> 
+                        <span><span name="value"></span> €</span>
+                    </div>
+                    <div name="items"></div>                
+                </div>
+            </div>            
+
+            <div name="billCycleSpecification_template">
+                <b>Billing schedule:</b>
+                billed every 
+                <span name="billingPeriodLength"></span> <span name="billingPeriodType"></span> 
+                on the <span name="billingPeriodEnd"></span>.
+                With a billing shift of <span name="billingDateShift"></span> days, 
+                and a payment due date after <span name="paymentDueDateOffset"></span> days.
+            </div>
+
+        </div>
+    
+    </body>
+
+</html>

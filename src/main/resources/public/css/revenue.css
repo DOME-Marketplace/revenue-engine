@@ -1,0 +1,117 @@
+body {
+    font-family:arial;
+    font-size:10pt;
+    padding:0;
+    margin:0;
+    background:#f0f0f0;
+}
+
+div {
+    padding:0pt 0pt;
+    font-size:10pt;
+}
+
+h3 {
+    padding:0pt;
+    margin:0pt;
+    padding-bottom:10pt;
+}
+
+td {
+    vertical-align:top;
+}
+
+.indent {
+    text-indent:-10pt;
+    padding-left:10pt;
+}
+
+div.plan, div.generic, div.message, div.subscription, div.statement, div.bill, div.cb, div.acbr {
+    padding:10pt;
+    margin-bottom:10pt;
+}
+
+div.plan {
+    border:2px solid purple;
+    background:rgba(255, 0, 255, 0.03);
+    --box-shadow-color: rgba(255, 0, 255, 0.3);
+}
+
+div.generic {
+    border:2px solid white;
+    background:rgba(255,255,255,0.03);
+    --box-shadow-color: rgba(255,255,255,0.03);
+}
+
+div.message {
+    border:2px solid gray;
+    text-align:center;
+}
+
+div.subscription {
+    border:2px solid green;
+    background:rgba(0,255,0,0.03);
+    --box-shadow-color: rgba(0, 255, 0, 0.3);
+}
+
+div.statement {
+    border:2px solid blue;
+    background:rgba(0,0,255,0.03);
+    --box-shadow-color: rgba(0,0,255,0.3);
+}
+
+div.bill {
+    border:2px solid red;
+    background:rgba(255,0,0,0.03);
+    --box-shadow-color:rgba(255,0,0,0.3);
+}
+
+div.cb {
+    border:2px solid orange;
+    background:rgba(255,128,0,0.03);
+     --box-shadow-color:rgba(255,128,0,0.3);
+}
+
+div.revenueItem {
+    padding:2pt 0pt 2pt 10pt;
+    margin:2pt 0pt;
+}
+
+div.plan:hover,
+div.subscription:hover,
+div.cb:hover,
+div.bill:hover,
+div.statement:hover {
+    box-shadow: 0px 0px 5px 5px var(--box-shadow-color);
+}
+
+button.menuButton {
+    width:100%;
+    text-align: left;
+    background-color:rgb(255, 255, 255, 0.5);
+    border:0;
+    margin:1pt;
+}
+
+button.menuButton:hover {
+    background-color:rgb(0, 0, 255, 0.1);
+    cursor:pointer;
+}
+
+button.menuButton:disabled {
+    background-color:transparent;
+    color:#808080;
+}
+
+td.lane {
+    max-width:250pt;
+}
+
+td.menu {
+    max-width:150pt;
+}
+
+hr {
+    border:0;
+    border-top:1px solid lightgray;
+}
