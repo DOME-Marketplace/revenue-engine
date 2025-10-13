@@ -151,7 +151,11 @@ public class BillsService {
         
 		// Next bill date and payment due date
 		Subscription sub = subscriptionService.getSubscriptionByProductId(rb.getSubscriptionId());
-
+        /*
+		Plan plan = planService.getPlanById(sub.getPlan().getId());
+		PlanResolver planResolver = new PlanResolver(sub);
+		Plan resolvedPlan = planResolver.resolve(plan);
+        */
         Plan resolvedPlan = planService.getResolvedPlanById(sub.getPlan().getId(), sub);
 		sub.setPlan(resolvedPlan);
 		
@@ -172,21 +176,19 @@ public class BillsService {
 		
 		//apply tax
 		List<AppliedCustomerBillingRate> acbrs = this.getACBRsByRevenueBill(rb);
-
-		List<TaxItem> taxItems = new ArrayList<>();
-		if (!acbrs.isEmpty()) {
-		    taxItems = this.getTaxItemListFromACBRs(acbrs);
-		}
-
-		cb.setTaxItem(taxItems);
-
-		Money taxIncludedTaxes = this.computeTaxIncludedAmount(acbrs);
-		cb.setTaxIncludedAmount(taxIncludedTaxes);
+	
+		List<TaxItem> taxItems = this.getTaxItemListFromACBRs(acbrs);
+    	
+    	cb.setTaxItem(taxItems);
+        
+    	//amounts
+    	Money taxIncludedTaxes = this.computeTaxIncludedAmount(acbrs);
+        cb.setTaxIncludedAmount(taxIncludedTaxes);
 		cb.setAmountDue(taxIncludedTaxes);
 		cb.setRemainingAmount(taxIncludedTaxes);
 		
-		return cb;
-
+        //check null condition
+        return cb;
     }
     
     /**
@@ -347,40 +349,50 @@ public class BillsService {
      * @throws IllegalStateException if required data (Subscription, Buyer party, etc.) cannot be retrieved
      */
     private List<AppliedCustomerBillingRate> getACBRsByRevenueBill(RevenueBill rb) {
-        if (rb == null) {
+    	if (rb == null) {
             throw new IllegalArgumentException("RevenueBill cannot be null");
         }
         if (rb.getRelatedParties() == null || rb.getRelatedParties().isEmpty()) {
             throw new IllegalArgumentException("Missing related party information in RevenueBill");
         }
-
+        
         Subscription subscription = subscriptionService.getSubscriptionByProductId(rb.getSubscriptionId());
+        
         if (subscription == null) {
             throw new IllegalStateException("Subscription not found for subscriptionId: " + rb.getSubscriptionId());
         }
-
-        Plan resolvedPlan = planService.getResolvedPlanById(subscription.getPlan().getId(), subscription);
-        subscription.setPlan(resolvedPlan);
-
-        List<AppliedCustomerBillingRate> acbrList = RevenueBillingMapper.toACBRList(rb, subscription);
-
-        if (acbrList == null) {
-            acbrList = new ArrayList<>();
+        
+		Plan plan = planService.getPlanById(subscription.getPlan().getId());
+		PlanResolver planResolver = new PlanResolver(subscription);
+		Plan resolvedPlan = planResolver.resolve(plan);
+		subscription.setPlan(resolvedPlan);
+        
+		List<AppliedCustomerBillingRate> acbrList = RevenueBillingMapper.toACBRList(rb, subscription);
+        if (acbrList.isEmpty()) {
+//            throw new IllegalStateException("Failed to map RevenueBill and Subscription to AppliedCustomerBillingRate list");
         }
-
-        if (!acbrList.isEmpty()) {
-            for (AppliedCustomerBillingRate acbr : acbrList) {
-                acbr.setRelatedParty(rb.getRelatedParties());
-            }
-
-            acbrList = setBillingAccountRef(acbrList, subscription.getId());
-            acbrList = setCustomerBillRef(acbrList, rb);
-            acbrList = applyTaxes(acbrList);
-        }
-
+        
+        for (AppliedCustomerBillingRate acbr : acbrList) {
+			acbr.setRelatedParty(rb.getRelatedParties());
+		}
+        
+        acbrList = this.setBillingAccountRef(acbrList, subscription.getId());
+//        if (acbrList == null || acbrList.isEmpty()) {
+//            throw new IllegalStateException("Failed to set billing account reference on AppliedCustomerBillingRate list");
+//        }
+        
+        acbrList = this.setCustomerBillRef(acbrList, rb);
+//        if (acbrList == null || acbrList.isEmpty()) {
+//            throw new IllegalStateException("Failed to set customer bill reference on AppliedCustomerBillingRate list");
+//        }
+        
+        acbrList = this.applyTaxes(acbrList);
+//        if (acbrList == null) {
+//            throw new IllegalStateException("Failed to apply taxes to AppliedCustomerBillingRate list");
+//        }
+        
         return acbrList;
     }
-
 
     /** Apply Taxes on a list of ACBR
  	 * 
