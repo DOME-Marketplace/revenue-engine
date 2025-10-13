@@ -26,61 +26,11 @@ td {
     padding-left:10pt;
 }
 
-div.plan, div.generic, div.message, div.subscription, div.statement, div.bill, div.cb, div.acbr {
+div.plan, div.generic, div.message, div.subscription, div.statement, div.bill, div.cb, div.acbr, div.organization {
     padding:10pt;
+    margin:2pt;
     margin-bottom:10pt;
-}
-
-div.plan {
-    border:2px solid purple;
-    background:rgba(255, 0, 255, 0.03);
-    --box-shadow-color: rgba(255, 0, 255, 0.3);
-}
-
-div.generic {
-    border:2px solid white;
-    background:rgba(255,255,255,0.03);
-    --box-shadow-color: rgba(255,255,255,0.03);
-}
-
-div.message {
-    border:2px solid gray;
-    text-align:center;
-}
-
-div.subscription {
-    border:2px solid green;
-    background:rgba(0,255,0,0.03);
-    --box-shadow-color: rgba(0, 255, 0, 0.3);
-}
-
-div.statement {
-    border:2px solid blue;
-    background:rgba(0,0,255,0.03);
-    --box-shadow-color: rgba(0,0,255,0.3);
-}
-
-div.bill {
-    border:2px solid red;
-    background:rgba(255,0,0,0.03);
-    --box-shadow-color:rgba(255,0,0,0.3);
-}
-
-div.cb {
-    border:2px solid orange;
-    background:rgba(255,128,0,0.03);
-    --box-shadow-color:rgba(255,128,0,0.3);
-}
-
-div.acbr {
-    border:2px solid brown;
-    background:rgba(255, 220, 220, 0.3);
-    --box-shadow-color:rgba(255, 20, 20, 0.3);
-}
-
-div.revenueItem {
-    padding:2pt 0pt 2pt 10pt;
-    margin:2pt 0pt;
+    outline:2pt solid gray;
 }
 
 div.plan:hover,
@@ -88,9 +38,53 @@ div.subscription:hover,
 div.cb:hover,
 div.bill:hover,
 div.acbr:hover,
+div.organization:hover,
 div.statement:hover {
-    box-shadow: 0px 0px 5px 5px var(--box-shadow-color);
+    outline-width:3pt;
 }
+
+div.organization {
+    outline-color:blue;
+}
+
+div.plan {
+    outline-color:purple;
+}
+
+div.generic {
+    outline-color:white;
+}
+
+div.message {
+    outline-color:gray;
+}
+
+div.subscription {
+    outline-color: green;
+}
+
+div.statement {
+    outline-color:blue;
+}
+
+div.bill {
+    outline-color:red;
+}
+
+div.cb {
+    outline-color:orange;
+}
+
+div.acbr {
+    outline-color:brown;
+}
+
+div.revenueItem {
+    padding:2pt 0pt 2pt 10pt;
+    margin:2pt 0pt;
+}
+
+
 
 button.menuButton {
     width:100%;

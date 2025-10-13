@@ -21,18 +21,34 @@ function getEndpointFor(resourceType, resourceId) {
     else if("bill"==resourceType)
         return baseURL + "bills/"+resourceId;        
     else if("customerBill"==resourceType) {
-        resourceId = resourceId.replace("customerbill", "revenuebill");
-        return baseURL + "bills/"+resourceId+"/cb";        
+        // it can be a volatile revenue sharing bill or persisted bill (retrieve from tmf)
+        if(resourceId.indexOf("product")!=-1) {
+            resourceId = resourceId.replace("customerbill", "revenuebill");
+            return baseURL + "bills/"+resourceId+"/cb";        
+        }
+        else {
+            return baseURL + "dev/customerbills/"+resourceId;
+        }
     }
     else if("acbrs"==resourceType) {
-        resourceId = resourceId.replace("customerbill", "revenuebill");
-        return baseURL + "bills/"+resourceId+"/acbr";
+        // it can be a volatile revenue sharing acbr or persisted acbr (retrieve from tmf)
+        if(resourceId.indexOf("product")!=-1) {
+            resourceId = resourceId.replace("customerbill", "revenuebill");
+            return baseURL + "bills/"+resourceId+"/acbr";        
+        }
+        else {
+            return baseURL + "dev/customerbills/"+resourceId+"/acbr";
+        }
     }
     else if("acbr"==resourceType) {
         console.log("ERROR: retrieval of a single ACBR not yet supported. Showing all ACBRs for the corresponding CB");
         resourceId = resourceId.replace("customerbill", "revenuebill");
         return baseURL + "bills/"+resourceId+"/acbr";
     }
+    else if("organizations"==resourceType)
+        return baseURL + "dev/organizations";
+    else if("organizationTransactions"==resourceType)
+        return baseURL + "dev/organizations/" + resourceId + "/customerbills";
     else
         console.log("ERROR: unable to return an endpoint for " + resourceType + ":" + resourceId);
     return null;
@@ -40,6 +56,7 @@ function getEndpointFor(resourceType, resourceId) {
 
 function genericFetchAndShow(resourceType, resourceId, viewCallback, clickedDOM) {
     let endpoint = getEndpointFor(resourceType, resourceId);
+    console.log(viewCallback);
     fetch(endpoint)
         .then(response => response.json())
         .then(data => {
@@ -52,6 +69,10 @@ function genericFetchAndShow(resourceType, resourceId, viewCallback, clickedDOM)
 
 function fetchAndShowPlans(clickedDOM) {
     genericFetchAndShow("plans", null, showPlans, clickedDOM)
+}
+
+function fetchAndShowOrganizations(clickedDOM) {
+    genericFetchAndShow("organizations", null, showOrganizations, clickedDOM)
 }
 
 function fetchAndShowPlan(clickedDOM) {
@@ -86,6 +107,10 @@ function fetchAndShowACBRs(clickedDOM) {
     genericFetchAndShow("acbrs", clickedDOM.getAttribute("objectId"), showACBRs, clickedDOM);
 }
 
+function fetchAndShowTransactions(clickedDOM) {
+    genericFetchAndShow("organizationTransactions", clickedDOM.getAttribute("objectId"), showCustomerBills, clickedDOM);
+}
+
 function fetchAndShowRaw(clickedDOM) {
     showRaw(clickedDOM.getAttribute("objectId"), clickedDOM);
 }
@@ -102,6 +127,13 @@ function showPlans(plans, clickedDOM) {
     getLanes().pushLane("some title");
     for(var plan of plans)
         getLanes().addToCurrentLane(getNodeFor("plan_short_summary", plan));
+}
+
+function showOrganizations(organizations, clickedDOM) {
+    getLanes().cleanAfter(clickedDOM);
+    getLanes().pushLane("some title");
+    for(var org of organizations)
+        getLanes().addToCurrentLane(getNodeFor("organization", org));
 }
 
 function showPlan(plan, clickedDOM) {
@@ -135,6 +167,15 @@ function showBills(bills, clickedDOM) {
         getLanes().addToCurrentLane(getNodeFor("bill_short_summary", bill));
     if(bills.length==0)
         getLanes().addToCurrentLane(getNodeForMessage("No bills found"));
+}
+
+function showCustomerBills(customerBills, clickedDOM) {
+    getLanes().cleanAfter(clickedDOM);
+    getLanes().pushLane("some title");
+    for(var cb of customerBills)
+        getLanes().addToCurrentLane(getNodeFor("cb_summary", cb));
+    if(customerBills.length==0)
+        getLanes().addToCurrentLane(getNodeForMessage("No customer bills found"));
 }
 
 function showCustomerBill(customerBill, clickedDOM) {
@@ -175,6 +216,9 @@ function showRaw(id, _unused_clickedDOM) {
     }
     else if(id.indexOf("urn:ngsi-ld:revenuebill:urn:ngsi-ld:product")!=-1) {
         url = getEndpointFor("bill", id);
+    }
+    else if(id.indexOf("urn:ngsi-ld:customer-bill")!=-1) {
+        url = getEndpointFor("customerBill", id);
     }
     else if(id.indexOf("urn:ngsi-ld:product")!=-1) {
         url = getEndpointFor("subscription", id);
@@ -288,6 +332,9 @@ function getNodeForObject(key, value) {
 
     // now, for each value.key which is also in the template, create a node and add it
     for(p in value) {
+        // if the property has no value, then skip it
+        if(value[p]==null)
+            continue;
         // check for a placeholder in the template
         let placeholder = outNode.querySelector('[name="'+p+'"]');
         if(placeholder!=null) {
@@ -315,6 +362,7 @@ function getNodeForObject(key, value) {
 }
 
 function getNodeFor(key, value) {
+    console.log("getting node for " + key + " " + value);
     if(Date.parse(value) && value.indexOf && value.indexOf("T")!=-1) {
         return getNodeForDate(key, value);
     }
@@ -356,8 +404,10 @@ class Lanes {
         button.innerHTML = label;
         if(callback)
             button.onclick = callback;
-        else
+        else {
             button.setAttribute("disabled", true);
+            button.style.display="none";
+        }
         this.menuCol.appendChild(button);
         return button;
     }
@@ -463,19 +513,19 @@ function getLanes() {
         lanes.addMenuEntry("Subscriptions");
 
         lanes.addMenuGroup("TMF 632 Party");
-        lanes.addMenuEntry("Organizations");
+        lanes.addMenuEntry("Organizations", fetchAndShowOrganizations);
         lanes.addMenuEntry("Individuals");
-        lanes.addMenuGroup("TMF 620 Catalog");
+//        lanes.addMenuGroup("TMF 620 Catalog");
         lanes.addMenuEntry("Service Specs");
         lanes.addMenuEntry("Resource Specs");
         lanes.addMenuEntry("Product Specs");
-        lanes.addMenuSeparator();
+//        lanes.addMenuSeparator();
         lanes.addMenuEntry("Product offerings");
         lanes.addMenuEntry("Product offering prices");
-        lanes.addMenuGroup("TMF 622 Order");
-        lanes.addMenuEntry("...");
-        lanes.addMenuGroup("TMF 637 Inventory");
-        lanes.addMenuEntry("...");
+//        lanes.addMenuGroup("TMF 622 Order");
+//        lanes.addMenuEntry("...");
+//        lanes.addMenuGroup("TMF 637 Inventory");
+//        lanes.addMenuEntry("...");
     }
 
     return lanes;

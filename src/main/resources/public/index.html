@@ -49,7 +49,6 @@
                 <hr/>
                 <button onclick="fetchAndShowStatements(this.parentNode);">statements</button>
                 <button onclick="fetchAndShowBills(this.parentNode);">bills</button>
-                <button onclick="inspectBillCycles(this.parentNode);" disabled>bill cycles</button>
                 <button onclick="fetchAndShowCustomerBills(this.parentNode);">CBs</button>
                 <button onclick="fetchAndShowRaw(this.parentNode);">raw</button>
             </div>
@@ -65,8 +64,6 @@
                 <h3>Revenue Statement</h3>
                 <div name="period"></div>
                 <div name="revenueItems"></div>
-                <hr/>
-                <button onclick="fetchAndShowRaw(this.parentNode);" disabled>raw</button>
             </div>
 
             <div name="bill_short_summary_template" class="bill">
@@ -197,6 +194,14 @@
                 on the <span name="billingPeriodEnd"></span>.
                 With a billing shift of <span name="billingDateShift"></span> days, 
                 and a payment due date after <span name="paymentDueDateOffset"></span> days.
+            </div>
+
+            <div name="organization_template" class="organization">
+                <b name="tradingName"></b><br/>
+                <i name="id" style="font-size:8pt"></i><br/>
+                <hr/>
+                <button onclick="fetchAndShowTransactions(this.parentNode);">transactions (as seller)</button>
+                <button onclick="fetchAndShowRaw(this.parentNode);" disabled>raw</button>
             </div>
 
         </div>
