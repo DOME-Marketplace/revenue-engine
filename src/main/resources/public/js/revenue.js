@@ -70,7 +70,7 @@ function fetchAndShowCustomerBills(clickedDOM) {
 }
 
 function fetchAndShowCustomerBill(clickedDOM) {
-    genericFetchAndShow("bill", clickedDOM.getAttribute("objectId"), showCustomerBill, clickedDOM);
+    genericFetchAndShow("customerBill", clickedDOM.getAttribute("objectId"), showCustomerBill, clickedDOM);
 }
 
 function fetchAndShowACBRs(clickedDOM) {
