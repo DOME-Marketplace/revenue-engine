@@ -256,21 +256,52 @@ public abstract class AbstractCalculator implements Calculator {
         return true;
     }
 
-	private boolean checkZeroIt(TimePeriod timePeriod) {
 
-		// TODO: support for zero (Boolean)
+ 	private boolean checkZeroIt(TimePeriod timePeriod) {
+ 		if (Boolean.TRUE.equals(item.getZero())) {
+ 			return true;
+ 		}
 
-		// TODO: support for zeroPeriod (String)
+ 		if (item.getZeroPeriod() != null && !item.getZeroPeriod().isEmpty()) {
+ 			SubscriptionTimeHelper sth = new SubscriptionTimeHelper(this.getSubscription());
+ 			TimePeriod zeroPeriod = sth.getCustomPeriod(null, (Price) this.item, item.getZeroPeriod());
+ 			if (zeroPeriod != null &&
+ 				!timePeriod.getEndDateTime().isBefore(zeroPeriod.getStartDateTime()) &&
+ 				!timePeriod.getStartDateTime().isAfter(zeroPeriod.getEndDateTime())) {
+ 				return true;
+ 			}
+ 		}
 
-		// TODO: support for zeroBetween (TimePeriod)
+ 		if (item.getZeroBetween() != null) {
+ 			TimePeriod zeroBetween = item.getZeroBetween();
+ 			if (
+ 				!timePeriod.getEndDateTime().isBefore(zeroBetween.getStartDateTime()) &&
+ 				!timePeriod.getStartDateTime().isAfter(zeroBetween.getEndDateTime())
+ 			) {
+ 				return true;
+ 			}
+ 		}
 
-		// TODO: support for computePeriod (String)
+ 		if (item.getComputePeriod() != null && !item.getComputePeriod().isEmpty()) {
+ 			SubscriptionTimeHelper sth = new SubscriptionTimeHelper(this.getSubscription());
+ 			TimePeriod computePeriod = sth.getCustomPeriod(null, (Price) this.item, item.getComputePeriod());
+ 			if (computePeriod != null &&
+ 				(timePeriod.getStartDateTime().isBefore(computePeriod.getStartDateTime())
+ 				|| timePeriod.getEndDateTime().isAfter(computePeriod.getEndDateTime()))) {
+ 				return true;
+ 			}
+ 		}
 
-		// TODO: support for computeBetween (TimePeriod)
+ 		if (item.getComputeBetween() != null) {
+ 			TimePeriod computeBetween = item.getComputeBetween();
+ 			if (timePeriod.getStartDateTime().isBefore(computeBetween.getStartDateTime())
+ 				|| timePeriod.getEndDateTime().isAfter(computeBetween.getEndDateTime())) {
+ 				return true;
+ 			}
+ 		}
 
-		return false;
-	}
-
+ 		return false;
+ 	}
 
 	/**
 	 * Make sure that properties for applicability are set correctly and that conditions are satisfied
