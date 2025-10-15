@@ -68,6 +68,7 @@ public class SubscriptionService implements InitializingBean {
 				Product fullProduct = this.tmfDataRetriever.getProductById(prod.getId(), null);
 	            
 				// FIXME: but be careful with last invoices... sub might not be active
+				// TODO: CHECK IF EXIST IN TMF A STATUS THAT IS RECENTLY TERMINATED
 				if (!"active".equalsIgnoreCase(fullProduct.getStatus().getValue())) {
 	                continue;
 	            }
@@ -83,6 +84,7 @@ public class SubscriptionService implements InitializingBean {
 	 * @param id The ID of the related party to search for.
 	 * @return The Subscription object if found, null otherwise.
 	*/
+    // TODO: should return a list of subscriptions
 	public Subscription getSubscriptionByRelatedPartyId(String id) {
 		// FIXME: this only returns the first subscription!!!!
 		logger.debug("Retrieving subscription by related party id: {}", id);
