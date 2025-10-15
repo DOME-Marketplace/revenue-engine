@@ -16,5 +16,6 @@ public interface Calculator {
     public void setTmfDataRetriever(TmfDataRetriever tdr);
 
     public void setCalculatorContext(Map<String, String> calculatorContext);
+    public Map<String, String> getCalculatorContext();
 
 }

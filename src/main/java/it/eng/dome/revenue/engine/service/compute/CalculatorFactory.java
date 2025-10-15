@@ -27,7 +27,7 @@ public class CalculatorFactory implements InitializingBean{
     @Autowired
     private TmfCachedDataRetriever tdr;
 
-    public static Calculator getCalculatorFor(Subscription subscription, PlanItem item) {
+    public static Calculator getCalculatorFor(Subscription subscription, PlanItem item, Calculator parentCalculator) {
         logger.debug("*************** Calculator FACTORY **************");
         Calculator c;
         if(item.getIsBundle()) {
@@ -38,6 +38,9 @@ public class CalculatorFactory implements InitializingBean{
         if(c!=null) {
             c.setMetricsRetriever(CalculatorFactory.staticMR);
             c.setTmfDataRetriever(CalculatorFactory.staticTDR);
+        }
+        if(parentCalculator!=null) {
+            c.setCalculatorContext(parentCalculator.getCalculatorContext());
         }
         return c;
     }

@@ -86,14 +86,14 @@
         }
       },
       {
-        "name": "fixme: iterator",
+        "name": "Revenue sharing based on transactions",
         "recurringChargePeriodType": "MONTH",
         "recurringChargePeriodLength": 1,
         "ignore": false,
         "isBundle": true,
         "bundleOp": "FOREACH",
         "skipIfZero": false,
-        "forEachMetric": "activeMarketplaceSeller",
+        "forEachMetric": "activeMarketplaceIncludedMarketplace",
         "prices": [
           {
             "name": "Revenue on transactions in the current period for <seller>",

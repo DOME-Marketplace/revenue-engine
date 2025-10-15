@@ -29,7 +29,7 @@ public class CumulativeCalculator extends AbstractCalculator {
 		for (PlanItem price : bundleItems) {
 			if(!(price instanceof Price))
 				continue;
-			Calculator childCalculator = CalculatorFactory.getCalculatorFor(this.getSubscription(), price);
+			Calculator childCalculator = CalculatorFactory.getCalculatorFor(this.getSubscription(), price, this);
 			RevenueItem childRevenueItem = childCalculator.compute(timePeriod, computeContext);
 			if (childRevenueItem != null) {
 				cumulativeRevenueItem.addRevenueItem(childRevenueItem);
@@ -41,7 +41,7 @@ public class CumulativeCalculator extends AbstractCalculator {
 			if(price.getDiscount()!=null) {
 				Map<String, Double> discountContext = new HashMap<>();
 				discountContext.put("parent-price", cumulativeRevenueItem.getOverallValue());
-				Calculator discountCalculator = CalculatorFactory.getCalculatorFor(this.getSubscription(), price.getDiscount());
+				Calculator discountCalculator = CalculatorFactory.getCalculatorFor(this.getSubscription(), price.getDiscount(), this);
 				RevenueItem discountRevenueItem = discountCalculator.compute(timePeriod, discountContext);
 				if(discountRevenueItem!=null) {
 					cumulativeRevenueItem.addRevenueItem(discountRevenueItem);
@@ -51,7 +51,7 @@ public class CumulativeCalculator extends AbstractCalculator {
 		
 	    if (this.item instanceof Discount) {
 	        for (PlanItem subItem : this.item.getBundleItems()) {
-                Calculator childCalc = CalculatorFactory.getCalculatorFor(this.getSubscription(), subItem);
+                Calculator childCalc = CalculatorFactory.getCalculatorFor(this.getSubscription(), subItem, this);
                 RevenueItem childRev = childCalc.compute(timePeriod, computeContext);
                 if (childRev != null)
                     cumulativeRevenueItem.addRevenueItem(childRev);

@@ -62,7 +62,7 @@ public class ForEachCalculator extends AbstractCalculator {
 						Map<String, String> context = new HashMap<>();
 						context.put("sellerId", orgId);
 
-						Calculator childCalc = CalculatorFactory.getCalculatorFor(this.getSubscription(), childItem);
+						Calculator childCalc = CalculatorFactory.getCalculatorFor(this.getSubscription(), childItem, this);
 						childCalc.setCalculatorContext(context);						
 
 						RevenueItem childRevenueItem = childCalc.compute(timePeriod, computeContext);
