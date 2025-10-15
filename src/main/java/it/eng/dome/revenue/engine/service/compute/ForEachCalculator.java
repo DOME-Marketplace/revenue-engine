@@ -33,24 +33,24 @@ public class ForEachCalculator extends AbstractCalculator {
 			return null;
 		}
 
-		// only 'activeMarketplaceSeller' is currently supported
-		if(!"activeMarketplaceSeller".equalsIgnoreCase(iterateOver)) {
+		// only 'activeMarketplaceIncludedMarketplace' is currently supported
+		if(!"activeMarketplaceIncludedMarketplace".equalsIgnoreCase(iterateOver)) {
 			logger.error("{} is not supported. Currently, only 'marketplaceSeller' metric is supported.");
 			return null;
 		}
 
 		// now process them
-		if("activeMarketplaceSeller".equalsIgnoreCase(iterateOver)) {
+		if("activeMarketplaceIncludedMarketplace".equalsIgnoreCase(iterateOver)) {
 			// retrieve the possible values
 			try {
-				List<String> sellerIds = this.metricsRetriever.getDistinctValuesForKey(iterateOver, this.getSubscription().getSubscriberId(), timePeriod);
+				List<String> orgIds = this.metricsRetriever.getDistinctValuesForKey(iterateOver, this.getSubscription().getSubscriberId(), timePeriod);
 
-				logger.debug("Found {} sellers behind marketplace {} in period {}", sellerIds.size(), this.getSubscription().getSubscriberId(), timePeriod);
+				logger.debug("Found {} sellers + marketplace {} in period {}", orgIds.size(), this.getSubscription().getSubscriberId(), timePeriod);
 
 				// foreach 'iterator' property, build a sub-revenueItem with all child prices computed with the 'iterator' property.
-				for(String sellerId: sellerIds) {
+				for(String orgId: orgIds) {
 
-					String orgLabel = this.getOrganisationLabel(sellerId);
+					String orgLabel = this.getOrganisationLabel(orgId);
 
 					logger.debug("looking for transactions of seller {} in period {}", orgLabel, timePeriod);
 					RevenueItem sellerRevenueItem = new RevenueItem(this.item.getName() + " - Share from '" + orgLabel + "'", this.item.getCurrency());
@@ -60,7 +60,7 @@ public class ForEachCalculator extends AbstractCalculator {
 
 						// create a new context, to force the calculator to consider the sub-seller, instead of the subscriber
 						Map<String, String> context = new HashMap<>();
-						context.put("sellerId", sellerId);
+						context.put("sellerId", orgId);
 
 						Calculator childCalc = CalculatorFactory.getCalculatorFor(this.getSubscription(), childItem);
 						childCalc.setCalculatorContext(context);						
