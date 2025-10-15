@@ -434,21 +434,33 @@ public class TmfDataRetriever implements InitializingBean {
         return this.productApis.getAllProducts(fields, filter);
     }
     
+    public List<ProductOffering> getAllSubscriptionProductOfferings() {
+		
+	    CategoryApis categoryApis = new CategoryApis(tmfApiFactory.getTMF620ProductCatalogManagementApiClient());
+	    List<Category> listCategory = new ArrayList<>();
+	
+		listCategory = categoryApis.getAllCategory(null, null);
+	    
+	    Map<String, String> filter = new HashMap<String, String>();
+	    for (Category c : listCategory) {
+	        if (c.getName() != null && c.getName().equalsIgnoreCase("DOME OPERATOR Plan")) {
+	            filter.put("category.id", c.getId());
+	        }
+	    }
+    
+    List<ProductOffering> pos = this.getAllProductOfferings(null, filter);
+    
+    return pos;	
+    }
+    
     public List<Product> getAllSubscriptionProducts() {
 
-		CategoryApis categoryApis = new CategoryApis(tmfApiFactory.getTMF620ProductCatalogManagementApiClient());
-		List<Category> listCategory = categoryApis.getAllCategory(null, null);
-
 		List<String> offeringIds = new ArrayList<>();
-		for (Category c : listCategory) {
-			if ("DOME OPERATOR Plan".equalsIgnoreCase(c.getName())) {
-				List<ProductOffering> pos = this.getAllProductOfferings(null, Map.of("category.id", c.getId()));
-				for (ProductOffering po : pos) {
-					offeringIds.add(po.getId());
-				}
-			}
+	
+		List<ProductOffering> pos = this.getAllSubscriptionProductOfferings();
+		for (ProductOffering po : pos) {
+			offeringIds.add(po.getId());
 		}
-
 		logger.debug("Found product offerings: {}", offeringIds);
 
 		Map<String, String> filter = new HashMap<>();
