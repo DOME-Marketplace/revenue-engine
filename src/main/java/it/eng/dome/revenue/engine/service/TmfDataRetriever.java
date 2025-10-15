@@ -1,11 +1,29 @@
 package it.eng.dome.revenue.engine.service;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
+import java.util.TreeSet;
+import java.util.stream.Collectors;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.InitializingBean;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
 import it.eng.dome.brokerage.api.AppliedCustomerBillRateApis;
+import it.eng.dome.brokerage.api.CategoryApis;
 import it.eng.dome.brokerage.api.ProductApis;
 import it.eng.dome.brokerage.api.ProductOfferingApis;
 import it.eng.dome.brokerage.api.ProductOfferingPriceApis;
 import it.eng.dome.revenue.engine.tmf.TmfApiFactory;
 import it.eng.dome.revenue.engine.utils.TMFApiUtils;
+import it.eng.dome.tmforum.tmf620.v4.model.Category;
 import it.eng.dome.tmforum.tmf620.v4.model.ProductOffering;
 import it.eng.dome.tmforum.tmf620.v4.model.ProductOfferingPrice;
 import it.eng.dome.tmforum.tmf632.v4.ApiException;
@@ -18,14 +36,6 @@ import it.eng.dome.tmforum.tmf678.v4.model.AppliedCustomerBillingRate;
 import it.eng.dome.tmforum.tmf678.v4.model.CustomerBill;
 import it.eng.dome.tmforum.tmf678.v4.model.RelatedParty;
 import it.eng.dome.tmforum.tmf678.v4.model.TimePeriod;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.InitializingBean;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
-
-import java.util.*;
-import java.util.stream.Collectors;
 
 @Service
 public class TmfDataRetriever implements InitializingBean {
@@ -416,6 +426,29 @@ public class TmfDataRetriever implements InitializingBean {
 
         return this.productApis.getAllProducts(fields, filter);
     }
+    
+    public List<Product> getAllSubscriptionProducts() {
+
+		CategoryApis categoryApis = new CategoryApis(tmfApiFactory.getTMF620ProductCatalogManagementApiClient());
+		List<Category> listCategory = categoryApis.getAllCategory(null, null);
+
+		List<String> offeringIds = new ArrayList<>();
+		for (Category c : listCategory) {
+			if ("DOME OPERATOR Plan".equalsIgnoreCase(c.getName())) {
+				List<ProductOffering> pos = this.getAllProductOfferings(null, Map.of("category.id", c.getId()));
+				for (ProductOffering po : pos) {
+					offeringIds.add(po.getId());
+				}
+			}
+		}
+
+		logger.debug("Found product offerings: {}", offeringIds);
+
+		Map<String, String> filter = new HashMap<>();
+		filter.put("productOffering.id", String.join(",", offeringIds)); // OR
+
+		return this.getAllProducts(null, filter);
+	}
 
     // ======== PRODUCT OFFERING ========
 

@@ -1,9 +1,7 @@
 package it.eng.dome.revenue.engine.service;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
@@ -13,13 +11,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
-import it.eng.dome.brokerage.api.CategoryApis;
 import it.eng.dome.revenue.engine.mapper.RevenueProductMapper;
 import it.eng.dome.revenue.engine.model.Subscription;
 import it.eng.dome.revenue.engine.service.cached.TmfCachedDataRetriever;
-import it.eng.dome.revenue.engine.tmf.TmfApiFactory;
-import it.eng.dome.tmforum.tmf620.v4.model.Category;
-import it.eng.dome.tmforum.tmf620.v4.model.ProductOffering;
 import it.eng.dome.tmforum.tmf637.v4.model.Product;
 
 @Service
@@ -33,9 +27,6 @@ public class SubscriptionService implements InitializingBean {
 
 	@Autowired
 	private TmfCachedDataRetriever tmfDataRetriever;
-	
-	@Autowired
-	private TmfApiFactory tmfApiFactory;
 
 	public SubscriptionService() {
 	}
@@ -70,25 +61,7 @@ public class SubscriptionService implements InitializingBean {
     	logger.info("Fetching subscriptions from tmf products");
 
 
-        CategoryApis categoryApis = new CategoryApis(tmfApiFactory.getTMF620ProductCatalogManagementApiClient());
-        List<Category> listCategory = categoryApis.getAllCategory(null, null);
-
-        List<String> offeringIds = new ArrayList<>();
-        for (Category c : listCategory) {
-            if ("DOME OPERATOR Plan".equalsIgnoreCase(c.getName())) {
-                List<ProductOffering> pos = tmfDataRetriever.getAllProductOfferings(null, Map.of("category.id", c.getId()));
-                for (ProductOffering po : pos) {
-                    offeringIds.add(po.getId());
-                }
-            }
-        }
-
-        logger.debug("Found product offerings: {}", offeringIds);
-
-        Map<String, String> filter = new HashMap<>();
-        filter.put("productOffering.id", String.join(",", offeringIds)); // OR
-
-		List<Product> prods = this.tmfDataRetriever.getAllProducts(null, filter);
+		List<Product> prods = this.tmfDataRetriever.getAllSubscriptionProducts();
 
 		List<Subscription> subs = new ArrayList<>();
         for (Product prod : prods) {

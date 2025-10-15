@@ -240,6 +240,22 @@ public class TmfCachedDataRetriever extends TmfDataRetriever {
         }
         return this.productListCache.get(key);
     }
+    
+    @Override
+    public List<Product> getAllSubscriptionProducts() {
+		String key = "all-subscription-products";
+		if (!TMF_CACHE_ENABLED || !this.productListCache.containsKey(key)) {
+			logger.debug("Cache MISS for {}", key);
+			List<Product> prods = super.getAllSubscriptionProducts();
+			if (prods != null) {
+				this.productListCache.put(key, prods);
+			} else {
+				logger.warn("Subscription Products not found");
+				return null;
+			}
+		}
+		return this.productListCache.get(key);
+	}
 
     @Override
     public ProductOffering getProductOfferingById(String poId, String fields) {
