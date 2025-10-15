@@ -65,8 +65,8 @@ public class BillsController {
     
     @GetMapping("{revenueBillId}/acbr")
     public ResponseEntity<List<AppliedCustomerBillingRate>> getACBRsByRevenueBillId(@PathVariable String revenueBillId) {
-    	List<AppliedCustomerBillingRate> acbrs = billsService.getACBRsByRevenueBillId(revenueBillId);
         try {
+        	List<AppliedCustomerBillingRate> acbrs = billsService.getACBRsByRevenueBillId(revenueBillId);
             if (acbrs == null) {
                 logger.info("No Applied Customer Billing Rate found for revenue bill id: {}", revenueBillId);
                 return ResponseEntity.notFound().build();

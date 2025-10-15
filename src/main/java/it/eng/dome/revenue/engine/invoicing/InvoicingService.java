@@ -77,7 +77,7 @@ public class InvoicingService {
      * The invoicing service returns a JSON object containing a field "appliedCustomerBillingRate" 
      * which is a list of enriched ACBRs.
      */
-    public List<AppliedCustomerBillingRate> applyTaxees(Product product, List<AppliedCustomerBillingRate> acbrs) {
+    public List<AppliedCustomerBillingRate> applyTaxees(Product product, List<AppliedCustomerBillingRate> acbrs) throws Exception {
 
         // Prepare DTO
         LocalApplyTaxesRequestDTO dto = new LocalApplyTaxesRequestDTO();
@@ -100,7 +100,8 @@ public class InvoicingService {
             return Arrays.asList(response.getBody());
         } catch (Exception e) {
             logger.error("Failed to parse JSON response from invoicing service: {}", e.getMessage());
-            return acbrs;
+            throw(e);
+//            return acbrs;
         }
     }
 

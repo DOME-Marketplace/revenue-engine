@@ -100,7 +100,7 @@ public class BillsService {
 	 * @param revenueBillId the ID of the RevenueBill for which to retrieve CB
 	 * @return a Customer Bill objects representing the RevenueBill for tmf
 	*/
-    public CustomerBill getCustomerBillByRevenueBillId(String revenueBillId) {
+    public CustomerBill getCustomerBillByRevenueBillId(String revenueBillId) throws Exception {
     	RevenueBill rb = new RevenueBill();
 		try {
 			rb = this.getRevenueBillById(revenueBillId);
@@ -115,7 +115,7 @@ public class BillsService {
  	 * @param revenueBillId the ID of the RevenueBill for which to retrieve ACBR
  	 * @return a List of ACBR objects representing the bills of RevenueBill for tmf
  	*/
-    public List<AppliedCustomerBillingRate> getACBRsByRevenueBillId(String revenueBillId) {
+    public List<AppliedCustomerBillingRate> getACBRsByRevenueBillId(String revenueBillId) throws Exception {
     	RevenueBill rb = new RevenueBill();
 		try {
 			rb = this.getRevenueBillById(revenueBillId);
@@ -133,7 +133,7 @@ public class BillsService {
 	 * @return a CustomerBill object
 	 * @throws IllegalArgumentException if the RevenueBill is null or does not contain related party information
 	 */
-    public CustomerBill getCustomerBillByRevenueBill(RevenueBill rb) {
+    public CustomerBill getCustomerBillByRevenueBill(RevenueBill rb) throws Exception {
 
     	if (rb == null) {
             throw new IllegalArgumentException("RevenueBill cannot be null");
@@ -348,7 +348,7 @@ public class BillsService {
      * @throws IllegalArgumentException if the RevenueBill or its related parties are null/empty
      * @throws IllegalStateException if required data (Subscription, Buyer party, etc.) cannot be retrieved
      */
-    private List<AppliedCustomerBillingRate> getACBRsByRevenueBill(RevenueBill rb) {
+    private List<AppliedCustomerBillingRate> getACBRsByRevenueBill(RevenueBill rb) throws Exception {
     	if (rb == null) {
             throw new IllegalArgumentException("RevenueBill cannot be null");
         }
@@ -399,7 +399,7 @@ public class BillsService {
  	 * @param acbrs is a list of ACBR
  	 * @return a list of ACBR with AppliedBillingTaxRate attribute for each object.
  	*/
-    private List<AppliedCustomerBillingRate> applyTaxes(List<AppliedCustomerBillingRate> acbrs) {
+    private List<AppliedCustomerBillingRate> applyTaxes(List<AppliedCustomerBillingRate> acbrs) throws Exception {
 
         if(acbrs==null || acbrs.isEmpty()) {
             logger.info("no acbrs received, no taxes to apply");

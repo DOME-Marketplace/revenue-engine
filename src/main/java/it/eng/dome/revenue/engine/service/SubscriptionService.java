@@ -107,6 +107,9 @@ public class SubscriptionService implements InitializingBean {
 					.anyMatch(party -> party != null && party.getId() != null && party.getId().equals(id) && party.getRole()!=null && party.getRole().equalsIgnoreCase(role)) 
 				)
 				.toList();
+
+		// TOOD: consider the following instead of the previous
+//		return RelatedPartyUtils.retainSubscriptionsWithParty(this.getAllSubscriptions(), partyId, partyRole);
 	}
 
 	/**

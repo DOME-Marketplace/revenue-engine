@@ -404,7 +404,7 @@ public class TmfPeristenceService implements InitializingBean {
      * @param idCustomerBill2 ID of the second CustomerBill
      * @return true if both CustomerBills reference the same Product, false otherwise
     */
-    private boolean compareCBsProduct(String idCustomerBill1, String idCustomerBill2) {
+    private boolean compareCBsProduct(String idCustomerBill1, String idCustomerBill2) throws Exception {
     	if(idCustomerBill1 == null || idCustomerBill2 == null) {
     		logger.warn("One of the customer bill IDs is null. idCustomerBill1={}, idCustomerBill2={}", idCustomerBill1, idCustomerBill2);
     		return false;
@@ -444,7 +444,7 @@ public class TmfPeristenceService implements InitializingBean {
         return rlId1 != null && rlId1.equals(rlId2);
     }
     
-    public RelatedParty filterRelatedPartyPerRole(List<RelatedParty> relatedParties, String role) {
+    private RelatedParty filterRelatedPartyPerRole(List<RelatedParty> relatedParties, String role) {
     	for(RelatedParty rl : relatedParties) {
     		if(role.equalsIgnoreCase(rl.getRole())){
     			return rl;

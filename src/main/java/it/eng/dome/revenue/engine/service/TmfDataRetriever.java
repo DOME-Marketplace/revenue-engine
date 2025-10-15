@@ -159,6 +159,10 @@ public class TmfDataRetriever implements InitializingBean {
                 )
                 .collect(Collectors.toList());
 
+        // TODO: consider using the following instead of the above
+//        if(sellerId!=null)
+//            filtered = RelatedPartyUtils.retainCustomerBillsWithParty(out, sellerId, Role.SELLER);
+
         // TODO: further filters, if any (maybe by using a map of properties in the signature)
 
         logger.debug("Found {} bills in the specified period after role/id filter", filtered.size());
@@ -193,6 +197,9 @@ public class TmfDataRetriever implements InitializingBean {
         }
 
         List<CustomerBill> out = billApi.getAllCustomerBills(null, filter);
+
+        // FIXME: consider using the following replacing the if/for/for/if below
+        // out = RelatedPartyUtils.retainCustomerBillsWithParty(out, participantId, participantRole);
 
         // check that id and role are in the same RelatedParty
         if(participantId!=null && participantRole!=null) {
