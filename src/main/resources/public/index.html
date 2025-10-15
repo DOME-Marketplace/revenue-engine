@@ -13,7 +13,7 @@
         <!-- TEMPLATES -->
         <div id="templates" style="display:none">
 
-            <div name="plan_summary_template" class="plan">
+            <div name="plan_summary_template" class="plan tmfbox">
                 <b name="name"></b> - <i><span name="description"></span></i><br>
                 <i name="id" style="font-size:8pt"></i><br/>
                 <div name="price"></div>
@@ -24,7 +24,7 @@
                 <button onclick="fetchAndShowSubscriptions(this.parentNode);">subscribers</button>
             </div>
 
-            <div name="plan_short_summary_template" class="plan">
+            <div name="plan_short_summary_template" class="plan tmfbox">
                 <h3>Plan</h3>
                 <b name="name"></b><br/>
                 <i name="id" style="font-size:8pt"></i>
@@ -37,7 +37,7 @@
                 <button onclick="fetchAndShowRaw(this.parentNode);" disabled>raw</button>
             </div>
 
-            <div name="subscription_short_summary_template" class="subscription">
+            <div name="subscription_short_summary_template" class="subscription tmfbox">
                 <h3>Subscription</h3>
                 <b name="name"></b><br/>
                 <i name="id" style="font-size:8pt"></i>
@@ -53,20 +53,20 @@
                 <button onclick="fetchAndShowRaw(this.parentNode);">raw</button>
             </div>
 
-            <div name="generic_template" class="generic">
+            <div name="generic_template" class="generic tmfbox">
                 <h3>Generic viewer<h3>
                 <span name="name"></span><br/>
                 <span name="description"></span></span><br/>
                 <span name="id"></span></span>
             </div>
 
-            <div name="statement_short_summary_template" class="statement">
+            <div name="statement_short_summary_template" class="statement tmfbox">
                 <h3>Revenue Statement</h3>
                 <div name="period"></div>
                 <div name="revenueItems"></div>
             </div>
 
-            <div name="bill_short_summary_template" class="bill">
+            <div name="bill_short_summary_template" class="bill tmfbox">
                 <h3>Revenue Bill</h3>
                 <i name="id" style="font-size:8pt"></i>
                 <div name="period"></div>
@@ -77,7 +77,7 @@
                 <button onclick="fetchAndShowRaw(this.parentNode);">raw</button>
             </div>
 
-            <div name="cb_summary_template" class="cb">
+            <div name="cb_summary_template" class="cb tmfbox">
                 <h3>Customer Bill</h3>
                 <i name="id" style="font-size:8pt"></i>
                 <div name="period"></div>
@@ -92,7 +92,7 @@
                 <button onclick="fetchAndShowRaw(this.parentNode);">raw</button>
             </div>
 
-            <div name="acbr_short_summary_template" class="acbr">
+            <div name="acbr_short_summary_template" class="acbr tmfbox">
                 <h3>Applied Customer Billing Rate</h3>
                 <i name="id" style="font-size:8pt"></i><br/>
                 <b name="name"></b><br/>
@@ -196,12 +196,19 @@
                 and a payment due date after <span name="paymentDueDateOffset"></span> days.
             </div>
 
-            <div name="organization_template" class="organization">
+            <div name="organization_template" class="organization tmfbox">
                 <b name="tradingName"></b><br/>
                 <i name="id" style="font-size:8pt"></i><br/>
                 <hr/>
                 <button onclick="fetchAndShowTransactions(this.parentNode);">transactions (as seller)</button>
+                <button onclick="fetchAndShowPurchasedProducts(this.parentNode);">products (as buyer)</button>
+                <button onclick="fetchAndShowSoldProducts(this.parentNode);">products (as seller)</button>
                 <button onclick="fetchAndShowRaw(this.parentNode);" disabled>raw</button>
+            </div>
+
+            <div name="product_template" class="product tmfbox">
+                <b name="name"></b><br/>
+                <i name="id" style="font-size:8pt"></i><br/>
             </div>
 
         </div>

@@ -67,7 +67,6 @@ public class AtomicPriceCalculator extends AbstractCalculator {
         // seller id is the subscriber, by default. But can be overridden using the calculator context
         String sellerId = this.getSubscription().getSubscriberId();
         if(this.getCalculatorContext()!=null && this.getCalculatorContext().get("sellerId")!=null) {
-			logger.debug("****** PF REPLACING sellerId {} with the one from the context {}", sellerId, this.getCalculatorContext().get("sellerId"));
             sellerId = this.getCalculatorContext().get("sellerId");
 		}
 

@@ -26,25 +26,23 @@ td {
     padding-left:10pt;
 }
 
-div.plan, div.generic, div.message, div.subscription, div.statement, div.bill, div.cb, div.acbr, div.organization {
+div.tmfbox {
     padding:10pt;
     margin:2pt;
     margin-bottom:10pt;
     outline:2pt solid gray;
 }
 
-div.plan:hover,
-div.subscription:hover,
-div.cb:hover,
-div.bill:hover,
-div.acbr:hover,
-div.organization:hover,
-div.statement:hover {
+div.tmfbox:hover {
     outline-width:3pt;
 }
 
 div.organization {
     outline-color:blue;
+}
+
+div.product {
+    outline-color:sienna;
 }
 
 div.plan {
@@ -83,8 +81,6 @@ div.revenueItem {
     padding:2pt 0pt 2pt 10pt;
     margin:2pt 0pt;
 }
-
-
 
 button.menuButton {
     width:100%;

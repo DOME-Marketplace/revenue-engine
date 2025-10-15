@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.RestController;
 import it.eng.dome.revenue.engine.service.DevDashboardService;
 import it.eng.dome.revenue.engine.service.TmfDataRetriever;
 import it.eng.dome.tmforum.tmf632.v4.model.Organization;
+import it.eng.dome.tmforum.tmf637.v4.model.Product;
 import it.eng.dome.tmforum.tmf678.v4.model.AppliedCustomerBillingRate;
 import it.eng.dome.tmforum.tmf678.v4.model.CustomerBill;
 
@@ -57,6 +58,28 @@ public class DevOrganizationController {
         }
     }    
 
+    @GetMapping("organizations/{organizationId}/purchasedProducts")
+    public ResponseEntity<List<Product>> listPurchasedProducts(@PathVariable String organizationId) {
+        try {
+            List<Product> products = this.dashboardService.getPurchasedproducts(organizationId);
+            return ResponseEntity.ok(products);
+        } catch (Exception e) {
+            logger.error("Error retrieving organizations {} {}", e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }    
+
+    @GetMapping("organizations/{organizationId}/soldProducts")
+    public ResponseEntity<List<Product>> listSoldProducts(@PathVariable String organizationId) {
+        try {
+            List<Product> products = this.dashboardService.getSoldProducts(organizationId);
+            return ResponseEntity.ok(products);
+        } catch (Exception e) {
+            logger.error("Error retrieving organizations {} {}", e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }    
+    
     @GetMapping("customerbills/{customerBillId}")
     public ResponseEntity<CustomerBill> getCustomerBill(@PathVariable String customerBillId) {
         try {

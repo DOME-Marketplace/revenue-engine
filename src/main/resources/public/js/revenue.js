@@ -49,6 +49,10 @@ function getEndpointFor(resourceType, resourceId) {
         return baseURL + "dev/organizations";
     else if("organizationTransactions"==resourceType)
         return baseURL + "dev/organizations/" + resourceId + "/customerbills";
+    else if("purchasedProducts"==resourceType)
+        return baseURL + "dev/organizations/" + resourceId + "/purchasedProducts";
+    else if("soldProducts"==resourceType)
+        return baseURL + "dev/organizations/" + resourceId + "/soldProducts";
     else
         console.log("ERROR: unable to return an endpoint for " + resourceType + ":" + resourceId);
     return null;
@@ -56,7 +60,6 @@ function getEndpointFor(resourceType, resourceId) {
 
 function genericFetchAndShow(resourceType, resourceId, viewCallback, clickedDOM) {
     let endpoint = getEndpointFor(resourceType, resourceId);
-    console.log(viewCallback);
     fetch(endpoint)
         .then(response => response.json())
         .then(data => {
@@ -109,6 +112,14 @@ function fetchAndShowACBRs(clickedDOM) {
 
 function fetchAndShowTransactions(clickedDOM) {
     genericFetchAndShow("organizationTransactions", clickedDOM.getAttribute("objectId"), showCustomerBills, clickedDOM);
+}
+
+function fetchAndShowPurchasedProducts(clickedDOM) {
+    genericFetchAndShow("purchasedProducts", clickedDOM.getAttribute("objectId"), showProducts, clickedDOM);
+}
+
+function fetchAndShowSoldProducts(clickedDOM) {
+    genericFetchAndShow("soldProducts", clickedDOM.getAttribute("objectId"), showProducts, clickedDOM);
 }
 
 function fetchAndShowRaw(clickedDOM) {
@@ -176,6 +187,15 @@ function showCustomerBills(customerBills, clickedDOM) {
         getLanes().addToCurrentLane(getNodeFor("cb_summary", cb));
     if(customerBills.length==0)
         getLanes().addToCurrentLane(getNodeForMessage("No customer bills found"));
+}
+
+function showProducts(products, clickedDOM) {
+    getLanes().cleanAfter(clickedDOM);
+    getLanes().pushLane("some title");
+    for(var product of products)
+        getLanes().addToCurrentLane(getNodeFor("product", product));
+    if(products.length==0)
+        getLanes().addToCurrentLane(getNodeForMessage("No products found"));
 }
 
 function showCustomerBill(customerBill, clickedDOM) {
@@ -256,6 +276,7 @@ function getNodeForDate(key, value) {
 function getNodeForMessage(msg) {
     let outNode = document.createElement("div");
     outNode.classList.add("message");
+    outNode.classList.add("tmfbox");
     outNode.innerHTML = msg;
     return outNode;
 }
@@ -362,7 +383,6 @@ function getNodeForObject(key, value) {
 }
 
 function getNodeFor(key, value) {
-    console.log("getting node for " + key + " " + value);
     if(Date.parse(value) && value.indexOf && value.indexOf("T")!=-1) {
         return getNodeForDate(key, value);
     }
