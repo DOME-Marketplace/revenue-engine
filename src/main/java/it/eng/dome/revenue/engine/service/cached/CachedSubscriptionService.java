@@ -10,6 +10,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
+import it.eng.dome.revenue.engine.exception.BadTmfDataException;
+import it.eng.dome.revenue.engine.exception.ExternalServiceException;
 import it.eng.dome.revenue.engine.model.Role;
 import it.eng.dome.revenue.engine.model.Subscription;
 import it.eng.dome.revenue.engine.service.SubscriptionService;
@@ -57,7 +59,7 @@ public class CachedSubscriptionService extends SubscriptionService {
      * Retrieve bills from cache or from the parent class if not cached.
     */
     @Override
-    public List<Subscription> getAllSubscriptions() {
+    public List<Subscription> getAllSubscriptions() throws ExternalServiceException {
         String key = "all_subscriptions";
         if (!REVENUE_CACHE_ENABLED || !this.subscriptionsCache.containsKey(key)) {
             logger.debug("Cache MISS for " + key);
@@ -68,7 +70,7 @@ public class CachedSubscriptionService extends SubscriptionService {
     }
 
     @Override
-    public Subscription getSubscriptionByProductId(String productId) {
+    public Subscription getSubscriptionByProductId(String productId) throws BadTmfDataException, ExternalServiceException {
     	String key = productId;
 		if (!REVENUE_CACHE_ENABLED || !this.subscriptionsCache.containsKey(key)) {
 			logger.debug("Cache MISS for " + key);
@@ -79,7 +81,7 @@ public class CachedSubscriptionService extends SubscriptionService {
     }
     
     @Override
-    public Subscription getActiveSubscriptionByRelatedPartyId(String relatedPartyId) {
+    public Subscription getActiveSubscriptionByRelatedPartyId(String relatedPartyId) throws ExternalServiceException {
 		String key = relatedPartyId;
 		if (!REVENUE_CACHE_ENABLED || !this.subscriptionsCache.containsKey(key)) {
 			logger.debug("Cache MISS for " + key);
@@ -90,7 +92,7 @@ public class CachedSubscriptionService extends SubscriptionService {
 	}
 
     @Override
-    public List<Subscription> getSubscriptionsByRelatedPartyId(String id, Role role){
+    public List<Subscription> getSubscriptionsByRelatedPartyId(String id, Role role) throws ExternalServiceException{
     	String key = id + role.getValue();
 		if (!REVENUE_CACHE_ENABLED || !this.subscriptionsCache.containsKey(key)) {		
 			logger.debug("Cache MISS for " + key);

@@ -1,5 +1,7 @@
 package it.eng.dome.revenue.engine.service;
 
+import it.eng.dome.revenue.engine.exception.BadTmfDataException;
+import it.eng.dome.revenue.engine.exception.ExternalServiceException;
 import it.eng.dome.revenue.engine.invoicing.InvoicingService;
 import it.eng.dome.revenue.engine.mapper.RevenueBillingMapper;
 import it.eng.dome.revenue.engine.model.*;
@@ -440,8 +442,10 @@ public class BillsService {
  	 * @param acbrs is a list of ACBR
  	 * @param subscriptionId is a Subscription ID used to retrieve Billing Account
  	 * @return a list of ACBR with Billing Account Ref attribute for each object.
+     * @throws ExternalServiceException 
+     * @throws BadTmfDataException 
  	*/
-  private List<AppliedCustomerBillingRate> setBillingAccountRef(List<AppliedCustomerBillingRate> acbrs, String subscriptionId){
+  private List<AppliedCustomerBillingRate> setBillingAccountRef(List<AppliedCustomerBillingRate> acbrs, String subscriptionId) throws BadTmfDataException, ExternalServiceException{
 	  BillingAccountRef billingAccountRef = tmfDataRetriever.retrieveBillingAccountByProductId(subscriptionId);
 	  if (billingAccountRef == null) {
 		  logger.warn("toCB: billingAccountRef is null, CustomerBill will have null billingAccount");

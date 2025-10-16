@@ -11,6 +11,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
+import it.eng.dome.revenue.engine.exception.BadTmfDataException;
+import it.eng.dome.revenue.engine.exception.ExternalServiceException;
 import it.eng.dome.revenue.engine.mapper.RevenueProductMapper;
 import it.eng.dome.revenue.engine.model.Role;
 import it.eng.dome.revenue.engine.model.Subscription;
@@ -20,107 +22,122 @@ import it.eng.dome.tmforum.tmf637.v4.model.Product;
 
 @Service
 public class SubscriptionService implements InitializingBean {
-	
-	private final Logger logger = LoggerFactory.getLogger(SubscriptionService.class);
 
-	/** Dome Operator ID - now parametric via Spring property */
+    private final Logger logger = LoggerFactory.getLogger(SubscriptionService.class);
+
+    /** Dome Operator ID - now parametric via Spring property */
     @Value("${dome.operator.id}")
     private String DOME_OPERATOR_ID;
 
-	@Autowired
-	private TmfCachedDataRetriever tmfDataRetriever;
+    @Autowired
+    private TmfCachedDataRetriever tmfDataRetriever;
 
-	public SubscriptionService() {
-	}
-
-	@Override
-	public void afterPropertiesSet() throws Exception {
-	}
-   
-
-	/*
-	 * Retrieves a subscription by its product ID.
-	 */
-    public Subscription getSubscriptionByProductId(String productId) {
-    	
-    	 if (productId == null || productId.isEmpty()) {
-             throw new IllegalArgumentException("Product ID cannot be null or empty");
-         }
-
-         logger.info("Fetching subscription from product id: {}", productId);
-         
-         Product prod = this.tmfDataRetriever.getProductById(productId, null);
-
-         return RevenueProductMapper.toSubscription(prod);
+    public SubscriptionService() {
     }
-    
+
+    @Override
+    public void afterPropertiesSet() throws Exception {
+    }
+
+    /*
+     * Retrieves a subscription by its product ID.
+     */
+    public Subscription getSubscriptionByProductId(String productId)
+            throws BadTmfDataException, ExternalServiceException {
+
+        if (productId == null || productId.isEmpty()) {
+            throw new BadTmfDataException("Product", productId, "Product ID cannot be null or empty");
+        }
+
+        logger.info("Fetching subscription from product id: {}", productId);
+
+        Product prod;
+        try {
+            prod = this.tmfDataRetriever.getProductById(productId, null);
+        } catch (Exception e) {
+            logger.error("Failed to retrieve product {}: {}", productId, e.getMessage(), e);
+            throw new ExternalServiceException("Failed to retrieve product with ID: " + productId);
+        }
+
+        return RevenueProductMapper.toSubscription(prod);
+    }
+
     /**
-	 * Retrieves all subscriptions associated with the DOME operator.
-	 * 
-	 * @return A list of Subscription objects.
-	*/
-    public List<Subscription> getAllSubscriptions() {
-    	logger.info("Fetching subscriptions from tmf products");
+     * Retrieves all subscriptions associated with the DOME operator.
+     * 
+     * @return A list of Subscription objects.
+     */
+    public List<Subscription> getAllSubscriptions() throws ExternalServiceException {
+        logger.info("Fetching subscriptions from tmf products");
 
+        List<Product> prods;
+        try {
+            prods = this.tmfDataRetriever.getAllSubscriptionProducts();
+        } catch (Exception e) {
+            logger.error("Failed to retrieve all subscription products: {}", e.getMessage(), e);
+            throw new ExternalServiceException("Failed to retrieve subscription products");
+        }
 
-		List<Product> prods = this.tmfDataRetriever.getAllSubscriptionProducts();
-
-		List<Subscription> subs = new ArrayList<>();
+        List<Subscription> subs = new ArrayList<>();
         for (Product prod : prods) {
-				Product fullProduct = this.tmfDataRetriever.getProductById(prod.getId(), null);
-	            
-				// FIXME: but be careful with last invoices... sub might not be active
-				// TODO: CHECK IF EXIST IN TMF A STATUS THAT IS RECENTLY TERMINATED
-				if (!"active".equalsIgnoreCase(fullProduct.getStatus().getValue())) {
-	                continue;
-	            }
-				subs.add(RevenueProductMapper.toSubscription(fullProduct));				
-        }	
-				
+            try {
+                Product fullProduct = this.tmfDataRetriever.getProductById(prod.getId(), null);
+
+                // FIXME: but be careful with last invoices... sub might not be active
+                // TODO: CHECK IF EXIST IN TMF A STATUS THAT IS RECENTLY TERMINATED
+                if (!"active".equalsIgnoreCase(fullProduct.getStatus().getValue())) {
+                    continue;
+                }
+                subs.add(RevenueProductMapper.toSubscription(fullProduct));
+            } catch (Exception e) {
+                logger.warn("Failed to process product {}: {}", prod.getId(), e.getMessage(), e);
+            }
+        }
+
         return subs;
     }
 
-	/**
-	 * Retrieves a subscription by its related party ID.
-	 * 
-	 * @param id The ID of the related party to search for.
-	 * @return The Subscription object if found, null otherwise.
-	*/
-    public Subscription getActiveSubscriptionByRelatedPartyId(String id) {
+    /**
+     * Retrieves a subscription by its related party ID.
+     * 
+     * @param id The ID of the related party to search for.
+     * @return The Subscription object if found, null otherwise.
+     */
+    public Subscription getActiveSubscriptionByRelatedPartyId(String id) throws ExternalServiceException {
         logger.debug("Retrieving active subscription by related party id: {}", id);
 
         if (id == null) return null;
-        //FIXME: now assuming that a party can have only one active subscription
+        // FIXME: now assuming that a party can have only one active subscription
         for (Subscription sub : getAllSubscriptions()) {
-            if (sub.getStatus().equalsIgnoreCase("active") && RelatedPartyUtils.subscriptionHasPartyWithRole(sub, id, Role.BUYER)) {
+            if (sub.getStatus().equalsIgnoreCase("active")
+                    && RelatedPartyUtils.subscriptionHasPartyWithRole(sub, id, Role.BUYER)) {
                 return sub;
             }
         }
 
-        return null; 
+        return null;
     }
 
-	
-	/**
-	 * Retrieves a list of subscriptions by related party ID and role.
-	 * @param id related party id
-	 * @param role role of related party
-	 */
-	public List<Subscription> getSubscriptionsByRelatedPartyId(String id, Role role) {
+    /**
+     * Retrieves a list of subscriptions by related party ID and role.
+     * 
+     * @param id related party id
+     * @param role role of related party
+     */
+    public List<Subscription> getSubscriptionsByRelatedPartyId(String id, Role role) throws ExternalServiceException {
+        return RelatedPartyUtils.retainSubscriptionsWithParty(this.getAllSubscriptions(), id, role);
+    }
 
-		return RelatedPartyUtils.retainSubscriptionsWithParty(this.getAllSubscriptions(), id, role);
-	}
-
-	/**
-	 * Retrieves all subscriptions associated with a specific plan ID.
-	 * 
-	 * @param id The ID of the plan to filter subscriptions by.
-	 * @return A list of Subscription objects that match the given plan ID.
-	*/
-	public List<Subscription> getSubscriptionsByPlanId(String id) {
-	    logger.debug("Retrieving subscriptions by plan ID: {}", id);
+    /**
+     * Retrieves all subscriptions associated with a specific plan ID.
+     * 
+     * @param id The ID of the plan to filter subscriptions by.
+     * @return A list of Subscription objects that match the given plan ID.
+     */
+    public List<Subscription> getSubscriptionsByPlanId(String id) throws ExternalServiceException {
+        logger.debug("Retrieving subscriptions by plan ID: {}", id);
         return this.getAllSubscriptions().stream()
                 .filter(sub -> sub.getPlan() != null && id.equals(sub.getPlan().getId()))
                 .collect(Collectors.toList());
-	}	
+    }
 }

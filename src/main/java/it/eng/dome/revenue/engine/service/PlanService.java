@@ -130,7 +130,7 @@ public class PlanService implements InitializingBean {
     /*
      * Fetches the ProductOfferingPrice by its ID from the given ProductOffering.
      */
-    private ProductOfferingPrice fetchProductOfferingPriceById(ProductOffering po, String offeringPriceId) throws BadTmfDataException {
+    private ProductOfferingPrice fetchProductOfferingPriceById(ProductOffering po, String offeringPriceId) throws BadTmfDataException, ExternalServiceException {
         if (po.getProductOfferingPrice() == null || po.getProductOfferingPrice().isEmpty()) {
             throw new BadTmfDataException("ProductOfferingPrice", offeringPriceId, "ProductOffering has no ProductOfferingPrice");
         }

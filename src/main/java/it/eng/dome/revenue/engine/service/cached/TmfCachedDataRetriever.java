@@ -1,15 +1,9 @@
 package it.eng.dome.revenue.engine.service.cached;
 
-import it.eng.dome.revenue.engine.service.TmfDataRetriever;
-import it.eng.dome.tmforum.tmf620.v4.model.ProductOffering;
-import it.eng.dome.tmforum.tmf620.v4.model.ProductOfferingPrice;
-import it.eng.dome.tmforum.tmf632.v4.ApiException;
-import it.eng.dome.tmforum.tmf632.v4.model.Organization;
-import it.eng.dome.tmforum.tmf637.v4.model.BillingAccountRef;
-import it.eng.dome.tmforum.tmf637.v4.model.Product;
-import it.eng.dome.tmforum.tmf678.v4.model.AppliedCustomerBillingRate;
-import it.eng.dome.tmforum.tmf678.v4.model.CustomerBill;
-import it.eng.dome.tmforum.tmf678.v4.model.TimePeriod;
+import java.time.Duration;
+import java.util.List;
+import java.util.Map;
+
 import org.ehcache.Cache;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -17,9 +11,17 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
-import java.time.Duration;
-import java.util.List;
-import java.util.Map;
+import it.eng.dome.revenue.engine.exception.BadTmfDataException;
+import it.eng.dome.revenue.engine.exception.ExternalServiceException;
+import it.eng.dome.revenue.engine.service.TmfDataRetriever;
+import it.eng.dome.tmforum.tmf620.v4.model.ProductOffering;
+import it.eng.dome.tmforum.tmf620.v4.model.ProductOfferingPrice;
+import it.eng.dome.tmforum.tmf632.v4.model.Organization;
+import it.eng.dome.tmforum.tmf637.v4.model.BillingAccountRef;
+import it.eng.dome.tmforum.tmf637.v4.model.Product;
+import it.eng.dome.tmforum.tmf678.v4.model.AppliedCustomerBillingRate;
+import it.eng.dome.tmforum.tmf678.v4.model.CustomerBill;
+import it.eng.dome.tmforum.tmf678.v4.model.TimePeriod;
 
 @Service
 public class TmfCachedDataRetriever extends TmfDataRetriever {
@@ -115,7 +117,7 @@ public class TmfCachedDataRetriever extends TmfDataRetriever {
     }
 
     @Override
-    public List<CustomerBill> retrieveBills(String sellerId, TimePeriod timePeriod) throws Exception {
+    public List<CustomerBill> retrieveBills(String sellerId, TimePeriod timePeriod) throws ExternalServiceException {
         String key = "all-bills";
         if(sellerId!=null)
 			key  += sellerId;
@@ -135,7 +137,7 @@ public class TmfCachedDataRetriever extends TmfDataRetriever {
     }
 
     @Override
-    public BillingAccountRef retrieveBillingAccountByProductId(String productId) {
+    public BillingAccountRef retrieveBillingAccountByProductId(String productId) throws BadTmfDataException, ExternalServiceException {
         String key = productId;
         if (!TMF_CACHE_ENABLED || !this.billingAccountCache.containsKey(key)) {
             logger.debug("Cache MISS for {}", key);
@@ -151,7 +153,7 @@ public class TmfCachedDataRetriever extends TmfDataRetriever {
     }
 
     @Override
-    public List<AppliedCustomerBillingRate> getACBRsByCustomerBillId(String customerBillId) {
+    public List<AppliedCustomerBillingRate> getACBRsByCustomerBillId(String customerBillId) throws BadTmfDataException, ExternalServiceException {
         String key = customerBillId;
         if (!TMF_CACHE_ENABLED || !this.acbrCache.containsKey(key)) {
             logger.debug("Cache MISS for {}", key);
@@ -169,7 +171,7 @@ public class TmfCachedDataRetriever extends TmfDataRetriever {
 
 
     @Override
-    public CustomerBill getCustomerBillById(String customerBillId) {
+    public CustomerBill getCustomerBillById(String customerBillId) throws BadTmfDataException, ExternalServiceException {
         String key = customerBillId;
         if (!TMF_CACHE_ENABLED || !this.customerBillCache.containsKey(key)) {
             logger.debug("Cache MISS for {}", key);
@@ -185,7 +187,7 @@ public class TmfCachedDataRetriever extends TmfDataRetriever {
     }
     
     @Override
-    public List<CustomerBill> getAllCustomerBills(String fields, Map<String, String> filter) {
+    public List<CustomerBill> getAllCustomerBills(String fields, Map<String, String> filter) throws ExternalServiceException {
         String key = "all-customer-bills";
         if(fields!=null)
             key += fields;
@@ -206,7 +208,7 @@ public class TmfCachedDataRetriever extends TmfDataRetriever {
     }
 
     @Override
-    public Product getProductById(String productId, String fields) {
+    public Product getProductById(String productId, String fields) throws BadTmfDataException, ExternalServiceException {
         String key = productId;
         if (!TMF_CACHE_ENABLED || !this.productCache.containsKey(key)) {
             logger.debug("Cache MISS for {}", key);
@@ -222,7 +224,7 @@ public class TmfCachedDataRetriever extends TmfDataRetriever {
     }
 
     @Override
-    public List<Product> getAllProducts(String fields, Map<String, String> filter) {
+    public List<Product> getAllProducts(String fields, Map<String, String> filter) throws ExternalServiceException {
         String key = "all-products";
         if(fields!=null)
             key += fields;
@@ -242,7 +244,7 @@ public class TmfCachedDataRetriever extends TmfDataRetriever {
     }
     
     @Override
-    public List<Product> getAllSubscriptionProducts() {
+    public List<Product> getAllSubscriptionProducts() throws ExternalServiceException {
 		String key = "all-subscription-products";
 		if (!TMF_CACHE_ENABLED || !this.productListCache.containsKey(key)) {
 			logger.debug("Cache MISS for {}", key);
@@ -258,7 +260,7 @@ public class TmfCachedDataRetriever extends TmfDataRetriever {
 	}
 
     @Override
-    public List<ProductOffering> getAllSubscriptionProductOfferings() {
+    public List<ProductOffering> getAllSubscriptionProductOfferings() throws ExternalServiceException {
     	String key = "all-subscription-product-offerings";
 		if (!TMF_CACHE_ENABLED || !this.productOfferingListCache.containsKey(key)) {
 			logger.debug("Cache MISS for {}", key);
@@ -275,7 +277,7 @@ public class TmfCachedDataRetriever extends TmfDataRetriever {
     }
     
     @Override
-    public ProductOffering getProductOfferingById(String poId, String fields) {
+    public ProductOffering getProductOfferingById(String poId, String fields) throws BadTmfDataException, ExternalServiceException {
         String key = poId;
         if (!TMF_CACHE_ENABLED || !this.productOfferingCache.containsKey(key)) {
             logger.debug("Cache MISS for {}", key);
@@ -291,7 +293,7 @@ public class TmfCachedDataRetriever extends TmfDataRetriever {
     }
 
     @Override
-    public List<ProductOffering> getAllProductOfferings(String fields, Map<String, String> filter) {
+    public List<ProductOffering> getAllProductOfferings(String fields, Map<String, String> filter) throws ExternalServiceException {
         String key = "all-product-offerings";
         if(fields!=null)
             key += fields;
@@ -311,7 +313,7 @@ public class TmfCachedDataRetriever extends TmfDataRetriever {
     }
 
     @Override
-    public ProductOfferingPrice getProductOfferingPrice(String popId, String fields) {
+    public ProductOfferingPrice getProductOfferingPrice(String popId, String fields) throws BadTmfDataException, ExternalServiceException {
         String key = popId;
         if (!TMF_CACHE_ENABLED || !this.productOfferingPriceCache.containsKey(key)) {
             logger.debug("Cache MISS for {}", key);
@@ -327,7 +329,7 @@ public class TmfCachedDataRetriever extends TmfDataRetriever {
     }
 
     @Override
-    public Organization getOrganization(String organizationId) throws ApiException{
+    public Organization getOrganization(String organizationId) throws BadTmfDataException, ExternalServiceException{
         String key = organizationId;
         if (!TMF_CACHE_ENABLED || !this.organizationCache.containsKey(key)) {
             logger.debug("Cache MISS for {}", key);
