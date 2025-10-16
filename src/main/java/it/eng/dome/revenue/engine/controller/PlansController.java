@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import it.eng.dome.revenue.engine.exception.BadRevenuePlanException;
 import it.eng.dome.revenue.engine.model.Plan;
 import it.eng.dome.revenue.engine.model.Subscription;
 import it.eng.dome.revenue.engine.service.cached.CachedPlanService;
@@ -93,7 +94,7 @@ public class PlansController {
         PlanValidationReport report;
 		try {
 			report = subscriptionPlanService.validatePlanTest(plan);
-		} catch (IOException e) {
+		} catch (IOException | BadRevenuePlanException e) {
             logger.error("Unexpected error validating plan with ID {}: {}", plan, e.getMessage(), e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
 		}

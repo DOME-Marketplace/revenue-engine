@@ -23,6 +23,9 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 
+import it.eng.dome.revenue.engine.exception.BadRevenuePlanException;
+import it.eng.dome.revenue.engine.exception.BadTmfDataException;
+import it.eng.dome.revenue.engine.exception.ExternalServiceException;
 import it.eng.dome.revenue.engine.model.Plan;
 import it.eng.dome.revenue.engine.model.PlanResolver;
 import it.eng.dome.revenue.engine.model.Subscription;
@@ -40,8 +43,8 @@ import it.eng.dome.tmforum.tmf620.v4.model.ProductOfferingPriceRefOrValue;
  */
 @Service
 public class PlanService implements InitializingBean {
-	
-	/** Dome Operator ID - now parametric via Spring property */
+
+    /** Dome Operator ID - now parametric via Spring property */
     @Value("${dome.operator.id}")
     private String DOME_OPERATOR_ID;
 
@@ -49,12 +52,12 @@ public class PlanService implements InitializingBean {
     private Boolean DEV_USE_LOCAL_PLANS;
 
     private static final Logger logger = LoggerFactory.getLogger(PlanService.class);
-    
+
     @Autowired
     private TmfCachedDataRetriever tmfDataRetriever;
-    
+
     private final ObjectMapper mapper;
-       
+
     public void afterPropertiesSet() throws Exception {}
 
     /**
@@ -66,59 +69,52 @@ public class PlanService implements InitializingBean {
                 .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
                 .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
     }
-    
+
     // retrieve all plans by offerings
-    public List<Plan> getAllPlans() {
+    public List<Plan> getAllPlans() throws BadTmfDataException, BadRevenuePlanException, ExternalServiceException {
         logger.info("Fetching all plans...");
-        
+
         List<ProductOffering> pos = tmfDataRetriever.getAllSubscriptionProductOfferings();
-        
+        if (pos == null) throw new BadTmfDataException("ProductOffering", "all", "No product offerings retrieved");
+
         List<Plan> plans = new ArrayList<>();
         for (ProductOffering po : pos) {
-            List<Plan> planList = findPlans(po.getId());
-            if (planList != null && !planList.isEmpty()) {
-                plans.addAll(planList);
-            }
+            plans.addAll(findPlans(po.getId()));
         }
 
         logger.info("Total plans fetched: {}", plans.size());
         return plans;
     }
+
     /*
      * Retrieves a plan by its ID.
      */
-    public Plan getPlanById(String planId) {
-        
-         String[] parts = IdUtils.unpack(planId, "plan");
-         String offeringId = parts[0];
-         String offeringPriceId = parts[1];
-         
+    public Plan getPlanById(String planId) throws BadTmfDataException, BadRevenuePlanException, ExternalServiceException {
+        String[] parts = IdUtils.unpack(planId, "plan");
+        String offeringId = parts[0];
+        String offeringPriceId = parts[1];
         return this.findPlan(offeringId, offeringPriceId);
     }
 
-    public Plan getResolvedPlanById(String planId, Subscription sub) {
+    public Plan getResolvedPlanById(String planId, Subscription sub) throws BadTmfDataException, BadRevenuePlanException, ExternalServiceException {
         PlanResolver planResolver = new PlanResolver(sub);
         Plan plan = this.getPlanById(planId);
-        if(plan!=null) {
-            return planResolver.resolve(plan);
-        } else {
-            return null;
-        }        
+        return plan != null ? planResolver.resolve(plan) : null;
     }
 
     /*
-	 * Retrieves a plan by its offering ID and offering price ID.
-	 */
-    public Plan findPlan(String offeringId, String offeringPriceId) {
-    	if (offeringId == null || offeringId.isEmpty()) {
-            throw new IllegalArgumentException("Offering ID cannot be null or empty");
+     * Retrieves a plan by its offering ID and offering price ID.
+     */
+    public Plan findPlan(String offeringId, String offeringPriceId) throws BadTmfDataException, BadRevenuePlanException, ExternalServiceException {
+        if (offeringId == null || offeringId.isEmpty()) {
+            throw new BadTmfDataException("ProductOffering", offeringId, "Offering ID cannot be null or empty");
         }
 
         ProductOffering po = tmfDataRetriever.getProductOfferingById(offeringId, null);
         if (po == null) {
-            throw new IllegalStateException("ProductOffering not found for id=" + offeringId);
+            throw new BadTmfDataException("ProductOffering", offeringId, "ProductOffering not found");
         }
-        
+
         ProductOfferingPrice pop = fetchProductOfferingPriceById(po, offeringPriceId);
         String link = extractLinkFromDescription(pop.getDescription());
 
@@ -126,141 +122,123 @@ public class PlanService implements InitializingBean {
             Plan plan = this.loadPlanFromLink(link);
             this.overwritingPlanByProductOffering(plan, po, pop);
             return plan;
-		} catch (IOException e) {
-			logger.error("Failed to load Plan from link={}", link, e);
-            return null;
-		}
+        } catch (IOException e) {
+            throw new BadRevenuePlanException(new Plan(), "Failed to load Plan from link=" + link);
+        }
     }
 
     /*
      * Fetches the ProductOfferingPrice by its ID from the given ProductOffering.
      */
-    private ProductOfferingPrice fetchProductOfferingPriceById(ProductOffering po, String offeringPriceId) {
-    	if (po.getProductOfferingPrice() == null || po.getProductOfferingPrice().isEmpty()) {
-            //throw new IllegalStateException("ProductOffering has no ProductOfferingPrice");
+    private ProductOfferingPrice fetchProductOfferingPriceById(ProductOffering po, String offeringPriceId) throws BadTmfDataException {
+        if (po.getProductOfferingPrice() == null || po.getProductOfferingPrice().isEmpty()) {
+            throw new BadTmfDataException("ProductOfferingPrice", offeringPriceId, "ProductOffering has no ProductOfferingPrice");
         }
 
         for (ProductOfferingPriceRefOrValue ref : po.getProductOfferingPrice()) {
             if (ref.getId().equals(offeringPriceId)) {
-                // if necessary, check null condition on pop
                 return tmfDataRetriever.getProductOfferingPrice(ref.getId(), null);
             }
         }
 
-        throw new IllegalStateException("ProductOfferingPrice id not found: " + offeringPriceId);
+        throw new BadTmfDataException("ProductOfferingPrice", offeringPriceId, "Price not found in ProductOffering");
     }
-    
+
     /*
-	 * Retrieves all plans associated with the given offering ID.
-	 */
- 
-    public List<Plan> findPlans(String offeringId) {
+     * Retrieves all plans associated with the given offering ID.
+     */
+    public List<Plan> findPlans(String offeringId) throws BadTmfDataException, BadRevenuePlanException, ExternalServiceException {
         if (offeringId == null || offeringId.isEmpty()) {
-            throw new IllegalArgumentException("Offering ID cannot be null or empty");
+            throw new BadTmfDataException("ProductOffering", offeringId, "Offering ID cannot be null or empty");
         }
 
         ProductOffering po = tmfDataRetriever.getProductOfferingById(offeringId, null);
         if (po == null) {
-            //throw new IllegalStateException("ProductOffering not found for id=" + offeringId);
+            throw new BadTmfDataException("ProductOffering", offeringId, "ProductOffering not found");
         }
 
         if (po.getProductOfferingPrice() == null || po.getProductOfferingPrice().isEmpty()) {
-            //logger.error("ProductOffering id={} has no ProductOfferingPrice", offeringId);
             return Collections.emptyList();
         }
 
         List<Plan> plans = new ArrayList<>();
-
         for (ProductOfferingPriceRefOrValue popRef : po.getProductOfferingPrice()) {
             ProductOfferingPrice pop = tmfDataRetriever.getProductOfferingPrice(popRef.getId(), null);
-            if (pop == null) {
-                //logger.error("ProductOfferingPrice not found for id={}", popRef.getId());
-                continue; //
-            }
+            if (pop == null) continue;
 
             try {
                 String link = this.extractLinkFromDescription(pop.getDescription());
-                Plan plan;
-                try {
-                    plan = loadPlanFromLink(link);
-                } catch (IOException e) {
-                    logger.error("Failed to load Plan from link={}", link, e);
-                    continue;
-                }
-                
+                Plan plan = loadPlanFromLink(link);
                 this.overwritingPlanByProductOffering(plan, po, pop);
-
                 plans.add(plan);
-//                logger.info("Plan loaded for offeringId={}, priceId={}", offeringId, pop.getId());
-            } catch (IllegalStateException e) {
-                logger.error("Skipping ProductOfferingPrice id={} due to error: {}", popRef.getId(), e.getMessage());
+            } catch (IOException e) {
+                throw new BadRevenuePlanException(new Plan(), "Failed to load Plan from link in ProductOfferingPrice id=" + popRef.getId());
             }
         }
 
         return plans;
     }
-    
-    private String extractLinkFromDescription(String description) {
+
+    private String extractLinkFromDescription(String description) throws BadRevenuePlanException {
         if (description == null || description.isEmpty()) {
-            throw new IllegalStateException("Description is null or empty");
+            throw new BadRevenuePlanException(new Plan(), "Description is null or empty");
         }
         Pattern pattern = Pattern.compile("https?://raw\\.githubusercontent\\.com\\S+");
         Matcher matcher = pattern.matcher(description);
-        if (matcher.find()) {
-            return matcher.group();
-        }
+        if (matcher.find()) return matcher.group();
 
-        throw new IllegalStateException("No link found in description");
+        throw new BadRevenuePlanException(new Plan(), "No link found in description");
     }
 
-    private Plan loadPlanFromLink(String link) throws IOException {
-
+    private Plan loadPlanFromLink(String link) throws IOException, BadRevenuePlanException, ExternalServiceException {
         if(DEV_USE_LOCAL_PLANS) {
             // get the last part of the link
             String[] parts = link.split("/");
             String planFileName = parts[parts.length-1];
             // search it within src/main/resources/data/plans
             return this.loadPlanFromFile("./src/main/resources/data/plans/"+planFileName);
-        }
-        else {
-            URL planUrl = new URL(link);
-            try (InputStream is = planUrl.openStream()) {
-                Plan plan = mapper.readValue(is, Plan.class);
-                logger.debug("Loaded plan '{}' with ID '{}'", link, plan.getId());
-                return plan;
+        } else {
+            try {
+                URL planUrl = new URL(link);
+                try (InputStream is = planUrl.openStream()) {
+                    Plan plan = mapper.readValue(is, Plan.class);
+                    logger.debug("Loaded plan '{}' with ID '{}'", link, plan.getId());
+                    return plan;
+                }
+            } catch (IOException e) {
+                throw new ExternalServiceException("Failed to retrieve plan from external URL: " + link);
             }
-
         }
-
     }
 
-    protected Plan loadPlanFromFile(String path) throws IOException {
+    protected Plan loadPlanFromFile(String path) throws IOException, BadRevenuePlanException {
         File file = new File(path);
         try (InputStream is = new FileInputStream(file)) {
             Plan plan = mapper.readValue(is, Plan.class);
             return plan;
+        } catch(IOException e) {
+            throw new BadRevenuePlanException(new Plan(), "Failed to load plan from file: " + path);
         }
-
     }
 
-    private void overwritingPlanByProductOffering(Plan plan, ProductOffering po, ProductOfferingPrice pop) {
-    	plan.setId(plan.generateId(po.getId(), pop.getId()));
+    private void overwritingPlanByProductOffering(Plan plan, ProductOffering po, ProductOfferingPrice pop) throws BadRevenuePlanException {
+        plan.setId(plan.generateId(po.getId(), pop.getId()));
         plan.setLifecycleStatus(po.getLifecycleStatus());
         plan.setDescription(po.getDescription());
     }
-    
+
     /**
      * Validates the plan corresponding to the offering ID.
      *
      * @return a PlanValidationReport with validation results
      */
-    public PlanValidationReport validatePlan(String planId) {
+    public PlanValidationReport validatePlan(String planId) throws BadRevenuePlanException, BadTmfDataException, ExternalServiceException {
         Plan plan = getPlanById(planId);
         return new PlanValidator().validate(plan);
     }
-    
+
     //TODO: to be removed when not needed anymore
-    public PlanValidationReport validatePlanTest(Plan plan) throws IOException {
+    public PlanValidationReport validatePlanTest(Plan plan) throws IOException, BadRevenuePlanException {
         return new PlanValidator().validate(plan);
     }
 }

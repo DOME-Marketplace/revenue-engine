@@ -1,5 +1,8 @@
 package it.eng.dome.revenue.engine.service;
 
+import it.eng.dome.revenue.engine.exception.BadRevenuePlanException;
+import it.eng.dome.revenue.engine.exception.BadTmfDataException;
+import it.eng.dome.revenue.engine.exception.ExternalServiceException;
 import it.eng.dome.revenue.engine.model.*;
 import it.eng.dome.revenue.engine.model.comparator.RevenueItemComparator;
 import it.eng.dome.revenue.engine.model.comparator.RevenueStatementTimeComparator;
@@ -20,29 +23,27 @@ import java.util.TreeSet;
 
 @Service
 public class StatementsService implements InitializingBean {
-	
+
 	private final Logger logger = LoggerFactory.getLogger(StatementsService.class);
 
 	@Autowired
 	private CachedSubscriptionService subscriptionService;
-    @Autowired
-	private CachedPlanService planService;
 
-//    @Autowired
-//	private PriceCalculator priceCalculator;
+    @Autowired
+    private CachedPlanService planService;
 
     public void afterPropertiesSet() throws Exception {}
 
     public StatementsService() {}
 
-	/*
-	 * Returns a list of RevenueItems for the subscription
-	 */
-    public List<RevenueItem> getItemsForSubscription(String subscriptionId) throws Exception {    	
+    /*
+     * Returns a list of RevenueItems for the subscription
+     */
+    public List<RevenueItem> getItemsForSubscription(String subscriptionId) throws BadTmfDataException, BadRevenuePlanException, ExternalServiceException {
         List<RevenueStatement> statements = this.getStatementsForSubscription(subscriptionId);
         Set<RevenueItem> items = new TreeSet<>(new RevenueItemComparator());
-        for(RevenueStatement s:statements) {
-            for(RevenueItem i:s.getRevenueItems()) {
+        for (RevenueStatement s : statements) {
+            for (RevenueItem i : s.getRevenueItems()) {
                 items.add(i);
             }
         }
@@ -50,52 +51,63 @@ public class StatementsService implements InitializingBean {
     }
 
     /**
-	 * Returns a set of TimePeriods for the billing periods of the subscription
-	 * 
-	 * @param subscriptionId The ID of the subscription for which to retrieve billing periods.
-	 * @return A set of TimePeriod objects representing the billing periods.
-	 */
-    public Set<TimePeriod> getBillPeriods(String subscriptionId) {
+     * Returns a set of TimePeriods for the billing periods of the subscription
+     * 
+     * @param subscriptionId The ID of the subscription for which to retrieve billing periods.
+     * @return A set of TimePeriod objects representing the billing periods.
+     */
+    public Set<TimePeriod> getBillPeriods(String subscriptionId) throws BadTmfDataException, BadRevenuePlanException, ExternalServiceException {
 
-            // retrieve the subscription by id
-            Subscription sub = subscriptionService.getSubscriptionByProductId(subscriptionId);
-
-            // retrieve the resolved plan for the subscription
-            Plan plan = planService.getResolvedPlanById(sub.getPlan().getId(), sub);
-	        sub.setPlan(plan);
-
-            // build all statements
-            SubscriptionTimeHelper timeHelper = new SubscriptionTimeHelper(sub);
-
-            return timeHelper.getBillingTimePeriods();
+        // retrieve the subscription by id
+        Subscription sub;
+        try {
+            sub = subscriptionService.getSubscriptionByProductId(subscriptionId);
+        } catch (Exception e) {
+            logger.error("Failed to retrieve subscription with ID {}: {}", subscriptionId, e.getMessage(), e);
+            throw new BadTmfDataException("Subscription", subscriptionId, "Failed to retrieve subscription");
         }
 
-	/**
-	 * Retrieves all revenue statements for a given subscription ID.
-	 * 
-	 * @param subscriptionId The ID of the subscription for which to retrieve statements.
-	 * @return A list of RevenueStatement objects representing the statements for the subscription.
-	 * @throws Exception If an error occurs during retrieval or computation of statements.
-	 */
-    public List<RevenueStatement> getStatementsForSubscription(String subscriptionId) throws Exception {
+        // retrieve the resolved plan for the subscription
+        Plan plan = planService.getResolvedPlanById(sub.getPlan().getId(), sub);
+        sub.setPlan(plan);
+
+        // build all statements
+        SubscriptionTimeHelper timeHelper = new SubscriptionTimeHelper(sub);
+
+        return timeHelper.getBillingTimePeriods();
+    }
+
+    /**
+     * Retrieves all revenue statements for a given subscription ID.
+     * 
+     * @param subscriptionId The ID of the subscription for which to retrieve statements.
+     * @return A list of RevenueStatement objects representing the statements for the subscription.
+     * @throws BadTmfDataException If an error occurs retrieving the subscription from TMF.
+     * @throws BadRevenuePlanException If an error occurs resolving the plan.
+     * @throws ExternalServiceException If an unexpected error occurs during statement computation.
+     */
+    public List<RevenueStatement> getStatementsForSubscription(String subscriptionId) throws BadTmfDataException, BadRevenuePlanException, ExternalServiceException {
+
         logger.info("Call to getStatementsForSubscription: {}", subscriptionId);
 
         Set<RevenueStatement> statements = new TreeSet<>(new RevenueStatementTimeComparator());
 
+        // Retrieve subscription
         Subscription sub;
         try {
             sub = subscriptionService.getSubscriptionByProductId(subscriptionId);
         } catch (Exception ex) {
             logger.error("Failed to retrieve subscription with ID {}: {}", subscriptionId, ex.getMessage(), ex);
-            throw new RuntimeException("Failed to retrieve subscription: " + subscriptionId, ex);
+            throw new BadTmfDataException("Subscription", subscriptionId, "Failed to retrieve subscription");
         }
 
+        // Resolve plan
         Plan plan;
         try {
             plan = planService.getResolvedPlanById(sub.getPlan().getId(), sub);
         } catch (Exception ex) {
             logger.error("Failed to retrieve plan for subscription {}: {}", subscriptionId, ex.getMessage(), ex);
-            throw new RuntimeException("Failed to retrieve plan for subscription: " + subscriptionId, ex);
+            throw new BadRevenuePlanException(sub.getPlan(), "Failed to retrieve plan for subscription");
         }
 
         sub.setPlan(plan);
@@ -115,10 +127,9 @@ public class StatementsService implements InitializingBean {
                     // Continue processing other periods
                 }
             }
-
         } catch (Exception ex) {
             logger.error("Unexpected error while computing statements for subscription {}: {}", subscriptionId, ex.getMessage(), ex);
-            throw new RuntimeException("Error while computing statements for subscription: " + subscriptionId, ex);
+            throw new ExternalServiceException("Error while computing statements for subscription: " + subscriptionId);
         } finally {
             // Replace full plan with reference even in case of exception
             sub.setPlan(plan.buildRef());
@@ -126,5 +137,5 @@ public class StatementsService implements InitializingBean {
 
         return new ArrayList<>(statements);
     }
-    
+
 }

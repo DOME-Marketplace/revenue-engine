@@ -1,6 +1,5 @@
 package it.eng.dome.revenue.engine.controller;
 
-import java.io.IOException;
 import java.util.List;
 
 import org.slf4j.Logger;
@@ -13,9 +12,11 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import it.eng.dome.revenue.engine.exception.BadRevenuePlanException;
+import it.eng.dome.revenue.engine.exception.BadTmfDataException;
+import it.eng.dome.revenue.engine.exception.ExternalServiceException;
 import it.eng.dome.revenue.engine.model.Report;
 import it.eng.dome.revenue.engine.service.cached.CachedReportingService;
-import it.eng.dome.tmforum.tmf632.v4.ApiException;
 
 @RestController
 @RequestMapping("/revenue/dashboard")
@@ -43,7 +44,7 @@ public class ReportingController {
             }
 
             return ResponseEntity.ok(reports);
-        } catch (ApiException | IOException e) {
+        } catch (BadTmfDataException | BadRevenuePlanException | ExternalServiceException e) {
             logger.error("Failed to generate dashboard report for Organization with ID {}: {}", relatedPartyId, e.getMessage(), e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
