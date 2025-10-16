@@ -16,7 +16,6 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import it.eng.dome.revenue.engine.exception.BadRevenuePlanException;
 import it.eng.dome.revenue.engine.model.Plan;
 import it.eng.dome.revenue.engine.model.Subscription;
 import it.eng.dome.revenue.engine.service.cached.CachedPlanService;
@@ -90,7 +89,7 @@ public class PlansController {
     
     //TODO: remove this test endpoint,when not needed anymore
     @PostMapping("/validate")
-    public ResponseEntity<PlanValidationReport> validatePlan(@RequestBody Plan plan) throws BadRevenuePlanException {
+    public ResponseEntity<PlanValidationReport> validatePlan(@RequestBody Plan plan) {
         PlanValidationReport report;
 		try {
 			report = subscriptionPlanService.validatePlanTest(plan);

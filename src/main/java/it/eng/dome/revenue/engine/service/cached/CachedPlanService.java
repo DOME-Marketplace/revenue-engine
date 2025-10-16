@@ -10,9 +10,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
-import it.eng.dome.revenue.engine.exception.BadRevenuePlanException;
-import it.eng.dome.revenue.engine.exception.BadTmfDataException;
-import it.eng.dome.revenue.engine.exception.ExternalServiceException;
 import it.eng.dome.revenue.engine.model.Plan;
 import it.eng.dome.revenue.engine.service.PlanService;
 
@@ -57,7 +54,7 @@ public class CachedPlanService extends PlanService {
      * Retrieve bills from cache or from the parent class if not cached.
     */
     @Override
-    public List<Plan> getAllPlans() throws BadTmfDataException, BadRevenuePlanException, ExternalServiceException {
+    public List<Plan> getAllPlans() {
         String key = "all-plans";
         if (!REVENUE_CACHE_ENABLED || !this.planSetCache.containsKey(key)) {
             logger.debug("Cache MISS for " + key);
@@ -69,7 +66,7 @@ public class CachedPlanService extends PlanService {
     }
 
     @Override
-    public Plan getPlanById(String planId) throws BadTmfDataException, BadRevenuePlanException, ExternalServiceException {
+    public Plan getPlanById(String planId) {
         String key = planId;
         if (!REVENUE_CACHE_ENABLED || !this.planCache.containsKey(key)) {
             logger.debug("Cache MISS for " + key);
@@ -80,7 +77,7 @@ public class CachedPlanService extends PlanService {
     }
 
     @Override
-    public Plan findPlan(String offeringId, String offeringPriceId) throws BadTmfDataException, BadRevenuePlanException, ExternalServiceException {
+    public Plan findPlan(String offeringId, String offeringPriceId) {
         String key = offeringId+offeringPriceId;
         if (!REVENUE_CACHE_ENABLED || !this.planCache.containsKey(key)) {
             logger.debug("Cache MISS for " + key);

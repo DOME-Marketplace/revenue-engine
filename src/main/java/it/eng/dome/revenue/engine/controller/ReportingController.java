@@ -13,9 +13,6 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import it.eng.dome.revenue.engine.exception.BadRevenuePlanException;
-import it.eng.dome.revenue.engine.exception.BadTmfDataException;
-import it.eng.dome.revenue.engine.exception.ExternalServiceException;
 import it.eng.dome.revenue.engine.model.Report;
 import it.eng.dome.revenue.engine.service.cached.CachedReportingService;
 import it.eng.dome.tmforum.tmf632.v4.ApiException;
@@ -35,7 +32,7 @@ public class ReportingController {
     }
  */
     @GetMapping("/{relatedPartyId}")
-    public ResponseEntity<List<Report>> getDashboard(@PathVariable String relatedPartyId) throws BadTmfDataException, BadRevenuePlanException, ExternalServiceException {
+    public ResponseEntity<List<Report>> getDashboard(@PathVariable String relatedPartyId) {
 //        logger.info("Request received: reporting for dashboard, Organization ID = {}", relatedPartyId);
         try {
             List<Report> reports = reportingService.getDashboardReport(relatedPartyId);

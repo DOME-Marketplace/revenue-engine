@@ -5,8 +5,10 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -34,6 +36,7 @@ import it.eng.dome.tmforum.tmf637.v4.model.BillingAccountRef;
 import it.eng.dome.tmforum.tmf637.v4.model.Product;
 import it.eng.dome.tmforum.tmf678.v4.model.AppliedCustomerBillingRate;
 import it.eng.dome.tmforum.tmf678.v4.model.CustomerBill;
+import it.eng.dome.tmforum.tmf678.v4.model.RelatedParty;
 import it.eng.dome.tmforum.tmf678.v4.model.TimePeriod;
 
 @Service

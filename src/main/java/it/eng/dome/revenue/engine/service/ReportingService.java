@@ -19,9 +19,6 @@ import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import it.eng.dome.revenue.engine.exception.BadRevenuePlanException;
-import it.eng.dome.revenue.engine.exception.BadTmfDataException;
-import it.eng.dome.revenue.engine.exception.ExternalServiceException;
 import it.eng.dome.revenue.engine.model.Plan;
 import it.eng.dome.revenue.engine.model.Report;
 import it.eng.dome.revenue.engine.model.RevenueItem;
@@ -65,11 +62,8 @@ public class ReportingService implements InitializingBean {
      * @return a list of Report sections for the dashboard
      * @throws ApiException if an API call fails
      * @throws IOException if a file or network access fails
-     * @throws ExternalServiceException 
-     * @throws BadRevenuePlanException 
-     * @throws BadTmfDataException 
      */
-    public List<Report> getDashboardReport(String relatedPartyId) throws ApiException, IOException, BadTmfDataException, BadRevenuePlanException, ExternalServiceException {
+    public List<Report> getDashboardReport(String relatedPartyId) throws ApiException, IOException {
         logger.info("Reporting for dashboard, Organization ID = {}", relatedPartyId);
 
         List<Report> report = new ArrayList<>();
@@ -96,12 +90,9 @@ public class ReportingService implements InitializingBean {
 	 * @return a Report object containing subscription details
 	 * @throws ApiException if there is an error retrieving data from the API
 	 * @throws IOException if there is an error reading data from files
-     * @throws ExternalServiceException 
-     * @throws BadRevenuePlanException 
-     * @throws BadTmfDataException 
 	 */
     
-    public Report getSubscriptionSection(String relatedPartyId) throws ApiException, IOException, BadTmfDataException, BadRevenuePlanException, ExternalServiceException {
+    public Report getSubscriptionSection(String relatedPartyId) throws ApiException, IOException {
         Subscription subscription = subscriptionService.getActiveSubscriptionByRelatedPartyId(relatedPartyId);
         if (subscription == null) {
             return new Report("Subscription", "No active subscription found for this user.");
