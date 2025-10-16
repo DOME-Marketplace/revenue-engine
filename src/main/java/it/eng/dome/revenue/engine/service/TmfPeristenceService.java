@@ -19,10 +19,12 @@ import org.springframework.stereotype.Service;
 
 import it.eng.dome.brokerage.api.AppliedCustomerBillRateApis;
 import it.eng.dome.revenue.engine.model.RevenueBill;
+import it.eng.dome.revenue.engine.model.Role;
 import it.eng.dome.revenue.engine.model.Subscription;
 import it.eng.dome.revenue.engine.service.cached.CachedSubscriptionService;
 import it.eng.dome.revenue.engine.service.cached.TmfCachedDataRetriever;
 import it.eng.dome.revenue.engine.tmf.TmfApiFactory;
+import it.eng.dome.revenue.engine.utils.RelatedPartyUtils;
 import it.eng.dome.revenue.engine.utils.TMFApiUtils;
 import it.eng.dome.tmforum.tmf632.v4.api.OrganizationApi;
 import it.eng.dome.tmforum.tmf632.v4.model.Organization;
@@ -110,11 +112,18 @@ public class TmfPeristenceService implements InitializingBean {
      */
     public List<CustomerBill> persistProviderRevenueBills(String providerId) throws Exception {
         List<CustomerBill> createdCustomerBills = new ArrayList<>();
-        for (Subscription sub : this.subscriptionService.getSubscriptionsByRelatedPartyId(providerId, "Buyer")) {
+
+        List<Subscription> buyerSubscriptions = RelatedPartyUtils.retainSubscriptionsWithParty(
+            this.subscriptionService.getAllSubscriptions(), providerId, Role.BUYER
+        );
+
+        for (Subscription sub : buyerSubscriptions) {
             createdCustomerBills.addAll(this.persistSubscriptionRevenueBills(sub.getId()));
         }
+
         return createdCustomerBills;
     }
+
 
 
     /*
@@ -434,22 +443,21 @@ public class TmfPeristenceService implements InitializingBean {
     }
     
     private boolean relatedPartyMatch(List<RelatedParty> rl1, List<RelatedParty> rl2) {
-    	String rlId1 = null;
-    	String rlId2 = null;
-		if(rl1 != null && this.filterRelatedPartyPerRole(rl1, "Buyer")!=null)
-			rlId1 = this.filterRelatedPartyPerRole(rl1, "Buyer").getId();
-		if(rl2 != null && this.filterRelatedPartyPerRole(rl2, "Buyer")!=null)
-			rlId2 = this.filterRelatedPartyPerRole(rl2, "Buyer").getId();
+        String rlId1 = this.getRelatedPartyIdByRole(rl1, Role.BUYER);
+        String rlId2 = this.getRelatedPartyIdByRole(rl2, Role.BUYER);
 
-        return rlId1 != null && rlId1.equals(rlId2);
+        return rlId1.equals(rlId2);
     }
-    
-    private RelatedParty filterRelatedPartyPerRole(List<RelatedParty> relatedParties, String role) {
-    	for(RelatedParty rl : relatedParties) {
-    		if(role.equalsIgnoreCase(rl.getRole())){
-    			return rl;
-    		}
-    	}
-    	return null;
+
+    private String getRelatedPartyIdByRole(List<RelatedParty> relatedParties, Role role) {
+        if (relatedParties == null || role == null) return null;
+
+        for (RelatedParty rp : relatedParties) {
+            if (rp != null && rp.getRole() != null && role.getValue().equalsIgnoreCase(rp.getRole())) {
+                return rp.getId();
+            }
+        }
+        return null;
     }
+
 }

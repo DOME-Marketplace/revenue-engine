@@ -6,7 +6,6 @@ import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -23,12 +22,15 @@ import org.springframework.stereotype.Service;
 import it.eng.dome.revenue.engine.model.Plan;
 import it.eng.dome.revenue.engine.model.Report;
 import it.eng.dome.revenue.engine.model.RevenueItem;
+import it.eng.dome.revenue.engine.model.Role;
 import it.eng.dome.revenue.engine.model.Subscription;
 import it.eng.dome.revenue.engine.model.SubscriptionTimeHelper;
+import it.eng.dome.revenue.engine.model.comparator.CustomerBillComparator;
 import it.eng.dome.revenue.engine.service.cached.CachedPlanService;
 import it.eng.dome.revenue.engine.service.cached.CachedStatementsService;
 import it.eng.dome.revenue.engine.service.cached.CachedSubscriptionService;
 import it.eng.dome.revenue.engine.service.cached.TmfCachedDataRetriever;
+import it.eng.dome.revenue.engine.utils.RelatedPartyUtils;
 import it.eng.dome.tmforum.tmf632.v4.ApiException;
 import it.eng.dome.tmforum.tmf678.v4.model.CustomerBill;
 
@@ -132,16 +134,14 @@ public class ReportingService implements InitializingBean {
         filter.put("relatedParty.id", relatedPartyId);
         List<CustomerBill> allBills = tmfDataRetriever.getAllCustomerBills(null, filter);
 
-        List<CustomerBill> buyerBills = allBills.stream()
-            .filter(cb -> cb.getRelatedParty() != null &&
-                          cb.getRelatedParty().stream()
-                            .anyMatch(rp -> rp != null &&
-                                            relatedPartyId.equals(rp.getId()) &&
-                                            "buyer".equalsIgnoreCase(rp.getRole())))
-            .sorted(Comparator.comparing(
-                cb -> cb.getBillDate() != null ? cb.getBillDate() : OffsetDateTime.MIN
-            ))
-            .toList();
+        List<CustomerBill> buyerBills = new ArrayList<>();
+        for (CustomerBill bill : allBills) {
+            if (RelatedPartyUtils.customerBillHasPartyWithRole(bill, relatedPartyId, Role.BUYER)) {
+                buyerBills.add(bill);
+            }
+        }
+
+        Collections.sort(buyerBills, new CustomerBillComparator());
 
         List<Report> invoiceReports = new ArrayList<>();
 
