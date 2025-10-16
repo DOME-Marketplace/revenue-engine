@@ -10,6 +10,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
+import it.eng.dome.revenue.engine.model.Role;
 import it.eng.dome.revenue.engine.model.Subscription;
 import it.eng.dome.revenue.engine.service.SubscriptionService;
 
@@ -78,14 +79,27 @@ public class CachedSubscriptionService extends SubscriptionService {
     }
     
     @Override
-    public Subscription getSubscriptionByRelatedPartyId(String relatedPartyId) {
+    public Subscription getActiveSubscriptionByRelatedPartyId(String relatedPartyId) {
 		String key = relatedPartyId;
 		if (!REVENUE_CACHE_ENABLED || !this.subscriptionsCache.containsKey(key)) {
 			logger.debug("Cache MISS for " + key);
-			Subscription subscription = super.getSubscriptionByRelatedPartyId(relatedPartyId);
+			Subscription subscription = super.getActiveSubscriptionByRelatedPartyId(relatedPartyId);
 			this.subscriptionCache.put(key, subscription);
 		}
 		return this.subscriptionCache.get(key);
 	}
 
+    @Override
+    public List<Subscription> getSubscriptionsByRelatedPartyId(String id, Role role){
+    	String key = id + role.getValue();
+		if (!REVENUE_CACHE_ENABLED || !this.subscriptionsCache.containsKey(key)) {		
+			logger.debug("Cache MISS for " + key);
+			List<Subscription> subscriptions = super.getSubscriptionsByRelatedPartyId(id, role);
+			this.subscriptionsCache.put(key, subscriptions);
+		}
+		
+		return this.subscriptionsCache.get(key);
+	}
+			
+	
 }

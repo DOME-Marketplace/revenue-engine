@@ -93,7 +93,7 @@ public class ReportingService implements InitializingBean {
 	 */
     
     public Report getSubscriptionSection(String relatedPartyId) throws ApiException, IOException {
-        Subscription subscription = subscriptionService.getSubscriptionByRelatedPartyId(relatedPartyId);
+        Subscription subscription = subscriptionService.getActiveSubscriptionByRelatedPartyId(relatedPartyId);
         if (subscription == null) {
             return new Report("Subscription", "No active subscription found for this user.");
         }
@@ -197,7 +197,7 @@ public class ReportingService implements InitializingBean {
 	*/
     public Report getRevenueSection(String relatedPartyId) {
     	
-    	String subscriptionId = subscriptionService.getSubscriptionByRelatedPartyId(relatedPartyId).getId();
+    	String subscriptionId = subscriptionService.getActiveSubscriptionByRelatedPartyId(relatedPartyId).getId();
 		if (subscriptionId == null || subscriptionId.isEmpty()) {
 			logger.warn("Subscription ID is null or not found for Organization with ID: {}", relatedPartyId);
 			return new Report(
@@ -268,7 +268,7 @@ public class ReportingService implements InitializingBean {
     public List<RevenueItem> getRevenueStatements(String relatedPartyId) throws ApiException, IOException {
     	logger.info("Call getRevenueStatements with relatedPartyId: {}", relatedPartyId);
 
-        String subscriptionId = subscriptionService.getSubscriptionByRelatedPartyId(relatedPartyId).getId();
+        String subscriptionId = subscriptionService.getActiveSubscriptionByRelatedPartyId(relatedPartyId).getId();
         logger.debug("Retrieved subscriptionId: {}", subscriptionId);
 
         try {

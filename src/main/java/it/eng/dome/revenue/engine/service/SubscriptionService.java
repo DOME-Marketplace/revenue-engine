@@ -12,8 +12,10 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import it.eng.dome.revenue.engine.mapper.RevenueProductMapper;
+import it.eng.dome.revenue.engine.model.Role;
 import it.eng.dome.revenue.engine.model.Subscription;
 import it.eng.dome.revenue.engine.service.cached.TmfCachedDataRetriever;
+import it.eng.dome.revenue.engine.utils.RelatedPartyUtils;
 import it.eng.dome.tmforum.tmf637.v4.model.Product;
 
 @Service
@@ -84,34 +86,29 @@ public class SubscriptionService implements InitializingBean {
 	 * @param id The ID of the related party to search for.
 	 * @return The Subscription object if found, null otherwise.
 	*/
-    // TODO: should return a list of subscriptions
-	public Subscription getSubscriptionByRelatedPartyId(String id) {
-		// FIXME: this only returns the first subscription!!!!
-		logger.debug("Retrieving subscription by related party id: {}", id);
-	    return getAllSubscriptions().stream()
-	            .filter(subscription -> subscription.getRelatedParties() != null)
-	            .filter(subscription -> subscription.getRelatedParties().stream()
-	                    .anyMatch(party -> party != null && party.getId() != null && party.getId().equals(id)))
-	            .findFirst()
-	            .orElse(null);
-	}
+    public Subscription getActiveSubscriptionByRelatedPartyId(String id) {
+        logger.debug("Retrieving active subscription by related party id: {}", id);
+
+        if (id == null) return null;
+        //FIXME: now assuming that a party can have only one active subscription
+        for (Subscription sub : getAllSubscriptions()) {
+            if (sub.getStatus().equalsIgnoreCase("active") && RelatedPartyUtils.subscriptionHasPartyWithRole(sub, id, Role.BUYER)) {
+                return sub;
+            }
+        }
+
+        return null; 
+    }
+
 	
 	/**
 	 * Retrieves a list of subscriptions by related party ID and role.
 	 * @param id related party id
 	 * @param role role of related party
 	 */
-	public List<Subscription> getSubscriptionsByRelatedPartyId(String id, String role) {
-		//logger.debug("Retrieving subscriptions by related party id: {} with role: {}", id, role);
-	    return getAllSubscriptions().stream()
-	            .filter(subscription -> subscription.getRelatedParties() != null)
-	            .filter(subscription -> subscription.getRelatedParties().stream()
-					.anyMatch(party -> party != null && party.getId() != null && party.getId().equals(id) && party.getRole()!=null && party.getRole().equalsIgnoreCase(role)) 
-				)
-				.toList();
+	public List<Subscription> getSubscriptionsByRelatedPartyId(String id, Role role) {
 
-		// TOOD: consider the following instead of the previous
-//		return RelatedPartyUtils.retainSubscriptionsWithParty(this.getAllSubscriptions(), partyId, partyRole);
+		return RelatedPartyUtils.retainSubscriptionsWithParty(this.getAllSubscriptions(), id, role);
 	}
 
 	/**
