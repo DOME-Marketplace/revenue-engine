@@ -2,6 +2,7 @@ package it.eng.dome.revenue.engine.service;
 
 import it.eng.dome.revenue.engine.exception.BadTmfDataException;
 import it.eng.dome.revenue.engine.exception.ExternalServiceException;
+import it.eng.dome.revenue.engine.exception.BadRevenuePlanException;
 import it.eng.dome.revenue.engine.invoicing.InvoicingService;
 import it.eng.dome.revenue.engine.mapper.RevenueBillingMapper;
 import it.eng.dome.revenue.engine.model.*;
@@ -91,6 +92,15 @@ public class BillsService {
                 bills.add(bill);
             }
             return new ArrayList<>(bills);
+        } catch (BadRevenuePlanException e) {
+            logger.error("Bad revenue plan error retrieving subscription bills for ID {}: {}", subscriptionId, e.getMessage(), e);
+            throw e;
+        } catch (BadTmfDataException e) {
+            logger.error("Bad TMF data error retrieving subscription bills for ID {}: {}", subscriptionId, e.getMessage(), e);
+            throw e;
+        } catch (ExternalServiceException e) {
+            logger.error("External service error retrieving subscription bills for ID {}: {}", subscriptionId, e.getMessage(), e);
+            throw e;
         } catch (Exception e) {
         	logger.error("Error retrieving subscription bills for ID {}: {}", subscriptionId, e.getMessage(), e);
             throw e;
@@ -106,8 +116,18 @@ public class BillsService {
     	RevenueBill rb = new RevenueBill();
 		try {
 			rb = this.getRevenueBillById(revenueBillId);
+		} catch (BadRevenuePlanException e) {
+			logger.error("Bad revenue plan error retrieving Revenue Bill with ID {}: {}", revenueBillId, e.getMessage(), e);
+			throw e;
+		} catch (BadTmfDataException e) {
+			logger.error("Bad TMF data error retrieving Revenue Bill with ID {}: {}", revenueBillId, e.getMessage(), e);
+			throw e;
+		} catch (ExternalServiceException e) {
+			logger.error("External service error retrieving Revenue Bill with ID {}: {}", revenueBillId, e.getMessage(), e);
+			throw e;
 		} catch (Exception e) {
 			logger.error("Failed to retrieve Revenue Bill with ID {}: {}", revenueBillId, e.getMessage(), e);
+			throw e;
 		}
         return this.getCustomerBillByRevenueBill(rb);
     }
@@ -121,8 +141,18 @@ public class BillsService {
     	RevenueBill rb = new RevenueBill();
 		try {
 			rb = this.getRevenueBillById(revenueBillId);
+		} catch (BadRevenuePlanException e) {
+			logger.error("Bad revenue plan error retrieving Revenue Bill with ID {}: {}", revenueBillId, e.getMessage(), e);
+			throw e;
+		} catch (BadTmfDataException e) {
+			logger.error("Bad TMF data error retrieving Revenue Bill with ID {}: {}", revenueBillId, e.getMessage(), e);
+			throw e;
+		} catch (ExternalServiceException e) {
+			logger.error("External service error retrieving Revenue Bill with ID {}: {}", revenueBillId, e.getMessage(), e);
+			throw e;
 		} catch (Exception e) {
 			logger.error("Failed to retrieve Revenue Bill with ID {}: {}", revenueBillId, e.getMessage(), e);
+			throw e;
 		}
 
         return this.getACBRsByRevenueBill(rb);
@@ -149,7 +179,15 @@ public class BillsService {
         
         CustomerBill cb = RevenueBillingMapper.toCB(rb);
 
-		cb.setBillingAccount(TmfConverter.convertBillingAccountRefTo678(tmfDataRetriever.retrieveBillingAccountByProductId(rb.getSubscriptionId())));
+		try {
+			cb.setBillingAccount(TmfConverter.convertBillingAccountRefTo678(tmfDataRetriever.retrieveBillingAccountByProductId(rb.getSubscriptionId())));
+		} catch (BadTmfDataException e) {
+			logger.error("Bad TMF data error setting billing account for subscription ID {}: {}", rb.getSubscriptionId(), e.getMessage(), e);
+			throw e;
+		} catch (ExternalServiceException e) {
+			logger.error("External service error setting billing account for subscription ID {}: {}", rb.getSubscriptionId(), e.getMessage(), e);
+			throw e;
+		}
         
 		// Next bill date and payment due date
 		Subscription sub = subscriptionService.getSubscriptionByProductId(rb.getSubscriptionId());
@@ -445,7 +483,7 @@ public class BillsService {
      * @throws ExternalServiceException 
      * @throws BadTmfDataException 
  	*/
-  private List<AppliedCustomerBillingRate> setBillingAccountRef(List<AppliedCustomerBillingRate> acbrs, String subscriptionId) throws BadTmfDataException, ExternalServiceException{
+  private List<AppliedCustomerBillingRate> setBillingAccountRef(List<AppliedCustomerBillingRate> acbrs, String subscriptionId) throws BadTmfDataException, ExternalServiceException {
 	  BillingAccountRef billingAccountRef = tmfDataRetriever.retrieveBillingAccountByProductId(subscriptionId);
 	  if (billingAccountRef == null) {
 		  logger.warn("toCB: billingAccountRef is null, CustomerBill will have null billingAccount");
