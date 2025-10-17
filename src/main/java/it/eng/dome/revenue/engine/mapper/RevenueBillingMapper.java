@@ -182,7 +182,13 @@ public class RevenueBillingMapper {
 
 		// amounts
         Money taxExcludedAmount = new Money();
-        taxExcludedAmount.setUnit(revenueBill.getRevenueItems().get(0).getCurrency());
+        if (revenueBill.getRevenueItems() != null && !revenueBill.getRevenueItems().isEmpty()) {
+            taxExcludedAmount.setUnit(revenueBill.getRevenueItems().get(0).getCurrency());
+        } else {
+            // Default currency if no revenue items
+            taxExcludedAmount.setUnit("EUR");
+            logger.warn("No revenue items found for bill {}, using default currency", billId);
+        }
         taxExcludedAmount.setValue(revenueBill.getAmount().floatValue());
         cb.setTaxExcludedAmount(taxExcludedAmount);
 
