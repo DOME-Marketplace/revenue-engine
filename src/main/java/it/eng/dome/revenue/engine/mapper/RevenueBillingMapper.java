@@ -3,7 +3,6 @@ package it.eng.dome.revenue.engine.mapper;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Currency;
 import java.util.List;
 import java.util.UUID;
 
@@ -187,7 +186,7 @@ public class RevenueBillingMapper {
             taxExcludedAmount.setUnit(revenueBill.getRevenueItems().get(0).getCurrency());
         } else {
             // Default currency if no revenue items
-            taxExcludedAmount.setUnit(Currency.getInstance("EUR").getCurrencyCode());
+            taxExcludedAmount.setUnit("EUR");
             logger.warn("No revenue items found for bill {}, using default currency", billId);
         }
         taxExcludedAmount.setValue(revenueBill.getAmount().floatValue());
