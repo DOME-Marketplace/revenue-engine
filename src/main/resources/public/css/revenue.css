@@ -1,6 +1,6 @@
 body {
     font-family:arial;
-    font-size:10pt;
+    font-size:9pt;
     padding:0;
     margin:0;
     background:#f0f0f0;
@@ -27,14 +27,23 @@ td {
 }
 
 div.tmfbox {
-    padding:10pt;
+    padding:5pt;
     margin:2pt;
     margin-bottom:10pt;
-    outline:2pt solid gray;
+    margin-right:5pt;
+    outline:1pt solid gray;
+    border-radius: 5pt;
+    background:#e8e8e8;
+}
+
+div.selected {
+    outline-width:3pt;
+    box-shadow: 0pt 0pt 30pt 30pt white inset;
 }
 
 div.tmfbox:hover {
     outline-width:3pt;
+    box-shadow: 0pt 0pt 5pt 5pt white inset;
 }
 
 div.organization {
@@ -66,7 +75,7 @@ div.statement {
 }
 
 div.bill {
-    outline-color:red;
+    outline-color:darkred;
 }
 
 div.cb {

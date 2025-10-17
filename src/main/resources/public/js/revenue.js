@@ -71,54 +71,67 @@ function genericFetchAndShow(resourceType, resourceId, viewCallback, clickedDOM)
 }
 
 function fetchAndShowPlans(clickedDOM) {
+    getLanes().prepareFor(clickedDOM);
     genericFetchAndShow("plans", null, showPlans, clickedDOM)
 }
 
 function fetchAndShowOrganizations(clickedDOM) {
+    getLanes().prepareFor(clickedDOM);
     genericFetchAndShow("organizations", null, showOrganizations, clickedDOM)
 }
 
 function fetchAndShowPlan(clickedDOM) {
+    getLanes().prepareFor(clickedDOM);
     genericFetchAndShow("plan", clickedDOM.getAttribute("objectId"), showPlan, clickedDOM);
 }
 
 function fetchAndShowRawPlan(clickedDOM) {
+    getLanes().prepareFor(clickedDOM);
     genericFetchAndShow("plan", clickedDOM.getAttribute("objectId"), showRaw, clickedDOM);
 }
 
 function fetchAndShowSubscriptions(clickedDOM) {
+    getLanes().prepareFor(clickedDOM);
     genericFetchAndShow("subscriptions", clickedDOM.getAttribute("objectId"), showSubscriptions, clickedDOM);
 }
 
 function fetchAndShowStatements(clickedDOM) {
+    getLanes().prepareFor(clickedDOM);
     genericFetchAndShow("statements", clickedDOM.getAttribute("objectId"), showStatements, clickedDOM);
 }
 
 function fetchAndShowBills(clickedDOM) {
+    getLanes().prepareFor(clickedDOM);
     genericFetchAndShow("bills", clickedDOM.getAttribute("objectId"), showBills, clickedDOM);
 }
 
 function fetchAndShowCustomerBills(clickedDOM) {
+    getLanes().prepareFor(clickedDOM);
     genericFetchAndShow("bills", clickedDOM.getAttribute("objectId"), fetchAndAddCustomerBills, clickedDOM);
 }
 
 function fetchAndShowCustomerBill(clickedDOM) {
+    getLanes().prepareFor(clickedDOM);
     genericFetchAndShow("customerBill", clickedDOM.getAttribute("objectId"), showCustomerBill, clickedDOM);
 }
 
 function fetchAndShowACBRs(clickedDOM) {
+    getLanes().prepareFor(clickedDOM);
     genericFetchAndShow("acbrs", clickedDOM.getAttribute("objectId"), showACBRs, clickedDOM);
 }
 
 function fetchAndShowTransactions(clickedDOM) {
+    getLanes().prepareFor(clickedDOM);
     genericFetchAndShow("organizationTransactions", clickedDOM.getAttribute("objectId"), showCustomerBills, clickedDOM);
 }
 
 function fetchAndShowPurchasedProducts(clickedDOM) {
+    getLanes().prepareFor(clickedDOM);
     genericFetchAndShow("purchasedProducts", clickedDOM.getAttribute("objectId"), showProducts, clickedDOM);
 }
 
 function fetchAndShowSoldProducts(clickedDOM) {
+    getLanes().prepareFor(clickedDOM);
     genericFetchAndShow("soldProducts", clickedDOM.getAttribute("objectId"), showProducts, clickedDOM);
 }
 
@@ -450,6 +463,7 @@ class Lanes {
         this.currentCol++;
         col.setAttribute("name", "lane_"+this.currentCol);
         col.classList.add("lane");
+        col.classList.add("empty");
         this.row.appendChild(col);
         return col;
     }
@@ -469,11 +483,32 @@ class Lanes {
             laneDOM.appendChild(dom);
     }
 
-    // revoves all lanes after the one containing dom
+    // removes all lanes after the one containing dom
     cleanAfter(dom) {
         let domLane = this._getLaneContaining(dom);
         while(this._getLastLane()!=domLane) {
             this.popLane();
+        }
+    }
+
+    prepareFor(dom) {
+        let laneDOM = this._getLaneContaining(dom);
+        this._unselectAllBoxesInLane(laneDOM);
+        this.markAsCurrent(dom);
+        this.cleanAfter(dom);
+    }
+
+    markAsCurrent(boxDom) {
+        if(boxDom && boxDom.classList)
+            boxDom.classList.add("selected");
+    }
+
+    _unselectAllBoxesInLane(domLane) {
+        if(domLane) {
+            for(var box of domLane.children) {
+                console.log(box);
+                box.classList.remove("selected");
+            }
         }
     }
 

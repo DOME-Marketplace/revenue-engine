@@ -1,6 +1,7 @@
 package it.eng.dome.revenue.engine.service;
 
 import java.time.OffsetDateTime;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -10,6 +11,7 @@ import org.springframework.stereotype.Service;
 
 import it.eng.dome.revenue.engine.model.Role;
 import it.eng.dome.revenue.engine.model.comparator.CustomerBillComparator;
+import it.eng.dome.revenue.engine.model.comparator.OrganizationComparator;
 import it.eng.dome.revenue.engine.service.cached.TmfCachedDataRetriever;
 import it.eng.dome.revenue.engine.utils.RelatedPartyUtils;
 import it.eng.dome.tmforum.tmf632.v4.model.Organization;
@@ -27,7 +29,9 @@ public class DevDashboardService {
 	private TmfCachedDataRetriever tmfDataRetriever;
 
     public List<Organization> listOrganizations() throws Exception {
-        return tmfDataRetriever.getAllPaginatedOrg();
+        List<Organization> orgs = tmfDataRetriever.getAllPaginatedOrg();
+        Collections.sort(orgs, new OrganizationComparator());
+        return orgs;
     }
 
     public List<CustomerBill> listOrganizationTransactions(String sellerId) throws Exception {
