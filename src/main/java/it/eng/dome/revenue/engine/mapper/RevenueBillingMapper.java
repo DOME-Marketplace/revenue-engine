@@ -62,7 +62,7 @@ public class RevenueBillingMapper {
 		if (item == null)
 			return;
 
-		if(item.getValue()!=null && item.getValue()!=0) {
+		if(item.getValue()!=null) {
 			acbrList.add(toACBR(item, revenueBill, subscription));
 		}
 
