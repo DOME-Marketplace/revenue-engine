@@ -21,6 +21,8 @@ import it.eng.dome.tmforum.tmf678.v4.model.TaxItem;
 
 public class RevenueBillingMapper {
 	
+	private static final String STANDARD_CURRENCY_FOR_EMPTY_CB = "EUR";
+	
 	private static final Logger logger = LoggerFactory.getLogger(RevenueBillingMapper.class);
 		
 	/**
@@ -186,7 +188,7 @@ public class RevenueBillingMapper {
             taxExcludedAmount.setUnit(revenueBill.getRevenueItems().get(0).getCurrency());
         } else {
             // Default currency if no revenue items
-            taxExcludedAmount.setUnit("EUR");
+            taxExcludedAmount.setUnit(STANDARD_CURRENCY_FOR_EMPTY_CB);
             logger.warn("No revenue items found for bill {}, using default currency", billId);
         }
         taxExcludedAmount.setValue(revenueBill.getAmount().floatValue());
