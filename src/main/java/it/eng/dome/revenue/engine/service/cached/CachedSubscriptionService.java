@@ -12,6 +12,7 @@ import org.springframework.stereotype.Service;
 
 import it.eng.dome.revenue.engine.exception.BadTmfDataException;
 import it.eng.dome.revenue.engine.exception.ExternalServiceException;
+import it.eng.dome.revenue.engine.exception.NotFoundException;
 import it.eng.dome.revenue.engine.model.Role;
 import it.eng.dome.revenue.engine.model.Subscription;
 import it.eng.dome.revenue.engine.service.SubscriptionService;
@@ -70,7 +71,7 @@ public class CachedSubscriptionService extends SubscriptionService {
     }
 
     @Override
-    public Subscription getSubscriptionByProductId(String productId) throws BadTmfDataException, ExternalServiceException {
+    public Subscription getSubscriptionByProductId(String productId) throws BadTmfDataException, ExternalServiceException, NotFoundException {
     	String key = productId;
 		if (!REVENUE_CACHE_ENABLED || !this.subscriptionsCache.containsKey(key)) {
 			logger.debug("Cache MISS for " + key);

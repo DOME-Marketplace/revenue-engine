@@ -26,6 +26,7 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import it.eng.dome.revenue.engine.exception.BadRevenuePlanException;
 import it.eng.dome.revenue.engine.exception.BadTmfDataException;
 import it.eng.dome.revenue.engine.exception.ExternalServiceException;
+import it.eng.dome.revenue.engine.exception.NotFoundException;
 import it.eng.dome.revenue.engine.model.Plan;
 import it.eng.dome.revenue.engine.model.PlanResolver;
 import it.eng.dome.revenue.engine.model.Subscription;
@@ -89,14 +90,23 @@ public class PlanService implements InitializingBean {
     /*
      * Retrieves a plan by its ID.
      */
-    public Plan getPlanById(String planId) throws BadTmfDataException, BadRevenuePlanException, ExternalServiceException {
+    public Plan getPlanById(String planId)
+            throws BadTmfDataException, BadRevenuePlanException, ExternalServiceException, NotFoundException {
+
         String[] parts = IdUtils.unpack(planId, "plan");
         String offeringId = parts[0];
         String offeringPriceId = parts[1];
-        return this.findPlan(offeringId, offeringPriceId);
+
+        try {
+            return this.findPlan(offeringId, offeringPriceId);
+        } catch (BadTmfDataException e) {
+            logger.warn("Plan not found for ID {} (offeringId={}, priceId={})", planId, offeringId, offeringPriceId);
+            throw new NotFoundException("Plan not found for ID " + planId);
+        }
     }
 
-    public Plan getResolvedPlanById(String planId, Subscription sub) throws BadTmfDataException, BadRevenuePlanException, ExternalServiceException {
+    public Plan getResolvedPlanById(String planId, Subscription sub)
+            throws BadTmfDataException, BadRevenuePlanException, ExternalServiceException, NotFoundException {
         PlanResolver planResolver = new PlanResolver(sub);
         Plan plan = this.getPlanById(planId);
         return plan != null ? planResolver.resolve(plan) : null;
@@ -105,19 +115,23 @@ public class PlanService implements InitializingBean {
     /*
      * Retrieves a plan by its offering ID and offering price ID.
      */
-    public Plan findPlan(String offeringId, String offeringPriceId) throws BadTmfDataException, BadRevenuePlanException, ExternalServiceException {
+    public Plan findPlan(String offeringId, String offeringPriceId)
+            throws BadTmfDataException, BadRevenuePlanException, ExternalServiceException {
         if (offeringId == null || offeringId.isEmpty()) {
             throw new BadTmfDataException("ProductOffering", offeringId, "Offering ID cannot be null or empty");
         }
 
         ProductOffering po = tmfDataRetriever.getProductOfferingById(offeringId, null);
         if (po == null) {
-            throw new BadTmfDataException("ProductOffering", offeringId, "ProductOffering not found");
+            throw new BadTmfDataException("ProductOffering", offeringId, "ProductOffering referenced but not found");
         }
 
         ProductOfferingPrice pop = fetchProductOfferingPriceById(po, offeringPriceId);
-        String link = extractLinkFromDescription(pop.getDescription());
+        if (pop == null) {
+            throw new BadTmfDataException("ProductOfferingPrice", offeringPriceId, "Referenced ProductOfferingPrice not found");
+        }
 
+        String link = extractLinkFromDescription(pop.getDescription());
         try {
             Plan plan = this.loadPlanFromLink(link);
             this.overwritingPlanByProductOffering(plan, po, pop);
@@ -130,7 +144,8 @@ public class PlanService implements InitializingBean {
     /*
      * Fetches the ProductOfferingPrice by its ID from the given ProductOffering.
      */
-    private ProductOfferingPrice fetchProductOfferingPriceById(ProductOffering po, String offeringPriceId) throws BadTmfDataException, ExternalServiceException {
+    private ProductOfferingPrice fetchProductOfferingPriceById(ProductOffering po, String offeringPriceId)
+            throws BadTmfDataException, ExternalServiceException {
         if (po.getProductOfferingPrice() == null || po.getProductOfferingPrice().isEmpty()) {
             throw new BadTmfDataException("ProductOfferingPrice", offeringPriceId, "ProductOffering has no ProductOfferingPrice");
         }
@@ -141,20 +156,22 @@ public class PlanService implements InitializingBean {
             }
         }
 
-        throw new BadTmfDataException("ProductOfferingPrice", offeringPriceId, "Price not found in ProductOffering");
+        throw new BadTmfDataException("ProductOfferingPrice", offeringPriceId, "Price ID referenced but not present in ProductOffering");
     }
 
     /*
      * Retrieves all plans associated with the given offering ID.
      */
-    public List<Plan> findPlans(String offeringId) throws BadTmfDataException, BadRevenuePlanException, ExternalServiceException {
+    public List<Plan> findPlans(String offeringId)
+            throws BadTmfDataException, BadRevenuePlanException, ExternalServiceException {
         if (offeringId == null || offeringId.isEmpty()) {
             throw new BadTmfDataException("ProductOffering", offeringId, "Offering ID cannot be null or empty");
         }
 
         ProductOffering po = tmfDataRetriever.getProductOfferingById(offeringId, null);
         if (po == null) {
-            throw new BadTmfDataException("ProductOffering", offeringId, "ProductOffering not found");
+            logger.warn("ProductOffering not found for ID {}, returning empty plan list", offeringId);
+            return Collections.emptyList();
         }
 
         if (po.getProductOfferingPrice() == null || po.getProductOfferingPrice().isEmpty()) {
@@ -164,7 +181,9 @@ public class PlanService implements InitializingBean {
         List<Plan> plans = new ArrayList<>();
         for (ProductOfferingPriceRefOrValue popRef : po.getProductOfferingPrice()) {
             ProductOfferingPrice pop = tmfDataRetriever.getProductOfferingPrice(popRef.getId(), null);
-            if (pop == null) continue;
+            if (pop == null) {
+                throw new BadTmfDataException("ProductOfferingPrice", popRef.getId(), "Referenced ProductOfferingPrice not found");
+            }
 
             try {
                 String link = this.extractLinkFromDescription(pop.getDescription());
@@ -205,7 +224,7 @@ public class PlanService implements InitializingBean {
                     logger.debug("Loaded plan '{}' with ID '{}'", link, plan.getId());
                     return plan;
                 }
-            } catch (IOException e) {
+            } catch(IOException e) {
                 throw new ExternalServiceException("Failed to retrieve plan from external URL: " + link);
             }
         }
@@ -232,7 +251,8 @@ public class PlanService implements InitializingBean {
      *
      * @return a PlanValidationReport with validation results
      */
-    public PlanValidationReport validatePlan(String planId) throws BadRevenuePlanException, BadTmfDataException, ExternalServiceException {
+    public PlanValidationReport validatePlan(String planId)
+            throws BadRevenuePlanException, BadTmfDataException, ExternalServiceException, NotFoundException {
         Plan plan = getPlanById(planId);
         return new PlanValidator().validate(plan);
     }
