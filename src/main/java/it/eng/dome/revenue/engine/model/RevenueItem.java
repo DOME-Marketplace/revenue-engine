@@ -21,10 +21,16 @@ public class RevenueItem {
 
     private OffsetDateTime chargeTime;
     
+    private Boolean skipIfZero;
+    
     private List<RevenueItem> items;
 
     public RevenueItem() {
     	this.items = new ArrayList<>();
+    }
+    
+    public RevenueItem(PlanItem planItem) {
+        this.setSkipIfZero(planItem.getSkipIfZero());
     }
 
     public RevenueItem(String name, String currency) {
@@ -174,5 +180,13 @@ public class RevenueItem {
     public void setType(String type) {
         this.type = type;
     }
+    
+    public Boolean getSkipIfZero() {
+        return Boolean.TRUE.equals(skipIfZero);
+    }
+    
+    public void setSkipIfZero(Boolean skipIfZero) {
+		this.skipIfZero = skipIfZero;
+	}
 
 }
