@@ -13,7 +13,6 @@ import org.springframework.stereotype.Service;
 
 import it.eng.dome.revenue.engine.exception.BadTmfDataException;
 import it.eng.dome.revenue.engine.exception.ExternalServiceException;
-import it.eng.dome.revenue.engine.exception.NotFoundException;
 import it.eng.dome.revenue.engine.mapper.RevenueProductMapper;
 import it.eng.dome.revenue.engine.model.Role;
 import it.eng.dome.revenue.engine.model.Subscription;
@@ -34,7 +33,6 @@ public class SubscriptionService implements InitializingBean {
     private TmfCachedDataRetriever tmfDataRetriever;
 
     public SubscriptionService() {
-
     }
 
     @Override
@@ -45,7 +43,7 @@ public class SubscriptionService implements InitializingBean {
      * Retrieves a subscription by its product ID.
      */
     public Subscription getSubscriptionByProductId(String productId)
-            throws BadTmfDataException, ExternalServiceException, NotFoundException {
+            throws BadTmfDataException, ExternalServiceException {
 
         if (productId == null || productId.isEmpty()) {
             throw new BadTmfDataException("Product", productId, "Product ID cannot be null or empty");
@@ -59,10 +57,6 @@ public class SubscriptionService implements InitializingBean {
         } catch (Exception e) {
             logger.error("Failed to retrieve product {}: {}", productId, e.getMessage(), e);
             throw new ExternalServiceException("Failed to retrieve product with ID: " + productId);
-        }
-
-        if (prod == null) {
-            throw new NotFoundException("Subscription with Product ID " + productId + " not found");
         }
 
         return RevenueProductMapper.toSubscription(prod);

@@ -3,7 +3,6 @@ package it.eng.dome.revenue.engine.service;
 import it.eng.dome.revenue.engine.exception.BadRevenuePlanException;
 import it.eng.dome.revenue.engine.exception.BadTmfDataException;
 import it.eng.dome.revenue.engine.exception.ExternalServiceException;
-import it.eng.dome.revenue.engine.exception.NotFoundException;
 import it.eng.dome.revenue.engine.model.*;
 import it.eng.dome.revenue.engine.model.comparator.RevenueItemComparator;
 import it.eng.dome.revenue.engine.model.comparator.RevenueStatementTimeComparator;
@@ -56,9 +55,8 @@ public class StatementsService implements InitializingBean {
      * 
      * @param subscriptionId The ID of the subscription for which to retrieve billing periods.
      * @return A set of TimePeriod objects representing the billing periods.
-     * @throws NotFoundException 
      */
-    public Set<TimePeriod> getBillPeriods(String subscriptionId) throws BadTmfDataException, BadRevenuePlanException, ExternalServiceException, NotFoundException {
+    public Set<TimePeriod> getBillPeriods(String subscriptionId) throws BadTmfDataException, BadRevenuePlanException, ExternalServiceException {
 
         // retrieve the subscription by id
         Subscription sub;
