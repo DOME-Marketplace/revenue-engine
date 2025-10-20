@@ -33,6 +33,7 @@ import it.eng.dome.revenue.engine.service.cached.CachedStatementsService;
 import it.eng.dome.revenue.engine.service.cached.CachedSubscriptionService;
 import it.eng.dome.revenue.engine.service.cached.TmfCachedDataRetriever;
 import it.eng.dome.revenue.engine.utils.RelatedPartyUtils;
+import it.eng.dome.tmforum.tmf637.v4.model.Product;
 import it.eng.dome.tmforum.tmf678.v4.model.CustomerBill;
 
 @Service
@@ -67,18 +68,45 @@ public class ReportingService implements InitializingBean {
      */
     public List<Report> getDashboardReport(String relatedPartyId) throws BadTmfDataException, BadRevenuePlanException, ExternalServiceException {
         logger.info("Reporting for dashboard, Organization ID = {}", relatedPartyId);
-
+        if (relatedPartyId == null || relatedPartyId.isEmpty()) {
+			throw new BadTmfDataException("Organization", relatedPartyId, "Related Party ID cannot be null or empty");
+		}
+        
         List<Report> report = new ArrayList<>();
+		
+		List<Product> products = tmfDataRetriever.getAllSubscriptionProducts();
+		
+		boolean isDomeOp = false;
+		
+		// TODO: REPLACE WITH ROLE.DOME_OPERATOR
+		for(Product p : products) {
+			if(RelatedPartyUtils.productHasPartyWithRole(p, relatedPartyId, Role.SELLER_OPERATOR)) {
+				isDomeOp = true;
+				break;
+			}
+		}		
+		
+		if(!isDomeOp) {
+	        // My Subscription Plan
+	        report.add(getSubscriptionSection(relatedPartyId));
+	
+	        // Billing History
+	        report.add(getBillingHistorySection(relatedPartyId));
+	
+	        // Revenue section
+	        report.add(getRevenueSection(relatedPartyId));
+		}
+		else {
+			Report totalRevenueReport = totalSubscriptionRevenueSection();
+	        report.add(totalRevenueReport);
 
-        // My Subscription Plan
-        report.add(getSubscriptionSection(relatedPartyId));
-
-        // Billing History
-        report.add(getBillingHistorySection(relatedPartyId));
-
-        // Revenue section
-        report.add(getRevenueSection(relatedPartyId));
-
+			// active providers
+	        report.add(activeProvidersSection());
+			
+			// top performing providers
+	        report.add(topSubscriptionsSection(totalRevenueReport));
+		}
+		
         return report;
     }
 
@@ -266,6 +294,90 @@ public class ReportingService implements InitializingBean {
             throw new ExternalServiceException("Unexpected error retrieving revenue section");
         }
     }
+    
+    private Report topSubscriptionsSection(Report totalRevenueReport) {
+        if (totalRevenueReport.getItems() == null || totalRevenueReport.getItems().isEmpty()) {
+            return new Report("Top Subscriptions", "No revenue data available");
+        }
+
+        List<Report> subscriptions = totalRevenueReport.getItems().stream()
+                .filter(r -> !"Overall Total".equalsIgnoreCase(r.getLabel()))
+                .collect(Collectors.toList());
+
+        if (subscriptions.isEmpty()) {
+            return new Report("Top Subscription", "No revenue data available");
+        }
+
+        subscriptions.sort((r1, r2) -> Double.compare(parseCurrency(r2.getText()), parseCurrency(r1.getText())));
+
+        return new Report("Top Subscriptions", List.of(subscriptions.get(0),subscriptions.get(1)));
+    }
+
+    public Report activeProvidersSection() throws ExternalServiceException, BadTmfDataException {
+		
+    	// FIXME: ACTIVE SUBSCRIPTIONS ONLY
+		int nr = subscriptionService.getAllSubscriptions().size();
+        
+		return new Report("Active Providers", String.valueOf(nr));
+			
+	}
+    
+    public Report totalSubscriptionRevenueSection()
+            throws BadTmfDataException, BadRevenuePlanException, ExternalServiceException {
+
+    	// FIXME: ACTIVE SUBSCRIPTIONS ONLY
+        List<Subscription> subscriptions = subscriptionService.getAllSubscriptions();
+        if (subscriptions == null || subscriptions.isEmpty()) {
+            return new Report("Total Subscription Revenue", "No active subscriptions found");
+        }
+
+        List<Report> subscriptionReports = new ArrayList<>();
+        double totalOverall = 0.0;
+        String currency = "";
+
+        LocalDate today = LocalDate.now();
+
+        for (Subscription sub : subscriptions) {
+            String subId = sub.getId();
+            if (subId == null || subId.isEmpty()) continue;
+
+            try {
+                List<RevenueItem> items = statementsService.getItemsForSubscription(subId);
+                if (items == null || items.isEmpty()) continue;
+
+                double yearlyTotal = 0.0;
+
+                for (RevenueItem ri : items) {
+                    LocalDate chargeDate = ri.getChargeTime().toLocalDate();
+                    if (chargeDate.isAfter(today)) continue;
+
+                    if (currency.isEmpty() && ri.getCurrency() != null) {
+                        currency = ri.getCurrency() + " ";
+                    }
+
+                    yearlyTotal += ri.getOverallValue();
+                }
+
+                totalOverall += yearlyTotal;
+
+                String subName = sub.getName();
+                subscriptionReports.add(new Report(subName, currency + format(yearlyTotal)));
+
+            } catch (Exception e) {
+                logger.warn("Skipping subscription {} due to error: {}", subId, e.getMessage());
+            }
+        }
+
+        if (subscriptionReports.isEmpty()) {
+            return new Report("Total Subscription Revenue", "No revenue data available");
+        }
+
+        subscriptionReports.add(new Report("Overall Total", currency + format(totalOverall)));
+
+        return new Report("Total Subscription Revenue", subscriptionReports);
+    }
+
+
 
     /**
      * Retrieves revenue statements for the given relatedPartyId.
@@ -318,4 +430,16 @@ public class ReportingService implements InitializingBean {
         return String.format("%,.2f", value);
     }
 
+
+    private double parseCurrency(String text) {
+        if (text == null) return 0.0;
+        String cleaned = text.replaceAll("[^0-9,\\.]", "").replace(",", ".");
+        try {
+            return Double.parseDouble(cleaned);
+        } catch (NumberFormatException e) {
+            return 0.0;
+        }
+    }
+
+   
 }
