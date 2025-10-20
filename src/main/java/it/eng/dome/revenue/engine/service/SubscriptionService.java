@@ -1,6 +1,7 @@
 package it.eng.dome.revenue.engine.service;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -54,6 +55,9 @@ public class SubscriptionService implements InitializingBean {
         Product prod;
         try {
             prod = this.tmfDataRetriever.getProductById(productId, null);
+            if (prod == null) {
+                return null;
+            }
         } catch (Exception e) {
             logger.error("Failed to retrieve product {}: {}", productId, e.getMessage(), e);
             throw new ExternalServiceException("Failed to retrieve product with ID: " + productId);
@@ -66,13 +70,17 @@ public class SubscriptionService implements InitializingBean {
      * Retrieves all subscriptions associated with the DOME operator.
      * 
      * @return A list of Subscription objects.
+     * @throws BadTmfDataException 
      */
-    public List<Subscription> getAllSubscriptions() throws ExternalServiceException {
+    public List<Subscription> getAllSubscriptions() throws ExternalServiceException, BadTmfDataException {
         logger.info("Fetching subscriptions from tmf products");
 
         List<Product> prods;
         try {
             prods = this.tmfDataRetriever.getAllSubscriptionProducts();
+            if (prods == null) {
+                return Collections.emptyList();
+            }
         } catch (Exception e) {
             logger.error("Failed to retrieve all subscription products: {}", e.getMessage(), e);
             throw new ExternalServiceException("Failed to retrieve subscription products");
@@ -82,6 +90,9 @@ public class SubscriptionService implements InitializingBean {
         for (Product prod : prods) {
             try {
                 Product fullProduct = this.tmfDataRetriever.getProductById(prod.getId(), null);
+                if (fullProduct == null) {
+                    throw new BadTmfDataException("Product", prod.getId(), "Referenced product not found");
+                }
 
                 // FIXME: but be careful with last invoices... sub might not be active
                 // TODO: CHECK IF EXIST IN TMF A STATUS THAT IS RECENTLY TERMINATED
@@ -89,6 +100,8 @@ public class SubscriptionService implements InitializingBean {
                     continue;
                 }
                 subs.add(RevenueProductMapper.toSubscription(fullProduct));
+            } catch (BadTmfDataException e) {
+                throw e;
             } catch (Exception e) {
                 logger.warn("Failed to process product {}: {}", prod.getId(), e.getMessage(), e);
             }
@@ -102,8 +115,9 @@ public class SubscriptionService implements InitializingBean {
      * 
      * @param id The ID of the related party to search for.
      * @return The Subscription object if found, null otherwise.
+     * @throws BadTmfDataException 
      */
-    public Subscription getActiveSubscriptionByRelatedPartyId(String id) throws ExternalServiceException {
+    public Subscription getActiveSubscriptionByRelatedPartyId(String id) throws ExternalServiceException, BadTmfDataException {
         logger.debug("Retrieving active subscription by related party id: {}", id);
 
         if (id == null) return null;
@@ -123,8 +137,9 @@ public class SubscriptionService implements InitializingBean {
      * 
      * @param id related party id
      * @param role role of related party
+     * @throws BadTmfDataException 
      */
-    public List<Subscription> getSubscriptionsByRelatedPartyId(String id, Role role) throws ExternalServiceException {
+    public List<Subscription> getSubscriptionsByRelatedPartyId(String id, Role role) throws ExternalServiceException, BadTmfDataException {
         return RelatedPartyUtils.retainSubscriptionsWithParty(this.getAllSubscriptions(), id, role);
     }
 
@@ -133,8 +148,9 @@ public class SubscriptionService implements InitializingBean {
      * 
      * @param id The ID of the plan to filter subscriptions by.
      * @return A list of Subscription objects that match the given plan ID.
+     * @throws BadTmfDataException 
      */
-    public List<Subscription> getSubscriptionsByPlanId(String id) throws ExternalServiceException {
+    public List<Subscription> getSubscriptionsByPlanId(String id) throws ExternalServiceException, BadTmfDataException {
         logger.debug("Retrieving subscriptions by plan ID: {}", id);
         return this.getAllSubscriptions().stream()
                 .filter(sub -> sub.getPlan() != null && id.equals(sub.getPlan().getId()))

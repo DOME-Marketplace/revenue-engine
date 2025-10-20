@@ -75,7 +75,8 @@ public class PlanService implements InitializingBean {
         logger.info("Fetching all plans...");
 
         List<ProductOffering> pos = tmfDataRetriever.getAllSubscriptionProductOfferings();
-        if (pos == null) throw new BadTmfDataException("ProductOffering", "all", "No product offerings retrieved");
+        if (pos == null) 
+			return Collections.emptyList();
 
         List<Plan> plans = new ArrayList<>();
         for (ProductOffering po : pos) {
@@ -120,6 +121,7 @@ public class PlanService implements InitializingBean {
 
         try {
             Plan plan = this.loadPlanFromLink(link);
+            if (plan == null) throw new BadRevenuePlanException(new Plan(), "Plan could not be loaded from link: " + link);
             this.overwritingPlanByProductOffering(plan, po, pop);
             return plan;
         } catch (IOException e) {
@@ -137,7 +139,10 @@ public class PlanService implements InitializingBean {
 
         for (ProductOfferingPriceRefOrValue ref : po.getProductOfferingPrice()) {
             if (ref.getId().equals(offeringPriceId)) {
-                return tmfDataRetriever.getProductOfferingPrice(ref.getId(), null);
+                ProductOfferingPrice price = tmfDataRetriever.getProductOfferingPrice(ref.getId(), null);
+                if (price == null)
+                    throw new BadTmfDataException("ProductOfferingPrice", offeringPriceId, "Referenced price not found");
+                return price;
             }
         }
 
@@ -158,17 +163,18 @@ public class PlanService implements InitializingBean {
         }
 
         if (po.getProductOfferingPrice() == null || po.getProductOfferingPrice().isEmpty()) {
-            return Collections.emptyList();
+            return Collections.emptyList(); 
         }
 
         List<Plan> plans = new ArrayList<>();
         for (ProductOfferingPriceRefOrValue popRef : po.getProductOfferingPrice()) {
             ProductOfferingPrice pop = tmfDataRetriever.getProductOfferingPrice(popRef.getId(), null);
-            if (pop == null) continue;
+            if (pop == null) throw new BadTmfDataException("ProductOfferingPrice", popRef.getId(), "Referenced price not found"); 
 
             try {
                 String link = this.extractLinkFromDescription(pop.getDescription());
                 Plan plan = loadPlanFromLink(link);
+                if (plan == null) throw new BadRevenuePlanException(new Plan(), "Plan not found at link: " + link); 
                 this.overwritingPlanByProductOffering(plan, po, pop);
                 plans.add(plan);
             } catch (IOException e) {
@@ -196,12 +202,15 @@ public class PlanService implements InitializingBean {
             String[] parts = link.split("/");
             String planFileName = parts[parts.length-1];
             // search it within src/main/resources/data/plans
-            return this.loadPlanFromFile("./src/main/resources/data/plans/"+planFileName);
+            Plan plan = this.loadPlanFromFile("./src/main/resources/data/plans/"+planFileName);
+            if (plan == null) throw new BadRevenuePlanException(new Plan(), "Plan not found in file: " + planFileName);
+            return plan;
         } else {
             try {
                 URL planUrl = new URL(link);
                 try (InputStream is = planUrl.openStream()) {
                     Plan plan = mapper.readValue(is, Plan.class);
+                    if (plan == null) throw new BadRevenuePlanException(new Plan(), "Plan not found at URL: " + link);
                     logger.debug("Loaded plan '{}' with ID '{}'", link, plan.getId());
                     return plan;
                 }
@@ -215,6 +224,7 @@ public class PlanService implements InitializingBean {
         File file = new File(path);
         try (InputStream is = new FileInputStream(file)) {
             Plan plan = mapper.readValue(is, Plan.class);
+            if (plan == null) throw new BadRevenuePlanException(new Plan(), "Plan not found in file: " + path); 
             return plan;
         } catch(IOException e) {
             throw new BadRevenuePlanException(new Plan(), "Failed to load plan from file: " + path);

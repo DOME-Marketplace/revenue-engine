@@ -59,7 +59,7 @@ public class CachedSubscriptionService extends SubscriptionService {
      * Retrieve bills from cache or from the parent class if not cached.
     */
     @Override
-    public List<Subscription> getAllSubscriptions() throws ExternalServiceException {
+    public List<Subscription> getAllSubscriptions() throws ExternalServiceException, BadTmfDataException {
         String key = "all_subscriptions";
         if (!REVENUE_CACHE_ENABLED || !this.subscriptionsCache.containsKey(key)) {
             logger.debug("Cache MISS for " + key);
@@ -81,7 +81,7 @@ public class CachedSubscriptionService extends SubscriptionService {
     }
     
     @Override
-    public Subscription getActiveSubscriptionByRelatedPartyId(String relatedPartyId) throws ExternalServiceException {
+    public Subscription getActiveSubscriptionByRelatedPartyId(String relatedPartyId) throws ExternalServiceException, BadTmfDataException {
 		String key = relatedPartyId;
 		if (!REVENUE_CACHE_ENABLED || !this.subscriptionsCache.containsKey(key)) {
 			logger.debug("Cache MISS for " + key);
@@ -92,7 +92,7 @@ public class CachedSubscriptionService extends SubscriptionService {
 	}
 
     @Override
-    public List<Subscription> getSubscriptionsByRelatedPartyId(String id, Role role) throws ExternalServiceException{
+    public List<Subscription> getSubscriptionsByRelatedPartyId(String id, Role role) throws ExternalServiceException, BadTmfDataException{
     	String key = id + role.getValue();
 		if (!REVENUE_CACHE_ENABLED || !this.subscriptionsCache.containsKey(key)) {		
 			logger.debug("Cache MISS for " + key);
