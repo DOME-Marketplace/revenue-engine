@@ -2,6 +2,21 @@
  
 **Release Notes** of the *Revenue Engine* software:
 
+
+### <code>1.2.5</code> :calendar: 22/10/2025
+**Bug Fixing**
+- General bug fixes and minor performance optimizations.
+
+**New Features**
+- Added new methods in `ReportingService` to generate the DOME Operator dashboard.
+- Replaced the `compute` package with the old `compute2`.
+- Introduced for-each logic to support federated marketplace handling.
+
+**Improvements**
+- Enhanced tiering logic in the application of pricing rules.
+- Improved exception handling.
+
+
 ### <code>1.2.4</code> :calendar: 09/10/2025
 **Bug Fixing**
 - General bug fixing and cleanup:
