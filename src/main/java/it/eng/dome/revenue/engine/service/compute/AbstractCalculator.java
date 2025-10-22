@@ -57,7 +57,7 @@ public abstract class AbstractCalculator implements Calculator {
 		logger.debug("preconditions OK");
 
 		logger.debug("checking computability...");
-		if(!this.checkComputability(timePeriod)) {
+		if(!this.checkComputability(/*timePeriod*/)) {
 			return null;
 		}
 		logger.debug("computability OK");
@@ -348,7 +348,7 @@ public abstract class AbstractCalculator implements Calculator {
      * @param tp
      * @return
      */
-    private boolean checkComputability(TimePeriod timePeriod) {
+    private boolean checkComputability(/*TimePeriod timePeriod*/) {
 
 		if(this.item.getIsBundle())
 			return true;
