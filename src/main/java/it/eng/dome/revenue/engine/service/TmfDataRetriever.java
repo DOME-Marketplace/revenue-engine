@@ -87,7 +87,7 @@ public class TmfDataRetriever implements InitializingBean {
             return cb;
         } catch (Exception e) {
             logger.error("Error retrieving Customer Bill {}: {}", customerBillId, e.getMessage(), e);
-            throw new ExternalServiceException("Failed to retrieve Customer Bill with ID: " + customerBillId);
+            throw new ExternalServiceException("Failed to retrieve Customer Bill with ID: " + customerBillId, e);
         }
     }
 
@@ -97,7 +97,7 @@ public class TmfDataRetriever implements InitializingBean {
             return this.billApi.getAllCustomerBills(fields, filter);
         } catch (Exception e) {
             logger.error("Error retrieving all customer bills", e);
-            throw new ExternalServiceException("Failed to retrieve all customer bills");
+            throw new ExternalServiceException("Failed to retrieve all customer bills", e);
         }
     }
 
@@ -125,7 +125,7 @@ public class TmfDataRetriever implements InitializingBean {
             return acbrs;
         } catch (Exception e) {
             logger.error("Error retrieving ACBRs for Customer Bill {}: {}", customerBillId, e.getMessage(), e);
-            throw new ExternalServiceException("Failed to retrieve ACBRs for Customer Bill with ID: " + customerBillId);
+            throw new ExternalServiceException("Failed to retrieve ACBRs for Customer Bill with ID: " + customerBillId, e);
         }
     }
 
@@ -170,7 +170,7 @@ public class TmfDataRetriever implements InitializingBean {
             return filtered;
         } catch (Exception e) {
             logger.error("Failed to retrieve bills for seller {}: {}", sellerId, e.getMessage(), e);
-            throw new ExternalServiceException("Failed to retrieve bills for seller ID: " + sellerId);
+            throw new ExternalServiceException("Failed to retrieve bills for seller ID: " + sellerId, e);
         }
     }
 
@@ -204,7 +204,7 @@ public class TmfDataRetriever implements InitializingBean {
             return out;
         } catch (Exception e) {
             logger.error("Failed to retrieve bills for participant {} with role {}: {}", participantId, participantRole, e.getMessage(), e);
-            throw new ExternalServiceException("Failed to retrieve bills for participant ID: " + participantId);
+            throw new ExternalServiceException("Failed to retrieve bills for participant ID: " + participantId, e);
         }
     }
 
@@ -242,13 +242,14 @@ public class TmfDataRetriever implements InitializingBean {
                 } catch (Exception e) {
                     logger.error("unable to retrieve organisation with id {} appearing as seller", s);
                     logger.error("", e);
+                    throw e;
                 }
             }
 
             return activeSellers;
         } catch (Exception e) {
             logger.error("Failed to retrieve active sellers", e);
-            throw new ExternalServiceException("Failed to retrieve active sellers");
+            throw new ExternalServiceException("Failed to retrieve active sellers", e);
         }
     }
 
@@ -277,7 +278,7 @@ public class TmfDataRetriever implements InitializingBean {
             return referrals;
         } catch (Exception e) {
             logger.error("Error retrieving referrals for referrer provider ID: {}", referrerOrganizationId, e);
-            throw new ExternalServiceException("Failed to retrieve referred providers for ID: " + referrerOrganizationId);
+            throw new ExternalServiceException("Failed to retrieve referred providers for ID: " + referrerOrganizationId, e);
         }
     }
 
@@ -307,7 +308,7 @@ public class TmfDataRetriever implements InitializingBean {
             return null;
         } catch (Exception e) {
             logger.error("Error retrieving referrer provider for referral provider ID: {}", referralOrganizationId, e);
-            throw new ExternalServiceException("Failed to retrieve referrer provider for referral ID: " + referralOrganizationId);
+            throw new ExternalServiceException("Failed to retrieve referrer provider for referral ID: " + referralOrganizationId, e);
         }
     }
 
@@ -319,7 +320,7 @@ public class TmfDataRetriever implements InitializingBean {
             return allOrgs;
         } catch (Exception e) {
             logger.error("Failed to retrieve all organizations", e);
-            throw new ExternalServiceException("Failed to retrieve all organizations");
+            throw new ExternalServiceException("Failed to retrieve all organizations", e);
         }
     }
 
@@ -345,7 +346,7 @@ public class TmfDataRetriever implements InitializingBean {
             return ba;
         } catch (Exception e) {
             logger.error("Failed to retrieve billing account for product {}", productId, e);
-            throw new ExternalServiceException("Failed to retrieve billing account for product ID: " + productId);
+            throw new ExternalServiceException("Failed to retrieve billing account for product ID: " + productId, e);
         }
     }
 
@@ -366,7 +367,7 @@ public class TmfDataRetriever implements InitializingBean {
             return prod;
         } catch (Exception e) {
             logger.error("Failed to retrieve product {}", productId, e);
-            throw new ExternalServiceException("Failed to retrieve product with ID: " + productId);
+            throw new ExternalServiceException("Failed to retrieve product with ID: " + productId, e);
         }
     }
 
@@ -376,7 +377,7 @@ public class TmfDataRetriever implements InitializingBean {
             return this.productApis.getAllProducts(fields, filter);
         } catch (Exception e) {
             logger.error("Failed to retrieve products", e);
-            throw new ExternalServiceException("Failed to retrieve products");
+            throw new ExternalServiceException("Failed to retrieve products", e);
         }
     }
 
@@ -396,7 +397,7 @@ public class TmfDataRetriever implements InitializingBean {
             return this.getAllProductOfferings(null, filter);
         } catch (Exception e) {
             logger.error("Failed to retrieve subscription product offerings", e);
-            throw new ExternalServiceException("Failed to retrieve subscription product offerings");
+            throw new ExternalServiceException("Failed to retrieve subscription product offerings", e);
         }
     }
 
@@ -415,7 +416,7 @@ public class TmfDataRetriever implements InitializingBean {
             return this.getAllProducts(null, filter);
         } catch (Exception e) {
             logger.error("Failed to retrieve subscription products", e);
-            throw new ExternalServiceException("Failed to retrieve subscription products");
+            throw new ExternalServiceException("Failed to retrieve subscription products", e);
         }
     }
 
@@ -433,7 +434,7 @@ public class TmfDataRetriever implements InitializingBean {
             return this.productOfferingApis.getProductOffering(poId, fields);
         } catch (Exception e) {
             logger.error("Failed to retrieve product offering {}", poId, e);
-            throw new ExternalServiceException("Failed to retrieve product offering with ID: " + poId);
+            throw new ExternalServiceException("Failed to retrieve product offering with ID: " + poId, e);
         }
     }
 
@@ -443,7 +444,7 @@ public class TmfDataRetriever implements InitializingBean {
             return this.productOfferingApis.getAllProductOfferings(fields, filter);
         } catch (Exception e) {
             logger.error("Failed to retrieve product offerings", e);
-            throw new ExternalServiceException("Failed to retrieve product offerings");
+            throw new ExternalServiceException("Failed to retrieve product offerings", e);
         }
     }
 
@@ -458,7 +459,7 @@ public class TmfDataRetriever implements InitializingBean {
             return this.popApis.getProductOfferingPrice(popId, fields);
         } catch (Exception e) {
             logger.error("Failed to retrieve product offering price {}", popId, e);
-            throw new ExternalServiceException("Failed to retrieve product offering price with ID: " + popId);
+            throw new ExternalServiceException("Failed to retrieve product offering price with ID: " + popId, e);
         }
     }
 
@@ -472,7 +473,7 @@ public class TmfDataRetriever implements InitializingBean {
             return this.orgApi.retrieveOrganization(organizationId, null);
         } catch (Exception e) {
             logger.error("Failed to retrieve organization {}", organizationId, e);
-            throw new ExternalServiceException("Failed to retrieve organization with ID: " + organizationId);
+            throw new ExternalServiceException("Failed to retrieve organization with ID: " + organizationId, e);
         }
     }
 
@@ -510,13 +511,14 @@ public class TmfDataRetriever implements InitializingBean {
                 } catch (Exception e) {
                     logger.error("unable to retrieve organisation with id {} appearing as seller", s);
                     logger.error("", e);
+                    throw e;
                 }
             }
 
             return activeSellers;
         } catch (Exception e) {
             logger.error("Failed to retrieve sellers behind federated marketplace {}", federatedMarketplaceId, e);
-            throw new ExternalServiceException("Failed to retrieve sellers behind federated marketplace ID: " + federatedMarketplaceId);
+            throw new ExternalServiceException("Failed to retrieve sellers behind federated marketplace ID: " + federatedMarketplaceId, e);
         }
     }
 

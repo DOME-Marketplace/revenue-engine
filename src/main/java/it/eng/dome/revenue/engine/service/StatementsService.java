@@ -129,7 +129,7 @@ public class StatementsService implements InitializingBean {
             }
         } catch (Exception ex) {
             logger.error("Unexpected error while computing statements for subscription {}: {}", subscriptionId, ex.getMessage(), ex);
-            throw new ExternalServiceException("Error while computing statements for subscription: " + subscriptionId);
+            throw new ExternalServiceException("Error while computing statements for subscription: " + subscriptionId, ex);
         } finally {
             // Replace full plan with reference even in case of exception
             sub.setPlan(plan.buildRef());

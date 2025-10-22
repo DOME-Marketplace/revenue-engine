@@ -60,7 +60,7 @@ public class SubscriptionService implements InitializingBean {
             }
         } catch (Exception e) {
             logger.error("Failed to retrieve product {}: {}", productId, e.getMessage(), e);
-            throw new ExternalServiceException("Failed to retrieve product with ID: " + productId);
+            throw new ExternalServiceException("Failed to retrieve product with ID: " + productId, e);
         }
 
         return RevenueProductMapper.toSubscription(prod);
@@ -83,7 +83,7 @@ public class SubscriptionService implements InitializingBean {
             }
         } catch (Exception e) {
             logger.error("Failed to retrieve all subscription products: {}", e.getMessage(), e);
-            throw new ExternalServiceException("Failed to retrieve subscription products");
+            throw new ExternalServiceException("Failed to retrieve subscription products", e);
         }
 
         List<Subscription> subs = new ArrayList<>();
@@ -104,6 +104,7 @@ public class SubscriptionService implements InitializingBean {
                 throw e;
             } catch (Exception e) {
                 logger.warn("Failed to process product {}: {}", prod.getId(), e.getMessage(), e);
+                throw new ExternalServiceException("Failed to process product with ID: " + prod.getId(), e);
             }
         }
 
