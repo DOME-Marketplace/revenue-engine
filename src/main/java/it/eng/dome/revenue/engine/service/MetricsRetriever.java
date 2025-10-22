@@ -55,12 +55,12 @@ public class MetricsRetriever {
             return totalAmountNoTaxes;
         } catch (Exception e) {
             logger.error("Failed to compute bills no taxes for seller {}: {}", sellerId, e.getMessage(), e);
-            throw new ExternalServiceException("Failed to retrieve bills for seller ID: " + sellerId);
+            throw new ExternalServiceException("Failed to retrieve bills for seller ID: " + sellerId, e);
         }
     }
 
     // implement retriever for key 'referred-providers-number'
-    private Integer computeReferralsProvidersNumber(String sellerId, TimePeriod timePeriod)
+    private Integer computeReferralsProvidersNumber(String sellerId /*, TimePeriod timePeriod*/)
             throws BadTmfDataException, ExternalServiceException {
         // retrieves the list of providers referenced by the seller
         if (sellerId == null || sellerId.isEmpty()) {
@@ -80,7 +80,7 @@ public class MetricsRetriever {
             return size;
         } catch (Exception e) {
             logger.error("Failed to retrieve referred providers for seller {}: {}", sellerId, e.getMessage(), e);
-            throw new ExternalServiceException("Failed to retrieve referred providers for seller ID: " + sellerId);
+            throw new ExternalServiceException("Failed to retrieve referred providers for seller ID: " + sellerId, e);
         }
     }
 
@@ -108,7 +108,7 @@ public class MetricsRetriever {
             return totalTransactionVolume;	    
         } catch (Exception e) {
             logger.error("Failed to compute transaction volume for referred providers of seller {}: {}", sellerId, e.getMessage(), e);
-            throw new ExternalServiceException("Failed to compute transaction volume for seller ID: " + sellerId);
+            throw new ExternalServiceException("Failed to compute transaction volume for seller ID: " + sellerId, e);
         }
     }
 
@@ -136,7 +136,7 @@ public class MetricsRetriever {
             return maxTransactionVolume;
         } catch (Exception e) {
             logger.error("Failed to compute max transaction volume for referred providers of seller {}: {}", sellerId, e.getMessage(), e);
-            throw new ExternalServiceException("Failed to compute max transaction volume for seller ID: " + sellerId);
+            throw new ExternalServiceException("Failed to compute max transaction volume for seller ID: " + sellerId, e);
         }
     }
 
@@ -146,7 +146,7 @@ public class MetricsRetriever {
             case "bills-no-taxes":
                 return computeBillsNoTaxes(sellerId, timePeriod);
             case "referred-providers-number":
-                return (double) computeReferralsProvidersNumber(sellerId, timePeriod);
+                return (double) computeReferralsProvidersNumber(sellerId/*, timePeriod*/);
             case "referred-providers-transaction-volume":
                 return computeReferralsProvidersTransactionVolume(sellerId, timePeriod);
             case "referred-provider-max-transaction-volume":
@@ -173,7 +173,7 @@ public class MetricsRetriever {
                     return orgIds;
                 } catch (Exception e) {
                     logger.error("Failed to retrieve active sellers behind marketplace {}: {}", subscriberId, e.getMessage(), e);
-                    throw new ExternalServiceException("Failed to retrieve active sellers behind marketplace ID: " + subscriberId);
+                    throw new ExternalServiceException("Failed to retrieve active sellers behind marketplace ID: " + subscriberId, e);
                 }
             default:
                 throw new BadTmfDataException("Metric", key, "Unknown metric key");
@@ -188,7 +188,7 @@ public class MetricsRetriever {
             return out;
         } catch (Exception e) {
             logger.error("Failed to retrieve sellers behind marketplace {}: {}", marketplaceId, e.getMessage(), e);
-            throw new ExternalServiceException("Failed to retrieve sellers behind marketplace ID: " + marketplaceId);
+            throw new ExternalServiceException("Failed to retrieve sellers behind marketplace ID: " + marketplaceId, e);
         }
     }
 

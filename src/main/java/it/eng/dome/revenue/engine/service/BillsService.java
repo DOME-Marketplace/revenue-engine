@@ -113,7 +113,7 @@ public class BillsService {
 	 * @return a Customer Bill objects representing the RevenueBill for tmf
 	*/
     public CustomerBill getCustomerBillByRevenueBillId(String revenueBillId) throws Exception {
-    	RevenueBill rb = new RevenueBill();
+    	RevenueBill rb;
 		try {
 			rb = this.getRevenueBillById(revenueBillId);
 		} catch (BadRevenuePlanException e) {
@@ -138,7 +138,7 @@ public class BillsService {
  	 * @return a List of ACBR objects representing the bills of RevenueBill for tmf
  	*/
     public List<AppliedCustomerBillingRate> getACBRsByRevenueBillId(String revenueBillId) throws Exception {
-    	RevenueBill rb = new RevenueBill();
+    	RevenueBill rb;
 		try {
 			rb = this.getRevenueBillById(revenueBillId);
 		} catch (BadRevenuePlanException e) {
