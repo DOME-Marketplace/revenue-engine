@@ -1,0 +1,123 @@
+body {
+    font-family:arial;
+    font-size:9pt;
+    padding:0;
+    margin:0;
+    background:#f0f0f0;
+}
+
+div {
+    padding:0pt 0pt;
+    font-size:10pt;
+}
+
+h3 {
+    padding:0pt;
+    margin:0pt;
+    padding-bottom:10pt;
+}
+
+td {
+    vertical-align:top;
+}
+
+.indent {
+    text-indent:-10pt;
+    padding-left:10pt;
+}
+
+div.tmfbox {
+    padding:5pt;
+    margin:2pt;
+    margin-bottom:10pt;
+    margin-right:5pt;
+    outline:1pt solid gray;
+    border-radius: 5pt;
+    background:#e8e8e8;
+}
+
+div.selected {
+    outline-width:3pt;
+    box-shadow: 0pt 0pt 30pt 30pt white inset;
+}
+
+div.tmfbox:hover {
+    outline-width:3pt;
+    box-shadow: 0pt 0pt 5pt 5pt white inset;
+}
+
+div.organization {
+    outline-color:blue;
+}
+
+div.product {
+    outline-color:sienna;
+}
+
+div.plan {
+    outline-color:purple;
+}
+
+div.generic {
+    outline-color:white;
+}
+
+div.message {
+    outline-color:gray;
+}
+
+div.subscription {
+    outline-color: green;
+}
+
+div.statement {
+    outline-color:blue;
+}
+
+div.bill {
+    outline-color:darkred;
+}
+
+div.cb {
+    outline-color:orange;
+}
+
+div.acbr {
+    outline-color:brown;
+}
+
+div.revenueItem {
+    padding:2pt 0pt 2pt 10pt;
+    margin:2pt 0pt;
+}
+
+button.menuButton {
+    width:100%;
+    text-align: left;
+    background-color:rgb(255, 255, 255, 0.5);
+    border:0;
+    margin:1pt;
+}
+
+button.menuButton:hover {
+    background-color:rgb(0, 0, 255, 0.1);
+    cursor:pointer;
+}
+
+button.menuButton:disabled {
+    background-color:transparent;
+    color:#808080;
+}
+
+td.lane {
+    max-width:250pt;
+}
+
+td.menu {
+    max-width:150pt;
+}
+
+hr {
+    border:0;
+    border-top:1px solid lightgray;
+}

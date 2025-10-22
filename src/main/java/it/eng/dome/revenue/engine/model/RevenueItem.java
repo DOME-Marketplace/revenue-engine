@@ -20,6 +20,7 @@ public class RevenueItem {
     private String type;
 
     private OffsetDateTime chargeTime;
+
     
     private List<RevenueItem> items;
 

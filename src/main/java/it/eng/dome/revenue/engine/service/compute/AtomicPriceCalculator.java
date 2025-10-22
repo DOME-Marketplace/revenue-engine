@@ -1,4 +1,4 @@
-package it.eng.dome.revenue.engine.service.compute2;
+package it.eng.dome.revenue.engine.service.compute;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -55,7 +55,7 @@ public class AtomicPriceCalculator extends AbstractCalculator {
 	 * @return List of RevenueItems representing discounts
 	 */
 	private RevenueItem computeDiscountRevenueItem(TimePeriod timePeriod, Map<String, Double> computationContext) {
-		Calculator dc = CalculatorFactory.getCalculatorFor(this.getSubscription(), ((Price)this.item).getDiscount());
+		Calculator dc = CalculatorFactory.getCalculatorFor(this.getSubscription(), ((Price)this.item).getDiscount(), this);
 		RevenueItem discountItem = dc.compute(timePeriod, computationContext);
 		return discountItem;
 	}
@@ -66,8 +66,9 @@ public class AtomicPriceCalculator extends AbstractCalculator {
 
         // seller id is the subscriber, by default. But can be overridden using the calculator context
         String sellerId = this.getSubscription().getSubscriberId();
-        if(this.getCalculatorContext()!=null && this.getCalculatorContext().get("sellerId")!=null)
+        if(this.getCalculatorContext()!=null && this.getCalculatorContext().get("sellerId")!=null) {
             sellerId = this.getCalculatorContext().get("sellerId");
+		}
 
 		Double priceValue = this.computePriceValue(sellerId, timePeriod);
 
@@ -88,7 +89,7 @@ public class AtomicPriceCalculator extends AbstractCalculator {
 	private Double computePriceValue(String sellerId, TimePeriod tp) {
 		try {
 			if (this.item.getPercent() != null) {
-				TimePeriod computationPeriod = this.getComputationTimePeriod(tp.getEndDateTime());
+				TimePeriod computationPeriod = this.getComputationTimePeriod(tp.getEndDateTime().minusSeconds(1));
 				if (computationPeriod == null) {
 					logger.debug("Could not compute custom period for reference: {}", this.item.getComputationBaseReferencePeriod());
 					return null;
@@ -99,8 +100,8 @@ public class AtomicPriceCalculator extends AbstractCalculator {
 					logger.debug("Computation value is null");
 					return null;
 				}
-				logger.info("Computation base {} for metric '{}' in period {} - {}",
-					computationBase, this.item.getComputationBase(), computationPeriod.getStartDateTime(), computationPeriod.getEndDateTime());				
+				logger.info("Computation base {} for metric '{}' in period {} - {} for seller {}",
+					computationBase, this.item.getComputationBase(), computationPeriod.getStartDateTime(), computationPeriod.getEndDateTime(), sellerId);				
 				return computationBase * (this.item.getPercent() / 100);
 			} 
 			else {

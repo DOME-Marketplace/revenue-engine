@@ -49,21 +49,33 @@ public class BillsController {
     
     @GetMapping("{revenueBillId}/cb")
     public ResponseEntity<CustomerBill> getCustomerBillByRevenueBillId(@PathVariable String revenueBillId) {
-        CustomerBill cb = billsService.getCustomerBillByRevenueBillId(revenueBillId);
-        if (cb == null) {
-            logger.info("No CustomerBill found for RevenueBillId: {}", revenueBillId);
-            return ResponseEntity.notFound().build();
+        try {
+            CustomerBill cb = billsService.getCustomerBillByRevenueBillId(revenueBillId);
+            if (cb == null) {
+                logger.info("No CustomerBill found for RevenueBillId: {}", revenueBillId);
+                return ResponseEntity.notFound().build();
+            }
+            return ResponseEntity.ok(cb);
         }
-        return ResponseEntity.ok(cb);
+        catch(Exception e) {
+            logger.error("Failed to generate cb for{}: {}", revenueBillId, e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
     }
     
     @GetMapping("{revenueBillId}/acbr")
     public ResponseEntity<List<AppliedCustomerBillingRate>> getACBRsByRevenueBillId(@PathVariable String revenueBillId) {
-    	List<AppliedCustomerBillingRate> acbrs = billsService.getACBRsByRevenueBillId(revenueBillId);
-    	if (acbrs == null) {
-            logger.info("No Applied Customer Billing Rate found for revenue bill id: {}", revenueBillId);
-            return ResponseEntity.notFound().build();
+        try {
+        	List<AppliedCustomerBillingRate> acbrs = billsService.getACBRsByRevenueBillId(revenueBillId);
+            if (acbrs == null) {
+                logger.info("No Applied Customer Billing Rate found for revenue bill id: {}", revenueBillId);
+                return ResponseEntity.notFound().build();
+            }
+            return ResponseEntity.ok(acbrs);
         }
-    	return ResponseEntity.ok(acbrs);
+        catch(Exception e) {
+            logger.error("Failed to generate acbr for{}: {}", revenueBillId, e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
     }
 }

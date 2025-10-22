@@ -11,6 +11,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
+import it.eng.dome.revenue.engine.exception.BadRevenuePlanException;
+import it.eng.dome.revenue.engine.exception.BadTmfDataException;
+import it.eng.dome.revenue.engine.exception.ExternalServiceException;
 import it.eng.dome.revenue.engine.model.Report;
 import it.eng.dome.revenue.engine.service.ReportingService;
 import it.eng.dome.tmforum.tmf632.v4.ApiException;
@@ -46,7 +49,7 @@ public class CachedReportingService extends ReportingService {
     }
 
     @Override
-    public List<Report> getDashboardReport(String partyId) throws ApiException, IOException {
+    public List<Report> getDashboardReport(String partyId) throws BadTmfDataException, BadRevenuePlanException, ExternalServiceException  {
         String key = partyId;
         if (!REVENUE_CACHE_ENABLED || !this.reportCache.containsKey(key)) {
             logger.debug("Cache MISS for " + key);

@@ -1,4 +1,4 @@
-package it.eng.dome.revenue.engine.service.compute2;
+package it.eng.dome.revenue.engine.service.compute;
 
 import java.util.HashMap;
 import java.util.List;
@@ -23,7 +23,7 @@ public class AlternativeCalculator extends AbstractCalculator {
 		List<PlanItem> childItems = this.item.getBundleItems();
 		RevenueItem selectedItem = null;
 		for (PlanItem item : childItems) {
-			Calculator childCalc = CalculatorFactory.getCalculatorFor(this.getSubscription(), item);
+			Calculator childCalc = CalculatorFactory.getCalculatorFor(this.getSubscription(), item, this);
 			RevenueItem current = childCalc.compute(timePeriod, computeContext);
 			if (current == null)
 				continue;
@@ -47,7 +47,7 @@ public class AlternativeCalculator extends AbstractCalculator {
 			if(p.getDiscount()!=null) {
 				Map<String, Double> discountContext = new HashMap<>();
 				discountContext.put("parent-price", selectedItem.getOverallValue());
-				Calculator discountCalculator = CalculatorFactory.getCalculatorFor(this.getSubscription(), p.getDiscount());
+				Calculator discountCalculator = CalculatorFactory.getCalculatorFor(this.getSubscription(), p.getDiscount(), this);
 				RevenueItem discountRevenueItem = discountCalculator.compute(timePeriod, discountContext);
 				if(discountRevenueItem!=null) {
 					wrapper.addRevenueItem(discountRevenueItem);

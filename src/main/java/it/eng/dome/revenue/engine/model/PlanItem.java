@@ -7,7 +7,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-import it.eng.dome.tmforum.tmf620.v4.model.TimePeriod;
+import it.eng.dome.tmforum.tmf678.v4.model.TimePeriod;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.PositiveOrZero;
@@ -132,7 +132,22 @@ public abstract class PlanItem {
 	 * - computePeriod (String)
 	 * - computeBetween (TimePeriod)
 	 */
-	// TODO: implement the above
+
+	@JsonProperty("zero")
+	private Boolean zero;
+
+	@JsonProperty("zeroPeriod")
+	private String zeroPeriod;
+
+	@JsonProperty("zeroBetween")
+	private TimePeriod zeroBetween;
+
+	@JsonProperty("computePeriod")
+	private String computePeriod;
+
+	@JsonProperty("computeBetween")
+	private TimePeriod computeBetween;
+
 
 //	@JsonProperty("computationFrom")
 //	private OffsetDateTime computationFrom;
@@ -433,6 +448,46 @@ public abstract class PlanItem {
 
 	public void setValidPeriod(ReferencePeriod validPeriod) {
 		this.validPeriod = validPeriod;
+	}
+
+	public Boolean getZero() {
+	    return Boolean.TRUE.equals(zero);
+	}
+
+	public void setZero(Boolean zero) {
+	    this.zero = zero;
+	}
+
+	public String getZeroPeriod() {
+	    return zeroPeriod;
+	}
+
+	public void setZeroPeriod(String zeroPeriod) {
+	    this.zeroPeriod = zeroPeriod;
+	}
+
+	public TimePeriod getZeroBetween() {
+	    return zeroBetween;
+	}
+
+	public void setZeroBetween(TimePeriod zeroBetween) {
+	    this.zeroBetween = zeroBetween;
+	}
+
+	public String getComputePeriod() {
+	    return computePeriod;
+	}
+
+	public void setComputePeriod(String computePeriod) {
+	    this.computePeriod = computePeriod;
+	}
+
+	public TimePeriod getComputeBetween() {
+	    return computeBetween;
+	}
+
+	public void setComputeBetween(TimePeriod computeBetween) {
+	    this.computeBetween = computeBetween;
 	}
 	
 }

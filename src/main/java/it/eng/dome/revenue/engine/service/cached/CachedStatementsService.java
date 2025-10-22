@@ -10,6 +10,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
+import it.eng.dome.revenue.engine.exception.BadRevenuePlanException;
+import it.eng.dome.revenue.engine.exception.BadTmfDataException;
+import it.eng.dome.revenue.engine.exception.ExternalServiceException;
 import it.eng.dome.revenue.engine.model.RevenueStatement;
 import it.eng.dome.revenue.engine.service.StatementsService;
 
@@ -48,7 +51,7 @@ public class CachedStatementsService extends StatementsService {
      * Retrieve bills from cache or from the parent class if not cached.
     */
     @Override
-    public List<RevenueStatement> getStatementsForSubscription(String subscriptionId) throws Exception {
+    public List<RevenueStatement> getStatementsForSubscription(String subscriptionId) throws BadTmfDataException, BadRevenuePlanException, ExternalServiceException {
         String key = subscriptionId;
         if (!REVENUE_CACHE_ENABLED || !this.statementsCache.containsKey(key)) {
             logger.debug("Cache MISS for subscription " + key);

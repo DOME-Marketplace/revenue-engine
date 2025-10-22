@@ -1,4 +1,4 @@
-package it.eng.dome.revenue.engine.service.compute2;
+package it.eng.dome.revenue.engine.service.compute;
 
 import java.util.HashMap;
 
@@ -32,7 +32,7 @@ public class RevenueStatementBuilder {
 		try {
 			RevenueStatement statement = new RevenueStatement(this.subscription, timePeriod);
 			Price price = this.subscription.getPlan().getPrice();
-			Calculator calc = CalculatorFactory.getCalculatorFor(this.subscription, price);
+			Calculator calc = CalculatorFactory.getCalculatorFor(this.subscription, price, null);
 			RevenueItem revenueItem = calc.compute(timePeriod, new HashMap<>());
 			if (revenueItem != null) {
 				statement.addRevenueItem(revenueItem);

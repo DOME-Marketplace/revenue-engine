@@ -1,4 +1,4 @@
-package it.eng.dome.revenue.engine.service.compute2;
+package it.eng.dome.revenue.engine.service.compute;
 
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
@@ -8,6 +8,7 @@ import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import it.eng.dome.revenue.engine.model.Discount;
 import it.eng.dome.revenue.engine.model.PlanItem;
 import it.eng.dome.revenue.engine.model.Price;
 import it.eng.dome.revenue.engine.model.Range;
@@ -15,6 +16,7 @@ import it.eng.dome.revenue.engine.model.RevenueItem;
 import it.eng.dome.revenue.engine.model.Subscription;
 import it.eng.dome.revenue.engine.model.SubscriptionTimeHelper;
 import it.eng.dome.revenue.engine.service.MetricsRetriever;
+import it.eng.dome.revenue.engine.service.TmfDataRetriever;
 import it.eng.dome.tmforum.tmf678.v4.model.TimePeriod;
 
 public abstract class AbstractCalculator implements Calculator {
@@ -24,6 +26,8 @@ public abstract class AbstractCalculator implements Calculator {
 	protected PlanItem item;
 
 	MetricsRetriever metricsRetriever;
+
+	TmfDataRetriever tmfDataRetriever;
 
     private Subscription subscription;
 
@@ -39,6 +43,10 @@ public abstract class AbstractCalculator implements Calculator {
 		this.metricsRetriever = mr;
 	}
 
+	public void setTmfDataRetriever(TmfDataRetriever tdr) {
+		this.tmfDataRetriever = tdr;
+	}
+
 	public final RevenueItem compute(TimePeriod timePeriod, Map<String, Double> computeContext) {
 
 		// check if it's to skip or not
@@ -49,7 +57,7 @@ public abstract class AbstractCalculator implements Calculator {
 		logger.debug("preconditions OK");
 
 		logger.debug("checking computability...");
-		if(!this.checkComputability()) {
+		if(!this.checkComputability(/*timePeriod*/)) {
 			return null;
 		}
 		logger.debug("computability OK");
@@ -61,7 +69,7 @@ public abstract class AbstractCalculator implements Calculator {
 		logger.debug("applicability OK");
 
 		// check if it has to be zeroed (although we keep the structure)
-		boolean zeroIt = this.checkZeroIt();
+		boolean zeroIt = this.checkZeroIt(timePeriod);
 		logger.debug("zeroIt? {}", zeroIt);
 
 		// do build the structure and value
@@ -73,14 +81,24 @@ public abstract class AbstractCalculator implements Calculator {
 		if(outRevenueItem==null)
 			return null;
 
+		if(this.item instanceof Price) {
+			// TODO: if this works here, remove the setting done in atomic calculators
+			outRevenueItem.setChargeTime(new SubscriptionTimeHelper(this.getSubscription()).getChargeTime(timePeriod, this.item.getReferencePrice()));
+		}
+
 		// zero the item, if needed
-		if(outRevenueItem!=null && zeroIt) {
+		if(zeroIt) {
 			logger.debug("zero-ing the item");
 			outRevenueItem.zeroAmountsRecursively();
 		}
 
 		// constrain the resulting value, if needed
 		Range r = this.item.getResultingAmountRange();
+		if (r != null && this.item instanceof Discount) {
+			// for discounts, reverse the prices, since values in items are negative for discounts
+		    r = new Range(-r.getMax(), -r.getMin());
+		}
+
 		if(r!=null) {
 			logger.debug("enforcing resulting amount range...");
 			if(r.getMin()!=null) {
@@ -238,21 +256,52 @@ public abstract class AbstractCalculator implements Calculator {
         return true;
     }
 
-	private boolean checkZeroIt(/*TimePeriod timePeriod*/) {
 
-		// TODO: support for zero (Boolean)
+ 	private boolean checkZeroIt(TimePeriod timePeriod) {
+ 		if (Boolean.TRUE.equals(item.getZero())) {
+ 			return true;
+ 		}
 
-		// TODO: support for zeroPeriod (String)
+ 		if (item.getZeroPeriod() != null && !item.getZeroPeriod().isEmpty()) {
+ 			SubscriptionTimeHelper sth = new SubscriptionTimeHelper(this.getSubscription());
+ 			TimePeriod zeroPeriod = sth.getCustomPeriod(null, (Price) this.item, item.getZeroPeriod());
+ 			if (zeroPeriod != null &&
+ 				!timePeriod.getEndDateTime().isBefore(zeroPeriod.getStartDateTime()) &&
+ 				!timePeriod.getStartDateTime().isAfter(zeroPeriod.getEndDateTime())) {
+ 				return true;
+ 			}
+ 		}
 
-		// TODO: support for zeroBetween (TimePeriod)
+ 		if (item.getZeroBetween() != null) {
+ 			TimePeriod zeroBetween = item.getZeroBetween();
+ 			if (
+ 				!timePeriod.getEndDateTime().isBefore(zeroBetween.getStartDateTime()) &&
+ 				!timePeriod.getStartDateTime().isAfter(zeroBetween.getEndDateTime())
+ 			) {
+ 				return true;
+ 			}
+ 		}
 
-		// TODO: support for computePeriod (String)
+ 		if (item.getComputePeriod() != null && !item.getComputePeriod().isEmpty()) {
+ 			SubscriptionTimeHelper sth = new SubscriptionTimeHelper(this.getSubscription());
+ 			TimePeriod computePeriod = sth.getCustomPeriod(null, (Price) this.item, item.getComputePeriod());
+ 			if (computePeriod != null &&
+ 				(timePeriod.getStartDateTime().isBefore(computePeriod.getStartDateTime())
+ 				|| timePeriod.getEndDateTime().isAfter(computePeriod.getEndDateTime()))) {
+ 				return true;
+ 			}
+ 		}
 
-		// TODO: support for computeBetween (TimePeriod)
+ 		if (item.getComputeBetween() != null) {
+ 			TimePeriod computeBetween = item.getComputeBetween();
+ 			if (timePeriod.getStartDateTime().isBefore(computeBetween.getStartDateTime())
+ 				|| timePeriod.getEndDateTime().isAfter(computeBetween.getEndDateTime())) {
+ 				return true;
+ 			}
+ 		}
 
-		return false;
-	}
-
+ 		return false;
+ 	}
 
 	/**
 	 * Make sure that properties for applicability are set correctly and that conditions are satisfied
@@ -296,9 +345,10 @@ public abstract class AbstractCalculator implements Calculator {
 
     /**
      * Make sure that properties for computation are correctly set and are available
+     * @param tp
      * @return
      */
-    private boolean checkComputability() {
+    private boolean checkComputability(/*TimePeriod timePeriod*/) {
 
 		if(this.item.getIsBundle())
 			return true;

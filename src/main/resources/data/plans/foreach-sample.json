@@ -1,0 +1,65 @@
+{
+  "id": "urn:ngsi-ld:plan:55761it5-3d4q-2321-p009-44bro198re0q",
+  "name": "ForEach Example",
+  "description": "A price plan demonstrating the use of the FOREACH bundle operator",
+  "validFor": {
+    "startDateTime": "2025-01-01T00:00:00Z",
+    "endDateTime": "2025-12-31T23:59:59Z"
+  },
+  "lifecycleStatus": "launched",
+  "billCycleSpecification": {
+    "billingPeriodLength": "1",
+    "billingPeriodType": "MONTH",
+    "billingPeriodEnd": "LAST_DAY_OF_CALENDAR_MONTH",
+    "billingDateShift": "5",
+    "paymentDueDateOffset": "45"
+  },
+  "subscriptionDurationLength": 1,
+  "subscriptionDurationPeriodType": "YEAR",
+  "price": {
+    "name": "Price components for the FOREACH example",
+    "isBundle": true,
+    "currency": "EUR",
+    "bundleOp": "CUMULATIVE",
+    "collapse": false,
+    "prices": [
+      {
+        "name": "Fee for subproviders",
+        "recurringChargePeriodType": "MONTH",
+        "recurringChargePeriodLength": 1,
+        "ignore": false,
+        "amount": 150,
+        "isBundle": true,
+        "bundleOp": "FOREACH",
+        "skipIfZero": true,
+        "forEachMetric": "activeMarketplaceSeller",
+        "prices": [
+          {
+            "name": "SubFee1",
+            "type": "RECURRING_PREPAID",
+            "amount": 25,
+            "currency": "EUR",
+            "collapse": false
+          },
+          {
+            "name": "SubFee2",
+            "type": "RECURRING_POSTPAID",
+            "percent": 5,
+            "computationBaseReferencePeriod": "CURRENT_CHARGE_PERIOD",
+            "computationBase": "bills-no-taxes",
+            "currency": "EUR",
+            "collapse": false,
+            "discount": {
+              "name": "hello discount",
+              "percent": 1,
+              "computationBase": "parent-price",
+              "resultingAmountRange" : {
+                "min": 0, "max": 1000
+              }
+            }
+          }
+        ]
+      }
+    ]
+  }
+}

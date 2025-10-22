@@ -1,5 +1,8 @@
 package it.eng.dome.revenue.engine.service;
 
+import it.eng.dome.revenue.engine.exception.BadTmfDataException;
+import it.eng.dome.revenue.engine.exception.ExternalServiceException;
+import it.eng.dome.revenue.engine.exception.BadRevenuePlanException;
 import it.eng.dome.revenue.engine.invoicing.InvoicingService;
 import it.eng.dome.revenue.engine.mapper.RevenueBillingMapper;
 import it.eng.dome.revenue.engine.model.*;
@@ -89,6 +92,15 @@ public class BillsService {
                 bills.add(bill);
             }
             return new ArrayList<>(bills);
+        } catch (BadRevenuePlanException e) {
+            logger.error("Bad revenue plan error retrieving subscription bills for ID {}: {}", subscriptionId, e.getMessage(), e);
+            throw e;
+        } catch (BadTmfDataException e) {
+            logger.error("Bad TMF data error retrieving subscription bills for ID {}: {}", subscriptionId, e.getMessage(), e);
+            throw e;
+        } catch (ExternalServiceException e) {
+            logger.error("External service error retrieving subscription bills for ID {}: {}", subscriptionId, e.getMessage(), e);
+            throw e;
         } catch (Exception e) {
         	logger.error("Error retrieving subscription bills for ID {}: {}", subscriptionId, e.getMessage(), e);
             throw e;
@@ -100,12 +112,22 @@ public class BillsService {
 	 * @param revenueBillId the ID of the RevenueBill for which to retrieve CB
 	 * @return a Customer Bill objects representing the RevenueBill for tmf
 	*/
-    public CustomerBill getCustomerBillByRevenueBillId(String revenueBillId) {
-    	RevenueBill rb = new RevenueBill();
+    public CustomerBill getCustomerBillByRevenueBillId(String revenueBillId) throws Exception {
+    	RevenueBill rb;
 		try {
 			rb = this.getRevenueBillById(revenueBillId);
+		} catch (BadRevenuePlanException e) {
+			logger.error("Bad revenue plan error retrieving Revenue Bill with ID {}: {}", revenueBillId, e.getMessage(), e);
+			throw e;
+		} catch (BadTmfDataException e) {
+			logger.error("Bad TMF data error retrieving Revenue Bill with ID {}: {}", revenueBillId, e.getMessage(), e);
+			throw e;
+		} catch (ExternalServiceException e) {
+			logger.error("External service error retrieving Revenue Bill with ID {}: {}", revenueBillId, e.getMessage(), e);
+			throw e;
 		} catch (Exception e) {
 			logger.error("Failed to retrieve Revenue Bill with ID {}: {}", revenueBillId, e.getMessage(), e);
+			throw e;
 		}
         return this.getCustomerBillByRevenueBill(rb);
     }
@@ -115,12 +137,22 @@ public class BillsService {
  	 * @param revenueBillId the ID of the RevenueBill for which to retrieve ACBR
  	 * @return a List of ACBR objects representing the bills of RevenueBill for tmf
  	*/
-    public List<AppliedCustomerBillingRate> getACBRsByRevenueBillId(String revenueBillId) {
-    	RevenueBill rb = new RevenueBill();
+    public List<AppliedCustomerBillingRate> getACBRsByRevenueBillId(String revenueBillId) throws Exception {
+    	RevenueBill rb;
 		try {
 			rb = this.getRevenueBillById(revenueBillId);
+		} catch (BadRevenuePlanException e) {
+			logger.error("Bad revenue plan error retrieving Revenue Bill with ID {}: {}", revenueBillId, e.getMessage(), e);
+			throw e;
+		} catch (BadTmfDataException e) {
+			logger.error("Bad TMF data error retrieving Revenue Bill with ID {}: {}", revenueBillId, e.getMessage(), e);
+			throw e;
+		} catch (ExternalServiceException e) {
+			logger.error("External service error retrieving Revenue Bill with ID {}: {}", revenueBillId, e.getMessage(), e);
+			throw e;
 		} catch (Exception e) {
 			logger.error("Failed to retrieve Revenue Bill with ID {}: {}", revenueBillId, e.getMessage(), e);
+			throw e;
 		}
 
         return this.getACBRsByRevenueBill(rb);
@@ -133,7 +165,7 @@ public class BillsService {
 	 * @return a CustomerBill object
 	 * @throws IllegalArgumentException if the RevenueBill is null or does not contain related party information
 	 */
-    public CustomerBill getCustomerBillByRevenueBill(RevenueBill rb) {
+    public CustomerBill getCustomerBillByRevenueBill(RevenueBill rb) throws Exception {
 
     	if (rb == null) {
             throw new IllegalArgumentException("RevenueBill cannot be null");
@@ -147,7 +179,15 @@ public class BillsService {
         
         CustomerBill cb = RevenueBillingMapper.toCB(rb);
 
-		cb.setBillingAccount(TmfConverter.convertBillingAccountRefTo678(tmfDataRetriever.retrieveBillingAccountByProductId(rb.getSubscriptionId())));
+		try {
+			cb.setBillingAccount(TmfConverter.convertBillingAccountRefTo678(tmfDataRetriever.retrieveBillingAccountByProductId(rb.getSubscriptionId())));
+		} catch (BadTmfDataException e) {
+			logger.error("Bad TMF data error setting billing account for subscription ID {}: {}", rb.getSubscriptionId(), e.getMessage(), e);
+			throw e;
+		} catch (ExternalServiceException e) {
+			logger.error("External service error setting billing account for subscription ID {}: {}", rb.getSubscriptionId(), e.getMessage(), e);
+			throw e;
+		}
         
 		// Next bill date and payment due date
 		Subscription sub = subscriptionService.getSubscriptionByProductId(rb.getSubscriptionId());
@@ -311,8 +351,11 @@ public class BillsService {
      * @throws IllegalArgumentException if the list is null, empty, or contains invalid Money objects
      */
     private Money computeTaxIncludedAmount(List<AppliedCustomerBillingRate> acbrs) {
-    	if (acbrs == null || acbrs.isEmpty()) {
-            throw new IllegalArgumentException("AppliedCustomerBillingRate list cannot be null or empty");
+
+        if (acbrs == null || acbrs.isEmpty()) {
+            logger.debug("empty or null acbr list. Returning amount of zero");
+//            throw new IllegalArgumentException("AppliedCustomerBillingRate list cannot be null or empty");
+            return new Money().value(0f);
         }
     	
     	float sum = 0.0f;
@@ -345,7 +388,7 @@ public class BillsService {
      * @throws IllegalArgumentException if the RevenueBill or its related parties are null/empty
      * @throws IllegalStateException if required data (Subscription, Buyer party, etc.) cannot be retrieved
      */
-    private List<AppliedCustomerBillingRate> getACBRsByRevenueBill(RevenueBill rb) {
+    private List<AppliedCustomerBillingRate> getACBRsByRevenueBill(RevenueBill rb) throws Exception {
     	if (rb == null) {
             throw new IllegalArgumentException("RevenueBill cannot be null");
         }
@@ -366,7 +409,7 @@ public class BillsService {
         
 		List<AppliedCustomerBillingRate> acbrList = RevenueBillingMapper.toACBRList(rb, subscription);
         if (acbrList.isEmpty()) {
-            throw new IllegalStateException("Failed to map RevenueBill and Subscription to AppliedCustomerBillingRate list");
+//            throw new IllegalStateException("Failed to map RevenueBill and Subscription to AppliedCustomerBillingRate list");
         }
         
         for (AppliedCustomerBillingRate acbr : acbrList) {
@@ -374,19 +417,19 @@ public class BillsService {
 		}
         
         acbrList = this.setBillingAccountRef(acbrList, subscription.getId());
-        if (acbrList == null || acbrList.isEmpty()) {
-            throw new IllegalStateException("Failed to set billing account reference on AppliedCustomerBillingRate list");
-        }
+//        if (acbrList == null || acbrList.isEmpty()) {
+//            throw new IllegalStateException("Failed to set billing account reference on AppliedCustomerBillingRate list");
+//        }
         
         acbrList = this.setCustomerBillRef(acbrList, rb);
-        if (acbrList == null || acbrList.isEmpty()) {
-            throw new IllegalStateException("Failed to set customer bill reference on AppliedCustomerBillingRate list");
-        }
+//        if (acbrList == null || acbrList.isEmpty()) {
+//            throw new IllegalStateException("Failed to set customer bill reference on AppliedCustomerBillingRate list");
+//        }
         
         acbrList = this.applyTaxes(acbrList);
-        if (acbrList == null) {
-            throw new IllegalStateException("Failed to apply taxes to AppliedCustomerBillingRate list");
-        }
+//        if (acbrList == null) {
+//            throw new IllegalStateException("Failed to apply taxes to AppliedCustomerBillingRate list");
+//        }
         
         return acbrList;
     }
@@ -396,14 +439,21 @@ public class BillsService {
  	 * @param acbrs is a list of ACBR
  	 * @return a list of ACBR with AppliedBillingTaxRate attribute for each object.
  	*/
-    private List<AppliedCustomerBillingRate> applyTaxes(List<AppliedCustomerBillingRate> acbrs) {
+    private List<AppliedCustomerBillingRate> applyTaxes(List<AppliedCustomerBillingRate> acbrs) throws Exception {
 
-        // first, retrieve the product
-        String productId = acbrs.get(0).getProduct().getId();
-        Product product = tmfDataRetriever.getProductById(productId, null);
+        if(acbrs==null || acbrs.isEmpty()) {
+            logger.info("no acbrs received, no taxes to apply");
+            return acbrs;
+        }
+        else {
+            // first, retrieve the product
+            String productId = acbrs.get(0).getProduct().getId();
+            Product product = tmfDataRetriever.getProductById(productId, null);
 
-        // invoke the invoicing servi
-        return this.invoicingService.applyTaxees(product, acbrs);
+            // invoke the invoicing servi
+            return this.invoicingService.applyTaxees(product, acbrs);
+        }
+
     }
     
     /** Set Customer Bill Ref for each object in a List of Applied Customer Billing Rate
@@ -430,8 +480,10 @@ public class BillsService {
  	 * @param acbrs is a list of ACBR
  	 * @param subscriptionId is a Subscription ID used to retrieve Billing Account
  	 * @return a list of ACBR with Billing Account Ref attribute for each object.
+     * @throws ExternalServiceException 
+     * @throws BadTmfDataException 
  	*/
-  private List<AppliedCustomerBillingRate> setBillingAccountRef(List<AppliedCustomerBillingRate> acbrs, String subscriptionId){
+  private List<AppliedCustomerBillingRate> setBillingAccountRef(List<AppliedCustomerBillingRate> acbrs, String subscriptionId) throws BadTmfDataException, ExternalServiceException {
 	  BillingAccountRef billingAccountRef = tmfDataRetriever.retrieveBillingAccountByProductId(subscriptionId);
 	  if (billingAccountRef == null) {
 		  logger.warn("toCB: billingAccountRef is null, CustomerBill will have null billingAccount");

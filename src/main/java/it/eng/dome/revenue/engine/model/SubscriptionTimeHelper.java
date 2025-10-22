@@ -110,33 +110,36 @@ public class SubscriptionTimeHelper {
     }
 
     private Set<TimePeriod> getChargePeriodTimes(Price price) {
-        Set<TimePeriod> chargePeriodTimes = new TreeSet<>(new TimePeriodComparator());       
-        if(price.getIsBundle()) {
-            for(Price p: price.getPrices()) {
-                chargePeriodTimes.addAll(this.getChargePeriodTimes(p));
-            }
-        } else {
-            // the start date of the subscription
-            OffsetDateTime start = this.subscription.getStartDate();
-            if(PriceType.ONE_TIME_PREPAID.equals(price.getType())) {
-                TimePeriod tp = new TimePeriod();
-                // if the price is a one-time prepaid, return only one period for the first subscription period
-                OffsetDateTime end = this.rollSubscriptionPeriod(start, 1);
-                tp.setStartDateTime(start);
-                tp.setEndDateTime(end);
-                chargePeriodTimes.add(tp);
-                logger.debug("One-time prepaid price, returning single charge period: " + tp + " for price: " + price.getName());
+        Set<TimePeriod> chargePeriodTimes = new TreeSet<>(new TimePeriodComparator());    
+        
+        if(!"true".equalsIgnoreCase(price.getIgnore())) {
+            if(price.getIsBundle()) {
+                for(Price p: price.getPrices()) {
+                    chargePeriodTimes.addAll(this.getChargePeriodTimes(p));
+                }
             } else {
-                // iterate over the charge periods, up to the end of the subscription
-                OffsetDateTime stopAt = this.rollSubscriptionPeriod(start, 1).minusSeconds(1);
-                while(start.isBefore(stopAt)) {
-                    OffsetDateTime end = this.rollChargePeriod(start, price, 1);
+                // the start date of the subscription
+                OffsetDateTime start = this.subscription.getStartDate();
+                if(PriceType.ONE_TIME_PREPAID.equals(price.getType())) {
                     TimePeriod tp = new TimePeriod();
+                    // if the price is a one-time prepaid, return only one period for the first subscription period
+                    OffsetDateTime end = this.rollSubscriptionPeriod(start, 1);
                     tp.setStartDateTime(start);
                     tp.setEndDateTime(end);
                     chargePeriodTimes.add(tp);
-                    start = end;
-                    logger.debug("Adding charge period: " + tp + " for price: " + price.getName());
+                    logger.debug("One-time prepaid price, returning single charge period: " + tp + " for price: " + price.getName());
+                } else {
+                    // iterate over the charge periods, up to the end of the subscription
+                    OffsetDateTime stopAt = this.rollSubscriptionPeriod(start, 1).minusSeconds(1);
+                    while(start.isBefore(stopAt)) {
+                        OffsetDateTime end = this.rollChargePeriod(start, price, 1);
+                        TimePeriod tp = new TimePeriod();
+                        tp.setStartDateTime(start);
+                        tp.setEndDateTime(end);
+                        chargePeriodTimes.add(tp);
+                        start = end;
+                        logger.debug("Adding charge period: " + tp + " for price: " + price.getName());
+                    }
                 }
             }
         }
