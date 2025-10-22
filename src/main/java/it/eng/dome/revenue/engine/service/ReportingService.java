@@ -151,7 +151,7 @@ public class ReportingService implements InitializingBean {
             throw e;
         } catch (Exception e) {
             logger.error("Unexpected error in getSubscriptionSection for relatedPartyId {}: {}", relatedPartyId, e.getMessage(), e);
-            throw new ExternalServiceException("Unexpected error retrieving subscription section");
+            throw new ExternalServiceException("Unexpected error retrieving subscription section", e);
         }
     }
 
@@ -291,7 +291,7 @@ public class ReportingService implements InitializingBean {
             throw e;
         } catch (Exception e) {
             logger.error("Unexpected error in getRevenueSection for relatedPartyId {}: {}", relatedPartyId, e.getMessage(), e);
-            throw new ExternalServiceException("Unexpected error retrieving revenue section");
+            throw new ExternalServiceException("Unexpected error retrieving revenue section", e);
         }
     }
     
@@ -397,7 +397,7 @@ public class ReportingService implements InitializingBean {
             return statementsService.getItemsForSubscription(subscriptionId);
         } catch (Exception e) {
             logger.error("Error retrieving statements for relatedPartyId {}: {}", relatedPartyId, e.getMessage(), e);
-            throw new ExternalServiceException("Unexpected error retrieving statements");
+            throw new ExternalServiceException("Unexpected error retrieving statements", e);
         }
     }
 

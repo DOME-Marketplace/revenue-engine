@@ -125,7 +125,7 @@ public class PlanService implements InitializingBean {
             this.overwritingPlanByProductOffering(plan, po, pop);
             return plan;
         } catch (IOException e) {
-            throw new BadRevenuePlanException(new Plan(), "Failed to load Plan from link=" + link);
+            throw new BadRevenuePlanException(new Plan(), "Failed to load Plan from link=" + link, e);
         }
     }
 
@@ -178,7 +178,7 @@ public class PlanService implements InitializingBean {
                 this.overwritingPlanByProductOffering(plan, po, pop);
                 plans.add(plan);
             } catch (IOException e) {
-                throw new BadRevenuePlanException(new Plan(), "Failed to load Plan from link in ProductOfferingPrice id=" + popRef.getId());
+                throw new BadRevenuePlanException(new Plan(), "Failed to load Plan from link in ProductOfferingPrice id=" + popRef.getId(), e);
             }
         }
 
@@ -215,7 +215,7 @@ public class PlanService implements InitializingBean {
                     return plan;
                 }
             } catch (IOException e) {
-                throw new ExternalServiceException("Failed to retrieve plan from external URL: " + link);
+                throw new ExternalServiceException("Failed to retrieve plan from external URL: " + link, e);
             }
         }
     }
@@ -227,7 +227,7 @@ public class PlanService implements InitializingBean {
             if (plan == null) throw new BadRevenuePlanException(new Plan(), "Plan not found in file: " + path); 
             return plan;
         } catch(IOException e) {
-            throw new BadRevenuePlanException(new Plan(), "Failed to load plan from file: " + path);
+            throw new BadRevenuePlanException(new Plan(), "Failed to load plan from file: " + path, e);
         }
     }
 

@@ -64,7 +64,7 @@ public class StatementsService implements InitializingBean {
             sub = subscriptionService.getSubscriptionByProductId(subscriptionId);
         } catch (Exception e) {
             logger.error("Failed to retrieve subscription with ID {}: {}", subscriptionId, e.getMessage(), e);
-            throw new BadTmfDataException("Subscription", subscriptionId, "Failed to retrieve subscription");
+            throw new BadTmfDataException("Subscription", subscriptionId, "Failed to retrieve subscription", e);
         }
 
         // retrieve the resolved plan for the subscription
@@ -98,7 +98,7 @@ public class StatementsService implements InitializingBean {
             sub = subscriptionService.getSubscriptionByProductId(subscriptionId);
         } catch (Exception ex) {
             logger.error("Failed to retrieve subscription with ID {}: {}", subscriptionId, ex.getMessage(), ex);
-            throw new BadTmfDataException("Subscription", subscriptionId, "Failed to retrieve subscription");
+            throw new BadTmfDataException("Subscription", subscriptionId, "Failed to retrieve subscription", ex);
         }
 
         // Resolve plan
@@ -107,7 +107,7 @@ public class StatementsService implements InitializingBean {
             plan = planService.getResolvedPlanById(sub.getPlan().getId(), sub);
         } catch (Exception ex) {
             logger.error("Failed to retrieve plan for subscription {}: {}", subscriptionId, ex.getMessage(), ex);
-            throw new BadRevenuePlanException(sub.getPlan(), "Failed to retrieve plan for subscription");
+            throw new BadRevenuePlanException(sub.getPlan(), "Failed to retrieve plan for subscription", ex);
         }
 
         sub.setPlan(plan);
