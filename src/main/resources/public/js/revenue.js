@@ -53,7 +53,10 @@ function getEndpointFor(resourceType, resourceId) {
         return baseURL + "dev/organizations/" + resourceId + "/purchasedProducts";
     else if("soldProducts"==resourceType)
         return baseURL + "dev/organizations/" + resourceId + "/soldProducts";
+	else if("dashboard"==resourceType)
+	    return baseURL + "dashboard/" + resourceId;
     else
+	
         console.log("ERROR: unable to return an endpoint for " + resourceType + ":" + resourceId);
     return null;
 }
@@ -68,6 +71,12 @@ function genericFetchAndShow(resourceType, resourceId, viewCallback, clickedDOM)
         .catch(error => {
             console.log(error);
         });
+}
+
+function fetchAndShowDashboard(clickedDOM) {
+    getLanes().prepareFor(clickedDOM);
+    const orgId = clickedDOM.getAttribute("objectId");
+    genericFetchAndShow("dashboard", orgId, showDashboard, clickedDOM);
 }
 
 function fetchAndShowPlans(clickedDOM) {
@@ -145,6 +154,43 @@ function fetchAndShowRaw(clickedDOM) {
 *    CALLBACKS
 * 
 * *********************************************************************/
+function showDashboard(data, clickedDOM) {
+    getLanes().cleanAfter(clickedDOM);
+    const lane = getLanes().pushLane("Dashboard");
+
+    function renderItem(item, container) {
+        const div = document.createElement("div");
+        div.classList.add("tmfbox");
+
+        if(item.label) {
+            const b = document.createElement("b");
+            b.textContent = item.label;
+            div.appendChild(b);
+            div.appendChild(document.createElement("br"));
+        }
+
+        if(item.text) {
+            const span = document.createElement("span");
+            span.textContent = item.text;
+            div.appendChild(span);
+        }
+
+        if(item.items && Array.isArray(item.items)) {
+            const ul = document.createElement("ul");
+            item.items.forEach(subItem => {
+                const li = document.createElement("li");
+                li.textContent = subItem.label + (subItem.text ? ": " + subItem.text : "");
+                if(subItem.items) renderItem(subItem, li);
+                ul.appendChild(li);
+            });
+            div.appendChild(ul);
+        }
+
+        container.appendChild(div);
+    }
+
+    data.forEach(section => renderItem(section, lane));
+}
 
 function showPlans(plans, clickedDOM) {
     getLanes().cleanAfter(clickedDOM);
