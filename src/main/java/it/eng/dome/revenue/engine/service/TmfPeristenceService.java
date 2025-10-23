@@ -8,6 +8,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 
 import org.slf4j.Logger;
@@ -31,6 +32,8 @@ import it.eng.dome.tmforum.tmf678.v4.model.AppliedCustomerBillingRateCreate;
 import it.eng.dome.tmforum.tmf678.v4.model.BillRef;
 import it.eng.dome.tmforum.tmf678.v4.model.CustomerBill;
 import it.eng.dome.tmforum.tmf678.v4.model.CustomerBillCreate;
+import it.eng.dome.tmforum.tmf678.v4.model.ProductRef;
+import it.eng.dome.tmforum.tmf678.v4.model.RelatedParty;
 
 /**
  * FIXME: Enhancemets and fixes:
@@ -317,7 +320,21 @@ public class TmfPeristenceService {
             null,
             10
         )
-        .filter(candidate -> TmfPeristenceService.match(cb, candidate))
+        .filter(candidate -> {
+        	try {
+	        	boolean basicMatch = TmfPeristenceService.match(cb, candidate);
+	            boolean productMatch = compareCBsProduct(revenueBillId, candidate.getId());            
+	            boolean rlMatch = relatedPartyMatch(cb.getRelatedParty(), candidate.getRelatedParty());
+	            if (basicMatch && productMatch && rlMatch) {
+	            	return true;
+	            }	
+			} catch (Exception e) {
+				logger.error("Error: {}", e.getMessage());
+				return false;
+			}
+            
+        	return true;
+        })
         .findFirst();
 
         return found.orElse(null);
@@ -465,7 +482,7 @@ public class TmfPeristenceService {
      * @param idCustomerBill2 ID of the second CustomerBill
      * @return true if both CustomerBills reference the same Product, false otherwise
     */
-    /*private boolean compareCBsProduct(String idCustomerBill1, String idCustomerBill2) throws Exception {
+    private boolean compareCBsProduct(String idCustomerBill1, String idCustomerBill2) throws Exception {
     	if(idCustomerBill1 == null || idCustomerBill2 == null) {
     		logger.warn("One of the customer bill IDs is null. idCustomerBill1={}, idCustomerBill2={}", idCustomerBill1, idCustomerBill2);
     		return false;
@@ -510,6 +527,6 @@ public class TmfPeristenceService {
             }
         }
         return null;
-    }*/
+    }
 
 }
