@@ -45,6 +45,7 @@
 - General bug fixing:
 	- Added parameter in `InvoicingService`.
 	- Fixed filter for `RelatedParty`.
+
 **Improvements**
 - General bug fixes and minor optimizations in the RevenueProductMapper class.
 
