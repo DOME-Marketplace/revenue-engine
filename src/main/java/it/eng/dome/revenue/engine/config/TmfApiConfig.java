@@ -8,6 +8,7 @@ import org.springframework.context.annotation.Configuration;
 
 import it.eng.dome.brokerage.api.APIPartyApis;
 import it.eng.dome.brokerage.api.AgreementManagementApis;
+import it.eng.dome.brokerage.api.AppliedCustomerBillRateApis;
 import it.eng.dome.brokerage.api.CustomerBillApis;
 import it.eng.dome.brokerage.api.CustomerManagementApis;
 import it.eng.dome.brokerage.api.ProductCatalogManagementApis;
@@ -51,16 +52,23 @@ public class TmfApiConfig {
 	}
 
 	@Bean
-	public CustomerBillApis customerBillApis() {
-		logger.info("Initializing of CustomerBillApis");
-
-		return new CustomerBillApis(tmfApiFactory.getTMF678CustomerBillApiClient());
-	}
-
-	@Bean
 	public AgreementManagementApis agreementManagementApis() {
 		logger.info("Initializing of AgreementManagementApis");
 
 		return new AgreementManagementApis(tmfApiFactory.getTMF651AgreementManagementApiClient());
+	}
+
+	@Bean
+	public AppliedCustomerBillRateApis appliedCustomerBillRateApis() {
+		logger.info("Initializing of AppliedCustomerBillRateApis");
+
+		return new AppliedCustomerBillRateApis(tmfApiFactory.getTMF678CustomerBillApiClient());
+	}
+
+	@Bean
+	public CustomerBillApis customerBillApis() {
+		logger.info("Initializing of CustomerBillApis");
+
+		return new CustomerBillApis(tmfApiFactory.getTMF678CustomerBillApiClient());
 	}
 }
