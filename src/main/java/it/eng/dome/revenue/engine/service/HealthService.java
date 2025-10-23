@@ -8,8 +8,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-
 import it.eng.dome.brokerage.api.APIPartyApis;
 import it.eng.dome.brokerage.api.AgreementManagementApis;
 import it.eng.dome.brokerage.api.AppliedCustomerBillRateApis;
@@ -25,12 +23,13 @@ import it.eng.dome.brokerage.observability.info.Info;
 import it.eng.dome.revenue.engine.invoicing.InvoicingService;
 
 
+
 @Service
 public class HealthService extends AbstractHealthService {
 	
 	private final Logger logger = LoggerFactory.getLogger(HealthService.class);
 	private final static String SERVICE_NAME = "Invoicing Service";
-
+	
     @Autowired
     private InvoicingService invoicingService;
 
@@ -127,7 +126,7 @@ public class HealthService extends AbstractHealthService {
         Check connectivity = createCheck("invoicing-service", "connectivity", "external");
 
         try {
-            Info invoicingInfo = invoicingService.getInfo();
+        	Info invoicingInfo = invoicingService.getInfo();
             connectivity.setStatus(HealthStatus.PASS);
             connectivity.setOutput(toJson(invoicingInfo));
         }
