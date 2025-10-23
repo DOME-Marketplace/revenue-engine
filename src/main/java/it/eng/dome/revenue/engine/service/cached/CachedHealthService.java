@@ -10,6 +10,11 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import it.eng.dome.brokerage.api.APIPartyApis;
+import it.eng.dome.brokerage.api.AgreementManagementApis;
+import it.eng.dome.brokerage.api.AppliedCustomerBillRateApis;
+import it.eng.dome.brokerage.api.CustomerManagementApis;
+import it.eng.dome.brokerage.api.ProductCatalogManagementApis;
+import it.eng.dome.brokerage.api.ProductInventoryApis;
 import it.eng.dome.brokerage.observability.health.Health;
 import it.eng.dome.revenue.engine.service.HealthService;
 import jakarta.annotation.PostConstruct;
@@ -17,8 +22,12 @@ import jakarta.annotation.PostConstruct;
 @Service
 public class CachedHealthService extends HealthService {
 
-    public CachedHealthService(APIPartyApis apiPartyApis) {
-		super(apiPartyApis);
+    public CachedHealthService(ProductCatalogManagementApis productCatalogManagementApis, 
+    		CustomerManagementApis customerManagementApis,
+    		APIPartyApis apiPartyApis, ProductInventoryApis productInventoryApis,
+    		AgreementManagementApis agreementManagementApis,
+    		AppliedCustomerBillRateApis appliedCustomerBillRateApis) {
+		super(productCatalogManagementApis, customerManagementApis, apiPartyApis, productInventoryApis, agreementManagementApis, appliedCustomerBillRateApis);
 	}
 
 	private final Logger logger = LoggerFactory.getLogger(CachedHealthService.class);
@@ -30,16 +39,6 @@ public class CachedHealthService extends HealthService {
     CacheService cacheService;
 
     private Cache<String, Health> healthCache;
-
-//    public CachedHealthService() {
-//        super();
-//    }
-//
-//    @Override
-//    public void afterPropertiesSet() throws Exception {
-//        super.afterPropertiesSet();
-//        this.initCaches();
-//    }
 
     @PostConstruct
     private void initCaches() {
