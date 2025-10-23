@@ -11,6 +11,11 @@ import org.springframework.stereotype.Service;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import it.eng.dome.brokerage.api.APIPartyApis;
+import it.eng.dome.brokerage.api.AgreementManagementApis;
+import it.eng.dome.brokerage.api.AppliedCustomerBillRateApis;
+import it.eng.dome.brokerage.api.CustomerManagementApis;
+import it.eng.dome.brokerage.api.ProductCatalogManagementApis;
+import it.eng.dome.brokerage.api.ProductInventoryApis;
 import it.eng.dome.brokerage.api.fetch.FetchUtils;
 import it.eng.dome.brokerage.observability.AbstractHealthService;
 import it.eng.dome.brokerage.observability.health.Check;
@@ -29,10 +34,25 @@ public class HealthService extends AbstractHealthService {
     @Autowired
     private InvoicingService invoicingService;
 
+    private final ProductCatalogManagementApis productCatalogManagementApis;
+    private final CustomerManagementApis customerManagementApis;
     private final APIPartyApis apiPartyApis;
+    private final ProductInventoryApis productInventoryApis;
+    private final AgreementManagementApis agreementManagementApis;
+    private final AppliedCustomerBillRateApis appliedCustomerBillRateApis;
 
-    public HealthService(APIPartyApis apiPartyApis) {
+    public HealthService(ProductCatalogManagementApis productCatalogManagementApis, 
+    		CustomerManagementApis customerManagementApis,
+    		APIPartyApis apiPartyApis, ProductInventoryApis productInventoryApis,
+    		AgreementManagementApis agreementManagementApis,
+    		AppliedCustomerBillRateApis appliedCustomerBillRateApis) {
+    	
+    	this.productCatalogManagementApis = productCatalogManagementApis;
+    	this.customerManagementApis = customerManagementApis;
 		this.apiPartyApis = apiPartyApis;
+		this.productInventoryApis = productInventoryApis;
+		this.agreementManagementApis = agreementManagementApis;
+		this.appliedCustomerBillRateApis = appliedCustomerBillRateApis;
 	}
     
 	@Override
@@ -109,7 +129,7 @@ public class HealthService extends AbstractHealthService {
         try {
             Info invoicingInfo = invoicingService.getInfo();
             connectivity.setStatus(HealthStatus.PASS);
-            connectivity.setOutput(new ObjectMapper().writeValueAsString(invoicingInfo));
+            connectivity.setOutput(toJson(invoicingInfo));
         }
         catch(Exception e) {
             connectivity.setStatus(HealthStatus.FAIL);
@@ -123,6 +143,36 @@ public class HealthService extends AbstractHealthService {
     private List<Check> getTMFChecks() {
 
     	List<Check> out = new ArrayList<>();
+    	
+    	// TMF620
+		Check tmf620 = createCheck("tmf-api", "connectivity", "tmf620");
+
+		try {
+			FetchUtils.streamAll(productCatalogManagementApis::listCatalogs, null, null, 1).findAny();
+
+			tmf620.setStatus(HealthStatus.PASS);
+
+		} catch (Exception e) {
+			tmf620.setStatus(HealthStatus.FAIL);
+			tmf620.setOutput(e.toString());
+		}
+
+		out.add(tmf620);
+		
+		// TMF629
+		Check tmf629 = createCheck("tmf-api", "connectivity", "tmf629");
+
+		try {
+			FetchUtils.streamAll(customerManagementApis::listCustomers, null, null, 1).findAny();
+
+			tmf629.setStatus(HealthStatus.PASS);
+
+		} catch (Exception e) {
+			tmf629.setStatus(HealthStatus.FAIL);
+			tmf629.setOutput(e.toString());
+		}
+
+		out.add(tmf629);
 
 		// TMF632
 		Check tmf632 = createCheck("tmf-api", "connectivity", "tmf632");
@@ -138,6 +188,56 @@ public class HealthService extends AbstractHealthService {
 		}
 
 		out.add(tmf632);
+		
+		// TMF637
+		Check tmf637 = createCheck("tmf-api", "connectivity", "tmf637");
+
+		try {
+			FetchUtils.streamAll(productInventoryApis::listProducts, null, null, 1).findAny();
+
+			tmf637.setStatus(HealthStatus.PASS);
+
+		} catch (Exception e) {
+			tmf637.setStatus(HealthStatus.FAIL);
+			tmf637.setOutput(e.toString());
+		}
+
+		out.add(tmf637);
+		
+		// TMF651
+		Check tmf651 = createCheck("tmf-api", "connectivity", "tmf651");
+
+		try {
+			FetchUtils.streamAll(agreementManagementApis::listAgreements, null, null, 1).findAny();
+
+			tmf651.setStatus(HealthStatus.PASS);
+
+		} catch (Exception e) {
+			tmf651.setStatus(HealthStatus.FAIL);
+			tmf651.setOutput(e.toString());
+		}
+
+		out.add(tmf651);
+		
+		// TMF678
+		Check tmf678 = createCheck("tmf-api", "connectivity", "tmf678");
+
+		try {
+			FetchUtils.streamAll(
+				appliedCustomerBillRateApis::listAppliedCustomerBillingRates,
+			    null,
+			    null,
+			    1
+			)
+			.findAny();
+			
+			tmf678.setStatus(HealthStatus.PASS);
+		} catch (Exception e) {
+			tmf678.setStatus(HealthStatus.FAIL);
+			tmf678.setOutput(e.toString());
+		}
+
+		out.add(tmf678);
 		
         return out;
     }
