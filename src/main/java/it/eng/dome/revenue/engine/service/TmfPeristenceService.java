@@ -10,6 +10,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
+import it.eng.dome.brokerage.api.CustomerBillApis;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.InitializingBean;
@@ -67,6 +68,7 @@ public class TmfPeristenceService implements InitializingBean {
     private AppliedCustomerBillingRateApi acbrAPI;
 	private AppliedCustomerBillRateApis appliedCustomerBillRateApis;
     private OrganizationApi orgApi;
+    private CustomerBillApis customerBillApis;
 
 	public TmfPeristenceService() {}
     
@@ -83,6 +85,9 @@ public class TmfPeristenceService implements InitializingBean {
         
 		this.acbrAPI = new AppliedCustomerBillingRateApi(tmfApiFactory.getTMF678CustomerBillApiClient());
 		logger.info("TmfPeristenceService initialized with AppliedCustomerBillingRateApi {}", this.acbrAPI);
+
+        this.customerBillApis = new CustomerBillApis(tmfApiFactory.getTMF678CustomerBillApiClient());
+        logger.info("TmfPeristenceService initialized with CustomerBillApis {}", this.customerBillApis);
 		
 		
     }
@@ -209,7 +214,7 @@ public class TmfPeristenceService implements InitializingBean {
             CustomerBill cbToPersist = watermark(cb);
             // persist it
             logger.debug("PERSISTENCE: creating CB {}...", cbToPersist.getId());
-            String id = this.appliedCustomerBillRateApis.createCustomerBill(CustomerBillCreate.fromJson(cbToPersist.toJson()));
+            String id = this.customerBillApis.createCustomerBill(CustomerBillCreate.fromJson(cbToPersist.toJson()));
             logger.info("PERSISTENCE: created CB with id {}", id);
             // and return a fresh copy
             return this.tmfDataRetriever.getCustomerBillById(id);
@@ -236,12 +241,12 @@ public class TmfPeristenceService implements InitializingBean {
             // acbr.setBill(null);
             // persist it
             logger.info("PERSISTENCE: creating ACBR {}", acbrToPersist.getId());
-            
+
             AppliedCustomerBillingRateCreate acbrc = AppliedCustomerBillingRateCreate.fromJson(acbrToPersist.toJson());
             acbrc.setAtSchemaLocation(new URI("https://raw.githubusercontent.com/DOME-Marketplace/dome-odrl-profile/refs/heads/add-related-party-ref/schemas/simplified/RelatedPartyRef.schema.json"));
-            AppliedCustomerBillingRate createdACBR = this.appliedCustomerBillRateApis.createAppliedCustomerBillingRate(acbrc);
-            
-            logger.info("PERSISTENCE: created ACBR with id {}", createdACBR.getId());
+            String createdACBRId = this.appliedCustomerBillRateApis.createAppliedCustomerBillingRate(acbrc);
+
+            logger.info("PERSISTENCE: created ACBR with id {}", createdACBRId);
             // and return a fresh copy
 //            return createdACBR;
         } else {

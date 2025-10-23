@@ -187,7 +187,7 @@ public class TmfCachedDataRetriever extends TmfDataRetriever {
     }
     
     @Override
-    public List<CustomerBill> getAllCustomerBills(String fields, Map<String, String> filter) throws ExternalServiceException {
+    public List<CustomerBill> getAllCustomerBills(String fields, Map<String, String> filter, int pageSize) throws ExternalServiceException {
         String key = "all-customer-bills";
         if(fields!=null)
             key += fields;
@@ -196,7 +196,7 @@ public class TmfCachedDataRetriever extends TmfDataRetriever {
 		if (!TMF_CACHE_ENABLED || !this.customerBillListCache.containsKey(key)) {
 			
 			logger.debug("Cache MISS for {}", key);
-			List<CustomerBill> cbs = super.getAllCustomerBills(fields, filter);
+			List<CustomerBill> cbs = super.getAllCustomerBills(fields, filter, pageSize);
 			if (cbs != null) {
 				this.customerBillListCache.put(key, cbs);
 			} else {

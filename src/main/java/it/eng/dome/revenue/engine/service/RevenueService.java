@@ -2,6 +2,7 @@ package it.eng.dome.revenue.engine.service;
 
 import java.util.List;
 
+import it.eng.dome.brokerage.api.fetch.FetchUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.InitializingBean;
@@ -37,7 +38,12 @@ public class RevenueService implements InitializingBean {
 	
 	public void getCustomers() {
 		logger.info("Get getCustomers");
-		List<Customer> customers = customer.getAllCustomers(null, null);
+		List<Customer> customers = FetchUtils.streamAll(
+				customer::listCustomers,    // method reference
+				null,                       		   // fields
+				null,            					   // filter
+				100                         	   // pageSize
+		).toList();
 		logger.info("Customers size: {}", customers.size());
 		
 		for (Customer customer : customers) {
@@ -47,7 +53,12 @@ public class RevenueService implements InitializingBean {
 	
 	public void getAgreements() {
 		logger.info("Get getAgreements");
-		List<Agreement> agreements = agreement.getAllAgreements(null, null);
+		List<Agreement> agreements = FetchUtils.streamAll(
+				agreement::listAgreements,    // method reference
+				null,                       		   // fields
+				null,            					   // filter
+				100                         	   // pageSize
+		).toList();
 		logger.info("Agreement size: {}", agreements.size());
 		
 		for (Agreement agreement : agreements) {

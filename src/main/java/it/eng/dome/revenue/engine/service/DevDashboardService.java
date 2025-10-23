@@ -1,10 +1,7 @@
 package it.eng.dome.revenue.engine.service;
 
 import java.time.OffsetDateTime;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -30,8 +27,9 @@ public class DevDashboardService {
 
     public List<Organization> listOrganizations() throws Exception {
         List<Organization> orgs = tmfDataRetriever.getAllPaginatedOrg();
-        Collections.sort(orgs, new OrganizationComparator());
-        return orgs;
+        List<Organization> mutableOrgs = new ArrayList<>(orgs); // copy mutable list
+        Collections.sort(mutableOrgs, new OrganizationComparator());
+        return mutableOrgs;
     }
 
     public List<CustomerBill> listOrganizationTransactions(String sellerId) throws Exception {

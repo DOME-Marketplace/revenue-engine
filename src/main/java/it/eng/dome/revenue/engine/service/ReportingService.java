@@ -166,7 +166,7 @@ public class ReportingService implements InitializingBean {
             // retrieve all bills
             Map<String, String> filter = new HashMap<>();
             filter.put("relatedParty.id", relatedPartyId);
-            List<CustomerBill> allBills = tmfDataRetriever.getAllCustomerBills(null, filter);
+            List<CustomerBill> allBills = tmfDataRetriever.getAllCustomerBills(null, filter, 100);
 
             List<CustomerBill> buyerBills = new ArrayList<>();
             for (CustomerBill bill : allBills) {

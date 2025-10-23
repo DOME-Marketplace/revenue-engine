@@ -125,7 +125,7 @@ public class HealthService extends AbstractHealthService implements Initializing
         return out;
     }
 
-    private List<String> buildNotes(Health hlt) {
+    public List<String> buildNotes(Health hlt) {
         List<String> notes = new ArrayList<>();
 
         // first, some notes about the Revenue Service itself
