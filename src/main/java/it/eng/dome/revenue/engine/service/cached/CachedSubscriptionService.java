@@ -1,6 +1,5 @@
 package it.eng.dome.revenue.engine.service.cached;
 
-import java.time.Duration;
 import java.util.List;
 
 import org.ehcache.Cache;
@@ -15,6 +14,7 @@ import it.eng.dome.revenue.engine.exception.ExternalServiceException;
 import it.eng.dome.revenue.engine.model.Role;
 import it.eng.dome.revenue.engine.model.Subscription;
 import it.eng.dome.revenue.engine.service.SubscriptionService;
+import it.eng.dome.revenue.engine.utils.CacheDuration;
 
 @Service
 public class CachedSubscriptionService extends SubscriptionService {
@@ -26,6 +26,10 @@ public class CachedSubscriptionService extends SubscriptionService {
 
     @Autowired
     CacheService cacheService;
+    
+	@Autowired
+	CacheDuration cacheDuration;
+
 
     private Cache<String, List<Subscription>> subscriptionsCache;
 
@@ -43,16 +47,18 @@ public class CachedSubscriptionService extends SubscriptionService {
 
     @SuppressWarnings("unchecked")
 	private void initCaches() {
-        this.subscriptionsCache = this.cacheService.getOrCreateCache(
-				"subscriptionsCache",
-				String.class,
-				(Class<List<Subscription>>)(Class<?>)List.class,
-				Duration.ofHours(1));
-        this.subscriptionCache = this.cacheService.getOrCreateCache(
-				"subscriptionCache",
-				String.class,
-				Subscription.class,
-				Duration.ofHours(1));
+    	logger.debug("Set cache duration for 'subscription-service' to: {}", cacheDuration.get("subscription-service"));
+        subscriptionsCache = cacheService.getOrCreateCache(
+        		"subscriptionsCache", 
+        		String.class, 
+        		(Class<List<Subscription>>)(Class<?>)List.class, 
+        		cacheDuration.get("subscription-service"));
+        
+        subscriptionCache = cacheService.getOrCreateCache(
+        		"subscriptionCache", 
+        		String.class, 
+        		Subscription.class, 
+        		cacheDuration.get("subscription-service"));
     }
     
 

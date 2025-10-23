@@ -1,6 +1,5 @@
 package it.eng.dome.revenue.engine.service.cached;
 
-import java.time.Duration;
 import java.util.List;
 
 import org.ehcache.Cache;
@@ -15,6 +14,7 @@ import it.eng.dome.revenue.engine.exception.BadTmfDataException;
 import it.eng.dome.revenue.engine.exception.ExternalServiceException;
 import it.eng.dome.revenue.engine.model.Plan;
 import it.eng.dome.revenue.engine.service.PlanService;
+import it.eng.dome.revenue.engine.utils.CacheDuration;
 
 @Service
 public class CachedPlanService extends PlanService {
@@ -29,6 +29,9 @@ public class CachedPlanService extends PlanService {
 
     private Cache<String, List<Plan>> planSetCache;
     private Cache<String, Plan> planCache;
+    
+	@Autowired
+	CacheDuration cacheDuration;
 
     public CachedPlanService() {
         super();
@@ -41,17 +44,19 @@ public class CachedPlanService extends PlanService {
     }
 
     @SuppressWarnings("unchecked")
-	private void initCaches() {
-        this.planSetCache = this.cacheService.getOrCreateCache(
-				"planSetCache",
-				String.class,
-				(Class<List<Plan>>)(Class<?>)List.class,
-				Duration.ofHours(1));
-        this.planCache = this.cacheService.getOrCreateCache(
-				"planCache",
-				String.class,
-				Plan.class,
-				Duration.ofHours(1));
+	private void initCaches() {    	
+		logger.debug("Set cache duration for 'plan-service' to: {}", cacheDuration.get("plan-service"));
+        planSetCache = cacheService.getOrCreateCache(
+        		"planSetCache", 
+        		String.class, 
+        		(Class<List<Plan>>)(Class<?>)List.class,
+        		cacheDuration.get("plan-service"));
+        
+        planCache = cacheService.getOrCreateCache(
+        		"planCache", 
+        		String.class, 
+        		Plan.class, 
+        		cacheDuration.get("plan-service"));
     }
 
     /*

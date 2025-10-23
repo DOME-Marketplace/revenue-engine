@@ -1,6 +1,5 @@
 package it.eng.dome.revenue.engine.service.cached;
 
-import java.time.Duration;
 import java.util.List;
 import java.util.Map;
 
@@ -19,6 +18,7 @@ import it.eng.dome.brokerage.api.ProductInventoryApis;
 import it.eng.dome.revenue.engine.exception.BadTmfDataException;
 import it.eng.dome.revenue.engine.exception.ExternalServiceException;
 import it.eng.dome.revenue.engine.service.TmfDataRetriever;
+import it.eng.dome.revenue.engine.utils.CacheDuration;
 import it.eng.dome.tmforum.tmf620.v4.model.ProductOffering;
 import it.eng.dome.tmforum.tmf620.v4.model.ProductOfferingPrice;
 import it.eng.dome.tmforum.tmf632.v4.model.Organization;
@@ -46,6 +46,9 @@ public class TmfCachedDataRetriever extends TmfDataRetriever {
 
     @Autowired
     CacheService cacheService;
+    
+	@Autowired
+	CacheDuration cacheDuration;
 
     private Cache<String, BillingAccountRef> billingAccountCache;
     private Cache<String, CustomerBill> customerBillCache;
@@ -58,79 +61,76 @@ public class TmfCachedDataRetriever extends TmfDataRetriever {
     private Cache<String, List<Product>> productListCache;
     private Cache<String, List<ProductOffering>> productOfferingListCache;
 
-//    public TmfCachedDataRetriever() {
-//    	initCaches();
-//    }
-
-//    @Override
-//    public void afterPropertiesSet() throws Exception {
-//        super.afterPropertiesSet();
-//        this.initCaches();
-//    }
 
     @SuppressWarnings({ "unchecked" })
     @PostConstruct
 	private void initCaches() {
-    	logger.info("Executing Init Caches");
-    	
-        this.acbrCache = this.cacheService.getOrCreateCache(
-                "acbrCache",
-                String.class,
-                (Class<List<AppliedCustomerBillingRate>>)(Class<?>)List.class,
-                Duration.ofHours(1));
-
-        this.billingAccountCache = this.cacheService.getOrCreateCache(
+    	// tmforum-service
+		logger.debug("Set cache duration for 'tmforum-service' to: {}", cacheDuration.get("tmforum-service"));
+		
+		acbrCache = cacheService.getOrCreateCache(
+				"acbrCache", 
+				String.class, 
+				(Class<List<AppliedCustomerBillingRate>>)(Class<?>)List.class, 
+				cacheDuration.get("tmforum-service"));
+		
+		billingAccountCache = this.cacheService.getOrCreateCache(
                 "billingAccountCache",
                 String.class,
                 BillingAccountRef.class,
-                Duration.ofHours(1));
-
-        this.customerBillCache = this.cacheService.getOrCreateCache(
+                cacheDuration.get("tmforum-service"));
+		
+        customerBillCache = this.cacheService.getOrCreateCache(
                 "customerBillCache",
                 String.class,
                 CustomerBill.class,
-                Duration.ofHours(1));
+                cacheDuration.get("tmforum-service"));
 
-        this.productCache = this.cacheService.getOrCreateCache(
+        productCache = this.cacheService.getOrCreateCache(
                 "productCache",
                 String.class,
                 Product.class,
-                Duration.ofHours(1));
-
-        this.productListCache = this.cacheService.getOrCreateCache(
-                "productListCache",
-                String.class,
-                (Class<List<Product>>)(Class<?>)List.class,
-                Duration.ofMinutes(30));
-
-        this.productOfferingCache = this.cacheService.getOrCreateCache(
+                cacheDuration.get("tmforum-service"));
+        
+        productOfferingCache = this.cacheService.getOrCreateCache(
                 "productOfferingCache",
                 String.class,
                 ProductOffering.class,
-                Duration.ofHours(1));
-
-        this.productOfferingListCache = this.cacheService.getOrCreateCache(
-                "productOfferingListCache",
-                String.class,
-                (Class<List<ProductOffering>>)(Class<?>)List.class,
-                Duration.ofMinutes(30));
-
-        this.productOfferingPriceCache = this.cacheService.getOrCreateCache(
+                cacheDuration.get("tmforum-service"));
+        
+        
+        productOfferingPriceCache = this.cacheService.getOrCreateCache(
                 "productOfferingPriceCache",
                 String.class,
                 ProductOfferingPrice.class,
-                Duration.ofHours(1));
-
-        this.organizationCache = this.cacheService.getOrCreateCache(
+                cacheDuration.get("tmforum-service"));
+        
+        organizationCache = this.cacheService.getOrCreateCache(
                 "organizationCache",
                 String.class,
                 Organization.class,
-                Duration.ofHours(1));
-        this.customerBillListCache = this.cacheService.getOrCreateCache(
+                cacheDuration.get("tmforum-service"));
+        
+        // tmforum-list-service
+        logger.debug("Set cache duration for 'tmforum-list-service' to: {}", cacheDuration.get("tmforum-list-service"));
+        
+        productListCache = this.cacheService.getOrCreateCache(
+                "productListCache",
+                String.class,
+                (Class<List<Product>>)(Class<?>)List.class,
+                cacheDuration.get("tmforum-list-service"));
+
+        productOfferingListCache = this.cacheService.getOrCreateCache(
+                "productOfferingListCache",
+                String.class,
+                (Class<List<ProductOffering>>)(Class<?>)List.class,
+                cacheDuration.get("tmforum-list-service"));
+
+        customerBillListCache = this.cacheService.getOrCreateCache(
 				"customerBillListCache",
 				String.class,
 				(Class<List<CustomerBill>>)(Class<?>)List.class,
-				Duration.ofMinutes(30));
+				cacheDuration.get("tmforum-list-service"));
     }
 
     @Override

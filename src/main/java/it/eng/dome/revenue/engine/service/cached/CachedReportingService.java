@@ -1,6 +1,5 @@
 package it.eng.dome.revenue.engine.service.cached;
 
-import java.time.Duration;
 import java.util.List;
 
 import org.ehcache.Cache;
@@ -15,6 +14,7 @@ import it.eng.dome.revenue.engine.exception.BadTmfDataException;
 import it.eng.dome.revenue.engine.exception.ExternalServiceException;
 import it.eng.dome.revenue.engine.model.Report;
 import it.eng.dome.revenue.engine.service.ReportingService;
+import it.eng.dome.revenue.engine.utils.CacheDuration;
 
 @Service
 public class CachedReportingService extends ReportingService {
@@ -26,6 +26,9 @@ public class CachedReportingService extends ReportingService {
 
     @Autowired
     private CacheService cacheService;
+    
+	@Autowired
+	CacheDuration cacheDuration;
 
     private Cache<String, List<Report>> reportCache;
 
@@ -40,11 +43,12 @@ public class CachedReportingService extends ReportingService {
 
     @SuppressWarnings("unchecked")
 	private void initCaches() {
-        this.reportCache = this.cacheService.getOrCreateCache(
-				"reportCache",
-				String.class,
-				(Class<List<Report>>)(Class<?>)List.class,
-				Duration.ofHours(1));
+		logger.debug("Set cache duration for 'reporting-service' to: {}", cacheDuration.get("reporting-service"));
+		reportCache = cacheService.getOrCreateCache(
+				"reportCache", 
+				String.class, 
+				(Class<List<Report>>)(Class<?>)List.class, 
+				cacheDuration.get("reporting-service"));
     }
 
     @Override

@@ -1,7 +1,7 @@
 
 # Spring Configuration
 server: 
-  port: 8080
+  port: 8580
   servlet:
     context-path:  ${BILLING_PREFIX:/}
 
@@ -18,7 +18,7 @@ logging:
 # Spring Boot Actuator
 management:
   server:
-    port: 9000
+    port: 9005
   endpoints:
     enabled-by-default: false
     web:
@@ -34,6 +34,16 @@ management:
   health:
     probes:
       enabled: true
+
+cache:
+  duration: 
+    health-service: 1m
+    plan-service: 1h
+    reporting-service: 1h
+    statement-service: 1h
+    subscription-service: 1h
+    tmforum-service: 1h
+    tmforum-list-service: 30m
 
 # Billing Service
 billing:

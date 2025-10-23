@@ -1,5 +1,9 @@
 package it.eng.dome.revenue.engine.service.cached;
 
+import java.time.Duration;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+
 import org.ehcache.Cache;
 import org.ehcache.CacheManager;
 import org.ehcache.config.CacheConfiguration;
@@ -7,19 +11,14 @@ import org.ehcache.config.builders.CacheConfigurationBuilder;
 import org.ehcache.config.builders.CacheManagerBuilder;
 import org.ehcache.config.builders.ExpiryPolicyBuilder;
 import org.ehcache.config.builders.ResourcePoolsBuilder;
-import org.springframework.beans.factory.InitializingBean;
 import org.springframework.stereotype.Service;
-
-import java.time.Duration;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Generic cache service using Ehcache for local caching of any data type.
  * Supports configurable TTL and multiple independent caches.
  */
 @Service
-public class CacheService implements InitializingBean {
+public class CacheService {
 
     private final CacheManager cacheManager;
 
@@ -33,9 +32,6 @@ public class CacheService implements InitializingBean {
         this.cacheManager = CacheManagerBuilder.newCacheManagerBuilder().build(true);
     }
 
-    @Override
-    public void afterPropertiesSet() throws Exception {
-    }
 
     /**
      * Returns an existing or newly created typed cache.

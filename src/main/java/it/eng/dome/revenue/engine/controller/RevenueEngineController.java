@@ -3,15 +3,14 @@ package it.eng.dome.revenue.engine.controller;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import io.swagger.v3.oas.annotations.tags.Tag;
 import it.eng.dome.brokerage.observability.health.Health;
 import it.eng.dome.brokerage.observability.info.Info;
-import it.eng.dome.revenue.engine.service.HealthService;
-
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
+import it.eng.dome.revenue.engine.service.cached.CachedHealthService;
 
 @RestController
 @RequestMapping("/revenue")
@@ -19,7 +18,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 public class RevenueEngineController {
 
     @Autowired
-    private HealthService healthService;
+    private CachedHealthService healthService;
 
     @GetMapping("/health")
     public ResponseEntity<Health> getHealth() {

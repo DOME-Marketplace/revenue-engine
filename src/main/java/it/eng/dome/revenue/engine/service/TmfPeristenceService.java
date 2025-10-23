@@ -60,12 +60,6 @@ public class TmfPeristenceService {
     @Value("${persistence.monthsBack:1}")
     private int monthsBack;
     
-//    private CustomerBillApi customerBillAPI;
-//    private AppliedCustomerBillingRateApi acbrAPI;
-//	private AppliedCustomerBillRateApis appliedCustomerBillRateApis;
-//    private OrganizationApi orgApi;
-//    private CustomerBillApis customerBillApis;
-    
     private APIPartyApis apiPartyApis;
     private CustomerBillApis customerBillApis;
     private AppliedCustomerBillRateApis appliedCustomerBillRateApis;
@@ -78,23 +72,6 @@ public class TmfPeristenceService {
 		this.appliedCustomerBillRateApis = appliedCustomerBillRateApis;
 	}
     
-    /*@Override
-    public void afterPropertiesSet() throws Exception {
-		this.customerBillAPI = new CustomerBillApi(tmfApiFactory.getTMF678CustomerBillApiClient());
-        logger.info("TmfPeristenceService initialized with CustomerBillApi {}", this.customerBillAPI);
-
-		this.appliedCustomerBillRateApis = new AppliedCustomerBillRateApis(tmfApiFactory.getTMF678CustomerBillApiClient());
-        logger.info("TmfPeristenceService initialized with AppliedCustomerBillRateApis {}", this.appliedCustomerBillRateApis);
-
-        this.orgApi = new OrganizationApi(tmfApiFactory.getTMF632PartyManagementApiClient());
-        logger.info("TmfPeristenceService initialized with OrganizationApis {}", this.orgApi);
-        
-		this.acbrAPI = new AppliedCustomerBillingRateApi(tmfApiFactory.getTMF678CustomerBillApiClient());
-		logger.info("TmfPeristenceService initialized with AppliedCustomerBillingRateApi {}", this.acbrAPI);
-
-        this.customerBillApis = new CustomerBillApis(tmfApiFactory.getTMF678CustomerBillApiClient());
-        logger.info("TmfPeristenceService initialized with CustomerBillApis {}", this.customerBillApis);
-    }*/
 
     /**
      * Persists all revenue bills for all organizations.
