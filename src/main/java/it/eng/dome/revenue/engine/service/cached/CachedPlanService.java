@@ -40,7 +40,8 @@ public class CachedPlanService extends PlanService {
         this.initCaches();
     }
 
-    private void initCaches() {
+    @SuppressWarnings("unchecked")
+	private void initCaches() {
         this.planSetCache = this.cacheService.getOrCreateCache(
 				"planSetCache",
 				String.class,

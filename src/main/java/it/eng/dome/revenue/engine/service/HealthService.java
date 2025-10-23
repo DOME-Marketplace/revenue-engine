@@ -1,90 +1,110 @@
 package it.eng.dome.revenue.engine.service;
 
-import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.springframework.beans.factory.InitializingBean;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import it.eng.dome.brokerage.api.APIPartyApis;
+import it.eng.dome.brokerage.api.fetch.FetchUtils;
 import it.eng.dome.brokerage.observability.AbstractHealthService;
 import it.eng.dome.brokerage.observability.health.Check;
 import it.eng.dome.brokerage.observability.health.Health;
 import it.eng.dome.brokerage.observability.health.HealthStatus;
 import it.eng.dome.brokerage.observability.info.Info;
 import it.eng.dome.revenue.engine.invoicing.InvoicingService;
-import it.eng.dome.revenue.engine.tmf.TmfApiFactory;
-import it.eng.dome.tmforum.tmf632.v4.api.OrganizationApi;
+
 
 @Service
-public class HealthService extends AbstractHealthService implements InitializingBean {
+public class HealthService extends AbstractHealthService {
+	
+	private final Logger logger = LoggerFactory.getLogger(HealthService.class);
+	private final static String SERVICE_NAME = "Invoicing Service";
 
     @Autowired
     private InvoicingService invoicingService;
 
-    @Autowired
-    private TmfApiFactory tmfApiFactory;
+    private final APIPartyApis apiPartyApis;
 
-    private OrganizationApi orgApi;
+    public HealthService(APIPartyApis apiPartyApis) {
+		this.apiPartyApis = apiPartyApis;
+	}
+    
+	@Override
+	public Info getInfo() {
 
-    @Override
-    public void afterPropertiesSet() throws Exception {
-        // create an API for each of the used TMF APIs ... or just one?
-        this.orgApi = new OrganizationApi(tmfApiFactory.getTMF632PartyManagementApiClient());
-    }
+		Info info = super.getInfo();
+		logger.debug("Response: {}", toJson(info));
+
+		return info;
+	}
 
     public Health getHealth() {
-        Health h = new Health();
-        h.setDescription("Health for the Revenue Sharing Service");
+    	Health health = new Health();
+		health.setDescription("Health for the " + SERVICE_NAME);
 
-        // check the invoicing service
-        for(Check c: this.getInvoicingServiceCheck()) {
-            h.addCheck(c);
+		health.elevateStatus(HealthStatus.PASS);
+
+		// 1: check of the TMForum APIs dependencies
+		for (Check c : getTMFChecks()) {
+			health.addCheck(c);
+			health.elevateStatus(c.getStatus());
+		}
+
+		// 2: check dependencies: in case of FAIL or WARN set it to WARN
+		boolean onlyDependenciesFailing = health.getChecks("self", null).stream()
+				.allMatch(c -> c.getStatus() == HealthStatus.PASS);
+		
+		if (onlyDependenciesFailing && health.getStatus() == HealthStatus.FAIL) {
+	        health.setStatus(HealthStatus.WARN);
+	    }
+
+		// 3: check self info
+	    for(Check c: getChecksOnSelf()) {
+	    	health.addCheck(c);
+	    	health.elevateStatus(c.getStatus());
         }
-
-        // check the TMF PIs
-        for(Check c: this.getTMFChecks())
-            h.addCheck(c);
-
-        // Status of its dependencies. In case of FAIL or WARN set it to WARN
-        for(Check c: h.getAllChecks()) {
-            h.elevateStatus(c.getStatus());
+		
+	    // 4: check invoicing service
+	    for(Check c: getInvoicingServiceCheck()) {
+	    	health.addCheck(c);
+	    	health.elevateStatus(c.getStatus());
         }
-        // ... but not to FAIL (which means a failure in the Revenue itself)
-        if(HealthStatus.FAIL.equals(h.getStatus()))
-            h.setStatus(HealthStatus.WARN);
-
-        // now look at the internal status (may lead to PASS, WARN or FAIL)
-        for(Check c: this.getChecksOnSelf()) {
-            h.addCheck(c);
-            h.elevateStatus(c.getStatus());
-        }
-
-        // add some notes
-        h.setNotes(this.buildNotes(h));
-
-        return h;
+	    
+	    // 5: build human-readable notes
+	    health.setNotes(buildNotes(health));
+		
+		logger.debug("Health response: {}", toJson(health));
+		
+		return health;
     }
 
     private List<Check> getChecksOnSelf() {
-        List<Check> out = new ArrayList<>();
-        Check self = new Check("self", "");
-        // FIXME... 
-        self.setStatus(HealthStatus.PASS);
-        out.add(self);
-        return out;
-    }
+	    List<Check> out = new ArrayList<>();
+
+	    // Check getInfo API
+	    Info info = getInfo();
+	    HealthStatus infoStatus = (info != null) ? HealthStatus.PASS : HealthStatus.FAIL;
+	    String infoOutput = (info != null)
+	            ? SERVICE_NAME + " version: " + info.getVersion()
+	            : SERVICE_NAME + " getInfo returned unexpected response";
+	    
+	    Check infoCheck = createCheck("self", "get-info", "api", infoStatus, infoOutput);
+	    out.add(infoCheck);
+
+	    return out;
+	}
 
     private List<Check> getInvoicingServiceCheck() {
 
         List<Check> out = new ArrayList<>();
 
-        Check connectivity = new Check("invoicing-service", "connectivity");
-        connectivity.setComponentType("external");
-        connectivity.setTime(OffsetDateTime.now());
+        Check connectivity = createCheck("invoicing-service", "connectivity", "external");
 
         try {
             Info invoicingInfo = invoicingService.getInfo();
@@ -97,65 +117,29 @@ public class HealthService extends AbstractHealthService implements Initializing
         }
         out.add(connectivity);
 
-        // TODO: return more/better checks
-
         return out;
     }
 
     private List<Check> getTMFChecks() {
 
-        List<Check> out = new ArrayList<>();
+    	List<Check> out = new ArrayList<>();
 
-        Check connectivity = new Check("tmf-api", "connectivity");
-        connectivity.setComponentType("external");
-        connectivity.setTime(OffsetDateTime.now());
+		// TMF632
+		Check tmf632 = createCheck("tmf-api", "connectivity", "tmf632");
 
-        try {
-            orgApi.listOrganization(null, null, 5, null);
-            connectivity.setStatus(HealthStatus.PASS);
-        } catch(Exception e) {
-            connectivity.setStatus(HealthStatus.FAIL);
-            connectivity.setOutput(e.getMessage());
-        }
+		try {
+			FetchUtils.streamAll(apiPartyApis::listOrganizations, null, null, 1).findAny();
 
-        out.add(connectivity);
+			tmf632.setStatus(HealthStatus.PASS);
 
-        // TODO: return more/better checks
+		} catch (Exception e) {
+			tmf632.setStatus(HealthStatus.FAIL);
+			tmf632.setOutput(e.toString());
+		}
 
+		out.add(tmf632);
+		
         return out;
-    }
-
-    public List<String> buildNotes(Health hlt) {
-        List<String> notes = new ArrayList<>();
-
-        // first, some notes about the Revenue Service itself
-        for(Check c: hlt.getChecks("self", null)) {
-            switch(c.getStatus()) {
-                case UNKNOWN:
-                    notes.add("Revenue Sharing Service status is UNKNOWN. It might not behave as expected.");
-                    break;
-                case PASS:
-                    break;
-                case WARN:
-                    notes.add("Revenue Sharing Service has some internal troubles degrading its behaviour/performance");
-                    break;
-                case FAIL:
-                    notes.add("Revenue Sharing Service has some major internal troubles");
-                    break;
-                default:
-                    notes.add("The Revenue Sharing Service reported an unknown status: " + c.getStatus());
-            }
-        }
-
-        // Then, some notes on its dependencies
-        for(Check c: hlt.getChecks("invoicing-service", null))
-            if(c.getStatus().getSeverity()>HealthStatus.PASS.getSeverity())
-                notes.add("Revenue Sharing Service can't behave correctly because the Invoicing Service is degraded or failing");
-        for(Check c: hlt.getChecks("tmf-api", null))
-            if(c.getStatus().getSeverity()>HealthStatus.PASS.getSeverity())
-                notes.add("Revenue Sharing Service can't behave correctly because the TMF APIs are degraded or failing");
-
-        return notes;
     }
 
 }

@@ -1,6 +1,5 @@
 package it.eng.dome.revenue.engine.service.cached;
 
-import java.io.IOException;
 import java.time.Duration;
 import java.util.List;
 
@@ -16,7 +15,6 @@ import it.eng.dome.revenue.engine.exception.BadTmfDataException;
 import it.eng.dome.revenue.engine.exception.ExternalServiceException;
 import it.eng.dome.revenue.engine.model.Report;
 import it.eng.dome.revenue.engine.service.ReportingService;
-import it.eng.dome.tmforum.tmf632.v4.ApiException;
 
 @Service
 public class CachedReportingService extends ReportingService {
@@ -40,7 +38,8 @@ public class CachedReportingService extends ReportingService {
         this.initCaches();
     }
 
-    private void initCaches() {
+    @SuppressWarnings("unchecked")
+	private void initCaches() {
         this.reportCache = this.cacheService.getOrCreateCache(
 				"reportCache",
 				String.class,

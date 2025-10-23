@@ -7,26 +7,24 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
-import java.util.stream.Collectors;
 
-import it.eng.dome.brokerage.api.*;
-import it.eng.dome.brokerage.api.fetch.FetchUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.InitializingBean;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import it.eng.dome.brokerage.api.APIPartyApis;
+import it.eng.dome.brokerage.api.AppliedCustomerBillRateApis;
+import it.eng.dome.brokerage.api.CustomerBillApis;
+import it.eng.dome.brokerage.api.ProductCatalogManagementApis;
+import it.eng.dome.brokerage.api.ProductInventoryApis;
+import it.eng.dome.brokerage.api.fetch.FetchUtils;
 import it.eng.dome.revenue.engine.exception.BadTmfDataException;
 import it.eng.dome.revenue.engine.exception.ExternalServiceException;
 import it.eng.dome.revenue.engine.model.Role;
-import it.eng.dome.revenue.engine.tmf.TmfApiFactory;
 import it.eng.dome.revenue.engine.utils.RelatedPartyUtils;
-import it.eng.dome.revenue.engine.utils.TMFApiUtils;
 import it.eng.dome.tmforum.tmf620.v4.model.Category;
 import it.eng.dome.tmforum.tmf620.v4.model.ProductOffering;
 import it.eng.dome.tmforum.tmf620.v4.model.ProductOfferingPrice;
-import it.eng.dome.tmforum.tmf632.v4.api.OrganizationApi;
 import it.eng.dome.tmforum.tmf632.v4.model.Characteristic;
 import it.eng.dome.tmforum.tmf632.v4.model.Organization;
 import it.eng.dome.tmforum.tmf637.v4.model.BillingAccountRef;
@@ -36,32 +34,26 @@ import it.eng.dome.tmforum.tmf678.v4.model.CustomerBill;
 import it.eng.dome.tmforum.tmf678.v4.model.TimePeriod;
 
 @Service
-public class TmfDataRetriever implements InitializingBean {
+public class TmfDataRetriever {
 
     private final Logger logger = LoggerFactory.getLogger(TmfDataRetriever.class);
 
-    // Factory for TMF APIss
-    @Autowired
-    private TmfApiFactory tmfApiFactory;
-
-    // TMForum API to retrieve bills, organizations and products
-    private AppliedCustomerBillRateApis acbrApi;
-    private CustomerBillApis customerBillApi;
-    private APIPartyApis apiPartyApis;
-    private ProductInventoryApis productApis;
+    // TMForum API
     private ProductCatalogManagementApis productCatalogManagementApis;
+    private CustomerBillApis customerBillApis;
+    private APIPartyApis apiPartyApis;
+    private ProductInventoryApis productInventoryApis;
+    private AppliedCustomerBillRateApis appliedCustomerBillRateApis;
 
-    public TmfDataRetriever() {
-    }
-
-    @Override
-    public void afterPropertiesSet() throws Exception {
-        this.acbrApi = new AppliedCustomerBillRateApis(tmfApiFactory.getTMF678CustomerBillApiClient());
-        this.apiPartyApis = new APIPartyApis(tmfApiFactory.getTMF632PartyManagementApiClient());
-        this.productApis = new ProductInventoryApis(tmfApiFactory.getTMF637ProductInventoryApiClient());
-        this.productCatalogManagementApis = new ProductCatalogManagementApis(tmfApiFactory.getTMF620ProductCatalogManagementApiClient());
-        this.customerBillApi = new CustomerBillApis(tmfApiFactory.getTMF678CustomerBillApiClient());
-        logger.info("TmfDataRetriever initialized with the following api: {}, {}, {}, {}, {}", acbrApi, customerBillApi, productApis, apiPartyApis, productCatalogManagementApis);
+    public TmfDataRetriever(ProductCatalogManagementApis productCatalogManagementApis, CustomerBillApis customerBillApis,
+    		APIPartyApis apiPartyApis, ProductInventoryApis productInventoryApis,
+    		AppliedCustomerBillRateApis appliedCustomerBillRateApis) {
+    	
+    	this.productCatalogManagementApis = productCatalogManagementApis;
+    	this.customerBillApis = customerBillApis;
+    	this.apiPartyApis = apiPartyApis;
+    	this.productInventoryApis = productInventoryApis;
+    	this.appliedCustomerBillRateApis = appliedCustomerBillRateApis;    	
     }
 
     // ======= TMF Customer Bill ========
@@ -75,7 +67,7 @@ public class TmfDataRetriever implements InitializingBean {
         }
 
         try {
-            CustomerBill cb = this.customerBillApi.getCustomerBill(customerBillId, null);
+            CustomerBill cb = this.customerBillApis.getCustomerBill(customerBillId, null);
 
             if (cb == null) {
                 logger.info("No Customer Bill found for Customer Bill with id {}: ", customerBillId);
@@ -94,7 +86,7 @@ public class TmfDataRetriever implements InitializingBean {
         try {
             //FIXME: fix retrieve of large CustomerBill lists
             return FetchUtils.streamAll(
-                    customerBillApi::listCustomerBills,    // method reference
+                    customerBillApis::listCustomerBills,    // method reference
                     fields,                       		   // fields
                     filter,            					   // filter
                     pageSize                         	   // pageSize
@@ -120,10 +112,10 @@ public class TmfDataRetriever implements InitializingBean {
             filter.put("bill.id", customerBillId);
             //FIXME: fix retrieve of large ACBR lists
             List<AppliedCustomerBillingRate> acbrs = FetchUtils.streamAll(
-                    acbrApi::listAppliedCustomerBillingRates,    // method reference
-                    null,                       		   // fields
-                    filter,            					   // filter
-                    100                         	       // pageSize
+        		appliedCustomerBillRateApis::listAppliedCustomerBillingRates,    // method reference
+                null,                       		   // fields
+                filter,            					   // filter
+                100                         	       // pageSize
             ).toList();
 
             if (acbrs == null || acbrs.isEmpty()) {
@@ -170,7 +162,7 @@ public class TmfDataRetriever implements InitializingBean {
 
             //FIXME: fix retrieve of large CustomerBill lists
             List<CustomerBill> out = FetchUtils.streamAll(
-                    customerBillApi::listCustomerBills,    // method reference
+                    customerBillApis::listCustomerBills,    // method reference
                     null,                       		   // fields
                     filter,            					   // filter
                     100                         	   // pageSize
@@ -214,7 +206,7 @@ public class TmfDataRetriever implements InitializingBean {
 
             //FIXME: fix retrieve of large CustomerBill lists
             List<CustomerBill> out = FetchUtils.streamAll(
-                    customerBillApi::listCustomerBills,    // method reference
+                    customerBillApis::listCustomerBills,    // method reference
                     null,                       		   // fields
                     filter,            					   // filter
                     100                         	   // pageSize
@@ -368,7 +360,7 @@ public class TmfDataRetriever implements InitializingBean {
         }
 
         try {
-            Product prod = this.productApis.getProduct(productId, null);
+            Product prod = this.productInventoryApis.getProduct(productId, null);
             BillingAccountRef ba = prod.getBillingAccount();
 
             if (ba == null) {
@@ -392,7 +384,7 @@ public class TmfDataRetriever implements InitializingBean {
         }
 
         try {
-            Product prod = this.productApis.getProduct(productId, fields);
+            Product prod = this.productInventoryApis.getProduct(productId, fields);
             if (prod == null) {
                 logger.info("No product found for product with id {}: ", productId);
                 return null;
@@ -409,10 +401,10 @@ public class TmfDataRetriever implements InitializingBean {
         try {
             //FIXME: fix retrieve of large Product lists
             return FetchUtils.streamAll(
-                    productApis::listProducts,    // method reference
-                    fields,                       		   // fields
-                    filter,            					   // filter
-                    100                         	   // pageSize
+        		productInventoryApis::listProducts,    // method reference
+                fields,                       		   // fields
+                filter,            					   // filter
+                100                         	   // pageSize
             ).toList();
         } catch (Exception e) {
             logger.error("Failed to retrieve products", e);
@@ -423,9 +415,19 @@ public class TmfDataRetriever implements InitializingBean {
     public List<ProductOffering> getAllSubscriptionProductOfferings()
             throws ExternalServiceException {
         try {
-            CategoryApis categoryApis = new CategoryApis(tmfApiFactory.getTMF620ProductCatalogManagementApiClient());
-            List<Category> listCategory = categoryApis.getAllCategory(null, null);
-
+            
+        	//CategoryApis categoryApis = new CategoryApis(tmfApiFactory.getTMF620ProductCatalogManagementApiClient());
+        	//List<Category> listCategory = categoryApis.getAllCategory(null, null);
+        	//FIXME: fix retrieve of large category lists
+        	
+        	List<Category> listCategory = FetchUtils.streamAll(
+        		productCatalogManagementApis::listCategories,    // method reference
+                null,                       		   // fields
+                null,            					   // filter
+                100                         	   // pageSize
+            ).toList();
+            
+            
             Map<String, String> filter = new HashMap<>();
             for (Category c : listCategory) {
                 if (c.getName() != null && c.getName().equalsIgnoreCase("DOME OPERATOR Plan")) {

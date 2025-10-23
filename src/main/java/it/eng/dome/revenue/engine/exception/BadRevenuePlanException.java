@@ -5,7 +5,9 @@ import it.eng.dome.revenue.engine.model.PlanItem;
 
 public class BadRevenuePlanException extends Exception {
 
-    public BadRevenuePlanException(Plan item, String message, Throwable cause) {
+	private static final long serialVersionUID = 1248372472941747004L;
+
+	public BadRevenuePlanException(Plan item, String message, Throwable cause) {
         super(String.format("Subscription plan named '%s' has the following issue: %s", item.getName(), message), cause);
     }
 

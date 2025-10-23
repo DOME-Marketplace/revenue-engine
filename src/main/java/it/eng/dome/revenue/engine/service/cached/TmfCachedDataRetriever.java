@@ -11,6 +11,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
+import it.eng.dome.brokerage.api.APIPartyApis;
+import it.eng.dome.brokerage.api.AppliedCustomerBillRateApis;
+import it.eng.dome.brokerage.api.CustomerBillApis;
+import it.eng.dome.brokerage.api.ProductCatalogManagementApis;
+import it.eng.dome.brokerage.api.ProductInventoryApis;
 import it.eng.dome.revenue.engine.exception.BadTmfDataException;
 import it.eng.dome.revenue.engine.exception.ExternalServiceException;
 import it.eng.dome.revenue.engine.service.TmfDataRetriever;
@@ -22,11 +27,19 @@ import it.eng.dome.tmforum.tmf637.v4.model.Product;
 import it.eng.dome.tmforum.tmf678.v4.model.AppliedCustomerBillingRate;
 import it.eng.dome.tmforum.tmf678.v4.model.CustomerBill;
 import it.eng.dome.tmforum.tmf678.v4.model.TimePeriod;
+import jakarta.annotation.PostConstruct;
 
 @Service
 public class TmfCachedDataRetriever extends TmfDataRetriever {
 
-    private final Logger logger = LoggerFactory.getLogger(TmfCachedDataRetriever.class);
+    public TmfCachedDataRetriever(ProductCatalogManagementApis productCatalogManagementApis,
+			CustomerBillApis customerBillApis, APIPartyApis apiPartyApis, ProductInventoryApis productInventoryApis,
+			AppliedCustomerBillRateApis appliedCustomerBillRateApis) {
+		
+    	super(productCatalogManagementApis, customerBillApis, apiPartyApis, productInventoryApis, appliedCustomerBillRateApis);
+	}
+
+	private final Logger logger = LoggerFactory.getLogger(TmfCachedDataRetriever.class);
 
     @Value("${caching.tmf.enabled}")
     private Boolean TMF_CACHE_ENABLED;
@@ -45,17 +58,21 @@ public class TmfCachedDataRetriever extends TmfDataRetriever {
     private Cache<String, List<Product>> productListCache;
     private Cache<String, List<ProductOffering>> productOfferingListCache;
 
-    public TmfCachedDataRetriever() {
-        super();
-    }
+//    public TmfCachedDataRetriever() {
+//    	initCaches();
+//    }
 
-    @Override
-    public void afterPropertiesSet() throws Exception {
-        super.afterPropertiesSet();
-        this.initCaches();
-    }
+//    @Override
+//    public void afterPropertiesSet() throws Exception {
+//        super.afterPropertiesSet();
+//        this.initCaches();
+//    }
 
-    private void initCaches() {
+    @SuppressWarnings({ "unchecked" })
+    @PostConstruct
+	private void initCaches() {
+    	logger.info("Executing Init Caches");
+    	
         this.acbrCache = this.cacheService.getOrCreateCache(
                 "acbrCache",
                 String.class,

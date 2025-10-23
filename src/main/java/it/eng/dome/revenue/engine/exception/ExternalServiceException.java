@@ -1,8 +1,10 @@
 package it.eng.dome.revenue.engine.exception;
 
 public class ExternalServiceException extends Exception {
-    
-    public ExternalServiceException(String message, Throwable cause) {
+
+	private static final long serialVersionUID = 1916953790575799813L;
+
+	public ExternalServiceException(String message, Throwable cause) {
         super(message, cause);
     }
     

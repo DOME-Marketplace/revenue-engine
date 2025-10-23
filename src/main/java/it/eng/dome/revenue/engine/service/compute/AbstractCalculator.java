@@ -166,7 +166,8 @@ public abstract class AbstractCalculator implements Calculator {
      * @param timePeriod
      * @return
      */
-    private boolean checkPreconditions(TimePeriod timePeriod) {
+    @SuppressWarnings("deprecation")
+	private boolean checkPreconditions(TimePeriod timePeriod) {
 
 		// check that the charge time period for the price corresponds with the one as parameter (only if not a bundle)
 		// Q: why not applicable to bundles? if the bundle sets the periodicity and it doesn't match the timePeriod, skip it entirely

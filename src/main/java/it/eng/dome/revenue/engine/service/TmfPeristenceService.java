@@ -8,36 +8,29 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
+import java.util.Optional;
 
-import it.eng.dome.brokerage.api.CustomerBillApis;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
+import it.eng.dome.brokerage.api.APIPartyApis;
 import it.eng.dome.brokerage.api.AppliedCustomerBillRateApis;
+import it.eng.dome.brokerage.api.CustomerBillApis;
+import it.eng.dome.brokerage.api.fetch.FetchUtils;
 import it.eng.dome.revenue.engine.model.RevenueBill;
 import it.eng.dome.revenue.engine.model.Role;
 import it.eng.dome.revenue.engine.model.Subscription;
 import it.eng.dome.revenue.engine.service.cached.CachedSubscriptionService;
 import it.eng.dome.revenue.engine.service.cached.TmfCachedDataRetriever;
-import it.eng.dome.revenue.engine.tmf.TmfApiFactory;
 import it.eng.dome.revenue.engine.utils.RelatedPartyUtils;
-import it.eng.dome.revenue.engine.utils.TMFApiUtils;
-import it.eng.dome.tmforum.tmf632.v4.api.OrganizationApi;
-import it.eng.dome.tmforum.tmf632.v4.model.Organization;
-import it.eng.dome.tmforum.tmf678.v4.api.AppliedCustomerBillingRateApi;
-import it.eng.dome.tmforum.tmf678.v4.api.CustomerBillApi;
 import it.eng.dome.tmforum.tmf678.v4.model.AppliedCustomerBillingRate;
 import it.eng.dome.tmforum.tmf678.v4.model.AppliedCustomerBillingRateCreate;
 import it.eng.dome.tmforum.tmf678.v4.model.BillRef;
 import it.eng.dome.tmforum.tmf678.v4.model.CustomerBill;
 import it.eng.dome.tmforum.tmf678.v4.model.CustomerBillCreate;
-import it.eng.dome.tmforum.tmf678.v4.model.ProductRef;
-import it.eng.dome.tmforum.tmf678.v4.model.RelatedParty;
 
 /**
  * FIXME: Enhancemets and fixes:
@@ -45,12 +38,12 @@ import it.eng.dome.tmforum.tmf678.v4.model.RelatedParty;
  */
 
 @Service
-public class TmfPeristenceService implements InitializingBean {
+public class TmfPeristenceService {
 
     private final Logger logger = LoggerFactory.getLogger(TmfPeristenceService.class);
 
-    @Autowired
-    private TmfApiFactory tmfApiFactory;
+//    @Autowired
+//    private TmfApiFactory tmfApiFactory;
 
     @Autowired
     private BillsService billService;
@@ -64,15 +57,25 @@ public class TmfPeristenceService implements InitializingBean {
     @Value("${persistence.monthsBack:1}")
     private int monthsBack;
     
-    private CustomerBillApi customerBillAPI;
-    private AppliedCustomerBillingRateApi acbrAPI;
-	private AppliedCustomerBillRateApis appliedCustomerBillRateApis;
-    private OrganizationApi orgApi;
-    private CustomerBillApis customerBillApis;
-
-	public TmfPeristenceService() {}
+//    private CustomerBillApi customerBillAPI;
+//    private AppliedCustomerBillingRateApi acbrAPI;
+//	private AppliedCustomerBillRateApis appliedCustomerBillRateApis;
+//    private OrganizationApi orgApi;
+//    private CustomerBillApis customerBillApis;
     
-    @Override
+    private APIPartyApis apiPartyApis;
+    private CustomerBillApis customerBillApis;
+    private AppliedCustomerBillRateApis appliedCustomerBillRateApis;
+
+	public TmfPeristenceService(APIPartyApis apiPartyApis, CustomerBillApis customerBillApis,
+			AppliedCustomerBillRateApis appliedCustomerBillRateApis) {
+		
+		this.apiPartyApis = apiPartyApis;
+		this.customerBillApis = customerBillApis;
+		this.appliedCustomerBillRateApis = appliedCustomerBillRateApis;
+	}
+    
+    /*@Override
     public void afterPropertiesSet() throws Exception {
 		this.customerBillAPI = new CustomerBillApi(tmfApiFactory.getTMF678CustomerBillApiClient());
         logger.info("TmfPeristenceService initialized with CustomerBillApi {}", this.customerBillAPI);
@@ -88,9 +91,7 @@ public class TmfPeristenceService implements InitializingBean {
 
         this.customerBillApis = new CustomerBillApis(tmfApiFactory.getTMF678CustomerBillApiClient());
         logger.info("TmfPeristenceService initialized with CustomerBillApis {}", this.customerBillApis);
-		
-		
-    }
+    }*/
 
     /**
      * Persists all revenue bills for all organizations.
@@ -99,13 +100,29 @@ public class TmfPeristenceService implements InitializingBean {
     public List<CustomerBill> persistAllRevenueBills() throws Exception {
         List<CustomerBill> createdCustomerBills = new ArrayList<>();
 
+        //FIXME - to be verified
+        FetchUtils.fetchByBatch(
+        	apiPartyApis::listOrganizations, 
+    	    null, 
+    	    null, 
+    	    10, 
+    	    batch -> {
+			    batch.forEach(org -> {
+			    	try {
+						createdCustomerBills.addAll(this.persistProviderRevenueBills(org.getId()));
+					} catch (Exception e) {
+						logger.error("Error: {}", e.getMessage());
+					}
+			    });
+			}
+    	);
 
-        TMFApiUtils.fetchByBatch(orgApi::listOrganization, null, 10, null, batch -> {
-            for (Organization org : batch) {
-                createdCustomerBills.addAll(this.persistProviderRevenueBills(org.getId()));
-            }
-            return true; // continue fetching next batch
-        });
+//        TMFApiUtils.fetchByBatch(orgApi::listOrganization, null, 10, null, batch -> {
+//            for (Organization org : batch) {
+//                createdCustomerBills.addAll(this.persistProviderRevenueBills(org.getId()));
+//            }
+//            return true; // continue fetching next batch
+//        });
 
         return createdCustomerBills;
     }
@@ -244,7 +261,7 @@ public class TmfPeristenceService implements InitializingBean {
 
             AppliedCustomerBillingRateCreate acbrc = AppliedCustomerBillingRateCreate.fromJson(acbrToPersist.toJson());
             acbrc.setAtSchemaLocation(new URI("https://raw.githubusercontent.com/DOME-Marketplace/dome-odrl-profile/refs/heads/add-related-party-ref/schemas/simplified/RelatedPartyRef.schema.json"));
-            String createdACBRId = this.appliedCustomerBillRateApis.createAppliedCustomerBillingRate(acbrc);
+            String createdACBRId = appliedCustomerBillRateApis.createAppliedCustomerBillingRate(acbrc);
 
             logger.info("PERSISTENCE: created ACBR with id {}", createdACBRId);
             // and return a fresh copy
@@ -271,8 +288,12 @@ public class TmfPeristenceService implements InitializingBean {
 /*         Map<String, String> filter = new HashMap<>();
          filter.put("relatedParty.id", cb.getRelatedParty().getId());
          filter.put("billingAccount.id", "urn:ngsi-ld:billing-account:...");*/
-        final CustomerBill[] found = new CustomerBill[1];
+        
+    	//final CustomerBill[] found = new CustomerBill[1];
+                
         // Fetch customer bills in batches with early stop
+                            
+/*        
         TMFApiUtils.fetchCustomerBillsByBatch(customerBillAPI, null, 10, null, batch -> {
             for (CustomerBill candidate : batch) {
                 boolean basicMatch = TmfPeristenceService.match(cb, candidate);
@@ -286,8 +307,20 @@ public class TmfPeristenceService implements InitializingBean {
             }
             return true; // continue fetching next batch
         });
+*/
+        //return found[0]; // null if no match found
+        
+        //TODO - Verify 
+        Optional<CustomerBill> found = FetchUtils.streamAll(
+        	customerBillApis::listCustomerBills,
+            null,
+            null,
+            10
+        )
+        .filter(candidate -> TmfPeristenceService.match(cb, candidate))
+        .findFirst();
 
-        return found[0]; // null if no match found
+        return found.orElse(null);
     }
 
     /**
@@ -303,6 +336,7 @@ public class TmfPeristenceService implements InitializingBean {
         Map<String, String> filter = new HashMap<>();
         filter.put("periodCoverage.startDateTime", acbr.getPeriodCoverage().getStartDateTime().toString());
 
+        /*
         final AppliedCustomerBillingRate[] found = new AppliedCustomerBillingRate[1];
 
         TMFApiUtils.fetchAppliedCustomerBillingRateByBatch(acbrAPI, null, 10, filter, batch -> {
@@ -318,6 +352,19 @@ public class TmfPeristenceService implements InitializingBean {
         });
 
         return found[0]; // null if no match found
+        */
+
+        //TODO - Verify 
+        Optional<AppliedCustomerBillingRate> found = FetchUtils.streamAll(
+            appliedCustomerBillRateApis::listAppliedCustomerBillingRates,
+            null,
+            filter,
+            10
+        )
+        .filter(candidate -> TmfPeristenceService.match(acbr, candidate))
+        .findFirst();
+
+        return found.orElse(null);
     }
 
     /**
@@ -418,7 +465,7 @@ public class TmfPeristenceService implements InitializingBean {
      * @param idCustomerBill2 ID of the second CustomerBill
      * @return true if both CustomerBills reference the same Product, false otherwise
     */
-    private boolean compareCBsProduct(String idCustomerBill1, String idCustomerBill2) throws Exception {
+    /*private boolean compareCBsProduct(String idCustomerBill1, String idCustomerBill2) throws Exception {
     	if(idCustomerBill1 == null || idCustomerBill2 == null) {
     		logger.warn("One of the customer bill IDs is null. idCustomerBill1={}, idCustomerBill2={}", idCustomerBill1, idCustomerBill2);
     		return false;
@@ -463,6 +510,6 @@ public class TmfPeristenceService implements InitializingBean {
             }
         }
         return null;
-    }
+    }*/
 
 }

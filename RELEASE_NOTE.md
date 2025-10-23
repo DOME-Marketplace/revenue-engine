@@ -13,6 +13,10 @@
 - Introduced for-each logic to support federated marketplace handling.
 
 **Improvements**
+- Usage of the new `Brokerage Utils` version: `2.2.0`.
+- Add `TmfApiConfig` class to avoid loading the **TMFourm APIs** objects every time they are used in service classes.
+- Usage of `AbstractHealthService` class from `Brokerage Utils` to manage **getInfo()** and **getHealth()** features.
+- Add `TMF637EnumModule` class in the **JacksonModuleConfig** to *serialize* and *deserialize* the **TMForum enum types**.
 - Enhanced tiering logic in the application of pricing rules.
 - Improved exception handling.
 

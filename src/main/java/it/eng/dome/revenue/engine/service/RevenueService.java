@@ -2,47 +2,41 @@ package it.eng.dome.revenue.engine.service;
 
 import java.util.List;
 
-import it.eng.dome.brokerage.api.fetch.FetchUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.InitializingBean;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.config.ConfigurableBeanFactory;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
 
 import it.eng.dome.brokerage.api.AgreementManagementApis;
 import it.eng.dome.brokerage.api.CustomerManagementApis;
-import it.eng.dome.revenue.engine.tmf.TmfApiFactory;
+import it.eng.dome.brokerage.api.fetch.FetchUtils;
 import it.eng.dome.tmforum.tmf629.v4.model.Customer;
 import it.eng.dome.tmforum.tmf651.v4.model.Agreement;
 
 
 @Component(value = "revenueService")
 @Scope(value = ConfigurableBeanFactory.SCOPE_PROTOTYPE)
-public class RevenueService implements InitializingBean {
+public class RevenueService {
 
 	private final Logger logger = LoggerFactory.getLogger(RevenueService.class);
 	
-	@Autowired
-	private TmfApiFactory tmfApiFactory;
+	private CustomerManagementApis customerManagementApis;
+	private AgreementManagementApis agreementManagementApis;
 	
-	private CustomerManagementApis customer;
-	private AgreementManagementApis agreement;
-	
-	@Override
-	public void afterPropertiesSet() throws Exception {
-		customer = new CustomerManagementApis(tmfApiFactory.getTMF629CustomerManagementApiClient());
-		agreement = new AgreementManagementApis(tmfApiFactory.getTMF651AgreementManagementApiClient());
+	public RevenueService(CustomerManagementApis customerManagementApis, AgreementManagementApis agreementManagementApis) {
+		
+		this.customerManagementApis = customerManagementApis;
+		this.agreementManagementApis = agreementManagementApis;
 	}
 	
 	public void getCustomers() {
 		logger.info("Get getCustomers");
 		List<Customer> customers = FetchUtils.streamAll(
-				customer::listCustomers,    // method reference
-				null,                       		   // fields
-				null,            					   // filter
-				100                         	   // pageSize
+			customerManagementApis::listCustomers,    // method reference
+			null,                       		   // fields
+			null,            					   // filter
+			100                         	   // pageSize
 		).toList();
 		logger.info("Customers size: {}", customers.size());
 		
@@ -54,10 +48,10 @@ public class RevenueService implements InitializingBean {
 	public void getAgreements() {
 		logger.info("Get getAgreements");
 		List<Agreement> agreements = FetchUtils.streamAll(
-				agreement::listAgreements,    // method reference
-				null,                       		   // fields
-				null,            					   // filter
-				100                         	   // pageSize
+			agreementManagementApis::listAgreements,    // method reference
+			null,                       		   // fields
+			null,            					   // filter
+			100                         	   // pageSize
 		).toList();
 		logger.info("Agreement size: {}", agreements.size());
 		

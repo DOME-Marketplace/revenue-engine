@@ -1,6 +1,6 @@
 # Revenue Engine
 
-**Version:** 1.2.3  
+**Version:** 1.2.4  
 **Description:** Swagger REST APIs for the revenue-engine software  
 
 
@@ -9,6 +9,7 @@
 ### subscriptions-controller
 | Verb | Path | Task |
 |------|------|------|
+| POST | `/revenue/subscriptions/fromProduct` | convertFromProduct |
 | GET | `/revenue/subscriptions` | getAllSubscriptions |
 | GET | `/revenue/subscriptions/{subscriptionId}` | getSubscription |
 | GET | `/revenue/subscriptions/{subscriptionId}/statements` | statementCalculator |
@@ -18,9 +19,10 @@
 ### plans-controller
 | Verb | Path | Task |
 |------|------|------|
+| POST | `/revenue/plans/validate` | validatePlan |
 | GET | `/revenue/plans` | getAllPlans |
 | GET | `/revenue/plans/{planId}` | getPlanById |
-| GET | `/revenue/plans/{planId}/validate` | validatePlan |
+| GET | `/revenue/plans/{planId}/validate` | validatePlan_1 |
 | GET | `/revenue/plans/{planId}/subscriptions` | getSubscriptionsByPlanId |
 
 ### persistence-controller
@@ -34,7 +36,8 @@
 ### Revenue Engine Controller
 | Verb | Path | Task |
 |------|------|------|
-| GET | `/revenue/info` | getInfo |
+| GET | `/revenue/info` | getInfp |
+| GET | `/revenue/health` | getHealth |
 
 ### reporting-controller
 | Verb | Path | Task |
@@ -47,6 +50,12 @@
 | GET | `/revenue/bills/{revenueBillId}/cb` | getCustomerBillByRevenueBillId |
 | GET | `/revenue/bills/{revenueBillId}/acbr` | getACBRsByRevenueBillId |
 | GET | `/revenue/bills/{billId}` | getBillPeriods_1 |
+
+### preview-and-billing-controller
+| Verb | Path | Task |
+|------|------|------|
+| GET | `/revenue/billing/instantBill` | instantBill |
+| GET | `/revenue/billing/bill` | bill |
 
 ### dev-organization-controller
 | Verb | Path | Task |

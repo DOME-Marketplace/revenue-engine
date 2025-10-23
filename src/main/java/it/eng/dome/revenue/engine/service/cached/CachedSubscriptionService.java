@@ -41,7 +41,8 @@ public class CachedSubscriptionService extends SubscriptionService {
         this.initCaches();
     }
 
-    private void initCaches() {
+    @SuppressWarnings("unchecked")
+	private void initCaches() {
         this.subscriptionsCache = this.cacheService.getOrCreateCache(
 				"subscriptionsCache",
 				String.class,

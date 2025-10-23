@@ -9,13 +9,19 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
+import it.eng.dome.brokerage.api.APIPartyApis;
 import it.eng.dome.brokerage.observability.health.Health;
 import it.eng.dome.revenue.engine.service.HealthService;
+import jakarta.annotation.PostConstruct;
 
 @Service
 public class CachedHealthService extends HealthService {
 
-    private final Logger logger = LoggerFactory.getLogger(CachedHealthService.class);
+    public CachedHealthService(APIPartyApis apiPartyApis) {
+		super(apiPartyApis);
+	}
+
+	private final Logger logger = LoggerFactory.getLogger(CachedHealthService.class);
 
     @Value("${caching.health.enabled}")
     private Boolean HEALTH_CACHE_ENABLED;
@@ -25,16 +31,17 @@ public class CachedHealthService extends HealthService {
 
     private Cache<String, Health> healthCache;
 
-    public CachedHealthService() {
-        super();
-    }
+//    public CachedHealthService() {
+//        super();
+//    }
+//
+//    @Override
+//    public void afterPropertiesSet() throws Exception {
+//        super.afterPropertiesSet();
+//        this.initCaches();
+//    }
 
-    @Override
-    public void afterPropertiesSet() throws Exception {
-        super.afterPropertiesSet();
-        this.initCaches();
-    }
-
+    @PostConstruct
     private void initCaches() {
         this.healthCache = this.cacheService.getOrCreateCache(
 				"healthCache",

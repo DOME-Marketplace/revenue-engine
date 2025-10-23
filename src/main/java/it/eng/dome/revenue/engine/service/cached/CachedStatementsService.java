@@ -39,7 +39,8 @@ public class CachedStatementsService extends StatementsService {
         this.initCaches();
     }
 
-    private void initCaches() {
+    @SuppressWarnings("unchecked")
+	private void initCaches() {
         this.statementsCache = this.cacheService.getOrCreateCache(
 				"statementsCache",
 				String.class,
