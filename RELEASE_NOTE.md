@@ -10,7 +10,8 @@
 - Usage of `AbstractHealthService` class from `Brokerage Utils` to manage **getInfo()** and **getHealth()** features.
 - Add `TMF637EnumModule` class in the **JacksonModuleConfig** to *serialize* and *deserialize* the **TMForum enum types**.
 - Set **cache duration** parameters in the `application.yaml` file.
-
+- Set **persist settings** parameters in the `application.yaml` file. 
+- Added `RevenueScheduler` class and `SchedulerConfig` class
 
 ### <code>1.2.5</code> :calendar: 22/10/2025
 **Bug Fixing**

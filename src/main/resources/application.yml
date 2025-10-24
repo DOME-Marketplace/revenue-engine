@@ -83,7 +83,12 @@ caching:
     enabled: true
 
 persistence:
-  monthsBack: ${MONTHS_BACK:2}
+  monthsBack: ${MONTHS_BACK:12}
+
+scheduler:
+  persist-revenue-bills:
+    enabled: false
+    cron: "0 0 */1 * * *"
 
 spring:
   web:
