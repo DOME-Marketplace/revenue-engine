@@ -32,7 +32,6 @@ import it.eng.dome.tmforum.tmf678.v4.model.AppliedCustomerBillingRateCreate;
 import it.eng.dome.tmforum.tmf678.v4.model.BillRef;
 import it.eng.dome.tmforum.tmf678.v4.model.CustomerBill;
 import it.eng.dome.tmforum.tmf678.v4.model.CustomerBillCreate;
-import it.eng.dome.tmforum.tmf678.v4.model.ProductRef;
 import it.eng.dome.tmforum.tmf678.v4.model.RelatedParty;
 
 /**
@@ -44,9 +43,6 @@ import it.eng.dome.tmforum.tmf678.v4.model.RelatedParty;
 public class TmfPeristenceService {
 
     private final Logger logger = LoggerFactory.getLogger(TmfPeristenceService.class);
-
-//    @Autowired
-//    private TmfApiFactory tmfApiFactory;
 
     @Autowired
     private BillsService billService;
@@ -80,12 +76,11 @@ public class TmfPeristenceService {
     public List<CustomerBill> persistAllRevenueBills() throws Exception {
         List<CustomerBill> createdCustomerBills = new ArrayList<>();
 
-        //FIXME - to be verified
         FetchUtils.fetchByBatch(
         	apiPartyApis::listOrganizations, 
     	    null, 
     	    null, 
-    	    10, 
+    	    100, 
     	    batch -> {
 			    batch.forEach(org -> {
 			    	try {
@@ -96,13 +91,6 @@ public class TmfPeristenceService {
 			    });
 			}
     	);
-
-//        TMFApiUtils.fetchByBatch(orgApi::listOrganization, null, 10, null, batch -> {
-//            for (Organization org : batch) {
-//                createdCustomerBills.addAll(this.persistProviderRevenueBills(org.getId()));
-//            }
-//            return true; // continue fetching next batch
-//        });
 
         return createdCustomerBills;
     }
@@ -172,7 +160,7 @@ public class TmfPeristenceService {
             return null;
         }
 
-        // persiste the cb and get the id
+        // persist the cb and get the id
         CustomerBill persistedCB = this.persistCustomerBill(localCb, revenueBillId);
 
         if(persistedCB != null) {
@@ -186,7 +174,7 @@ public class TmfPeristenceService {
 	            acbr.setBill(bref);
 	            // mark it as billed
 	            acbr.setIsBilled(true);
-	            // persiste the acbr
+	            // persist the acbr
 	            this.persistAppliedCustomerBillingRate(acbr);
 	        }
         }
@@ -271,46 +259,38 @@ public class TmfPeristenceService {
         
     	//final CustomerBill[] found = new CustomerBill[1];
                 
-        // Fetch customer bills in batches with early stop
-                            
-/*        
-        TMFApiUtils.fetchCustomerBillsByBatch(customerBillAPI, null, 10, null, batch -> {
-            for (CustomerBill candidate : batch) {
+        // Fetch customer bills in batches with early stop                           
+        List<AppliedCustomerBillingRate> localAcbrs = billService.getACBRsByRevenueBillId(revenueBillId);
+        String localProductId = (localAcbrs.isEmpty() || localAcbrs.get(0).getProduct() == null)
+                ? null
+                : localAcbrs.get(0).getProduct().getId();
+
+        Optional<CustomerBill> found = FetchUtils.streamAll(
+                customerBillApis::listCustomerBills,
+                null,
+                null,
+                100
+        )
+        .filter(candidate -> {
+            try {
                 boolean basicMatch = TmfPeristenceService.match(cb, candidate);
-                boolean productMatch = compareCBsProduct(revenueBillId, candidate.getId());
+                List<AppliedCustomerBillingRate> candidateAcbrs = tmfDataRetriever.getACBRsByCustomerBillId(candidate.getId());
+                String candidateProductId = (candidateAcbrs.isEmpty() || candidateAcbrs.get(0).getProduct() == null)
+                        ? null
+                        : candidateAcbrs.get(0).getProduct().getId();
+
+                boolean productMatch = Objects.equals(localProductId, candidateProductId);
                 boolean rlMatch = relatedPartyMatch(cb.getRelatedParty(), candidate.getRelatedParty());
 
-                if (basicMatch && productMatch && rlMatch) {
-                    found[0] = candidate;
-                    return false; // stop fetching immediately
-                }
+                return basicMatch && productMatch && rlMatch;
+            } catch (Exception e) {
+                logger.error("Error in isCbAlreadyInTMF filter: {}", e.getMessage());
+                return false;
             }
-            return true; // continue fetching next batch
-        });
-*/
-        //return found[0]; // null if no match found
-        
-        //TODO - Verify 
-    	Optional<CustomerBill> found = FetchUtils.streamAll(
-    		    customerBillApis::listCustomerBills,
-    		    null,
-    		    null,
-    		    10
-    		)
-    		.filter(candidate -> {
-    		    try {
-    		        boolean basicMatch = TmfPeristenceService.match(cb, candidate);
-    		        boolean productMatch = compareCBsProduct(revenueBillId, candidate.getId());
-    		        boolean rlMatch = relatedPartyMatch(cb.getRelatedParty(), candidate.getRelatedParty());
-    		        return basicMatch && productMatch && rlMatch;
-    		    } catch (Exception e) {
-    		        logger.error("Error in isCbAlreadyInTMF filter: {}", e.getMessage());
-    		        return false;
-    		    }
-    		})
-    		.findFirst();
+        })
+        .findFirst();
 
-    		return found.orElse(null);
+        return found.orElse(null);
     }
 
     /**
@@ -326,25 +306,6 @@ public class TmfPeristenceService {
         Map<String, String> filter = new HashMap<>();
         filter.put("periodCoverage.startDateTime", acbr.getPeriodCoverage().getStartDateTime().toString());
 
-        /*
-        final AppliedCustomerBillingRate[] found = new AppliedCustomerBillingRate[1];
-
-        TMFApiUtils.fetchAppliedCustomerBillingRateByBatch(acbrAPI, null, 10, filter, batch -> {
-            for (AppliedCustomerBillingRate candidate : batch) {
-                boolean basicMatch = TmfPeristenceService.match(acbr, candidate);
-                // match criteria
-                if (basicMatch) {
-                    found[0] = candidate;
-                    return false; // stop fetching immediately
-                }
-            }
-            return true; // continue fetching next batch
-        });
-
-        return found[0]; // null if no match found
-        */
-
-        //TODO - Verify 
         Optional<AppliedCustomerBillingRate> found = FetchUtils.streamAll(
             appliedCustomerBillRateApis::listAppliedCustomerBillingRates,
             null,
@@ -397,10 +358,6 @@ public class TmfPeristenceService {
             out.put("periodCoverage.startDateTime", fmt.format(cb.getPeriodCoverage().getStartDateTime()));
         if(cb.getPeriodCoverage()!=null && cb.getPeriodCoverage().getEndDateTime()!=null)
             out.put("periodCoverage.endDateTime", fmt.format(cb.getPeriodCoverage().getEndDateTime()));
-//        if(cb.getName()!=null)
-//            out.put("name", cb.getName());
-//        if(cb.getDescription()!=null)
-//            out.put("description", cb.getDescription());
         if(cb.getBillingAccount()!=null && cb.getBillingAccount().getId()!=null)
         	out.put("billingAccount.id", cb.getBillingAccount().getId());
         if(cb.getType()!=null)
@@ -442,46 +399,6 @@ public class TmfPeristenceService {
             cb.setCategory(mark);
         }
         return cb;
-    }
-    
-    /**
-     * Compares the products of two CustomerBills by their IDs.
-     * <p>
-     * Retrieves the first AppliedCustomerBillingRate (ACBR) of each CustomerBill and 
-     * checks if their ProductRefs are equal (id, href, name).
-     * </p>
-     *
-     * @param idCustomerBill1 ID of the first CustomerBill
-     * @param idCustomerBill2 ID of the second CustomerBill
-     * @return true if both CustomerBills reference the same Product, false otherwise
-    */
-    private boolean compareCBsProduct(String idCustomerBill1, String idCustomerBill2) throws Exception {
-    	if(idCustomerBill1 == null || idCustomerBill2 == null) {
-    		logger.warn("One of the customer bill IDs is null. idCustomerBill1={}, idCustomerBill2={}", idCustomerBill1, idCustomerBill2);
-    		return false;
-    	}
-    	
-    	if(idCustomerBill1.equals(idCustomerBill2)) {
-    		return true;
-    	}
-    	
-    	List<AppliedCustomerBillingRate> acbrs1 = billService.getACBRsByRevenueBillId(idCustomerBill1); // recupera da local
-    	List<AppliedCustomerBillingRate> acbrs2 = tmfDataRetriever.getACBRsByCustomerBillId(idCustomerBill2); // retrieve from TMF
-    	
-    	if(acbrs1 == null || acbrs2 == null || acbrs1.isEmpty() || acbrs2.isEmpty()) {
-            logger.warn("NO ACBR found for at least one CB in {} {}", idCustomerBill1, idCustomerBill2);
-    		return false;
-    	}
-        
-        ProductRef productRef1 = acbrs1.get(0).getProduct();
-        ProductRef productRef2 = acbrs2.get(0).getProduct();
-        
-        if (productRef1 == null || productRef2 == null) {
-            logger.warn("One of the products is null. productRef1={}, productRef2={}", productRef1, productRef2);
-            return false;
-        }
-
-        return Objects.equals(productRef1.getId(), productRef2.getId());
     }
     
     private boolean relatedPartyMatch(List<RelatedParty> rl1, List<RelatedParty> rl2) {
