@@ -57,7 +57,7 @@ public class TmfPeristenceService {
     @Autowired
     private TmfCachedDataRetriever tmfDataRetriever;
     
-    @Value("${persistence.monthsBack:1}")
+    @Value("${persistence.monthsBack:2}")
     private int monthsBack;
     
     private APIPartyApis apiPartyApis;
@@ -291,30 +291,26 @@ public class TmfPeristenceService {
         //return found[0]; // null if no match found
         
         //TODO - Verify 
-        Optional<CustomerBill> found = FetchUtils.streamAll(
-        	customerBillApis::listCustomerBills,
-            null,
-            null,
-            10
-        )
-        .filter(candidate -> {
-        	try {
-	        	boolean basicMatch = TmfPeristenceService.match(cb, candidate);
-	            boolean productMatch = compareCBsProduct(revenueBillId, candidate.getId());            
-	            boolean rlMatch = relatedPartyMatch(cb.getRelatedParty(), candidate.getRelatedParty());
-	            if (basicMatch && productMatch && rlMatch) {
-	            	return true;
-	            }	
-			} catch (Exception e) {
-				logger.error("Error: {}", e.getMessage());
-				return false;
-			}
-            
-        	return true;
-        })
-        .findFirst();
+    	Optional<CustomerBill> found = FetchUtils.streamAll(
+    		    customerBillApis::listCustomerBills,
+    		    null,
+    		    null,
+    		    10
+    		)
+    		.filter(candidate -> {
+    		    try {
+    		        boolean basicMatch = TmfPeristenceService.match(cb, candidate);
+    		        boolean productMatch = compareCBsProduct(revenueBillId, candidate.getId());
+    		        boolean rlMatch = relatedPartyMatch(cb.getRelatedParty(), candidate.getRelatedParty());
+    		        return basicMatch && productMatch && rlMatch;
+    		    } catch (Exception e) {
+    		        logger.error("Error in isCbAlreadyInTMF filter: {}", e.getMessage());
+    		        return false;
+    		    }
+    		})
+    		.findFirst();
 
-        return found.orElse(null);
+    		return found.orElse(null);
     }
 
     /**
