@@ -3,6 +3,15 @@
 **Release Notes** of the *Revenue Engine* software:
 
 
+### <code>1.2.6</code> :calendar: 24/10/2025
+**Improvements**
+- Usage of the new `Brokerage Utils` version: `2.2.0`.
+- Add `TmfApiConfig` class to avoid loading the **TMFourm APIs** objects every time they are used in service classes.
+- Usage of `AbstractHealthService` class from `Brokerage Utils` to manage **getInfo()** and **getHealth()** features.
+- Add `TMF637EnumModule` class in the **JacksonModuleConfig** to *serialize* and *deserialize* the **TMForum enum types**.
+- Set **cache duration** parameters in the `application.yaml` file.
+
+
 ### <code>1.2.5</code> :calendar: 22/10/2025
 **Bug Fixing**
 - General bug fixes and minor performance optimizations.
@@ -13,10 +22,6 @@
 - Introduced for-each logic to support federated marketplace handling.
 
 **Improvements**
-- Usage of the new `Brokerage Utils` version: `2.2.0`.
-- Add `TmfApiConfig` class to avoid loading the **TMFourm APIs** objects every time they are used in service classes.
-- Usage of `AbstractHealthService` class from `Brokerage Utils` to manage **getInfo()** and **getHealth()** features.
-- Add `TMF637EnumModule` class in the **JacksonModuleConfig** to *serialize* and *deserialize* the **TMForum enum types**.
 - Enhanced tiering logic in the application of pricing rules.
 - Improved exception handling.
 
