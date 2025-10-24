@@ -340,9 +340,9 @@ public class TmfPeristenceService {
         DateTimeFormatter fmt = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss'Z'");
         Map<String, String> out = new HashMap<>();
         if(cb.getBillingPeriod()!=null && cb.getBillingPeriod().getStartDateTime()!=null)
-            out.put("billingPeriod.startDateTime", fmt.format(cb.getBillingPeriod().getStartDateTime()));
+            out.put("billingPeriod.startDateTime", fmt.format(cb.getBillingPeriod().getStartDateTime().toInstant()));
         if(cb.getBillingPeriod()!=null && cb.getBillingPeriod().getEndDateTime()!=null)
-            out.put("billingPeriod.endDateTime", fmt.format(cb.getBillingPeriod().getEndDateTime()));
+            out.put("billingPeriod.endDateTime", fmt.format(cb.getBillingPeriod().getEndDateTime().toInstant()));
         if(cb.getTaxExcludedAmount()!=null && cb.getTaxExcludedAmount().getValue()!=null)
             out.put("taxExcludedAmount.value", cb.getTaxExcludedAmount().getValue().toString());
         
@@ -355,9 +355,9 @@ public class TmfPeristenceService {
         if(cb.getProduct()!=null && cb.getProduct().getId()!=null)
             out.put("product.id", cb.getProduct().getId());
         if(cb.getPeriodCoverage()!=null && cb.getPeriodCoverage().getStartDateTime()!=null)
-            out.put("periodCoverage.startDateTime", fmt.format(cb.getPeriodCoverage().getStartDateTime()));
+            out.put("periodCoverage.startDateTime", fmt.format(cb.getPeriodCoverage().getStartDateTime().toInstant()));
         if(cb.getPeriodCoverage()!=null && cb.getPeriodCoverage().getEndDateTime()!=null)
-            out.put("periodCoverage.endDateTime", fmt.format(cb.getPeriodCoverage().getEndDateTime()));
+            out.put("periodCoverage.endDateTime", fmt.format(cb.getPeriodCoverage().getEndDateTime().toInstant()));
         if(cb.getBillingAccount()!=null && cb.getBillingAccount().getId()!=null)
         	out.put("billingAccount.id", cb.getBillingAccount().getId());
         if(cb.getType()!=null)
