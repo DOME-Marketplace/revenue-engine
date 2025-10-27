@@ -3,13 +3,9 @@ package it.eng.dome.revenue.engine.service;
 import java.net.URI;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
-import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
+import java.time.temporal.ChronoUnit;
+import java.util.*;
+import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -21,7 +17,6 @@ import it.eng.dome.brokerage.api.APIPartyApis;
 import it.eng.dome.brokerage.api.AppliedCustomerBillRateApis;
 import it.eng.dome.brokerage.api.CustomerBillApis;
 import it.eng.dome.brokerage.api.fetch.FetchUtils;
-import it.eng.dome.revenue.engine.model.RevenueBill;
 import it.eng.dome.revenue.engine.model.Role;
 import it.eng.dome.revenue.engine.model.Subscription;
 import it.eng.dome.revenue.engine.service.cached.CachedSubscriptionService;
@@ -34,40 +29,38 @@ import it.eng.dome.tmforum.tmf678.v4.model.CustomerBill;
 import it.eng.dome.tmforum.tmf678.v4.model.CustomerBillCreate;
 import it.eng.dome.tmforum.tmf678.v4.model.RelatedParty;
 
+
 /**
- * FIXME: Enhancemets and fixes:
+ * FIXME: Enhancements and fixes:
  * [H] only consider active subscriptions ([L] but be careful with last invoices... sub might not be active)
  */
-
 @Service
 public class TmfPeristenceService {
 
     private final Logger logger = LoggerFactory.getLogger(TmfPeristenceService.class);
 
-    @Autowired
+    @Autowired 
     private BillsService billService;
-
-    @Autowired
-    private CachedSubscriptionService subscriptionService;
-
-    @Autowired
-    private TmfCachedDataRetriever tmfDataRetriever;
     
+    @Autowired 
+    private CachedSubscriptionService subscriptionService;
+    
+    @Autowired 
+    private TmfCachedDataRetriever tmfDataRetriever;
+
     @Value("${persistence.monthsBack:2}")
     private int monthsBack;
-    
+
     private APIPartyApis apiPartyApis;
     private CustomerBillApis customerBillApis;
     private AppliedCustomerBillRateApis appliedCustomerBillRateApis;
 
-	public TmfPeristenceService(APIPartyApis apiPartyApis, CustomerBillApis customerBillApis,
-			AppliedCustomerBillRateApis appliedCustomerBillRateApis) {
-		
-		this.apiPartyApis = apiPartyApis;
-		this.customerBillApis = customerBillApis;
-		this.appliedCustomerBillRateApis = appliedCustomerBillRateApis;
-	}
-    
+    public TmfPeristenceService(APIPartyApis apiPartyApis, CustomerBillApis customerBillApis,
+                                AppliedCustomerBillRateApis appliedCustomerBillRateApis) {
+        this.apiPartyApis = apiPartyApis;
+        this.customerBillApis = customerBillApis;
+        this.appliedCustomerBillRateApis = appliedCustomerBillRateApis;
+    }
 
     /**
      * Persists all revenue bills for all organizations.
@@ -75,26 +68,17 @@ public class TmfPeristenceService {
      */
     public List<CustomerBill> persistAllRevenueBills() throws Exception {
         List<CustomerBill> createdCustomerBills = new ArrayList<>();
-
-        FetchUtils.fetchByBatch(
-        	apiPartyApis::listOrganizations, 
-    	    null, 
-    	    null, 
-    	    100, 
-    	    batch -> {
-			    batch.forEach(org -> {
-			    	try {
-						createdCustomerBills.addAll(this.persistProviderRevenueBills(org.getId()));
-					} catch (Exception e) {
-						logger.error("Error: {}", e.getMessage());
-					}
-			    });
-			}
-    	);
-
+        FetchUtils.fetchByBatch(apiPartyApis::listOrganizations, null, null, 100,
+            batch -> batch.forEach(org -> {
+                try {
+                    createdCustomerBills.addAll(persistProviderRevenueBills(org.getId()));
+                } catch (Exception e) {
+                    logger.error("Error: {}", e.getMessage());
+                }
+            })
+        );
         return createdCustomerBills;
     }
-
 
     /**
      * Persist all revenue bills for a provider; where needed and applicable.
@@ -102,141 +86,100 @@ public class TmfPeristenceService {
      */
     public List<CustomerBill> persistProviderRevenueBills(String providerId) throws Exception {
         List<CustomerBill> createdCustomerBills = new ArrayList<>();
-
+        // FIXME: consider filtering only active subscriptions
         List<Subscription> buyerSubscriptions = RelatedPartyUtils.retainSubscriptionsWithParty(
-            this.subscriptionService.getAllSubscriptions(), providerId, Role.BUYER
-        );
-
+                this.subscriptionService.getAllSubscriptions(), providerId, Role.BUYER);
         for (Subscription sub : buyerSubscriptions) {
             createdCustomerBills.addAll(this.persistSubscriptionRevenueBills(sub.getId()));
         }
-
         return createdCustomerBills;
     }
 
-
-
-    /*
+    /**
      * Persist all revenue bills for a subscription; where needed and applicable.
      * @param subscriptionId
      */
     public List<CustomerBill> persistSubscriptionRevenueBills(String subscriptionId) throws Exception {
-        List<CustomerBill> createdCustomerBills = new ArrayList<>();
-        
-        OffsetDateTime now = OffsetDateTime.now(ZoneOffset.UTC);
-        OffsetDateTime firstDayOfCurrentMonth = now.withDayOfMonth(1)
-                                                   .toLocalDate()
-                                                   .atStartOfDay()
-                                                   .atOffset(now.getOffset());
-        OffsetDateTime startDate = firstDayOfCurrentMonth.minusMonths(monthsBack);
-        
-        for (RevenueBill sb : this.billService.getSubscriptionBills(subscriptionId)) {
-            if (sb.getPeriod()!= null && sb.getPeriod().getEndDateTime().isBefore(startDate)) {
-                logger.info("Skipping CB {} because older than {}", sb.getId(), startDate);
-                continue;
-            }
-            CustomerBill createdCustomerBill = this.persistRevenueBill(sb.getId());
-            if (createdCustomerBill != null) {
-                createdCustomerBills.add(createdCustomerBill);
-            }
-        }
+        OffsetDateTime startDate = OffsetDateTime.now(ZoneOffset.UTC)
+                .withDayOfMonth(1).toLocalDate().atStartOfDay().atOffset(ZoneOffset.UTC)
+                .minusMonths(monthsBack);
 
-        return createdCustomerBills;
+        return billService.getSubscriptionBills(subscriptionId).parallelStream()
+                .filter(sb -> sb.getPeriod() == null
+                        || sb.getPeriod().getEndDateTime().isAfter(startDate)
+                        || sb.getPeriod().getStartDateTime().isAfter(startDate))
+                .map(sb -> {
+                    try {
+                        return persistRevenueBill(sb.getId());
+                    } catch (Exception e) {
+                        logger.error(e.getMessage());
+                        return null;
+                    }
+                })
+                .filter(Objects::nonNull)
+                .collect(Collectors.toList());
     }
 
-
     /**
-	 * Persist a revenue bill; where needed and applicable.
-	 * @param revenueBillId the revenue bill id
-	 */
+     * Persist a revenue bill; where needed and applicable.
+     * @param revenueBillId the revenue bill id
+     */
     public CustomerBill persistRevenueBill(String revenueBillId) throws Exception {
+        CustomerBill localCb = billService.getCustomerBillByRevenueBillId(revenueBillId);
 
-
-        // retrieve the local cb
-        CustomerBill localCb = this.billService.getCustomerBillByRevenueBillId(revenueBillId);
-
-        if(localCb.getBillDate().isAfter(OffsetDateTime.now())) {
+        if (localCb.getBillDate().isAfter(OffsetDateTime.now())) {
             logger.info("Skipping CB {} because not yet consolidated.", revenueBillId);
             return null;
         }
 
-        // persist the cb and get the id
-        CustomerBill persistedCB = this.persistCustomerBill(localCb, revenueBillId);
+        CustomerBill persistedCB = persistCustomerBill(localCb, revenueBillId);
 
-        if(persistedCB != null) {
-	        // generate the acbrs
-	        List<AppliedCustomerBillingRate> acbrs = this.billService.getACBRsByRevenueBillId(revenueBillId);
-	        for(AppliedCustomerBillingRate acbr: acbrs) {
-	            // set the reference to the new persisted cb
-	            BillRef bref = new BillRef();
-                if (persistedCB.getId() != null)
-	                bref.setId(persistedCB.getId());
-	            acbr.setBill(bref);
-	            // mark it as billed
-	            acbr.setIsBilled(true);
-	            // persist the acbr
-	            this.persistAppliedCustomerBillingRate(acbr);
-	        }
+        if (persistedCB != null) {
+            // generate the ACBRs
+            List<AppliedCustomerBillingRate> acbrs = billService.getACBRsByRevenueBillId(revenueBillId);
+            for (AppliedCustomerBillingRate acbr : acbrs) {
+                
+                acbr.setBill(new BillRef() {{ setId(persistedCB.getId()); }});
+                acbr.setIsBilled(true);
+                persistAppliedCustomerBillingRate(acbr);
+            }
+        } else {
+            logger.debug("***No ACBR was created because CB already exists");
         }
-        else
-        	logger.debug("***No ACBR was create beacuse cb already exists");
-        	
         return persistedCB;
     }
 
-    /*
+    /**
      * Persist a CustomerBill if not already present on TMF. 
      */
     public CustomerBill persistCustomerBill(CustomerBill cb, String revenueBillId) throws Exception {
-        // check if exist on tmf
-        logger.debug("PERSISTENCE - look for existing CB");
-        CustomerBill existingCustomerBill = this.isCbAlreadyInTMF(cb, revenueBillId);
-        logger.debug("PERSISTENCE - CB {}" , existingCustomerBill);
-        
-        // if not, persist it
-        if(existingCustomerBill==null) {
-            // FIXME: marking the CB so it can be easily removed during development. Remove before flight.
+        CustomerBill existingCustomerBill = isCbAlreadyInTMF(cb, revenueBillId);
+        if (existingCustomerBill == null) {
             CustomerBill cbToPersist = watermark(cb);
-            // persist it
-            logger.debug("PERSISTENCE: creating CB {}...", cbToPersist.getId());
-            String id = this.customerBillApis.createCustomerBill(CustomerBillCreate.fromJson(cbToPersist.toJson()));
+            String id = customerBillApis.createCustomerBill(CustomerBillCreate.fromJson(cbToPersist.toJson()));
             logger.info("PERSISTENCE: created CB with id {}", id);
-            // and return a fresh copy
-            return this.tmfDataRetriever.getCustomerBillById(id);
-//            return existingCustomerBill;
+            return tmfDataRetriever.getCustomerBillById(id);
         } else {
             logger.info("Local CB {} is already on TMF with id {}", cb.getId(), existingCustomerBill.getId());
-            // return null not CB
             return null;
         }
     }
 
-    /*
-	 * Persist an AppliedCustomerBillingRate if not already present on TMF. 
-	 */
+    /**
+     * Persist an AppliedCustomerBillingRate if not already present on TMF. 
+     */
     public void persistAppliedCustomerBillingRate(AppliedCustomerBillingRate acbr) throws Exception {
-        // check if exist on tmf
-        AppliedCustomerBillingRate existingACBR = this.isAcbrAlreadyInTMF(acbr);
+        AppliedCustomerBillingRate existingACBR = isAcbrAlreadyInTMF(acbr);
 
-        // if not, persist it
-        if(existingACBR==null) {
-            // FIXME: marking the ACBR so it can be easily removed during development. Remove before flight.
-        	AppliedCustomerBillingRate acbrToPersist = watermark(acbr);
-            // remove the reference to the bill (its to an local CB)
-            // acbr.setBill(null);
-            // persist it
-            logger.info("PERSISTENCE: creating ACBR {}", acbrToPersist.getId());
-
+        if (existingACBR == null) {
+            AppliedCustomerBillingRate acbrToPersist = watermark(acbr);
             AppliedCustomerBillingRateCreate acbrc = AppliedCustomerBillingRateCreate.fromJson(acbrToPersist.toJson());
-            acbrc.setAtSchemaLocation(new URI("https://raw.githubusercontent.com/DOME-Marketplace/dome-odrl-profile/refs/heads/add-related-party-ref/schemas/simplified/RelatedPartyRef.schema.json"));
-            String createdACBRId = appliedCustomerBillRateApis.createAppliedCustomerBillingRate(acbrc);
-
-            logger.info("PERSISTENCE: created ACBR with id {}", createdACBRId);
-            // and return a fresh copy
-//            return createdACBR;
+            acbrc.setAtSchemaLocation(new URI(
+                    "https://raw.githubusercontent.com/DOME-Marketplace/dome-odrl-profile/refs/heads/add-related-party-ref/schemas/simplified/RelatedPartyRef.schema.json"));
+            String createdId = appliedCustomerBillRateApis.createAppliedCustomerBillingRate(acbrc);
+            logger.info("PERSISTENCE: created ACBR with id {}", createdId);
         } else {
             logger.info("Local ACBR {} is already on TMF with id {}", acbr.getId(), existingACBR.getId());
-//            return existingACBR;
         }
     }
 
@@ -252,47 +195,48 @@ public class TmfPeristenceService {
      * Stops fetching batches as soon as a match is found (early stop).
      */
     private CustomerBill isCbAlreadyInTMF(CustomerBill cb, String revenueBillId) throws Exception {
-        // Optional filter can be set here
-/*         Map<String, String> filter = new HashMap<>();
-         filter.put("relatedParty.id", cb.getRelatedParty().getId());
-         filter.put("billingAccount.id", "urn:ngsi-ld:billing-account:...");*/
-        
-    	//final CustomerBill[] found = new CustomerBill[1];
-                
-        // Fetch customer bills in batches with early stop                           
         List<AppliedCustomerBillingRate> localAcbrs = billService.getACBRsByRevenueBillId(revenueBillId);
-        String localProductId = (localAcbrs.isEmpty() || localAcbrs.get(0).getProduct() == null)
+        String localProductId = localAcbrs.isEmpty() || localAcbrs.get(0).getProduct() == null
                 ? null
                 : localAcbrs.get(0).getProduct().getId();
 
-        Optional<CustomerBill> found = FetchUtils.streamAll(
-                customerBillApis::listCustomerBills,
-                null,
-                null,
-                100
-        )
-        .filter(candidate -> {
-            try {
-                boolean basicMatch = TmfPeristenceService.match(cb, candidate);
-                List<AppliedCustomerBillingRate> candidateAcbrs = tmfDataRetriever.getACBRsByCustomerBillId(candidate.getId());
-                String candidateProductId = (candidateAcbrs.isEmpty() || candidateAcbrs.get(0).getProduct() == null)
-                        ? null
-                        : candidateAcbrs.get(0).getProduct().getId();
+        return FetchUtils.streamAll(customerBillApis::listCustomerBills, null, null, 100)
+                .filter(candidate -> {
+                    try {
+                        // Truncate CB dates to seconds
+                        OffsetDateTime cbStart = cb.getBillingPeriod() != null
+                                ? cb.getBillingPeriod().getStartDateTime().truncatedTo(ChronoUnit.SECONDS)
+                                : null;
+                        OffsetDateTime cbEnd = cb.getBillingPeriod() != null
+                                ? cb.getBillingPeriod().getEndDateTime().truncatedTo(ChronoUnit.SECONDS)
+                                : null;
+                        OffsetDateTime candStart = candidate.getBillingPeriod() != null
+                                ? candidate.getBillingPeriod().getStartDateTime().truncatedTo(ChronoUnit.SECONDS)
+                                : null;
+                        OffsetDateTime candEnd = candidate.getBillingPeriod() != null
+                                ? candidate.getBillingPeriod().getEndDateTime().truncatedTo(ChronoUnit.SECONDS)
+                                : null;
 
-                boolean productMatch = Objects.equals(localProductId, candidateProductId);
-                boolean rlMatch = relatedPartyMatch(cb.getRelatedParty(), candidate.getRelatedParty());
+                        boolean periodMatch = Objects.equals(cbStart, candStart) && Objects.equals(cbEnd, candEnd);
 
-                return basicMatch && productMatch && rlMatch;
-            } catch (Exception e) {
-                logger.error("Error in isCbAlreadyInTMF filter: {}", e.getMessage());
-                return false;
-            }
-        })
-        .findFirst();
+                        // Compare product IDs of first ACBR
+                        List<AppliedCustomerBillingRate> candAcbrs = tmfDataRetriever.getACBRsByCustomerBillId(candidate.getId());
+                        String candProductId = candAcbrs.isEmpty() || candAcbrs.get(0).getProduct() == null
+                                ? null
+                                : candAcbrs.get(0).getProduct().getId();
 
-        return found.orElse(null);
+                        return periodMatch
+                                && Objects.equals(localProductId, candProductId)
+                                && relatedPartyMatch(cb.getRelatedParty(), candidate.getRelatedParty());
+                    } catch (Exception e) {
+                        logger.error("Error in isCbAlreadyInTMF filter: {}", e.getMessage());
+                        return false;
+                    }
+                })
+                .findFirst()
+                .orElse(null);
     }
-
+    
     /**
 	 * Retrieve ACBRs on TMF that, potentially match the local ACBR. 
 	 * @param acbr the local AppliedCustomerBillingRate
@@ -302,31 +246,16 @@ public class TmfPeristenceService {
      * @throws Exception exception in case of error
 	 */
     private AppliedCustomerBillingRate isAcbrAlreadyInTMF(AppliedCustomerBillingRate acbr) throws Exception {
-        // prepare a filter
-        Map<String, String> filter = new HashMap<>();
-        filter.put("periodCoverage.startDateTime", acbr.getPeriodCoverage().getStartDateTime().toString());
-
-        Optional<AppliedCustomerBillingRate> found = FetchUtils.streamAll(
-            appliedCustomerBillRateApis::listAppliedCustomerBillingRates,
-            null,
-            filter,
-            10
-        )
-        .filter(candidate -> TmfPeristenceService.match(acbr, candidate))
-        .findFirst();
-
-        return found.orElse(null);
+        Map<String, String> filter = Map.of(
+                "periodCoverage.startDateTime", acbr.getPeriodCoverage().getStartDateTime().truncatedTo(ChronoUnit.SECONDS).toString()
+        );
+        return FetchUtils.streamAll(appliedCustomerBillRateApis::listAppliedCustomerBillingRates, null, filter, 10)
+                .filter(candidate -> match(acbr, candidate))
+                .findFirst()
+                .orElse(null);
     }
 
-    /**
-     *  Compare on the following fields: billingPeriod.start/end, taxExcludedAmount.value, and if acbrs for both match
-     */
-    private static boolean match(CustomerBill cb1, CustomerBill cb2) {
-        Map<String, String> cb1map = buildComparisonMap(cb1);
-        Map<String, String> cb2map = buildComparisonMap(cb2);
-        return mapsMatch(cb1map, cb2map);
-    }
-
+    
     /**
      *  Compare on the following fields: product, periodcoverage, name, description, type, taxExcludedAmount
      */
@@ -336,35 +265,25 @@ public class TmfPeristenceService {
         return mapsMatch(acbr1map, acbr2map);
     }
 
-    private static Map<String, String> buildComparisonMap(CustomerBill cb) {
-        DateTimeFormatter fmt = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss'Z'");
-        Map<String, String> out = new HashMap<>();
-        if(cb.getBillingPeriod()!=null && cb.getBillingPeriod().getStartDateTime()!=null)
-            out.put("billingPeriod.startDateTime", fmt.format(cb.getBillingPeriod().getStartDateTime().toInstant()));
-        if(cb.getBillingPeriod()!=null && cb.getBillingPeriod().getEndDateTime()!=null)
-            out.put("billingPeriod.endDateTime", fmt.format(cb.getBillingPeriod().getEndDateTime().toInstant()));
-        if(cb.getTaxExcludedAmount()!=null && cb.getTaxExcludedAmount().getValue()!=null)
-            out.put("taxExcludedAmount.value", cb.getTaxExcludedAmount().getValue().toString());
-        
-        return out;
-    }
-
-    private static Map<String, String> buildComparisonMap(AppliedCustomerBillingRate cb) {
-        DateTimeFormatter fmt = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss'Z'");
-        Map<String, String> out = new HashMap<>();
-        if(cb.getProduct()!=null && cb.getProduct().getId()!=null)
-            out.put("product.id", cb.getProduct().getId());
-        if(cb.getPeriodCoverage()!=null && cb.getPeriodCoverage().getStartDateTime()!=null)
-            out.put("periodCoverage.startDateTime", fmt.format(cb.getPeriodCoverage().getStartDateTime().toInstant()));
-        if(cb.getPeriodCoverage()!=null && cb.getPeriodCoverage().getEndDateTime()!=null)
-            out.put("periodCoverage.endDateTime", fmt.format(cb.getPeriodCoverage().getEndDateTime().toInstant()));
-        if(cb.getBillingAccount()!=null && cb.getBillingAccount().getId()!=null)
-        	out.put("billingAccount.id", cb.getBillingAccount().getId());
-        if(cb.getType()!=null)
-            out.put("type", cb.getType());
-        if(cb.getTaxExcludedAmount()!=null && cb.getTaxExcludedAmount().getValue()!=null)
-            out.put("taxExcludedAmount.value", cb.getTaxExcludedAmount().getValue().toString());
-        return out;
+    private static Map<String, String> buildComparisonMap(AppliedCustomerBillingRate acbr) {
+        Map<String, String> map = new HashMap<>();
+        if (acbr.getProduct() != null && acbr.getProduct().getId() != null)
+            map.put("product.id", acbr.getProduct().getId());
+        if (acbr.getPeriodCoverage() != null) {
+            if (acbr.getPeriodCoverage().getStartDateTime() != null)
+                map.put("periodCoverage.startDateTime",
+                        acbr.getPeriodCoverage().getStartDateTime().truncatedTo(ChronoUnit.SECONDS).toString());
+            if (acbr.getPeriodCoverage().getEndDateTime() != null)
+                map.put("periodCoverage.endDateTime",
+                        acbr.getPeriodCoverage().getEndDateTime().truncatedTo(ChronoUnit.SECONDS).toString());
+        }
+        if (acbr.getBillingAccount() != null && acbr.getBillingAccount().getId() != null)
+            map.put("billingAccount.id", acbr.getBillingAccount().getId());
+        if (acbr.getType() != null)
+            map.put("type", acbr.getType());
+        if (acbr.getTaxExcludedAmount() != null && acbr.getTaxExcludedAmount().getValue() != null)
+            map.put("taxExcludedAmount.value", acbr.getTaxExcludedAmount().getValue().toString());
+        return map;
     }
 
     private static boolean mapsMatch(Map<String, String> map1, Map<String, String> map2) {
@@ -382,6 +301,8 @@ public class TmfPeristenceService {
     }
 
     private static AppliedCustomerBillingRate watermark(AppliedCustomerBillingRate acbr) {
+        // FIXME: marking ACBR for dev, remove before flight
+
         String mark = "Created by the Revenue Engine";
         if(acbr.getDescription()!=null) {
             acbr.setDescription(acbr.getDescription() + " - " + mark);
@@ -392,6 +313,8 @@ public class TmfPeristenceService {
     }
 
     private static CustomerBill watermark(CustomerBill cb) {
+        // FIXME: marking ACBR for dev, remove before flight
+
         String mark = "Created by the Revenue Engine";
         if(cb.getCategory()!=null) {
             cb.setCategory(cb.getCategory() + " - " + mark);
@@ -400,7 +323,7 @@ public class TmfPeristenceService {
         }
         return cb;
     }
-    
+
     private boolean relatedPartyMatch(List<RelatedParty> rl1, List<RelatedParty> rl2) {
         String rlId1 = this.getRelatedPartyIdByRole(rl1, Role.BUYER);
         String rlId2 = this.getRelatedPartyIdByRole(rl2, Role.BUYER);
@@ -410,13 +333,10 @@ public class TmfPeristenceService {
 
     private String getRelatedPartyIdByRole(List<RelatedParty> relatedParties, Role role) {
         if (relatedParties == null || role == null) return null;
-
         for (RelatedParty rp : relatedParties) {
-            if (rp != null && rp.getRole() != null && role.getValue().equalsIgnoreCase(rp.getRole())) {
+            if (rp != null && rp.getRole() != null && role.getValue().equalsIgnoreCase(rp.getRole()))
                 return rp.getId();
-            }
         }
         return null;
     }
-
 }
