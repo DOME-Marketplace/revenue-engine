@@ -14,11 +14,9 @@ public class CorsConfig {
             @Override
             public void addCorsMappings(CorsRegistry registry) {
                 registry.addMapping("/**")
-                        .allowedOrigins("https://dome-marketplace-sbx.org",
-                        		"http://localhost:8580",
-                        		"https://dome-marketplace-dev2.org") 
-                        .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS") 
-                        .allowedHeaders("*")
+                        .allowedOriginPatterns("*")
+                        .allowedMethods("*")      
+                        .allowedHeaders("*")   
                         .allowCredentials(true); 
             }
         };
