@@ -138,11 +138,13 @@ public class TmfPeristenceService {
             // generate the ACBRs
             List<AppliedCustomerBillingRate> acbrs = billService.getACBRsByRevenueBillId(revenueBillId);
             for (AppliedCustomerBillingRate acbr : acbrs) {
-                
-                acbr.setBill(new BillRef() {{ setId(persistedCB.getId()); }});
+                BillRef billRef = new BillRef();
+                billRef.setId(persistedCB.getId());
+                acbr.setBill(billRef);
                 acbr.setIsBilled(true);
                 persistAppliedCustomerBillingRate(acbr);
             }
+
         } else {
             logger.debug("***No ACBR was created because CB already exists");
         }
