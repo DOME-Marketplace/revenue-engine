@@ -13,11 +13,11 @@ public class CorsConfig {
         return new WebMvcConfigurer() {
             @Override
             public void addCorsMappings(CorsRegistry registry) {
-                registry.addMapping("/**") // Tutti gli endpoint
-                        .allowedOrigins("https://dome-marketplace-sbx.org") // Dominio frontend
-                        .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS") // Metodi ammessi
-                        .allowedHeaders("*") // Tutti gli header
-                        .allowCredentials(true); // Necessario se ci sono cookie o auth headers
+                registry.addMapping("/**")
+                        .allowedOrigins("https://dome-marketplace-sbx.org") 
+                        .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS") 
+                        .allowedHeaders("*")
+                        .allowCredentials(true); 
             }
         };
     }
