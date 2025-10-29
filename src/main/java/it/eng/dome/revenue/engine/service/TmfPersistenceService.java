@@ -35,9 +35,9 @@ import it.eng.dome.tmforum.tmf678.v4.model.RelatedParty;
  * [H] only consider active subscriptions ([L] but be careful with last invoices... sub might not be active)
  */
 @Service
-public class TmfPeristenceService {
+public class TmfPersistenceService {
 
-    private final Logger logger = LoggerFactory.getLogger(TmfPeristenceService.class);
+    private final Logger logger = LoggerFactory.getLogger(TmfPersistenceService.class);
 
     @Autowired 
     private BillsService billService;
@@ -55,7 +55,7 @@ public class TmfPeristenceService {
     private CustomerBillApis customerBillApis;
     private AppliedCustomerBillRateApis appliedCustomerBillRateApis;
 
-    public TmfPeristenceService(APIPartyApis apiPartyApis, CustomerBillApis customerBillApis,
+    public TmfPersistenceService(APIPartyApis apiPartyApis, CustomerBillApis customerBillApis,
                                 AppliedCustomerBillRateApis appliedCustomerBillRateApis) {
         this.apiPartyApis = apiPartyApis;
         this.customerBillApis = customerBillApis;
