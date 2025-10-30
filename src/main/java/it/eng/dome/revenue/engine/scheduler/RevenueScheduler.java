@@ -17,7 +17,7 @@ public class RevenueScheduler {
 
     private final TmfPersistenceService tmfPersistenceService;
 
-    @Value("${scheduler.persist-revenue-bills.enabled:true}")
+    @Value("${persistence.scheduler.enabled:true}")
     private boolean enabled;
 
     private final AtomicBoolean running = new AtomicBoolean(false);
@@ -26,7 +26,7 @@ public class RevenueScheduler {
         this.tmfPersistenceService = tmfPersistenceService;
     }
 
-    @Scheduled(cron = "${scheduler.persist-revenue-bills.cron:0 0 */1 * * *}")
+    @Scheduled(cron = "${persistence.scheduler.cron:0 0 */1 * * *}")
     public void persistAllRevenueBills() {
         if (!enabled) {
             logger.debug("RevenueScheduler is disabled");

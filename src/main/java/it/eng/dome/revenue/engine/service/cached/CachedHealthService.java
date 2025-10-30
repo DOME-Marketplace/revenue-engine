@@ -1,5 +1,7 @@
 package it.eng.dome.revenue.engine.service.cached;
 
+import java.time.Duration;
+
 import org.ehcache.Cache;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -45,13 +47,17 @@ public class CachedHealthService extends HealthService {
 
 	@PostConstruct
 	private void initCaches() {
-		logger.debug("Set cache duration for 'health-service' to: {}", cacheDuration.get("health-service"));
-		healthCache = cacheService.getOrCreateCache(
-				"healthCache", 
-				String.class, 
-				Health.class, 
-				cacheDuration.get("health-service"));
+	    // Health cache
+	    Duration healthDuration = cacheDuration.getHealth().getDuration();
+	    logger.debug("Set cache duration for 'healthCache' to: {}", healthDuration);
+	    healthCache = cacheService.getOrCreateCache(
+	            "healthCache",
+	            String.class,
+	            Health.class,
+	            healthDuration
+	    );
 	}
+
 
 	@Override
 	public Health getHealth() {

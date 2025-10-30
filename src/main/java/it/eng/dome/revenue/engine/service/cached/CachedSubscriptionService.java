@@ -1,5 +1,6 @@
 package it.eng.dome.revenue.engine.service.cached;
 
+import java.time.Duration;
 import java.util.List;
 
 import org.ehcache.Cache;
@@ -45,22 +46,27 @@ public class CachedSubscriptionService extends SubscriptionService {
         this.initCaches();
     }
 
-    @SuppressWarnings("unchecked")
-	private void initCaches() {
-    	logger.debug("Set cache duration for 'subscription-service' to: {}", cacheDuration.get("subscription-service"));
-        subscriptionsCache = cacheService.getOrCreateCache(
-        		"subscriptionsCache", 
-        		String.class, 
-        		(Class<List<Subscription>>)(Class<?>)List.class, 
-        		cacheDuration.get("subscription-service"));
-        
-        subscriptionCache = cacheService.getOrCreateCache(
-        		"subscriptionCache", 
-        		String.class, 
-        		Subscription.class, 
-        		cacheDuration.get("subscription-service"));
-    }
-    
+@SuppressWarnings("unchecked")
+private void initCaches() {
+    // Subscription-service caches
+    Duration subscriptionsDuration = cacheDuration.getRevenue().get("list-subscription");
+    logger.debug("Set cache duration for 'subscriptionsCache' to: {}", subscriptionsDuration);
+    subscriptionsCache = cacheService.getOrCreateCache(
+            "subscriptionsCache",
+            String.class,
+            (Class<List<Subscription>>)(Class<?>)List.class,
+            subscriptionsDuration
+    );
+
+    Duration subscriptionDuration = cacheDuration.getRevenue().get("subscription");
+    logger.debug("Set cache duration for 'subscriptionCache' to: {}", subscriptionDuration);
+    subscriptionCache = cacheService.getOrCreateCache(
+            "subscriptionCache",
+            String.class,
+            Subscription.class,
+            subscriptionDuration
+    );
+}
 
     /*
      * Retrieve bills from cache or from the parent class if not cached.

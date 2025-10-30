@@ -1,5 +1,6 @@
 package it.eng.dome.revenue.engine.service.cached;
 
+import java.time.Duration;
 import java.util.List;
 
 import org.ehcache.Cache;
@@ -44,20 +45,27 @@ public class CachedPlanService extends PlanService {
     }
 
     @SuppressWarnings("unchecked")
-	private void initCaches() {    	
-		logger.debug("Set cache duration for 'plan-service' to: {}", cacheDuration.get("plan-service"));
+    private void initCaches() {
+        // Plan-service caches
+        Duration plansDuration = cacheDuration.getRevenue().get("list-plan");
+        logger.debug("Set cache duration for 'planSetCache' to: {}", plansDuration);
         planSetCache = cacheService.getOrCreateCache(
-        		"planSetCache", 
-        		String.class, 
-        		(Class<List<Plan>>)(Class<?>)List.class,
-        		cacheDuration.get("plan-service"));
-        
+                "planSetCache",
+                String.class,
+                (Class<List<Plan>>)(Class<?>)List.class,
+                plansDuration
+        );
+
+        Duration planDuration = cacheDuration.getRevenue().get("plan");
+        logger.debug("Set cache duration for 'planCache' to: {}", planDuration);
         planCache = cacheService.getOrCreateCache(
-        		"planCache", 
-        		String.class, 
-        		Plan.class, 
-        		cacheDuration.get("plan-service"));
+                "planCache",
+                String.class,
+                Plan.class,
+                planDuration
+        );
     }
+
 
     /*
      * Retrieve bills from cache or from the parent class if not cached.

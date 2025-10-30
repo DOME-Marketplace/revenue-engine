@@ -1,5 +1,6 @@
 package it.eng.dome.revenue.engine.service.cached;
 
+import java.time.Duration;
 import java.util.List;
 
 import org.ehcache.Cache;
@@ -43,14 +44,18 @@ public class CachedStatementsService extends StatementsService {
     }
 
     @SuppressWarnings("unchecked")
-	private void initCaches() {
-    	logger.debug("Set cache duration for 'statement-service' to: {}", cacheDuration.get("statement-service"));
-        statementsCache = this.cacheService.getOrCreateCache(
-				"statementsCache",
-				String.class,
-				(Class<List<RevenueStatement>>)(Class<?>)List.class,
-				cacheDuration.get("statement-service"));
+    private void initCaches() {
+        // Statement-service cache
+        Duration statementsDuration = cacheDuration.getRevenue().get("list-statement");
+        logger.debug("Set cache duration for 'statementsCache' to: {}", statementsDuration);
+        statementsCache = cacheService.getOrCreateCache(
+                "statementsCache",
+                String.class,
+                (Class<List<RevenueStatement>>)(Class<?>)List.class,
+                statementsDuration
+        );
     }
+
 
     /*
      * Retrieve bills from cache or from the parent class if not cached.
