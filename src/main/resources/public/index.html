@@ -202,6 +202,8 @@
             <div name="organization_template" class="organization tmfbox">
                 <b name="tradingName"></b><br/>
                 <i name="id" style="font-size:8pt"></i><br/>
+                <p name="organizationIdentification"></p>
+                <p>Characteristic(s): <ul name="partyCharacteristic"></ul></p>
                 <hr/>
                 <button onclick="fetchAndShowTransactions(this.parentNode);">transactions (as seller)</button>
                 <button onclick="fetchAndShowPurchasedProducts(this.parentNode);">products (as buyer)</button>
@@ -209,6 +211,13 @@
                 <button onclick="fetchAndShowDashboard(this.parentNode);">dashboard</button>
                 <button onclick="fetchAndShowRaw(this.parentNode);" disabled>raw</button>
             </div>
+
+            <li name="partyCharacteristic_item_template">
+                <i name="name"></i>: <span name="value"></span>
+            </li>
+            <span name="organizationIdentification_item_template">
+                <b name="identificationId"></b> issued by <span name="issuingAuthority"></span>
+            </span>
 
             <div name="product_template" class="product tmfbox">
                 <b name="name"></b><br/>
