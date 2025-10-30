@@ -388,13 +388,21 @@ function getNodeForArray(key, array) {
     }
 
     // iterate over items and attach nodes to targetDOM
+    let childNodes = [];
     for(item of array) {
         let n = getNodeFor(key+"_item", item);
         if(n!=null)
-            targetDOM.append(n);
+            childNodes.push(n);
     }
 
-    return outNode;
+    if(targetDOM.getAttribute("skip")=="true")
+        return childNodes;
+    else {
+        for(cn of childNodes)
+            targetDOM.append(cn);
+        return [outNode];
+    }
+    
 }
 
 function getNodeForObject(key, value) {
@@ -426,7 +434,13 @@ function getNodeForObject(key, value) {
             // now create a node
             let n = getNodeFor(templateName, value[p]);
             if(n!=null) {
-                placeholder.append(n);
+                if(Array.isArray(n)) {
+                    for(cn of n)
+                        placeholder.append(cn);
+                }
+                else {
+                    placeholder.append(n);
+                }
             } else {
                 // remove also the container
                 placeholder.parentNode.removeChild(placeholder);
@@ -552,7 +566,6 @@ class Lanes {
     _unselectAllBoxesInLane(domLane) {
         if(domLane) {
             for(var box of domLane.children) {
-                console.log(box);
                 box.classList.remove("selected");
             }
         }

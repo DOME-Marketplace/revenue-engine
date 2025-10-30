@@ -121,3 +121,11 @@ hr {
     border:0;
     border-top:1px solid lightgray;
 }
+
+table.box {
+    width:100%; 
+    font-size:0.8em; 
+    border:1px solid #b0b0b0; 
+    border-radius:5pt; 
+    margin:2pt 0pt;
+}
