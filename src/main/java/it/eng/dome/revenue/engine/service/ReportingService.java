@@ -33,8 +33,11 @@ import it.eng.dome.revenue.engine.service.cached.CachedStatementsService;
 import it.eng.dome.revenue.engine.service.cached.CachedSubscriptionService;
 import it.eng.dome.revenue.engine.service.cached.TmfCachedDataRetriever;
 import it.eng.dome.revenue.engine.utils.RelatedPartyUtils;
+import it.eng.dome.tmforum.tmf632.v4.model.Organization;
+import it.eng.dome.tmforum.tmf637.v4.model.Characteristic;
 import it.eng.dome.tmforum.tmf637.v4.model.Product;
 import it.eng.dome.tmforum.tmf678.v4.model.CustomerBill;
+import it.eng.dome.tmforum.tmf678.v4.model.TimePeriod;
 
 @Service
 public class ReportingService implements InitializingBean {
@@ -56,6 +59,93 @@ public class ReportingService implements InitializingBean {
     public void afterPropertiesSet() {}
 
     public ReportingService() {}
+
+
+    private boolean isFederated(Product p) {
+        if (p.getProductCharacteristic() == null) return false;
+
+        for (Characteristic ch : p.getProductCharacteristic()) {
+            if ("marketplaceSubscription".equalsIgnoreCase(ch.getName())) {
+                Object val = ch.getValue();
+                if (val != null && "true".equalsIgnoreCase(val.toString())) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    private String getMarketplaceId(Product p) {
+        if (p.getRelatedParty() == null) return null;
+
+        return p.getRelatedParty().stream()
+                .filter(rp -> "Buyer".equalsIgnoreCase(rp.getRole()))
+                .map(rp -> rp.getId())
+                .findFirst()
+                .orElse(null);
+    }
+
+	public Report membersSection() throws ExternalServiceException, BadTmfDataException {
+	    List<Product> allProducts = tmfDataRetriever.getAllSubscriptionProducts();
+	    logger.info("Retrieved {} products", allProducts.size());
+	
+	    List<Product> singleProviders = new ArrayList<>();
+	    List<Product> federatedProviders = new ArrayList<>();
+	
+
+	        for (Product p : allProducts) {
+	            boolean federated = isFederated(p);
+	            logger.info("Product {} isFederated={}", p.getName(), federated);
+
+	            if (federated) {
+	                federatedProviders.add(p);
+	            } else {
+	                singleProviders.add(p);
+	            }
+	        }
+
+	    
+	
+	    int nrSingle = singleProviders.size();
+	    int nrFederated = federatedProviders.size();
+	    logger.info("Number of single providers: {}, federated providers: {}", nrSingle, nrFederated);
+	
+	    Map<String, Integer> activeSellersPerFederated = new HashMap<>();
+	    for (Product p : federatedProviders) {
+	        String marketplaceId = getMarketplaceId(p);
+	        logger.info("Processing federated product {} with marketplaceId={}", p.getId(), marketplaceId);
+	
+	        if (marketplaceId == null) {
+	            logger.warn("Marketplace ID is null for product {}", p.getId());
+	            continue;
+	        }
+	
+	        if (!activeSellersPerFederated.containsKey(marketplaceId)) {
+	            OffsetDateTime start = subscriptionService.getActiveSubscriptionByRelatedPartyId(marketplaceId).getStartDate();
+	            OffsetDateTime end = OffsetDateTime.now();
+	            TimePeriod tp = new TimePeriod();
+	            tp.setStartDateTime(start);
+	            tp.setEndDateTime(end);
+	
+	            int nrSellers = tmfDataRetriever.listActiveSellersBehindFederatedMarketplace(marketplaceId, tp).size();
+	
+	            Organization org = tmfDataRetriever.getOrganization(marketplaceId);
+	            String orgName = org != null ? org.getTradingName() : "Unknown";
+	            activeSellersPerFederated.put(orgName, nrSellers);
+	            logger.info("Marketplace {} has {} active sellers", orgName, nrSellers);
+	        }
+	    }
+	
+	    List<Report> items = new ArrayList<>();
+	    items.add(new Report("Single Providers", String.valueOf(nrSingle)));
+	    items.add(new Report("Federated Marketplaces", String.valueOf(nrFederated)));
+	
+	    for (Map.Entry<String, Integer> entry : activeSellersPerFederated.entrySet()) {
+	        items.add(new Report("Marketplace " + entry.getKey() + " - Active Sub-Sellers", String.valueOf(entry.getValue())));
+	    }
+	
+	    return new Report("Members Summary", items);
+	}
 
     /**
      * Retrieves the complete dashboard report for a given organization, using cache to avoid repeated computations.
@@ -101,7 +191,7 @@ public class ReportingService implements InitializingBean {
 	        report.add(totalRevenueReport);
 
 			// active providers
-	        report.add(activeProvidersSection());
+	        report.add(membersSection());
 			
 			// top performing providers
 	        report.add(topSubscriptionsSection(totalRevenueReport));
