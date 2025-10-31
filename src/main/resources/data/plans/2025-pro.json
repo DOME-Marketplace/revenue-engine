@@ -109,12 +109,12 @@
             "bundleOp": "CUMULATIVE",
             "prices": [
               {
-                "name": "tier 0: no revenue sharing for transactions below 100K",
+                "name": "tier 0: no revenue sharing for transactions below 100K for ${seller.tradingName}",
                 "amount": 0,
                 "skipIfZero": false
               },
               {
-                "name": "tier 1: 4% revenue sharing in the range 100-200K",
+                "name": "tier 1: 4% revenue sharing in the range 100-200K for ${seller.tradingName}",
                 "computationBase": "bills-no-taxes",
                 "percent": 4,
                 "discount": {
@@ -130,7 +130,7 @@
                 "skipIfZero": true
               },
               {
-                "name": "tier 2: 3% revenue sharing in the range 200-500k",
+                "name": "tier 2: 3% revenue sharing in the range 200-500k for ${seller.tradingName}",
                 "percent": 3,
                 "discount": {
                   "name": "removing the lower part",
@@ -146,7 +146,7 @@
                 "skipIfZero": true
               },
               {
-                "name": "tier 3: 2% revenue sharing in the range 500-800k",
+                "name": "tier 3: 2% revenue sharing in the range 500-800k for ${seller.tradingName}",
                 "percent": 2,
                 "discount": {
                   "name": "removing the lower part",
@@ -162,7 +162,7 @@
                 "skipIfZero": true
               },
               {
-                "name": "tier 4: 1% revenue sharing for transactions above 800k",
+                "name": "tier 4: 1% revenue sharing for transactions above 800k for ${seller.tradingName}",
                 "percent": 1,
                 "discount": {
                   "name": "removing the lower part",

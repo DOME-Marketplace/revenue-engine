@@ -131,11 +131,22 @@ public class PlanResolver {
             }
         }
         
-//        Pattern p4 = Pattern.compile("product.productCharacteristic.([a-zA-Z]+)");
-//        Matcher mProduct = p4.matcher(token);
-//        if (mProduct.matches() && subscription != null) {
-//            return subscription.getCharacteristics(mProduct.group(1));
-//        }
+        // seller properties
+        Pattern p4 = Pattern.compile("seller\\.([a-zA-Z]+)");
+        m = p4.matcher(token);
+        if (m.matches() && subscription != null && subscription.getRelatedParties() != null) {
+            switch (m.group(1).toLowerCase()) {
+                case "tradingname": 
+                    return subscription.getRelatedParties().stream()
+                        .filter(rp -> "Seller".equalsIgnoreCase(rp.getRole()))
+                        .map(rp -> rp.getName())
+                        .findFirst()
+                        .orElse(null);
+                default:
+                	break; // TODO: add more seller properties if needed
+            }
+        }
+
 
 
 
