@@ -198,22 +198,18 @@ public class PlanService implements InitializingBean {
 
     private Plan loadPlanFromLink(String link) throws IOException, BadRevenuePlanException, ExternalServiceException {
 
-        if(DEV_USE_LOCAL_PLANS) {
-            // get the last part of the link
-            String[] parts = link.split("/");
-            String planFileName = parts[parts.length-1];
-            // search it within src/main/resources/data/plans
-            return this.loadPlanFromFile("./src/main/resources/data/plans/"+planFileName);
-        }
-        else {
-            URL planUrl = new URL(link);
-            try (InputStream is = planUrl.openStream()) {
-                Plan plan = mapper.readValue(is, Plan.class);
-                logger.debug("Loaded plan '{}' with ID '{}'", link, plan.getId());
-                return plan;
+            try {
+                URL planUrl = new URL(link);
+                try (InputStream is = planUrl.openStream()) {
+                    Plan plan = mapper.readValue(is, Plan.class);
+                    if (plan == null) throw new BadRevenuePlanException(new Plan(), "Plan not found at URL: " + link);
+                    logger.debug("Loaded plan '{}' with ID '{}'", link, plan.getId());
+                    return plan;
+                }
+            } catch (IOException e) {
+                throw new ExternalServiceException("Failed to retrieve plan from external URL: " + link, e);
             }
-
-        }
+        
     }
 
     protected Plan loadPlanFromFile(String path) throws IOException, BadRevenuePlanException {
