@@ -7,6 +7,9 @@ import java.util.Map;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.expression.Expression;
+import org.springframework.expression.ExpressionParser;
+import org.springframework.expression.spel.standard.SpelExpressionParser;
 
 import it.eng.dome.revenue.engine.model.Discount;
 import it.eng.dome.revenue.engine.model.PlanItem;
@@ -202,11 +205,23 @@ public abstract class AbstractCalculator implements Calculator {
 		}
 		logger.debug("This item '{}' period matches the statements period {}.", this.item.getName(), timePeriod);
 
+
+		if(item.getIgnore()!=null && !item.getIgnore().trim().isEmpty()) {
+			ExpressionParser parser = new SpelExpressionParser();
+			Expression exp = parser.parseExpression(this.item.getIgnore());  
+			boolean b = (Boolean) exp.getValue();
+			if(b) {
+		        logger.info("Ignoring price/discount {} based on ignore flag {}", this.item.getName(), this.item.getIgnore());
+				return false;
+			}
+		}
+
 		// check the item is not to ignore
-	    if ("true".equalsIgnoreCase(this.item.getIgnore())) {
-	        logger.info("Ignoring price/discount {} based on ignore flag {}", this.item.getName(), this.item.getIgnore());
-			return false;
-	    }
+//	    if ("true".equalsIgnoreCase(this.item.getIgnore())) {
+//	        logger.info("Ignoring price/discount {} based on ignore flag {}", this.item.getName(), this.item.getIgnore());
+//			return false;
+//	    }
+
 		logger.info("The price/discount {} is not to be ignored", this.item.getName());
 
 

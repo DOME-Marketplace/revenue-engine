@@ -18,13 +18,13 @@
   "subscriptionDurationPeriodType": "MONTH",
   "agreements": [],
   "price": {
-    "name": "Price components for DOME Cloud Service Provider Subscription plan for 2025",
+    "name": "Price components for DOME Subscription Plan 2025",
     "isBundle": true,
     "currency": "EUR",
     "bundleOp": "CUMULATIVE",
     "prices": [
       {
-        "name": "Pre-paid Initial Fee",
+        "name": "Initial Fee",
         "type": "RECURRING_PREPAID",
         "recurringChargePeriodLength": 1,
         "recurringChargePeriodType": "YEAR",
@@ -86,19 +86,19 @@
         }
       },
       {
-        "name": "Revenue sharing based on transactions",
+        "name": "Revenue sharing based on transactions of sub-sellers (FM)",
         "recurringChargePeriodType": "MONTH",
         "recurringChargePeriodLength": 1,
         "type": "RECURRING_POSTPAID",
-        "ignore": false,
+        "ignore": "'${subscription.characteristics.marketplaceSubscription}'!='true'",
         "isBundle": true,
         "collapse": false,
         "bundleOp": "FOREACH",
         "skipIfZero": false,
-        "forEachMetric": "activeMarketplaceIncludedMarketplace",
+        "forEachMetric": "activeSellersIncludedMarketplace",
         "prices": [
           {
-            "name": "Revenue on transactions in the current period for ${seller.tradingName}",
+            "name": "Shares",
             "applicableBase": "bills-no-taxes",
             "applicableBaseReferencePeriod": "LAST_9_CHARGE_PERIODS",
             "computationBaseReferencePeriod": "CURRENT_CHARGE_PERIOD",
@@ -109,74 +109,98 @@
             "bundleOp": "CUMULATIVE",
             "prices": [
               {
-                "name": "tier 0: no revenue sharing for transactions below 100K",
-                "amount": 0,
-                "skipIfZero": false
-              },
-              {
-                "name": "tier 1: 4% revenue sharing in the range 100-200K",
+                "name": "1% revenue sharing",
                 "computationBase": "bills-no-taxes",
-                "percent": 4,
-                "discount": {
-                  "comment": "this is the 'min' of the tier x tier percentage",
-                  "amount": 4000
-                },
-                "resultingAmountRange": {
-                  "comment": "min is always zero. Max is the tier width x tier percentage (i.e. the max revenue for the tier window)",
-                  "min": 0,
-                  "max": 4000
-                },
-                "collapse": true,
-                "skipIfZero": true
-              },
-              {
-                "name": "tier 2: 3% revenue sharing in the range 200-500k",
-                "percent": 3,
-                "discount": {
-                  "name": "removing the lower part",
-                  "comment": "this is the 'min' of the tier x tier percentage",
-                  "amount": 6000
-                },
-                "resultingAmountRange": {
-                  "comment": "min is always zero. Max is the tier width x tier percentage (i.e. the max revenue for the tier window)",
-                  "min": 0,
-                  "max": 9000
-                },
-                "collapse": true,
-                "skipIfZero": true
-              },
-              {
-                "name": "tier 3: 2% revenue sharing in the range 500-800k",
-                "percent": 2,
-                "discount": {
-                  "name": "removing the lower part",
-                  "comment": "this is the 'min' of the tier x tier percentage",
-                  "amount": 10000
-                },
-                "resultingAmountRange": {
-                  "comment": "min is always zero. Max is the tier width x tier percentage (i.e. the max revenue for the tier window)",
-                  "min": 0,
-                  "max": 6000
-                },
-                "collapse": true,
-                "skipIfZero": true
-              },
-              {
-                "name": "tier 4: 1% revenue sharing for transactions above 800k",
                 "percent": 1,
-                "discount": {
-                  "name": "removing the lower part",
-                  "comment": "this is the 'min' of the tier x tier percentage",
-                  "amount": 8000
-                },
-                "resultingAmountRange": {
-                  "comment": "min is always zero. Max is the tier width x tier percentage (i.e. the max revenue for the tier window)",
-                  "min": 0
-                },
-                "collapse": true,
-                "skipIfZero": true
+                "skipIfZero": false
               }
             ]
+          }
+        ]
+      },
+      {
+        "name": "Revenue sharing based on transactions (CSP)",
+        "applicableBase": "bills-no-taxes",
+        "applicableBaseReferencePeriod": "LAST_9_CHARGE_PERIODS",
+        "computationBaseReferencePeriod": "CURRENT_CHARGE_PERIOD",
+        "computationBase": "bills-no-taxes",
+        "currency": "EUR",
+        "isBundle": true,
+        "bundleOp": "CUMULATIVE",
+        "recurringChargePeriodType": "MONTH",
+        "recurringChargePeriodLength": 1,
+        "collapse": false,
+        "skipIfZero": false,
+        "type": "RECURRING_POSTPAID",
+        "ignore": "${subscription.characteristics.marketplaceSubscription}",
+        "prices": [
+          {
+            "name": "Tier 0: no revenue sharing for transactions below 100K",
+            "amount": 0,
+            "skipIfZero": false
+          },
+          {
+            "name": "Tier 1: 4% revenue sharing in the range 100-200K",
+            "computationBase": "bills-no-taxes",
+            "percent": 4,
+            "discount": {
+              "comment": "this is the 'min' of the tier x tier percentage",
+              "amount": 4000
+            },
+            "resultingAmountRange": {
+              "comment": "min is always zero. Max is the tier width x tier percentage (i.e. the max revenue for the tier window)",
+              "min": 0,
+              "max": 4000
+            },
+            "collapse": true,
+            "skipIfZero": true
+          },
+          {
+            "name": "Tier 2: 3% revenue sharing in the range 200-500k",
+            "percent": 3,
+            "discount": {
+              "name": "removing the lower part",
+              "comment": "this is the 'min' of the tier x tier percentage",
+              "amount": 6000
+            },
+            "resultingAmountRange": {
+              "comment": "min is always zero. Max is the tier width x tier percentage (i.e. the max revenue for the tier window)",
+              "min": 0,
+              "max": 9000
+            },
+            "collapse": true,
+            "skipIfZero": true
+          },
+          {
+            "name": "Tier 3: 2% revenue sharing in the range 500-800k",
+            "percent": 2,
+            "discount": {
+              "name": "removing the lower part",
+              "comment": "this is the 'min' of the tier x tier percentage",
+              "amount": 10000
+            },
+            "resultingAmountRange": {
+              "comment": "min is always zero. Max is the tier width x tier percentage (i.e. the max revenue for the tier window)",
+              "min": 0,
+              "max": 6000
+            },
+            "collapse": true,
+            "skipIfZero": true
+          },
+          {
+            "name": "Tier 4: 1% revenue sharing for transactions above 800k",
+            "percent": 1,
+            "discount": {
+              "name": "removing the lower part",
+              "comment": "this is the 'min' of the tier x tier percentage",
+              "amount": 8000
+            },
+            "resultingAmountRange": {
+              "comment": "min is always zero. Max is the tier width x tier percentage (i.e. the max revenue for the tier window)",
+              "min": 0
+            },
+            "collapse": true,
+            "skipIfZero": true
           }
         ]
       }

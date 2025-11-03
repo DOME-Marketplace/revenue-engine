@@ -7,6 +7,7 @@ import it.eng.dome.revenue.engine.model.Role;
 import it.eng.dome.revenue.engine.model.Subscription;
 import it.eng.dome.tmforum.tmf637.v4.model.Product;
 import it.eng.dome.tmforum.tmf678.v4.model.CustomerBill;
+import it.eng.dome.tmforum.tmf678.v4.model.RelatedParty;
 
 class RP {
 
@@ -45,6 +46,18 @@ public class RelatedPartyUtils {
         List<RP> parties = bill.getRelatedParty().stream().map(party -> new RP(party.getId(), party.getRole()))
                 .toList();
         return RelatedPartyUtils.hasRPWithRole(parties, partyId, partyRole);
+    }
+
+    public static String partyIdWithRole(CustomerBill bill, Role partyRole) {
+        List<RelatedParty> relatedParties = bill.getRelatedParty();
+        if (relatedParties != null) {
+            for (RelatedParty rp : relatedParties) {
+                if (partyRole.getValue().equalsIgnoreCase(rp.getRole())) {
+                    return rp.getId();
+                }
+            }
+        }
+        return null;
     }
 
     public static Boolean subscriptionHasPartyWithRole(Subscription subscription, String partyId, Role partyRole) {

@@ -21,7 +21,6 @@ public class RevenueItem {
 
     private OffsetDateTime chargeTime;
 
-    
     private List<RevenueItem> items;
 
     public RevenueItem() {
@@ -116,6 +115,10 @@ public class RevenueItem {
 	public String toString() {
 		return "RevenueItem [name=" + name + ", value=" + value + ", currency=" + currency + ", items=" + items + "]";
 	}
+
+    public boolean isLeaf() {
+        return this.getItems()==null || this.getItems().size()==0;
+    }
 
     public Set<OffsetDateTime> extractChargeTimes() {
         Set<OffsetDateTime> out = new TreeSet<>();

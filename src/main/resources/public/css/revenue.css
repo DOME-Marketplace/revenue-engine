@@ -19,11 +19,12 @@ h3 {
 
 td {
     vertical-align:top;
+    max-width:500pt;
 }
 
 .indent {
-    text-indent:-10pt;
-    padding-left:10pt;
+    text-indent:-5pt;
+    padding-left:5pt;
 }
 
 div.tmfbox {
@@ -86,6 +87,10 @@ div.acbr {
     outline-color:brown;
 }
 
+div.invoice {
+    outline-color:sienna;
+}
+
 div.revenueItem {
     padding:2pt 0pt 2pt 10pt;
     margin:2pt 0pt;
@@ -120,4 +125,25 @@ td.menu {
 hr {
     border:0;
     border-top:1px solid lightgray;
+}
+
+table.box {
+    width:100%; 
+    font-size:0.8em; 
+    border:1px solid #b0b0b0; 
+    border-radius:5pt; 
+    margin:2pt 0pt;
+    background:#f0f0f0;
+    padding:5pt;
+}
+
+td.invoiceitem {
+    text-align:right;
+    white-space:nowrap;
+    vertical-align:bottom;
+    border-bottom:1px dotted #b0b0b0;
+}
+
+.oneline {
+    white-space:nowrap;
 }

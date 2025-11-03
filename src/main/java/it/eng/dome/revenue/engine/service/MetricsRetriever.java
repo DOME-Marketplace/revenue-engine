@@ -159,7 +159,7 @@ public class MetricsRetriever {
     public List<String> getDistinctValuesForKey(String key, String subscriberId, TimePeriod timePeriod)
             throws BadTmfDataException, ExternalServiceException {
         switch(key) {
-            case "activeMarketplaceIncludedMarketplace":
+            case "activeSellersIncludedMarketplace":
                 if (subscriberId == null || subscriberId.isEmpty()) {
                     throw new BadTmfDataException("Subscriber", subscriberId, "Subscriber ID cannot be null or empty");
                 }

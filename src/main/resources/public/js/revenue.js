@@ -20,6 +20,13 @@ function getEndpointFor(resourceType, resourceId) {
         return baseURL + "subscriptions/"+resourceId+"/bills";        
     else if("bill"==resourceType)
         return baseURL + "bills/"+resourceId;        
+    else if("invoice"==resourceType) {
+        // it can be a volatile revenue sharing bill or persisted bill (retrieve from tmf)
+        if(resourceId.indexOf("product")!=-1) {
+            resourceId = resourceId.replace("customerbill", "revenuebill");
+        }
+        return baseURL + "dev/invoices/"+resourceId;        
+    }
     else if("customerBill"==resourceType) {
         // it can be a volatile revenue sharing bill or persisted bill (retrieve from tmf)
         if(resourceId.indexOf("product")!=-1) {
@@ -56,7 +63,6 @@ function getEndpointFor(resourceType, resourceId) {
 	else if("dashboard"==resourceType)
 	    return baseURL + "dashboard/" + resourceId;
     else
-	
         console.log("ERROR: unable to return an endpoint for " + resourceType + ":" + resourceId);
     return null;
 }
@@ -148,6 +154,18 @@ function fetchAndShowRaw(clickedDOM) {
     showRaw(clickedDOM.getAttribute("objectId"), clickedDOM);
 }
 
+function fetchAndShowInvoice(clickedDOM, billId) {
+    getLanes().prepareFor(clickedDOM);
+    if(!billId)
+        billId = clickedDOM.getAttribute("objectId");
+    genericFetchAndShow("invoice", billId, showInvoice, clickedDOM);
+}
+
+function fetchAndShowRawInvoice(clickedDOM, billId) {
+    if(!billId)
+        billId = clickedDOM.getAttribute("objectId");
+    showRawInvoice(billId, clickedDOM);
+}
 
 /* **********************************************************************
 * 
@@ -263,6 +281,12 @@ function showCustomerBill(customerBill, clickedDOM) {
     getLanes().addToCurrentLane(getNodeFor("cb_summary", customerBill));
 }
 
+function showInvoice(invoice, clickedDOM) {
+    getLanes().cleanAfter(clickedDOM);
+    getLanes().pushLane("invoice");
+    getLanes().addToCurrentLane(getNodeFor("invoice_summary", invoice));
+}
+
 function showACBRs(acbrs, clickedDOM) {
     getLanes().cleanAfter(clickedDOM);
     getLanes().pushLane("some title");
@@ -272,7 +296,6 @@ function showACBRs(acbrs, clickedDOM) {
     if(acbrs.length==0)
         getLanes().addToCurrentLane(getNodeForMessage("No acbrs found"));
 }
-
 
 function fetchAndAddCustomerBills(revenueBills, clickedDOM) {
     getLanes().cleanAfter(clickedDOM);
@@ -311,7 +334,13 @@ function showRaw(id, _unused_clickedDOM) {
     if(url) {
         window.open(url, id).focus();
     }
+}
 
+function showRawInvoice(id) {
+    let url = getEndpointFor("invoice", id);
+    if(url) {
+        window.open(url, id).focus();
+    }
 }
 
 /* **********************************************************************
@@ -388,13 +417,21 @@ function getNodeForArray(key, array) {
     }
 
     // iterate over items and attach nodes to targetDOM
+    let childNodes = [];
     for(item of array) {
         let n = getNodeFor(key+"_item", item);
         if(n!=null)
-            targetDOM.append(n);
+            childNodes.push(n);
     }
 
-    return outNode;
+    if(targetDOM.getAttribute("skip")=="true")
+        return childNodes;
+    else {
+        for(cn of childNodes)
+            targetDOM.append(cn);
+        return [outNode];
+    }
+    
 }
 
 function getNodeForObject(key, value) {
@@ -426,7 +463,13 @@ function getNodeForObject(key, value) {
             // now create a node
             let n = getNodeFor(templateName, value[p]);
             if(n!=null) {
-                placeholder.append(n);
+                if(Array.isArray(n)) {
+                    for(cn of n)
+                        placeholder.append(cn);
+                }
+                else {
+                    placeholder.append(n);
+                }
             } else {
                 // remove also the container
                 placeholder.parentNode.removeChild(placeholder);
@@ -436,31 +479,129 @@ function getNodeForObject(key, value) {
 
     if(value.id) {
         outNode.setAttribute("objectId", value.id);
+        outNode.setAttribute("object", value);
     }
+
+    outNode.object = value;
 
     return outNode;
 }
 
 function getNodeFor(key, value) {
+
+    // first, format the value
+    let fmt = getFormatterFor(key);
+    if(fmt!=null) {
+        value = fmt(value);
+    }
+
+    // then create a node
+    let node = null;
     if(Date.parse(value) && value.indexOf && value.indexOf("T")!=-1) {
-        return getNodeForDate(key, value);
+        node = getNodeForDate(key, value);
     }
     else if(value.substring || typeof value === 'number' ) {
-        return getNodeForString(key, value);
+        node = getNodeForString(key, value);
     }
     else if(Array.isArray(value)) {
         if(value.length>0)
-            return getNodeForArray(key, value);
+            node = getNodeForArray(key, value);
     }
     else if(value && typeof(value) === 'object') {
-        return getNodeForObject(key, value);
+        node = getNodeForObject(key, value);
     }
     else {
         console.log("ERROR: unable to create an object for " + key + ". unknown object type. Value is "+value);
     }
-    return null;
+
+    // finally, format the node (if needed)
+    let nodeFmt = getNodeFormatterFor(key);
+    if(node && nodeFmt) {
+        node = nodeFmt(node);
+    }
+
+    return node;
 }
 
+/* **********************************************************************
+* 
+*    VALUE FORMATTERS
+* 
+* *********************************************************************/
+
+
+function getFormatterFor(key) {
+    let functionName = "format_"+key;
+    return window[functionName];
+}
+
+function format_invoice(invoice) {
+    if(invoice!=null && invoice.summary!=null)
+        invoice.summary = format_invoice_amount_summary(invoice.summary);
+    return invoice;
+}
+
+function format_invoice_items_item(invoiceItem) {
+    if(invoiceItem.vatPercent!=null) {
+        invoiceItem.vatPercent = invoiceItem.vatPercent*100+"%";
+    }
+    if(invoiceItem.netAmount!=null) {
+        invoiceItem.netAmount = formatMoney(invoiceItem.netAmount);
+    }
+    if(invoiceItem.vat!=null) {
+        invoiceItem.vat = formatMoney(invoiceItem.vat);
+    }
+    return invoiceItem;
+}
+
+function format_invoice_amount_summary(invoiceSummary) {
+    if(invoiceSummary!=null && invoiceSummary.taxExcludedAmount!=null)
+        invoiceSummary.taxExcludedAmount = formatMoney(invoiceSummary.taxExcludedAmount);
+    if(invoiceSummary!=null && invoiceSummary.totalTaxAmount!=null)
+        invoiceSummary.totalTaxAmount = formatMoney(invoiceSummary.totalTaxAmount);
+    if(invoiceSummary!=null && invoiceSummary.taxIncludedAmount!=null)
+        invoiceSummary.taxIncludedAmount = formatMoney(invoiceSummary.taxIncludedAmount);
+    return invoiceSummary;
+}
+
+function formatMoney (money) {
+    if(money.unit!=null)
+        money.unit = format_currency(money.unit);
+    if(money.value!=null)
+        money.value = format_amount(money.value);
+    return money;
+}
+
+function format_currency(currencyCode) {
+    return currencyCode.replace("EUR", "€");
+}
+
+function format_amount(amount) {
+    // TODO add separating dots
+    return amount;
+}
+
+/* **********************************************************************
+* 
+*    NODE FORMATTERS
+* 
+* *********************************************************************/
+
+function getNodeFormatterFor(key) {
+    let functionName = "format_"+key+"_node";
+    return window[functionName];
+}
+
+
+function format_invoice_items_item_node(node) {
+    if(node) {
+        for(var child of node.children) {
+            child.style.paddingLeft = (10*node.object.level)+"pt";
+            break; // only the first column (description)
+        }        
+    }
+    return node;
+}
 
 /* **********************************************************************
 * 
@@ -508,7 +649,8 @@ class Lanes {
         let col = this._createCol();
         this.currentCol++;
         col.setAttribute("name", "lane_"+this.currentCol);
-        col.classList.add("lane");
+        if(columnLabel!="invoice")
+            col.classList.add("lane");
         col.classList.add("empty");
         this.row.appendChild(col);
         return col;
@@ -552,7 +694,6 @@ class Lanes {
     _unselectAllBoxesInLane(domLane) {
         if(domLane) {
             for(var box of domLane.children) {
-                console.log(box);
                 box.classList.remove("selected");
             }
         }

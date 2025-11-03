@@ -90,7 +90,7 @@ public class PlanResolver {
 
         // replace tokens
         for (Map.Entry<String, String> entry : resolvedProperties.entrySet()) {
-            String value = entry.getValue() != null ? entry.getValue() : "<<ERROR.UNRESOLVED>>";
+            String value = entry.getValue() != null ? entry.getValue() : "";
             resolvedText = resolvedText.replace("${" + entry.getKey() + "}", value);
         }
 
@@ -140,7 +140,7 @@ public class PlanResolver {
                         .filter(rp -> "SellerOperator".equalsIgnoreCase(rp.getRole()))
                         .map(rp -> rp.getName()) 
                         .findFirst()
-                        .orElse("<<ERROR.UNRESOLVED>>");
+                        .orElse("");
                 default:
                 	break; // TODO: add more seller properties if needed
             }

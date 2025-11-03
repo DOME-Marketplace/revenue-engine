@@ -34,43 +34,48 @@ public class ForEachCalculator extends AbstractCalculator {
 		}
 
 		// only 'activeMarketplaceIncludedMarketplace' is currently supported
-		if(!"activeMarketplaceIncludedMarketplace".equalsIgnoreCase(iterateOver)) {
+		if(!"activeSellersIncludedMarketplace".equalsIgnoreCase(iterateOver)) {
 			logger.error("{} is not supported. Currently, only 'marketplaceSeller' metric is supported.");
 			return null;
 		}
 
 		// now process them
-		if("activeMarketplaceIncludedMarketplace".equalsIgnoreCase(iterateOver)) {
+		if("activeSellersIncludedMarketplace".equalsIgnoreCase(iterateOver)) {
 			// retrieve the possible values
 			try {
-				List<String> orgIds = this.metricsRetriever.getDistinctValuesForKey(iterateOver, this.getSubscription().getSubscriberId(), timePeriod);
+				List<String> distinctValues = this.metricsRetriever.getDistinctValuesForKey(iterateOver, this.getSubscription().getSubscriberId(), timePeriod);
 
-				logger.debug("Found {} sellers + marketplace {} in period {}", orgIds.size(), this.getSubscription().getSubscriberId(), timePeriod);
+				logger.debug("Found {} sellers + marketplace {} in period {}", distinctValues.size(), this.getSubscription().getSubscriberId(), timePeriod);
 
 				// foreach 'iterator' property, build a sub-revenueItem with all child prices computed with the 'iterator' property.
-				for(String orgId: orgIds) {
+				for(String id: distinctValues) {
 
-					String orgLabel = this.getOrganisationLabel(orgId);
+					String label = this.getLabel(id);
 
-					logger.debug("looking for transactions of seller {} in period {}", orgLabel, timePeriod);
-					RevenueItem sellerRevenueItem = new RevenueItem(this.item.getName() + " - Share from '" + orgLabel + "'", this.item.getCurrency());
-					if(this.item.getType()!=null)
-						sellerRevenueItem.setType(this.item.getType().toString());
+					logger.debug("looking for transactions of seller {} in period {}", label, timePeriod);
+//					RevenueItem sellerRevenueItem = new RevenueItem(this.item.getName() + " - Share from '" + label + "'", this.item.getCurrency());
+
+//					if(this.item.getType()!=null)
+//						sellerRevenueItem.setType(this.item.getType().toString());
+
 					for (PlanItem childItem : this.item.getBundleItems()) {
 
 						// create a new context, to force the calculator to consider the sub-seller, instead of the subscriber
 						Map<String, String> context = new HashMap<>();
-						context.put("sellerId", orgId);
+						context.put("sellerId", id);
 
 						Calculator childCalc = CalculatorFactory.getCalculatorFor(this.getSubscription(), childItem, this);
 						childCalc.setCalculatorContext(context);						
 
 						RevenueItem childRevenueItem = childCalc.compute(timePeriod, computeContext);
+						// prefix the name with the label of the iterator
+						childRevenueItem.setName(childRevenueItem.getName() + " computed for " + label);
 						if (childRevenueItem != null) {
-							sellerRevenueItem.addRevenueItem(childRevenueItem);
+							outputItem.addRevenueItem(childRevenueItem);
 						}
 					}
-					outputItem.addRevenueItem(sellerRevenueItem);
+
+//					outputItem.addRevenueItem(sellerRevenueItem);
 				}
 			} catch(Exception e) {
 				logger.error("Unable to retrieve bills for sellers behind marketplace {}", this.getSubscription().getSubscriberId());
@@ -88,17 +93,21 @@ public class ForEachCalculator extends AbstractCalculator {
 //			return null;
 	}
 
-	private String getOrganisationLabel(String orgId) throws Exception {
-		String orgLabel = "";
-		Organization seller = this.tmfDataRetriever.getOrganization(orgId);
-		if(seller!=null) {
-			if(seller.getName()!=null)
-				orgLabel = seller.getName();
-			if(seller.getTradingName()!=null)
-				orgLabel = seller.getTradingName();
+	private String getLabel(String id) throws Exception {
+		if(id.startsWith("urn:ngsi-ld:organization")) {
+			String orgLabel = "";
+			Organization seller = this.tmfDataRetriever.getOrganization(id);
+			if(seller!=null) {
+				if(seller.getName()!=null)
+					orgLabel = seller.getName();
+				if(seller.getTradingName()!=null)
+					orgLabel = seller.getTradingName();
+			}
+			return orgLabel.trim();
 		}
-		orgLabel += " ("+orgId+")";
-		return orgLabel.trim();
+		else {
+			return id;
+		}
 	}
 
 }

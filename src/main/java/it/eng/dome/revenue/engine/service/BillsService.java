@@ -62,7 +62,9 @@ public class BillsService {
             if(billId.equals(bill.getId()))
                 return bill;
         }
+
         return null;
+        
     }
     
     /** Retrieves all bills for a given subscription ID.
@@ -176,8 +178,10 @@ public class BillsService {
         if (rb.getPeriod() == null || rb.getPeriod().getEndDateTime() == null) {
             throw new IllegalArgumentException("RevenueBill period or endDateTime is missing");
         }
+
+		Subscription sub = subscriptionService.getSubscriptionByProductId(rb.getSubscriptionId());
         
-        CustomerBill cb = RevenueBillingMapper.toCB(rb);
+        CustomerBill cb = new RevenueBillingMapper(sub, rb).getCustomerBill();
 
 		try {
 			cb.setBillingAccount(TmfConverter.convertBillingAccountRefTo678(tmfDataRetriever.retrieveBillingAccountByProductId(rb.getSubscriptionId())));
@@ -190,7 +194,6 @@ public class BillsService {
 		}
         
 		// Next bill date and payment due date
-		Subscription sub = subscriptionService.getSubscriptionByProductId(rb.getSubscriptionId());
         /*
 		Plan plan = planService.getPlanById(sub.getPlan().getId());
 		PlanResolver planResolver = new PlanResolver(sub);
@@ -327,7 +330,7 @@ public class BillsService {
         }
         
         // convert AppliedBillingTaxRate to TaxItem (fills taxCategory and taxRate)
-		TaxItem taxItem = RevenueBillingMapper.toTaxItem(abtr);
+		TaxItem taxItem = new RevenueBillingMapper().getTaxItem(abtr);
 		
 		// calculate tax amount
         if(taxItem.getTaxRate() == null) {
@@ -407,7 +410,7 @@ public class BillsService {
 		Plan resolvedPlan = planResolver.resolve(plan);
 		subscription.setPlan(resolvedPlan);
         
-		List<AppliedCustomerBillingRate> acbrList = RevenueBillingMapper.toACBRList(rb, subscription);
+		List<AppliedCustomerBillingRate> acbrList = new RevenueBillingMapper(subscription, rb).generateACBRs();
         if (acbrList.isEmpty()) {
 //            throw new IllegalStateException("Failed to map RevenueBill and Subscription to AppliedCustomerBillingRate list");
         }
