@@ -231,6 +231,7 @@ public class PlanService implements InitializingBean {
     private void overwritingPlanByProductOffering(Plan plan, ProductOffering po, ProductOfferingPrice pop) throws BadRevenuePlanException {
         plan.setId(plan.generateId(po.getId(), pop.getId()));
         plan.setLifecycleStatus(po.getLifecycleStatus());
+        plan.setName(po.getName() + " - " + pop.getName());
         plan.setDescription(po.getDescription());
     }
 

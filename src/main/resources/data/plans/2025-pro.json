@@ -18,7 +18,7 @@
   "subscriptionDurationPeriodType": "MONTH",
   "agreements": [],
   "price": {
-    "name": "Price components for DOME Subscription Plan 2025",
+    "name": "Price components for ${subscription.name}",
     "isBundle": true,
     "currency": "EUR",
     "bundleOp": "CUMULATIVE",
