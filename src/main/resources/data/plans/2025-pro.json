@@ -1,7 +1,7 @@
 {
   "id": "urn:ngsi-ld:plan:55761it5-3d4q-2321-p009-44bro198re0q",
-  "name": "DOME Advanced Subscription plan for 2025",
-  "description": "DOME Advanced Subscription plan for 2025",
+  "name": "DOME Cloud Service Provider Subscription plan for 2025",
+  "description": "DOME Cloud Service Provider Subscription plan for 2025",
   "validFor": {
     "startDateTime": "2025-01-01T00:00:00Z",
     "endDateTime": "2025-12-31T23:59:59Z"
@@ -18,7 +18,7 @@
   "subscriptionDurationPeriodType": "MONTH",
   "agreements": [],
   "price": {
-    "name": "Price components for Advanced Subscription plan 2025",
+    "name": "Price components for DOME Cloud Service Provider Subscription plan for 2025",
     "isBundle": true,
     "currency": "EUR",
     "bundleOp": "CUMULATIVE",
