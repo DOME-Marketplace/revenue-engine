@@ -335,7 +335,7 @@ public Report getRevenueSection(String relatedPartyId) throws BadTmfDataExceptio
 
         LocalDate today = LocalDate.now();
 
-        LocalDate periodStart = today.minusMonths(1).withDayOfMonth(1);
+        LocalDate periodStart = today.minusMonths(1);
         LocalDate periodEnd = today.plusMonths(0).withDayOfMonth(today.plusMonths(0).lengthOfMonth());
 
         double yearlyTotal = 0.0;
