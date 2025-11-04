@@ -49,9 +49,13 @@ public class ReportingService implements InitializingBean {
 
 
 
-    public List<Report> totalSubscriptionRevenueSection() throws BadTmfDataException, BadRevenuePlanException, ExternalServiceException {
+    public List<Report> totalSubscriptionRevenueSection() 
+            throws BadTmfDataException, BadRevenuePlanException, ExternalServiceException {
+
         List<Subscription> subscriptions = subscriptionService.getAllSubscriptions();
-        if (subscriptions == null || subscriptions.isEmpty()) return List.of(new Report("Total Subscription Revenue", "No active subscriptions found"));
+        if (subscriptions == null || subscriptions.isEmpty()) {
+            return List.of(new Report("Total Subscription Revenue", "No active subscriptions found"));
+        }
 
         List<Report> cloudProviders = new ArrayList<>();
         List<Report> federatedProviders = new ArrayList<>();
@@ -60,6 +64,8 @@ public class ReportingService implements InitializingBean {
         String currency = "";
 
         LocalDate today = LocalDate.now();
+        LocalDate periodStart = today.withDayOfYear(1);
+        LocalDate periodEnd = today.withDayOfMonth(today.lengthOfMonth());
 
         for (Subscription sub : subscriptions) {
             try {
@@ -67,11 +73,16 @@ public class ReportingService implements InitializingBean {
                 if (items == null || items.isEmpty()) continue;
 
                 double yearlyTotal = items.stream()
-                        .filter(ri -> !ri.getChargeTime().toLocalDate().isAfter(today))
+                        .filter(ri -> {
+                            LocalDate chargeDate = ri.getChargeTime().toLocalDate();
+                            return !chargeDate.isBefore(periodStart) && !chargeDate.isAfter(periodEnd);
+                        })
                         .mapToDouble(RevenueItem::getOverallValue)
                         .sum();
 
-                if (currency.isEmpty() && !items.isEmpty() && items.get(0).getCurrency() != null) currency = items.get(0).getCurrency() + " ";
+                if (currency.isEmpty() && !items.isEmpty() && items.get(0).getCurrency() != null) {
+                    currency = items.get(0).getCurrency() + " ";
+                }
 
                 Product product = tmfDataRetriever.getProductById(sub.getId(), null);
                 String buyerId = product.getRelatedParty().stream()
@@ -87,32 +98,48 @@ public class ReportingService implements InitializingBean {
                     cloudProviders.add(new Report(name, currency + format(yearlyTotal)));
                     totalCloud += yearlyTotal;
                 }
+
             } catch (Exception e) {
                 logger.warn("Skipping subscription {} due to error: {}", sub.getId(), e.getMessage());
             }
         }
 
+        cloudProviders.sort((r1, r2) -> Double.compare(parseCurrency(r2.getText()), parseCurrency(r1.getText())));
+        federatedProviders.sort((r1, r2) -> Double.compare(parseCurrency(r2.getText()), parseCurrency(r1.getText())));
+
         List<Report> result = new ArrayList<>();
-        OffsetDateTime now = OffsetDateTime.now();
-        OffsetDateTime startOfYear = now.withDayOfYear(1);
+
         if (!cloudProviders.isEmpty()) {
-            result.add(new Report("Total Cloud Service Providers ("+now.toLocalDate()+" - "+startOfYear.toLocalDate()+") " + currency + format(totalCloud), cloudProviders));
-            List<Report> topCloud = cloudProviders.stream()
-                    .sorted((r1, r2) -> Double.compare(parseCurrency(r2.getText()), parseCurrency(r1.getText())))
-                    .limit(2).collect(Collectors.toList());
-            result.add(new Report("Top Cloud Service Providers ("+now.toLocalDate()+" - "+startOfYear.toLocalDate()+") ", topCloud));
+            result.add(new Report(
+                    "Total Cloud Service Providers (" + periodStart + " - " + periodEnd + "): " 
+                    + currency + format(totalCloud),
+                    cloudProviders
+            ));
+
+            List<Report> topCloud = cloudProviders.stream().limit(2).collect(Collectors.toList());
+            result.add(new Report(
+                    "Top Cloud Service Providers (" + periodStart + " - " + periodEnd + "): ",
+                    topCloud
+            ));
         }
 
         if (!federatedProviders.isEmpty()) {
-            result.add(new Report("Total Federated Marketplaces ("+now.toLocalDate()+" - "+startOfYear.toLocalDate()+") " + currency + format(totalFederated), federatedProviders));
-            List<Report> topFederated = federatedProviders.stream()
-                    .sorted((r1, r2) -> Double.compare(parseCurrency(r2.getText()), parseCurrency(r1.getText())))
-                    .limit(2).collect(Collectors.toList());
-            result.add(new Report("Top Federated Marketplaces ("+now.toLocalDate()+" - "+startOfYear.toLocalDate()+") ", topFederated));
+            result.add(new Report(
+                    "Total Federated Marketplaces (" + periodStart + " - " + periodEnd + "): " 
+                    + currency + format(totalFederated),
+                    federatedProviders
+            ));
+
+            List<Report> topFederated = federatedProviders.stream().limit(2).collect(Collectors.toList());
+            result.add(new Report(
+                    "Top Federated Marketplaces (" + periodStart + " - " + periodEnd + "): ",
+                    topFederated
+            ));
         }
 
         return result;
     }
+
 
     public List<Report> buildTopAndTotalBoxes(Report totalRevenueReport) {
         if (totalRevenueReport.getItems() == null || totalRevenueReport.getItems().isEmpty()) {
@@ -296,49 +323,64 @@ public class ReportingService implements InitializingBean {
         }
     }
 
-    public Report getRevenueSection(String relatedPartyId) throws BadTmfDataException, BadRevenuePlanException, ExternalServiceException {
-        try {
-            Subscription subscription = subscriptionService.getActiveSubscriptionByRelatedPartyId(relatedPartyId);
-            if (subscription == null || subscription.getId() == null || subscription.getId().isEmpty())
-                return new Report("Revenue Volume Monitoring", List.of(new Report("Error", "Invalid subscription ID")));
+public Report getRevenueSection(String relatedPartyId) throws BadTmfDataException, BadRevenuePlanException, ExternalServiceException {
+    try {
+        Subscription subscription = subscriptionService.getActiveSubscriptionByRelatedPartyId(relatedPartyId);
+        if (subscription == null || subscription.getId() == null || subscription.getId().isEmpty())
+            return new Report("Revenue Volume Monitoring", List.of(new Report("Error", "Invalid subscription ID")));
 
-            List<RevenueItem> items = statementsService.getItemsForSubscription(subscription.getId());
-            if (items == null || items.isEmpty())
-                return new Report("Revenue Volume Monitoring", "No revenue data available");
+        List<RevenueItem> items = statementsService.getItemsForSubscription(subscription.getId());
+        if (items == null || items.isEmpty())
+            return new Report("Revenue Volume Monitoring", "No revenue data available");
 
-            LocalDate today = LocalDate.now();
-            double yearlyTotal = 0.0;
-            double monthlyTotal = 0.0;
-            String currency = "";
-            String currentTier = "0% commission";
+        LocalDate today = LocalDate.now();
 
-            for (RevenueItem ri : items) {
-                LocalDate chargeDate = ri.getChargeTime().toLocalDate();
-                if (chargeDate.isAfter(today)) continue;
+        LocalDate periodStart = today.minusMonths(1).withDayOfMonth(1);
+        LocalDate periodEnd = today.plusMonths(0).withDayOfMonth(today.plusMonths(0).lengthOfMonth());
 
-                if (currency.isEmpty() && ri.getCurrency() != null) currency = ri.getCurrency() + " ";
-                yearlyTotal += ri.getOverallValue();
+        double yearlyTotal = 0.0;
+        double monthlyTotal = 0.0;
+        String currency = "";
+        String currentTier = "0% commission";
 
-                if (chargeDate.getMonth() == today.getMonth() && chargeDate.getYear() == today.getYear()) {
-                    monthlyTotal += ri.getOverallValue();
-                    RevenueItem tierItem = ri.getItems().stream().flatMap(i -> i.getItems().stream())
-                            .filter(i -> i.getOverallValue() > 0).findFirst().orElse(null);
-                    if (tierItem != null) currentTier = extractRevenueSharePercentage(tierItem) + " commission";
-                }
+        for (RevenueItem ri : items) {
+            LocalDate chargeDate = ri.getChargeTime().toLocalDate();
+
+            if (currency.isEmpty() && ri.getCurrency() != null)
+                currency = ri.getCurrency() + " ";
+
+            yearlyTotal += ri.getOverallValue();
+
+            if (!chargeDate.isBefore(periodStart) && !chargeDate.isAfter(periodEnd)) {
+                monthlyTotal += ri.getOverallValue();
+
+                RevenueItem tierItem = ri.getItems().stream()
+                        .flatMap(i -> i.getItems().stream())
+                        .filter(i -> i.getOverallValue() > 0)
+                        .reduce((first, second) -> second) 
+                        .orElse(null);
+
+
+                if (tierItem != null)
+                    currentTier = extractRevenueSharePercentage(tierItem) + " commission";
             }
-
-            List<Report> reportItems = new ArrayList<>();
-            reportItems.add(new Report("Current Monthly Revenue: ", currency + format(monthlyTotal)));
-            reportItems.add(new Report("Current Tier: ", currentTier));
-            reportItems.add(new Report("Yearly Total: ", currency + format(yearlyTotal)));
-
-            return new Report("Revenue Volume Monitoring", reportItems);
-        } catch (BadTmfDataException | BadRevenuePlanException | ExternalServiceException e) {
-            throw e;
-        } catch (Exception e) {
-            throw new ExternalServiceException("Unexpected error retrieving revenue section", e);
         }
+
+        List<Report> reportItems = new ArrayList<>();
+        reportItems.add(new Report("Current Monthly Revenue (" + periodStart + " - " + periodEnd + ")", 
+                currency + format(monthlyTotal)));
+        reportItems.add(new Report("Current Tier", currentTier));
+        reportItems.add(new Report("Yearly Total", currency + format(yearlyTotal)));
+
+        return new Report("Revenue Volume Monitoring", reportItems);
+
+    } catch (BadTmfDataException | BadRevenuePlanException | ExternalServiceException e) {
+        throw e;
+    } catch (Exception e) {
+        throw new ExternalServiceException("Unexpected error retrieving revenue section", e);
     }
+}
+
 
     public List<RevenueItem> getRevenueStatements(String relatedPartyId) throws BadTmfDataException, ExternalServiceException {
         try {
@@ -381,21 +423,22 @@ public class ReportingService implements InitializingBean {
 
     private String extractRevenueSharePercentage(RevenueItem item) {
         if (item == null) return "0%";
-        if (item.getValue() != null && item.getValue() > 0 && item.getName() != null && item.getName().contains("%")) {
-            String name = item.getName();
-            int percentIndex = name.indexOf("%");
-            if (percentIndex > 0) {
-                String beforePercent = name.substring(0, percentIndex);
-                String[] parts = beforePercent.split(" ");
-                return parts[parts.length - 1] + "%";
+        String found = "0%";
+
+        if (item.getName() != null && item.getName().matches(".*\\d+%.*")) {
+            java.util.regex.Matcher m = java.util.regex.Pattern.compile("(\\d+)%").matcher(item.getName());
+            while (m.find()) found = m.group(1) + "%";
+        }
+
+        if (item.getItems() != null && !item.getItems().isEmpty()) {
+            for (RevenueItem sub : item.getItems()) {
+                String subPct = extractRevenueSharePercentage(sub);
+                if (!"0%".equals(subPct)) found = subPct;
             }
         }
-        if (item.getItems() != null) {
-            for (RevenueItem subItem : item.getItems()) {
-                String percentage = extractRevenueSharePercentage(subItem);
-                if (!"0%".equals(percentage)) return percentage;
-            }
-        }
-        return "0%";
+
+        return found;
     }
+
+
 }
