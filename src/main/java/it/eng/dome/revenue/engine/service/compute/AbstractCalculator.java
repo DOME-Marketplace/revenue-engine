@@ -545,10 +545,11 @@ public abstract class AbstractCalculator implements Calculator {
 		}
 
 		try {
-			TimePeriod applicabilityTimePeriod = this.getApplicableTimePeriod(tp.getEndDateTime());
-
+			TimePeriod applicabilityTimePeriod = this.getApplicableTimePeriod(tp.getStartDateTime());		
+			
 			if(applicabilityTimePeriod!=null) {
 				Double applicableValue = this.metricsRetriever.computeValueForKey(this.item.getApplicableBase(), subscriberId, applicabilityTimePeriod);
+				
 				return applicableValue;
 			} else {
 				logger.debug("There's no applicableTimePeriod for {}. No applicableValue can be computed", this.item.getName());
