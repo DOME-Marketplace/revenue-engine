@@ -1,11 +1,30 @@
 package it.eng.dome.revenue.engine.service;
 
+import java.time.OffsetDateTime;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.TreeSet;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+import it.eng.dome.brokerage.billing.dto.BillingResponseDTO;
+import it.eng.dome.revenue.engine.exception.BadRevenuePlanException;
 import it.eng.dome.revenue.engine.exception.BadTmfDataException;
 import it.eng.dome.revenue.engine.exception.ExternalServiceException;
-import it.eng.dome.revenue.engine.exception.BadRevenuePlanException;
 import it.eng.dome.revenue.engine.invoicing.InvoicingService;
 import it.eng.dome.revenue.engine.mapper.RevenueBillingMapper;
-import it.eng.dome.revenue.engine.model.*;
+import it.eng.dome.revenue.engine.model.Plan;
+import it.eng.dome.revenue.engine.model.PlanResolver;
+import it.eng.dome.revenue.engine.model.RevenueBill;
+import it.eng.dome.revenue.engine.model.RevenueItem;
+import it.eng.dome.revenue.engine.model.Subscription;
+import it.eng.dome.revenue.engine.model.SubscriptionTimeHelper;
 import it.eng.dome.revenue.engine.model.comparator.RevenueBillComparator;
 import it.eng.dome.revenue.engine.service.cached.CachedPlanService;
 import it.eng.dome.revenue.engine.service.cached.CachedStatementsService;
@@ -15,14 +34,13 @@ import it.eng.dome.revenue.engine.utils.IdUtils;
 import it.eng.dome.revenue.engine.utils.TmfConverter;
 import it.eng.dome.tmforum.tmf637.v4.model.BillingAccountRef;
 import it.eng.dome.tmforum.tmf637.v4.model.Product;
-import it.eng.dome.tmforum.tmf678.v4.model.*;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
-
-import java.time.OffsetDateTime;
-import java.util.*;
+import it.eng.dome.tmforum.tmf678.v4.model.AppliedBillingTaxRate;
+import it.eng.dome.tmforum.tmf678.v4.model.AppliedCustomerBillingRate;
+import it.eng.dome.tmforum.tmf678.v4.model.BillRef;
+import it.eng.dome.tmforum.tmf678.v4.model.CustomerBill;
+import it.eng.dome.tmforum.tmf678.v4.model.Money;
+import it.eng.dome.tmforum.tmf678.v4.model.TaxItem;
+import it.eng.dome.tmforum.tmf678.v4.model.TimePeriod;
 
 @Service
 public class BillsService {
@@ -411,6 +429,7 @@ public class BillsService {
 		subscription.setPlan(resolvedPlan);
         
 		List<AppliedCustomerBillingRate> acbrList = new RevenueBillingMapper(subscription, rb).generateACBRs();
+		CustomerBill customerBill = new RevenueBillingMapper(subscription, rb).getCustomerBill();
         if (acbrList.isEmpty()) {
 //            throw new IllegalStateException("Failed to map RevenueBill and Subscription to AppliedCustomerBillingRate list");
         }
@@ -429,7 +448,7 @@ public class BillsService {
 //            throw new IllegalStateException("Failed to set customer bill reference on AppliedCustomerBillingRate list");
 //        }
         
-        acbrList = this.applyTaxes(acbrList);
+        acbrList = this.applyTaxes(customerBill, acbrList);
 //        if (acbrList == null) {
 //            throw new IllegalStateException("Failed to apply taxes to AppliedCustomerBillingRate list");
 //        }
@@ -441,23 +460,26 @@ public class BillsService {
  	 * 
  	 * @param acbrs is a list of ACBR
  	 * @return a list of ACBR with AppliedBillingTaxRate attribute for each object.
+     * @throws Exception 
  	*/
-    private List<AppliedCustomerBillingRate> applyTaxes(List<AppliedCustomerBillingRate> acbrs) throws Exception {
+    private List<AppliedCustomerBillingRate> applyTaxes(CustomerBill customerBill, List<AppliedCustomerBillingRate> acbrs) throws Exception {
 
-        if(acbrs==null || acbrs.isEmpty()) {
+        if (acbrs == null || acbrs.isEmpty()) {
             logger.info("no acbrs received, no taxes to apply");
             return acbrs;
-        }
-        else {
+        } else {
             // first, retrieve the product
             String productId = acbrs.get(0).getProduct().getId();
             Product product = tmfDataRetriever.getProductById(productId, null);
 
-            // invoke the invoicing servi
-            return this.invoicingService.applyTaxees(product, acbrs);
-        }
+            // invoke the invoicing service
+            BillingResponseDTO response = this.invoicingService.applyTaxees(product, customerBill, acbrs);
 
+            // return the updated ACBRs
+            return response.getAcbr();
+        }
     }
+
     
     /** Set Customer Bill Ref for each object in a List of Applied Customer Billing Rate
  	 * 
