@@ -1,30 +1,12 @@
 package it.eng.dome.revenue.engine.service;
 
-import java.time.OffsetDateTime;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.TreeSet;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
-
 import it.eng.dome.brokerage.billing.dto.BillingResponseDTO;
 import it.eng.dome.revenue.engine.exception.BadRevenuePlanException;
 import it.eng.dome.revenue.engine.exception.BadTmfDataException;
 import it.eng.dome.revenue.engine.exception.ExternalServiceException;
 import it.eng.dome.revenue.engine.invoicing.InvoicingService;
 import it.eng.dome.revenue.engine.mapper.RevenueBillingMapper;
-import it.eng.dome.revenue.engine.model.Plan;
-import it.eng.dome.revenue.engine.model.PlanResolver;
-import it.eng.dome.revenue.engine.model.RevenueBill;
-import it.eng.dome.revenue.engine.model.RevenueItem;
-import it.eng.dome.revenue.engine.model.Subscription;
-import it.eng.dome.revenue.engine.model.SubscriptionTimeHelper;
+import it.eng.dome.revenue.engine.model.*;
 import it.eng.dome.revenue.engine.model.comparator.RevenueBillComparator;
 import it.eng.dome.revenue.engine.service.cached.CachedPlanService;
 import it.eng.dome.revenue.engine.service.cached.CachedStatementsService;
@@ -34,13 +16,14 @@ import it.eng.dome.revenue.engine.utils.IdUtils;
 import it.eng.dome.revenue.engine.utils.TmfConverter;
 import it.eng.dome.tmforum.tmf637.v4.model.BillingAccountRef;
 import it.eng.dome.tmforum.tmf637.v4.model.Product;
-import it.eng.dome.tmforum.tmf678.v4.model.AppliedBillingTaxRate;
-import it.eng.dome.tmforum.tmf678.v4.model.AppliedCustomerBillingRate;
-import it.eng.dome.tmforum.tmf678.v4.model.BillRef;
-import it.eng.dome.tmforum.tmf678.v4.model.CustomerBill;
-import it.eng.dome.tmforum.tmf678.v4.model.Money;
-import it.eng.dome.tmforum.tmf678.v4.model.TaxItem;
-import it.eng.dome.tmforum.tmf678.v4.model.TimePeriod;
+import it.eng.dome.tmforum.tmf678.v4.model.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+import java.time.OffsetDateTime;
+import java.util.*;
 
 @Service
 public class BillsService {
@@ -82,7 +65,6 @@ public class BillsService {
         }
 
         return null;
-        
     }
     
     /** Retrieves all bills for a given subscription ID.
@@ -197,9 +179,12 @@ public class BillsService {
             throw new IllegalArgumentException("RevenueBill period or endDateTime is missing");
         }
 
+        BillingResponseDTO billingResponse = this.buildAndApplyTaxesForRevenueBill(rb);
+
+        CustomerBill cb = billingResponse.getCustomerBill();
+        List<AppliedCustomerBillingRate> acbrs = billingResponse.getAcbr();
+
 		Subscription sub = subscriptionService.getSubscriptionByProductId(rb.getSubscriptionId());
-        
-        CustomerBill cb = new RevenueBillingMapper(sub, rb).getCustomerBill();
 
 		try {
 			cb.setBillingAccount(TmfConverter.convertBillingAccountRefTo678(tmfDataRetriever.retrieveBillingAccountByProductId(rb.getSubscriptionId())));
@@ -234,169 +219,8 @@ public class BillsService {
         if(resolvedPlan.getBillCycleSpecification()!=null && resolvedPlan.getBillCycleSpecification().getPaymentDueDateOffset()!=null)
             paymentDueDate = paymentDueDate.plusDays(resolvedPlan.getBillCycleSpecification().getPaymentDueDateOffset());
 		cb.setPaymentDueDate(paymentDueDate);
-		
-		//apply tax
-		List<AppliedCustomerBillingRate> acbrs = this.getACBRsByRevenueBill(rb);
-	
-		List<TaxItem> taxItems = this.getTaxItemListFromACBRs(acbrs);
-    	
-    	cb.setTaxItem(taxItems);
-        
-    	//amounts
-    	Money taxIncludedTaxes = this.computeTaxIncludedAmount(acbrs);
-        cb.setTaxIncludedAmount(taxIncludedTaxes);
-		cb.setAmountDue(taxIncludedTaxes);
-		cb.setRemainingAmount(taxIncludedTaxes);
-		
-        //check null condition
+
         return cb;
-    }
-    
-    /**
-     * Extracts and aggregates TaxItem objects from a list of AppliedCustomerBillingRate.
-     * Groups results by (taxCategory + taxRate).
-     *
-     * @param acbrs list of AppliedCustomerBillingRate
-     * @return aggregated list of TaxItem
-     * @throws IllegalArgumentException if the input list is null
-     */
-    private List<TaxItem> getTaxItemListFromACBRs(List<AppliedCustomerBillingRate> acbrs) {
-        if (acbrs == null) {
-            throw new IllegalArgumentException("Input list of AppliedCustomerBillingRate cannot be null");
-        }
-
-        Map<String, TaxItem> taxItemsMap = new HashMap<>();
-
-        for (AppliedCustomerBillingRate acbr : acbrs) {
-            if (acbr == null) {
-                throw new IllegalArgumentException("AppliedCustomerBillingRate element cannot be null");
-            }
-            if (acbr.getAppliedTax() == null) {
-                continue; // no taxes applied, skip
-            }
-
-            for (AppliedBillingTaxRate abtr : acbr.getAppliedTax()) {
-                if (abtr == null) {
-                    throw new IllegalArgumentException("AppliedBillingTaxRate element cannot be null");
-                }
-
-                TaxItem newItem = this.getTaxItemFromABTR(abtr, acbr.getTaxExcludedAmount());
-
-                if (newItem.getTaxCategory() == null || newItem.getTaxRate() == null) {
-                    throw new IllegalArgumentException("Generated TaxItem or its key fields cannot be null");
-                }
-
-                // Unique key: taxCategory + taxRate
-                String key = newItem.getTaxCategory() + "|" + newItem.getTaxRate();
-
-                taxItemsMap.merge(key, newItem, (existing, incoming) -> {
-                    existing.setTaxAmount(sumMoney(existing.getTaxAmount(), incoming.getTaxAmount()));
-                    return existing;
-                });
-            }
-        }
-
-        return new ArrayList<>(taxItemsMap.values());
-    }
-
-    /**
-     * Adds two Money objects, ensuring that both are non-null and use the same unit.
-     * If either argument is null, an IllegalArgumentException is thrown.
-     *
-     * @param a first Money
-     * @param b second Money
-     * @return a new Money instance with the summed value
-     * @throws IllegalArgumentException if one of the arguments is null or units differ
-     */
-    private Money sumMoney(Money a, Money b) {
-        if (a == null || b == null) {
-            throw new IllegalArgumentException("Cannot sum Money: one of the arguments is null");
-        }
-
-        if (!a.getUnit().equals(b.getUnit())) {
-            throw new IllegalArgumentException(
-                "Cannot sum Money with different units: " + a.getUnit() + " vs " + b.getUnit()
-            );
-        }
-
-        Money result = new Money();
-        result.setUnit(a.getUnit());
-        if (a.getValue() == null || b.getValue() == null) {
-            throw new IllegalArgumentException("Cannot sum Money: one of the values is null");
-        }
-        result.setValue(a.getValue() + b.getValue());
-        return result;
-    }
-
-    /**
-     * Converts an AppliedBillingTaxRate into a TaxItem and calculates its taxAmount.
-     *
-     * @param abtr AppliedBillingTaxRate object (must not be null)
-     * @param taxExcludedAmount Money representing the base amount (must not be null)
-     * @return TaxItem with taxCategory, taxRate, and calculated taxAmount
-     * @throws IllegalArgumentException if any argument is null or contains invalid data
-     */
-    private TaxItem getTaxItemFromABTR(AppliedBillingTaxRate abtr, Money taxExcludedAmount) {
-    	if (abtr == null) {
-            throw new IllegalArgumentException("AppliedBillingTaxRate cannot be null");
-        }
-        if (taxExcludedAmount == null) {
-            throw new IllegalArgumentException("taxExcludedAmount cannot be null");
-        }
-        if (taxExcludedAmount.getValue() == null || taxExcludedAmount.getUnit() == null) {
-            throw new IllegalArgumentException("taxExcludedAmount must have non-null value and unit");
-        }
-        
-        // convert AppliedBillingTaxRate to TaxItem (fills taxCategory and taxRate)
-		TaxItem taxItem = new RevenueBillingMapper().getTaxItem(abtr);
-		
-		// calculate tax amount
-        if(taxItem.getTaxRate() == null) {
-        	throw new IllegalArgumentException("AppliedBillingTaxRate must have a non-null taxRate");
-        }
-		Float taxAmount = (taxExcludedAmount.getValue() * taxItem.getTaxRate());
-		Money taxAmountMoney = new Money();
-        taxAmountMoney.setUnit(taxExcludedAmount.getUnit());
-        taxAmountMoney.setValue(taxAmount);
-        taxItem.setTaxAmount(taxAmountMoney);
-        
-        return taxItem;
-    }
-    
-    /**
-     * Computes the total tax-included amount from a list of AppliedCustomerBillingRate.
-     * Sums the taxIncludedAmount of each rate, assuming all amounts have the same currency/unit.
-     *
-     * @param acbrs List of AppliedCustomerBillingRate (must not be null or contain null elements)
-     * @return Money object representing the total tax-included amount
-     * @throws IllegalArgumentException if the list is null, empty, or contains invalid Money objects
-     */
-    private Money computeTaxIncludedAmount(List<AppliedCustomerBillingRate> acbrs) {
-
-        if (acbrs == null || acbrs.isEmpty()) {
-            logger.debug("empty or null acbr list. Returning amount of zero");
-//            throw new IllegalArgumentException("AppliedCustomerBillingRate list cannot be null or empty");
-            return new Money().value(0f);
-        }
-    	
-    	float sum = 0.0f;
-    	String unit = null;
-    	
-    	for (AppliedCustomerBillingRate acbr : acbrs) {
-            if(acbr.getTaxIncludedAmount() == null || acbr.getTaxIncludedAmount().getValue() == null) {
-                	throw new IllegalArgumentException("Each AppliedCustomerBillingRate must have a non-null taxIncludedAmount with a value");
-            }
-            sum = sum + acbr.getTaxIncludedAmount().getValue();
-    		if(unit == null || !unit.equals(acbr.getTaxIncludedAmount().getUnit())) {
-    			unit = acbr.getTaxIncludedAmount().getUnit();
-    		}
-		}
-    	
-    	Money m = new Money();
-    	m.setUnit(unit);
-    	m.setValue(sum);
-    	
-    	return m;
     }
     
     /**
@@ -416,57 +240,57 @@ public class BillsService {
         if (rb.getRelatedParties() == null || rb.getRelatedParties().isEmpty()) {
             throw new IllegalArgumentException("Missing related party information in RevenueBill");
         }
-        
+
+        BillingResponseDTO billingResponse = this.buildAndApplyTaxesForRevenueBill(rb);
+        return billingResponse.getAcbr();
+    }
+
+    /**
+     * Centralized method that builds CustomerBill and ACBRs from a RevenueBill
+     * and applies taxes in one clean step.
+     */
+    public BillingResponseDTO buildAndApplyTaxesForRevenueBill(RevenueBill rb) throws Exception {
+        if (rb == null) throw new IllegalArgumentException("RevenueBill cannot be null");
+
         Subscription subscription = subscriptionService.getSubscriptionByProductId(rb.getSubscriptionId());
-        
-        if (subscription == null) {
+        if (subscription == null)
             throw new IllegalStateException("Subscription not found for subscriptionId: " + rb.getSubscriptionId());
+
+        Plan resolvedPlan = planService.getResolvedPlanById(subscription.getPlan().getId(), subscription);
+        subscription.setPlan(resolvedPlan);
+
+        // Build base structures
+        RevenueBillingMapper mapper = new RevenueBillingMapper(subscription, rb);
+        CustomerBill cb = mapper.getCustomerBill();
+        List<AppliedCustomerBillingRate> acbrList = mapper.generateACBRs();
+
+        // Set references
+        acbrList = setRelatedParties(acbrList, rb);
+        acbrList = setBillingAccountRef(acbrList, subscription.getId());
+        acbrList = setCustomerBillRef(acbrList, rb);
+
+        // Apply taxes through invoicing service
+        BillingResponseDTO response = this.applyTaxes(cb, acbrList);
+        if (response == null) {
+            throw new IllegalStateException("applyTaxes returned null response");
         }
-        
-		Plan plan = planService.getPlanById(subscription.getPlan().getId());
-		PlanResolver planResolver = new PlanResolver(subscription);
-		Plan resolvedPlan = planResolver.resolve(plan);
-		subscription.setPlan(resolvedPlan);
-        
-		List<AppliedCustomerBillingRate> acbrList = new RevenueBillingMapper(subscription, rb).generateACBRs();
-		CustomerBill customerBill = new RevenueBillingMapper(subscription, rb).getCustomerBill();
-        if (acbrList.isEmpty()) {
-//            throw new IllegalStateException("Failed to map RevenueBill and Subscription to AppliedCustomerBillingRate list");
-        }
-        
-        for (AppliedCustomerBillingRate acbr : acbrList) {
-			acbr.setRelatedParty(rb.getRelatedParties());
-		}
-        
-        acbrList = this.setBillingAccountRef(acbrList, subscription.getId());
-//        if (acbrList == null || acbrList.isEmpty()) {
-//            throw new IllegalStateException("Failed to set billing account reference on AppliedCustomerBillingRate list");
-//        }
-        
-        acbrList = this.setCustomerBillRef(acbrList, rb);
-//        if (acbrList == null || acbrList.isEmpty()) {
-//            throw new IllegalStateException("Failed to set customer bill reference on AppliedCustomerBillingRate list");
-//        }
-        
-        acbrList = this.applyTaxes(customerBill, acbrList);
-//        if (acbrList == null) {
-//            throw new IllegalStateException("Failed to apply taxes to AppliedCustomerBillingRate list");
-//        }
-        
-        return acbrList;
+
+        return response;
     }
 
     /** Apply Taxes on a list of ACBR
  	 * 
  	 * @param acbrs is a list of ACBR
  	 * @return a list of ACBR with AppliedBillingTaxRate attribute for each object.
-     * @throws Exception 
  	*/
-    private List<AppliedCustomerBillingRate> applyTaxes(CustomerBill customerBill, List<AppliedCustomerBillingRate> acbrs) throws Exception {
+    private BillingResponseDTO applyTaxes(CustomerBill customerBill, List<AppliedCustomerBillingRate> acbrs) throws Exception {
 
         if (acbrs == null || acbrs.isEmpty()) {
             logger.info("no acbrs received, no taxes to apply");
-            return acbrs;
+            return null;
+        } else if (customerBill == null) {
+            logger.info("no customer bill received, no taxes to apply");
+            return null;
         } else {
             // first, retrieve the product
             String productId = acbrs.get(0).getProduct().getId();
@@ -476,11 +300,31 @@ public class BillsService {
             BillingResponseDTO response = this.invoicingService.applyTaxees(product, customerBill, acbrs);
 
             // return the updated ACBRs
-            return response.getAcbr();
+            return response;
         }
     }
 
-    
+    /** Set Related Parties ref for each object in a List of Applied Customer Billing Rate
+     *
+     * @param acbrs is a list of ACBR
+     * @param rb is a RevenueBill used to generate a CustomerBill id
+     * @return a list of ACBR with Customer Bill Ref attribute for each object.
+     */
+    private List<AppliedCustomerBillingRate> setRelatedParties(List<AppliedCustomerBillingRate> acbrs, RevenueBill rb) {
+        List<RelatedParty> relatedParties = rb.getRelatedParties();
+
+        if (relatedParties == null || relatedParties.isEmpty()) {
+            logger.warn("No relatedParties found for RevenueBill {}", rb.getId());
+            return acbrs;
+        }
+
+        for (AppliedCustomerBillingRate acbr : acbrs) {
+            acbr.setRelatedParty(relatedParties);
+        }
+
+        return acbrs;
+    }
+
     /** Set Customer Bill Ref for each object in a List of Applied Customer Billing Rate
  	 * 
  	 * @param acbrs is a list of ACBR
@@ -505,10 +349,8 @@ public class BillsService {
  	 * @param acbrs is a list of ACBR
  	 * @param subscriptionId is a Subscription ID used to retrieve Billing Account
  	 * @return a list of ACBR with Billing Account Ref attribute for each object.
-     * @throws ExternalServiceException 
-     * @throws BadTmfDataException 
  	*/
-  private List<AppliedCustomerBillingRate> setBillingAccountRef(List<AppliedCustomerBillingRate> acbrs, String subscriptionId) throws BadTmfDataException, ExternalServiceException {
+    private List<AppliedCustomerBillingRate> setBillingAccountRef(List<AppliedCustomerBillingRate> acbrs, String subscriptionId) throws BadTmfDataException, ExternalServiceException {
 	  BillingAccountRef billingAccountRef = tmfDataRetriever.retrieveBillingAccountByProductId(subscriptionId);
 	  if (billingAccountRef == null) {
 		  logger.warn("toCB: billingAccountRef is null, CustomerBill will have null billingAccount");
