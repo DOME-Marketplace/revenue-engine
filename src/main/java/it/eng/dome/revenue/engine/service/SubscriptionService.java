@@ -43,8 +43,7 @@ public class SubscriptionService implements InitializingBean {
     /*
      * Retrieves a subscription by its product ID.
      */
-    public Subscription getSubscriptionByProductId(String productId)
-            throws BadTmfDataException, ExternalServiceException {
+    public Subscription getSubscriptionByProductId(String productId) throws BadTmfDataException, ExternalServiceException {
 
         if (productId == null || productId.isEmpty()) {
             throw new BadTmfDataException("Product", productId, "Product ID cannot be null or empty");
@@ -70,7 +69,6 @@ public class SubscriptionService implements InitializingBean {
      * Retrieves all subscriptions associated with the DOME operator.
      * 
      * @return A list of Subscription objects.
-     * @throws BadTmfDataException 
      */
     public List<Subscription> getAllSubscriptions() throws ExternalServiceException, BadTmfDataException {
         logger.info("Fetching subscriptions from tmf products");
@@ -116,7 +114,6 @@ public class SubscriptionService implements InitializingBean {
      * 
      * @param id The ID of the related party to search for.
      * @return The Subscription object if found, null otherwise.
-     * @throws BadTmfDataException 
      */
     public Subscription getActiveSubscriptionByRelatedPartyId(String id) throws ExternalServiceException, BadTmfDataException {
         logger.debug("Retrieving active subscription by related party id: {}", id);
@@ -138,7 +135,6 @@ public class SubscriptionService implements InitializingBean {
      * 
      * @param id related party id
      * @param role role of related party
-     * @throws BadTmfDataException 
      */
     public List<Subscription> getSubscriptionsByRelatedPartyId(String id, Role role) throws ExternalServiceException, BadTmfDataException {
         return RelatedPartyUtils.retainSubscriptionsWithParty(this.getAllSubscriptions(), id, role);
@@ -149,7 +145,6 @@ public class SubscriptionService implements InitializingBean {
      * 
      * @param id The ID of the plan to filter subscriptions by.
      * @return A list of Subscription objects that match the given plan ID.
-     * @throws BadTmfDataException 
      */
     public List<Subscription> getSubscriptionsByPlanId(String id) throws ExternalServiceException, BadTmfDataException {
         logger.debug("Retrieving subscriptions by plan ID: {}", id);

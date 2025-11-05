@@ -553,42 +553,20 @@ public abstract class AbstractCalculator implements Calculator {
 			return null;
 		}
 
-		TimePeriod applicabilityTimePeriod = this.getApplicableTimePeriod(tp.getEndDateTime());
+		try {
+			TimePeriod applicabilityTimePeriod = this.getApplicableTimePeriod(tp.getStartDateTime());
 
-		if(applicabilityTimePeriod!=null) {
-			Double applicableValue = this.metricsRetriever.computeValueForKey(this.item.getApplicableBase(), subscriberId, applicabilityTimePeriod);
-			return applicableValue;
-		} else {
-			logger.debug("There's no applicableTimePeriod for {}. No applicableValue can be computed", this.item.getName());
+			if(applicabilityTimePeriod!=null) {
+				Double applicableValue = this.metricsRetriever.computeValueForKey(this.item.getApplicableBase(), subscriberId, applicabilityTimePeriod);
+				return applicableValue;
+			} else {
+				logger.debug("There's no applicableTimePeriod for {}. No applicableValue can be computed", this.item.getName());
+				return null;
+			}
+		} catch (Exception e) {
+			logger.error("Error computing applicable value for base '{}': {}", this.item.getApplicableBase(), e.getMessage(), e);
 			return null;
 		}
-		
-	}
-
-	protected Double getComputationBase(String sellerId, TimePeriod timePeriod, Map<String, Double> computeContext) throws ExternalServiceException, BadTmfDataException {
-        if ("parent-price".equals(this.item.getComputationBase()) && computeContext.containsKey("parent-price")) {
-            // TODO: make this more generic to look for any key in the map first; and only after ask the metrics retriever.
-            Double computationBase = computeContext.get("parent-price");
-            logger.debug("Using parent price amount as computation base: {}", computationBase);
-            this.getCalculatorContext().put("computationbase", computationBase.toString());
-            return computationBase;
-        } else {
-            TimePeriod computationPeriod = this.getComputationTimePeriod(timePeriod.getEndDateTime().minusSeconds(1));
-            if (computationPeriod == null) {
-                logger.debug("Could not compute custom period for reference: {}", this.item.getComputationBaseReferencePeriod());
-                return null;
-            }
-            logger.debug("Using custom period for {}: {} - {}, based on reference: {}", this.item.getComputationBaseReferencePeriod(), computationPeriod.getStartDateTime(), computationPeriod.getEndDateTime());
-            Double computationBase = this.metricsRetriever.computeValueForKey(this.item.getComputationBase(), sellerId, computationPeriod);
-            if(computationBase==null) {
-                logger.debug("Computation value is null");
-                return null;
-            }
-            logger.info("Computation base {} for metric '{}' in period {} - {} for seller {}",
-                computationBase, this.item.getComputationBase(), computationPeriod.getStartDateTime(), computationPeriod.getEndDateTime(), sellerId);				
-            this.getCalculatorContext().put("computationbase", computationBase.toString());
-            return computationBase;
-        }
 	}
 
 

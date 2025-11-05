@@ -1,6 +1,5 @@
 package it.eng.dome.revenue.engine.invoicing;
 
-import java.util.Arrays;
 import java.util.List;
 
 import org.slf4j.Logger;
@@ -17,34 +16,48 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 
+import it.eng.dome.brokerage.billing.dto.BillingResponseDTO;
 import it.eng.dome.brokerage.observability.info.Info;
 import it.eng.dome.brokerage.utils.enumappers.TMF637EnumModule;
+import it.eng.dome.brokerage.utils.enumappers.TMF678EnumModule;
 import it.eng.dome.tmforum.tmf637.v4.model.Product;
 import it.eng.dome.tmforum.tmf678.v4.model.AppliedCustomerBillingRate;
+import it.eng.dome.tmforum.tmf678.v4.model.CustomerBill;
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
 class LocalApplyTaxesRequestDTO {
-	
-	@JsonProperty("product")
-	private Product product;
-   
-	@JsonProperty("appliedCustomerBillingRate")
-	private List<AppliedCustomerBillingRate> appliedCustomerBillingRate;
 
-	public Product getProduct() {
-		return product;
+    @JsonProperty("product")
+    private Product product;
+
+    @JsonProperty("customerBill")
+    private CustomerBill customerBill;
+
+    @JsonProperty("appliedCustomerBillingRate")
+    private List<AppliedCustomerBillingRate> appliedCustomerBillingRate;
+
+    public Product getProduct() { 
+    	return product; 
+	}
+    
+    public void setProduct(Product product) { 
+    	this.product = product; 
 	}
 
-	public void setProduct(Product product) {
-		this.product = product;
+    public CustomerBill getCustomerBill() {
+    	return customerBill; 
+	}
+    
+    public void setCustomerBill(CustomerBill customerBill) {
+    	this.customerBill = customerBill; 
 	}
 
-	public List<AppliedCustomerBillingRate> getAppliedCustomerBillingRate() {
-		return appliedCustomerBillingRate;
+    public List<AppliedCustomerBillingRate> getAppliedCustomerBillingRate() { 
+    	return appliedCustomerBillingRate; 
 	}
-
-	public void setAppliedCustomerBillingRate(List<AppliedCustomerBillingRate> appliedCustomerBillingRate) {
-		this.appliedCustomerBillingRate = appliedCustomerBillingRate;
+    
+    public void setAppliedCustomerBillingRate(List<AppliedCustomerBillingRate> appliedCustomerBillingRate) {
+    	this.appliedCustomerBillingRate = appliedCustomerBillingRate; 
 	}
 }
 
@@ -70,58 +83,70 @@ public class InvoicingService {
         this.outMapper.registerModule(new JavaTimeModule());
         // enum mapper for TMF637
         this.outMapper.registerModule(new TMF637EnumModule());
+        // enum mapper for TMF678
+        this.outMapper.registerModule(new TMF678EnumModule());
     }
-
     /**
      * Applies taxes to a list of ACBRs for a given product.
      * The invoicing service returns a JSON object containing a field "appliedCustomerBillingRate" 
      * which is a list of enriched ACBRs.
+     * @throws Exception 
      */
-    public List<AppliedCustomerBillingRate> applyTaxees(Product product, List<AppliedCustomerBillingRate> acbrs) throws Exception {
-
-        // Prepare DTO
+    public BillingResponseDTO applyTaxees(Product product, CustomerBill customerBill, List<AppliedCustomerBillingRate> acbrs) throws Exception {
         LocalApplyTaxesRequestDTO dto = new LocalApplyTaxesRequestDTO();
         dto.setProduct(product);
+        dto.setCustomerBill(customerBill);
         dto.setAppliedCustomerBillingRate(acbrs);
 
         try {
-
             String outJson = this.outMapper.writeValueAsString(dto);
+            logger.debug("Sending payload to invoicing service: {}", outJson);
 
-            RestClient defaultClient = RestClient.create();
-            ResponseEntity<AppliedCustomerBillingRate[]> response = defaultClient.post()
-                .uri(invoicingServiceEndpoint + "/invoicing/applyTaxes")
-                .contentType(MediaType.APPLICATION_JSON)
-                .body(outJson)
-                .accept(MediaType.APPLICATION_JSON)
-                .retrieve()
-                .toEntity(AppliedCustomerBillingRate[].class);
+            RestClient client = RestClient.create();
 
-            return Arrays.asList(response.getBody());
+            ResponseEntity<String> response = client.post()
+                    .uri(invoicingServiceEndpoint + "/invoicing/applyTaxes")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .body(outJson)
+                    .accept(MediaType.APPLICATION_JSON)
+                    .retrieve()
+                    .toEntity(String.class);
+
+            String bodyString = response.getBody();
+            logger.debug("Raw invoicing response: {}", bodyString);
+
+            BillingResponseDTO result = outMapper.readValue(bodyString, BillingResponseDTO.class);
+            if (result == null) {
+                logger.warn("Empty body from invoicing service, returning fallback BillingResponseDTO");
+                return new BillingResponseDTO(customerBill, acbrs);
+            }
+
+            logger.info("Taxes successfully applied by invoicing service.");
+            return result;
+
         } catch (Exception e) {
             logger.error("Failed to parse JSON response from invoicing service: {}", e.getMessage());
             throw(e);
-//            return acbrs;
         }
     }
-
 
     /**
      * Calls the invoicing service endpoint for getting info.
      */
-    public Info getInfo() throws Exception {
+    public Info getInfo() {
         try {
-            RestClient defaultClient = RestClient.create();
-            ResponseEntity<Info> response = defaultClient.get()
-                .uri(invoicingServiceEndpoint + "/invoicing/info")
-                .accept(MediaType.APPLICATION_JSON)
-                .retrieve()
-                .toEntity(Info.class);
+            RestClient client = RestClient.create();
+            ResponseEntity<Info> response = client.get()
+                    .uri(invoicingServiceEndpoint + "/invoicing/info")
+                    .accept(MediaType.APPLICATION_JSON)
+                    .retrieve()
+                    .toEntity(Info.class);
+
             return response.getBody();
+
         } catch (Exception e) {
             logger.error("Exception calling invoicing service: ", e);
             throw(e);
         }
-    }    
-
+    }
 }
