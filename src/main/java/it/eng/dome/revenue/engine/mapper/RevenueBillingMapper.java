@@ -41,13 +41,15 @@ public class RevenueBillingMapper {
 		prefixNames(this.revenueBill);
 	}
 
+	/*
+	 * REVENUE BILL TO ACBR
+	 */
+
 	/**
-	 * Maps a RevenueBill object to a list of AppliedCustomerBillingRate objects.
-	 * This method iterates through the revenue items of the RevenueBill,
-	 * and for each item, it recursively collects all leaf-level RevenueItems
-	 * to be converted into AppliedCustomerBillingRate objects.
-	 * @return A List of AppliedCustomerBillingRate objects, or an empty list if the input RevenueBill is null or has no revenue items.
-	*/
+	 * Generates a flat list of {@link AppliedCustomerBillingRate} from the revenue bill.
+	 *
+	 * @return list of generated ACBRs
+	 */
 	public List<AppliedCustomerBillingRate> generateACBRs() {
 
 	    List<AppliedCustomerBillingRate> acbrs = new ArrayList<>();
@@ -60,15 +62,13 @@ public class RevenueBillingMapper {
 
 	    return acbrs;
 	}
-	
+
 	/**
-	 * Recursively traverses the hierarchy of a RevenueItem to find all "leaf" nodes.
-	 * A leaf node is a RevenueItem that does not contain any child items.
-	 * Once a leaf node is found, it is mapped to an AppliedCustomerBillingRate object
-	 * and added to the provided list.
+	 * Recursively generates ACBRs from a revenue item and its children.
 	 *
-	 * @param revenueItem The current RevenueItem in the traversal.
-	*/
+	 * @param revenueItem the root revenue item
+	 * @return list of generated ACBRs
+	 */
 	private List<AppliedCustomerBillingRate> generateACBRs(RevenueItem revenueItem) {
 
 	    List<AppliedCustomerBillingRate> acbrs = new ArrayList<>();
@@ -97,14 +97,11 @@ public class RevenueBillingMapper {
 	}
 
 	/**
-	 * Maps a single RevenueItem to an AppliedCustomerBillingRate (ACBR) object.
-	 * This method creates a new ACBR instance and populates its fields with data
-	 * from the provided RevenueItem, RevenueBill, Subscription, and BillingAccountRef.
+	 * Builds an {@link AppliedCustomerBillingRate} from a single {@link RevenueItem}.
 	 *
-	 * @param item The RevenueItem to be mapped. This is expected to be a "leaf" item from the bill's hierarchy.
-	 * @return A new AppliedCustomerBillingRate object populated with the provided data, or null if the input item is null.
-	 * @throws IllegalArgumentException if the RevenueBill or its period are null, as these are mandatory for the ACBR.
-	*/
+	 * @param item the revenue item to convert
+	 * @return the generated ACBR or null if invalid
+	 */
 	private AppliedCustomerBillingRate generateAppliedCustomerBillingRate(RevenueItem item) {
 
 	    if (item == null) {
@@ -157,14 +154,11 @@ public class RevenueBillingMapper {
 	 */
 
 	/**
-	 * Maps a RevenueBill object to a CustomerBill object, following the TMF678 specification.
-	 * This method populates the CustomerBill's fields such as ID, dates, billing period,
-	 * amounts, taxes, and related parties based on the provided RevenueBill.
+	 * Maps a {@link RevenueBill} to a {@link CustomerBill}.
 	 *
-	 * @param revenueBill The RevenueBill object containing the source data.
-	 * @return A new CustomerBill object populated with the mapped data.
-	 * @throws IllegalArgumentException if the provided RevenueBill is null.
-	*/
+	 * @return the generated customer bill
+	 * @throws IllegalArgumentException if the revenue bill is null
+	 */
 	public CustomerBill getCustomerBill() {
 		if (revenueBill == null) {
 		    logger.error("toCB: RevenueBill is null, cannot map to CustomerBill");
@@ -206,7 +200,13 @@ public class RevenueBillingMapper {
 //        cb.setPaymentMethod(null);
         return cb;
     }
-	
+
+	/**
+	 * Converts an {@link AppliedBillingTaxRate} into a {@link TaxItem}.
+	 *
+	 * @param abtr the applied billing tax rate
+	 * @return a corresponding tax item
+	 */
 	public TaxItem getTaxItem(AppliedBillingTaxRate abtr) {
 		TaxItem out = new TaxItem();
 		out.setTaxCategory(abtr.getTaxCategory());
@@ -214,6 +214,12 @@ public class RevenueBillingMapper {
 		return out;
 	}
 
+	/**
+	 * Adds hierarchical prefixes to item names within a {@link RevenueBill}.
+	 *
+	 * @param revenueBill the revenue bill to modify
+	 * @return the same revenue bill with prefixed names
+	 */
 	private static RevenueBill prefixNames(RevenueBill revenueBill) {
 		if(revenueBill!=null) {
 			if(revenueBill.getRevenueItems()!=null) {
@@ -226,6 +232,13 @@ public class RevenueBillingMapper {
 		return revenueBill;
 	}
 
+	/**
+	 * Adds a hierarchical prefix to a single {@link RevenueItem} and its children.
+	 *
+	 * @param revenueItem the revenue item to modify
+	 * @param prefix      the prefix to apply
+	 * @return the same revenue item with updated names
+	 */
 	private static RevenueItem prefixNames(RevenueItem revenueItem, String prefix) {
 		if(revenueItem!=null) {
 			if(prefix!=null)
