@@ -60,7 +60,6 @@ public class ForEachCalculator extends AbstractCalculator {
 
 					for (PlanItem childItem : this.item.getBundleItems()) {
 
-
 						Calculator childCalc = CalculatorFactory.getCalculatorFor(this.getSubscription(), childItem, this);
 						// update the context, to force the calculator to consider the sub-seller, instead of the subscriber
 						childCalc.getCalculatorContext().put("sellerId", activeSellerId);

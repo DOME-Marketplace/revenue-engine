@@ -33,7 +33,7 @@ public class CumulativeCalculator extends AbstractCalculator {
             sellerId = this.getCalculatorContext().get("sellerId");
 		this.getComputationBase(sellerId, timePeriod, computeContext);
 
-		// first process prices
+		// first process child prices
 		for (PlanItem price : bundleItems) {
 			if(!(price instanceof Price))
 				continue;
@@ -68,11 +68,14 @@ public class CumulativeCalculator extends AbstractCalculator {
 	        }
 	    }
 
-		if (cumulativeRevenueItem.getItems().isEmpty()) {
-			return null;
-		} else {
-			return cumulativeRevenueItem;
-		}
+		// if (cumulativeRevenueItem.getItems().isEmpty()) {
+		// 	return null;
+		// } else {
+		// 	return cumulativeRevenueItem;
+		// }
+
+		return cumulativeRevenueItem;
+
 	}
 
 }

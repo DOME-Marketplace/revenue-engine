@@ -106,21 +106,21 @@ public class RevenueItemResolver {
             case "subscription.name":
                 return this.subscription.getName();
             case "subscription.startdate":
-                return this.subscription.getStartDate().toString();
+                return this.subscription.getStartDate().toString().substring(0, 10);
             case "chargetime":
-                return this.item.getChargeTime().toString();
+                return this.item.getChargeTime().toString().substring(0, 10);
             case "period.startdate":
                 if(this.period!=null) {
                     OffsetDateTime odt = this.period.getStartDateTime();
                     if(odt!=null)
-                        return odt.toString();
+                        return odt.toString().substring(0, 10);
                 }
                 break;
             case "period.enddate":
                 if(this.period!=null) {
                     OffsetDateTime odt = this.period.getEndDateTime();
                     if(odt!=null)
-                        return odt.toString();
+                        return odt.toString().substring(0, 10);
                 }
                 break;
             case "seller.tradingname": 

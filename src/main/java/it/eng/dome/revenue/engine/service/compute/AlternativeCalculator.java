@@ -64,9 +64,9 @@ public class AlternativeCalculator extends AbstractCalculator {
 			}
 		}
 
-		if (wrapper.getItems().isEmpty()) {
-			return null;
-		}
+//		if (wrapper.getItems().isEmpty()) {
+//			return null;
+//		}
 
 		return wrapper;
 	}
