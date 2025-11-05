@@ -43,14 +43,14 @@ public class ForEachCalculator extends AbstractCalculator {
 		if("activeSellersIncludedMarketplace".equalsIgnoreCase(iterateOver)) {
 			// retrieve the possible values
 			try {
-				List<String> distinctValues = this.metricsRetriever.getDistinctValuesForKey(iterateOver, this.getSubscription().getSubscriberId(), timePeriod);
+				List<String> activeSellerIds = this.metricsRetriever.getDistinctValuesForKey(iterateOver, this.getSubscription().getSubscriberId(), timePeriod);
 
-				logger.debug("Found {} sellers + marketplace {} in period {}", distinctValues.size(), this.getSubscription().getSubscriberId(), timePeriod);
+				logger.debug("Found {} sellers + marketplace {} in period {}", activeSellerIds.size(), this.getSubscription().getSubscriberId(), timePeriod);
 
 				// foreach 'iterator' property, build a sub-revenueItem with all child prices computed with the 'iterator' property.
-				for(String id: distinctValues) {
+				for(String activeSellerId: activeSellerIds) {
 
-					String label = this.getLabel(id);
+					String label = this.getLabel(activeSellerId);
 
 					logger.debug("looking for transactions of seller {} in period {}", label, timePeriod);
 //					RevenueItem sellerRevenueItem = new RevenueItem(this.item.getName() + " - Share from '" + label + "'", this.item.getCurrency());
@@ -60,12 +60,10 @@ public class ForEachCalculator extends AbstractCalculator {
 
 					for (PlanItem childItem : this.item.getBundleItems()) {
 
-						// create a new context, to force the calculator to consider the sub-seller, instead of the subscriber
-						Map<String, String> context = new HashMap<>();
-						context.put("sellerId", id);
 
 						Calculator childCalc = CalculatorFactory.getCalculatorFor(this.getSubscription(), childItem, this);
-						childCalc.setCalculatorContext(context);						
+						// update the context, to force the calculator to consider the sub-seller, instead of the subscriber
+						childCalc.getCalculatorContext().put("sellerId", activeSellerId);
 
 						RevenueItem childRevenueItem = childCalc.compute(timePeriod, computeContext);
 						// prefix the name with the label of the iterator

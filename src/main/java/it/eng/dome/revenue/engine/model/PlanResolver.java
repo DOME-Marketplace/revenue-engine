@@ -90,7 +90,8 @@ public class PlanResolver {
 
         // replace tokens
         for (Map.Entry<String, String> entry : resolvedProperties.entrySet()) {
-            String value = entry.getValue() != null ? entry.getValue() : "";
+            // if not resolved, leave unresolved (could be resolved afterwards, in the revenueItem)
+            String value = entry.getValue() != null ? entry.getValue() : "${" + entry.getKey() + "}";
             resolvedText = resolvedText.replace("${" + entry.getKey() + "}", value);
         }
 

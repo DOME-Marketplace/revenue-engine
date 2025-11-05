@@ -4,6 +4,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import it.eng.dome.revenue.engine.exception.BadTmfDataException;
+import it.eng.dome.revenue.engine.exception.ExternalServiceException;
 import it.eng.dome.revenue.engine.model.PlanItem;
 import it.eng.dome.revenue.engine.model.Price;
 import it.eng.dome.revenue.engine.model.RevenueItem;
@@ -19,9 +21,16 @@ public class AlternativeCalculator extends AbstractCalculator {
         this.higher = higher;        
     }
 
-    public RevenueItem doCompute(TimePeriod timePeriod, Map<String, Double> computeContext) {
+    public RevenueItem doCompute(TimePeriod timePeriod, Map<String, Double> computeContext) throws BadTmfDataException, ExternalServiceException {
 		List<PlanItem> childItems = this.item.getBundleItems();
 		RevenueItem selectedItem = null;
+
+		// compute the computationbase, so that the context contains it
+        String sellerId = this.getSubscription().getSubscriberId();
+        if(this.getCalculatorContext()!=null && this.getCalculatorContext().get("sellerId")!=null)
+            sellerId = this.getCalculatorContext().get("sellerId");
+		this.getComputationBase(sellerId, timePeriod, computeContext);
+
 		for (PlanItem item : childItems) {
 			Calculator childCalc = CalculatorFactory.getCalculatorFor(this.getSubscription(), item, this);
 			RevenueItem current = childCalc.compute(timePeriod, computeContext);

@@ -30,13 +30,14 @@
         "recurringChargePeriodType": "YEAR",
         "amount": 8000,
         "currency": "EUR",
-        "ignore": "${subscription.characteristics.marketplaceSubscription}",
+        "ignore": "'${subscription.characteristics.marketplaceSubscription}'=='true'",
         "discount": {
-          "name": "Discount based on previous year's sales",
+          "name": "Discount based on previous subscription period's sales (€ ${applicablevalue})",
           "isBundle": true,
           "bundleOp": "ALTERNATIVE_HIGHER",
           "applicableBaseReferencePeriod": "PREVIOUS_SUBSCRIPTION_PERIOD",
           "applicableBase": "bills-no-taxes",
+          "computationBase": "parent-price",
           "discounts": [
             {
               "name": "No discunt for previous-period transactions under 100k",
@@ -86,7 +87,7 @@
         }
       },
       {
-        "name": "Revenue sharing based on transactions of sub-sellers (FM)",
+        "name": "(FM) Revenue sharing based on transactions of sub-sellers",
         "recurringChargePeriodType": "MONTH",
         "recurringChargePeriodLength": 1,
         "type": "RECURRING_POSTPAID",
@@ -98,7 +99,7 @@
         "forEachMetric": "activeSellersIncludedMarketplace",
         "prices": [
           {
-            "name": "Shares",
+            "name": "Shares on €${computationbase} of transactions between ${period.startdate} and ${period.enddate}",
             "applicableBase": "bills-no-taxes",
             "applicableBaseReferencePeriod": "LAST_9_CHARGE_PERIODS",
             "computationBaseReferencePeriod": "CURRENT_CHARGE_PERIOD",
@@ -109,7 +110,7 @@
             "bundleOp": "CUMULATIVE",
             "prices": [
               {
-                "name": "1% revenue sharing",
+                "name": "1% revenue sharing on trasaction volume",
                 "computationBase": "bills-no-taxes",
                 "percent": 1,
                 "skipIfZero": false
@@ -119,7 +120,7 @@
         ]
       },
       {
-        "name": "Revenue sharing based on transactions (CSP)",
+        "name": "(CSP) Revenue sharing based on transactions (€${computationbase}) between ${period.startdate} and ${period.enddate}",
         "applicableBase": "bills-no-taxes",
         "applicableBaseReferencePeriod": "LAST_9_CHARGE_PERIODS",
         "computationBaseReferencePeriod": "CURRENT_CHARGE_PERIOD",
@@ -132,7 +133,7 @@
         "collapse": false,
         "skipIfZero": false,
         "type": "RECURRING_POSTPAID",
-        "ignore": "${subscription.characteristics.marketplaceSubscription}",
+        "ignore": "'${subscription.characteristics.marketplaceSubscription}'=='true'",
         "prices": [
           {
             "name": "Tier 0: no revenue sharing for transactions below 100K",

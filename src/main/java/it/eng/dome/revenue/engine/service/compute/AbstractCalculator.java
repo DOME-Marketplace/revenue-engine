@@ -11,6 +11,8 @@ import org.springframework.expression.Expression;
 import org.springframework.expression.ExpressionParser;
 import org.springframework.expression.spel.standard.SpelExpressionParser;
 
+import it.eng.dome.revenue.engine.exception.BadTmfDataException;
+import it.eng.dome.revenue.engine.exception.ExternalServiceException;
 import it.eng.dome.revenue.engine.model.Discount;
 import it.eng.dome.revenue.engine.model.PlanItem;
 import it.eng.dome.revenue.engine.model.Price;
@@ -50,7 +52,7 @@ public abstract class AbstractCalculator implements Calculator {
 		this.tmfDataRetriever = tdr;
 	}
 
-	public final RevenueItem compute(TimePeriod timePeriod, Map<String, Double> computeContext) {
+	public final RevenueItem compute(TimePeriod timePeriod, Map<String, Double> computeContext) throws BadTmfDataException, ExternalServiceException {
 
 		// check if it's to skip or not
 		logger.debug("checking preconditions...");
@@ -154,6 +156,10 @@ public abstract class AbstractCalculator implements Calculator {
 			}
 		}
 
+		// Resolve remaining tokens
+		RevenueItemResolver resolver = new RevenueItemResolver().setPlanItem(item).setReplacements(computeContext).setRevenueItem(outRevenueItem).setSubscription(subscription).setTimePeriod(timePeriod).setCalculatorContext(this.getCalculatorContext());
+		outRevenueItem = resolver.getResolvedRevenueItem(outRevenueItem);
+
 		logger.debug("returing {} for addition", outRevenueItem);
 
 		return outRevenueItem;
@@ -162,7 +168,7 @@ public abstract class AbstractCalculator implements Calculator {
 	/**
 	 *  This is the method to be implemented bu subclasses.
 	 */
-    protected abstract RevenueItem doCompute(TimePeriod timePeriod, Map<String, Double> computeContext);
+    protected abstract RevenueItem doCompute(TimePeriod timePeriod, Map<String, Double> computeContext) throws BadTmfDataException, ExternalServiceException;
 
     /**
      * Make sure general conditions are true in order to proceed.
@@ -323,11 +329,13 @@ public abstract class AbstractCalculator implements Calculator {
 	 * Make sure that properties for applicability are set correctly and that conditions are satisfied
 	 * @param tp
 	 * @return
+	 * @throws ExternalServiceException 
+	 * @throws BadTmfDataException 
 	 */
-    private boolean checkApplicability(TimePeriod timePeriod) {
+    private boolean checkApplicability(TimePeriod timePeriod) throws BadTmfDataException, ExternalServiceException {
 
-		if(this.item.getIsBundle())
-			return true;
+//		if(this.item.getIsBundle())
+//			return true;
 
 		String subscriberId = this.getSubscription().getSubscriberId();
 
@@ -339,6 +347,7 @@ public abstract class AbstractCalculator implements Calculator {
 		// no value & no condition => OK
 
 		if(applicableValue!=null) {
+			this.getCalculatorContext().put("applicablevalue", applicableValue.toString());
 			if (this.item.getApplicableBaseRange()!=null) {
 				return this.item.getApplicableBaseRange().inRange(applicableValue);
 			}
@@ -535,7 +544,7 @@ public abstract class AbstractCalculator implements Calculator {
     }
 	*/
 
-	private Double getApplicableValue(String subscriberId, TimePeriod tp) {
+	private Double getApplicableValue(String subscriberId, TimePeriod tp) throws BadTmfDataException, ExternalServiceException {
 
 		// TODO: the applicable base can also be 'parent-price'. This is not currently supported.
 		// In general, the context is not considered here. Shuould it?
@@ -544,21 +553,44 @@ public abstract class AbstractCalculator implements Calculator {
 			return null;
 		}
 
-		try {
-			TimePeriod applicabilityTimePeriod = this.getApplicableTimePeriod(tp.getEndDateTime());
+		TimePeriod applicabilityTimePeriod = this.getApplicableTimePeriod(tp.getEndDateTime());
 
-			if(applicabilityTimePeriod!=null) {
-				Double applicableValue = this.metricsRetriever.computeValueForKey(this.item.getApplicableBase(), subscriberId, applicabilityTimePeriod);
-				return applicableValue;
-			} else {
-				logger.debug("There's no applicableTimePeriod for {}. No applicableValue can be computed", this.item.getName());
-				return null;
-			}
-		} catch (Exception e) {
-			logger.error("Error computing applicable value for base '{}': {}", this.item.getApplicableBase(), e.getMessage(), e);
+		if(applicabilityTimePeriod!=null) {
+			Double applicableValue = this.metricsRetriever.computeValueForKey(this.item.getApplicableBase(), subscriberId, applicabilityTimePeriod);
+			return applicableValue;
+		} else {
+			logger.debug("There's no applicableTimePeriod for {}. No applicableValue can be computed", this.item.getName());
 			return null;
 		}
+		
 	}
+
+	protected Double getComputationBase(String sellerId, TimePeriod timePeriod, Map<String, Double> computeContext) throws ExternalServiceException, BadTmfDataException {
+        if ("parent-price".equals(this.item.getComputationBase()) && computeContext.containsKey("parent-price")) {
+            // TODO: make this more generic to look for any key in the map first; and only after ask the metrics retriever.
+            Double computationBase = computeContext.get("parent-price");
+            logger.debug("Using parent price amount as computation base: {}", computationBase);
+            this.getCalculatorContext().put("computationbase", computationBase.toString());
+            return computationBase;
+        } else {
+            TimePeriod computationPeriod = this.getComputationTimePeriod(timePeriod.getEndDateTime().minusSeconds(1));
+            if (computationPeriod == null) {
+                logger.debug("Could not compute custom period for reference: {}", this.item.getComputationBaseReferencePeriod());
+                return null;
+            }
+            logger.debug("Using custom period for {}: {} - {}, based on reference: {}", this.item.getComputationBaseReferencePeriod(), computationPeriod.getStartDateTime(), computationPeriod.getEndDateTime());
+            Double computationBase = this.metricsRetriever.computeValueForKey(this.item.getComputationBase(), sellerId, computationPeriod);
+            if(computationBase==null) {
+                logger.debug("Computation value is null");
+                return null;
+            }
+            logger.info("Computation base {} for metric '{}' in period {} - {} for seller {}",
+                computationBase, this.item.getComputationBase(), computationPeriod.getStartDateTime(), computationPeriod.getEndDateTime(), sellerId);				
+            this.getCalculatorContext().put("computationbase", computationBase.toString());
+            return computationBase;
+        }
+	}
+
 
 	protected Subscription getSubscription() {
         return this.subscription;

@@ -1,5 +1,7 @@
 package it.eng.dome.revenue.engine.service.compute;
 
+import java.util.HashMap;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.InitializingBean;
@@ -38,9 +40,11 @@ public class CalculatorFactory implements InitializingBean{
         if(c!=null) {
             c.setMetricsRetriever(CalculatorFactory.staticMR);
             c.setTmfDataRetriever(CalculatorFactory.staticTDR);
-        }
-        if(parentCalculator!=null) {
-            c.setCalculatorContext(parentCalculator.getCalculatorContext());
+            if(parentCalculator!=null) {
+                c.setCalculatorContext(new HashMap<>(parentCalculator.getCalculatorContext()));
+            } else {
+                c.setCalculatorContext(new HashMap<>());
+            }
         }
         return c;
     }
