@@ -29,7 +29,6 @@ import it.eng.dome.tmforum.tmf678.v4.model.CustomerBill;
 import it.eng.dome.tmforum.tmf678.v4.model.CustomerBillCreate;
 import it.eng.dome.tmforum.tmf678.v4.model.RelatedParty;
 
-
 /**
  * FIXME: Enhancements and fixes:
  * [H] only consider active subscriptions ([L] but be careful with last invoices... sub might not be active)

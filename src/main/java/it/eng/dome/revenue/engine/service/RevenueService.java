@@ -14,7 +14,6 @@ import it.eng.dome.brokerage.api.fetch.FetchUtils;
 import it.eng.dome.tmforum.tmf629.v4.model.Customer;
 import it.eng.dome.tmforum.tmf651.v4.model.Agreement;
 
-
 @Component(value = "revenueService")
 @Scope(value = ConfigurableBeanFactory.SCOPE_PROTOTYPE)
 public class RevenueService {

@@ -24,7 +24,6 @@ import it.eng.dome.tmforum.tmf678.v4.model.Money;
 import it.eng.dome.tmforum.tmf678.v4.model.TaxItem;
 import it.eng.dome.tmforum.tmf678.v4.model.TimePeriod;
 
-
 @Service
 public class DevDashboardService {
 

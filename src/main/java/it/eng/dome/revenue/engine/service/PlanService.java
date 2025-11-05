@@ -44,7 +44,6 @@ import it.eng.dome.tmforum.tmf620.v4.model.ProductOfferingPriceRefOrValue;
 @Service
 public class PlanService implements InitializingBean {
 
-    /** Dome Operator ID - now parametric via Spring property */
     @Value("${dome.operator.id}")
     private String DOME_OPERATOR_ID;
 

@@ -45,10 +45,11 @@ public class TmfDataRetriever {
     private ProductInventoryApis productInventoryApis;
     private AppliedCustomerBillRateApis appliedCustomerBillRateApis;
 
-    public TmfDataRetriever(ProductCatalogManagementApis productCatalogManagementApis, CustomerBillApis customerBillApis,
-    		APIPartyApis apiPartyApis, ProductInventoryApis productInventoryApis,
-    		AppliedCustomerBillRateApis appliedCustomerBillRateApis) {
-    	
+    public TmfDataRetriever(ProductCatalogManagementApis productCatalogManagementApis,
+                            CustomerBillApis customerBillApis,
+                            APIPartyApis apiPartyApis,
+                            ProductInventoryApis productInventoryApis,
+                            AppliedCustomerBillRateApis appliedCustomerBillRateApis) {
     	this.productCatalogManagementApis = productCatalogManagementApis;
     	this.customerBillApis = customerBillApis;
     	this.apiPartyApis = apiPartyApis;

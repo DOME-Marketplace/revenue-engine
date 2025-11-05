@@ -34,7 +34,6 @@ public class ReportingController {
  */
     @GetMapping("/{relatedPartyId}")
     public ResponseEntity<List<Report>> getDashboard(@PathVariable String relatedPartyId) {
-//        logger.info("Request received: reporting for dashboard, Organization ID = {}", relatedPartyId);
         try {
             List<Report> reports = reportingService.getDashboardReport(relatedPartyId);
 

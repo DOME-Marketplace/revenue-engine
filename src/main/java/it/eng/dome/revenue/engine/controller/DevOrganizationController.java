@@ -116,7 +116,6 @@ public class DevOrganizationController {
 
     @GetMapping("organizations/{referrerOrganizationId}/referrals")
     public ResponseEntity<List<Organization>> listReferralsProviders(@PathVariable String referrerOrganizationId) {
-//        logger.info("Request received: list referrals for referrerOrganizationId {}", referrerOrganizationId);
         try {
             List<Organization> referrals = tmfDataRetriever.listReferralsProviders(referrerOrganizationId);
 
@@ -134,8 +133,6 @@ public class DevOrganizationController {
 
     @GetMapping("organizations/{referralOrganizationId}/referrer")
     public ResponseEntity<Organization> getReferrerProvider(@PathVariable String referralOrganizationId) {
-//        logger.info("Request received: get referrer for referralOrganizationId {}", referralOrganizationId);
-
         try {
             Organization referrer = tmfDataRetriever.getReferrerProvider(referralOrganizationId);
 
