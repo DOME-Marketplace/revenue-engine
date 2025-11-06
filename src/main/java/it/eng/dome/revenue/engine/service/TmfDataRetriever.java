@@ -185,7 +185,7 @@ public class TmfDataRetriever {
         }
     }
 
-    private List<CustomerBill> retrieveBills(String participantId, Role participantRole, TimePeriod timePeriod)
+    protected List<CustomerBill> retrieveBills(String participantId, Role participantRole, TimePeriod timePeriod)
             throws ExternalServiceException {
         try {
             logger.debug("Retrieving bills from TMF API between {} and {}", timePeriod.getStartDateTime(), timePeriod.getEndDateTime());

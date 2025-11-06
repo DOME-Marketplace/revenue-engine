@@ -18,6 +18,7 @@ import it.eng.dome.brokerage.api.ProductCatalogManagementApis;
 import it.eng.dome.brokerage.api.ProductInventoryApis;
 import it.eng.dome.revenue.engine.exception.BadTmfDataException;
 import it.eng.dome.revenue.engine.exception.ExternalServiceException;
+import it.eng.dome.revenue.engine.model.Role;
 import it.eng.dome.revenue.engine.service.TmfDataRetriever;
 import it.eng.dome.revenue.engine.utils.CacheDuration;
 import it.eng.dome.tmforum.tmf620.v4.model.ProductOffering;
@@ -54,6 +55,7 @@ public class TmfCachedDataRetriever extends TmfDataRetriever {
     private Cache<String, BillingAccountRef> billingAccountCache;
     private Cache<String, CustomerBill> customerBillCache;
     private Cache<String, Organization> organizationCache;
+    private Cache<String, List<Organization>> organizationsCache;
     private Cache<String, Product> productCache;
     private Cache<String, ProductOffering> productOfferingCache;
     private Cache<String, ProductOfferingPrice> productOfferingPriceCache;
@@ -63,102 +65,131 @@ public class TmfCachedDataRetriever extends TmfDataRetriever {
     private Cache<String, List<ProductOffering>> productOfferingListCache;
 
 
-@SuppressWarnings({ "unchecked" })
-@PostConstruct
-private void initCaches() {
-    // --- TMF Data Retriever caches ---
-    Duration billingAccountDuration = cacheDuration.getTmf().get("billingAccount");
-    logger.debug("Set cache duration for 'billingAccountCache' to: {}", billingAccountDuration);
-    billingAccountCache = cacheService.getOrCreateCache(
-            "billingAccountCache",
-            String.class,
-            BillingAccountRef.class,
-            billingAccountDuration
-    );
 
-    Duration customerBillDuration = cacheDuration.getTmf().get("customerBill");
-    logger.debug("Set cache duration for 'customerBillCache' to: {}", customerBillDuration);
-    customerBillCache = cacheService.getOrCreateCache(
-            "customerBillCache",
-            String.class,
-            CustomerBill.class,
-            customerBillDuration
-    );
+    @SuppressWarnings({ "unchecked" })
+    @PostConstruct
+    private void initCaches() {
+        // --- TMF Data Retriever caches ---
+        Duration billingAccountDuration = cacheDuration.getTmf().get("billingAccount");
+        logger.debug("Set cache duration for 'billingAccountCache' to: {}", billingAccountDuration);
+        billingAccountCache = cacheService.getOrCreateCache(
+                "billingAccountCache",
+                String.class,
+                BillingAccountRef.class,
+                billingAccountDuration
+        );
 
-    Duration productDuration = cacheDuration.getTmf().get("product");
-    logger.debug("Set cache duration for 'productCache' to: {}", productDuration);
-    productCache = cacheService.getOrCreateCache(
-            "productCache",
-            String.class,
-            Product.class,
-            productDuration
-    );
+        Duration customerBillDuration = cacheDuration.getTmf().get("customerBill");
+        logger.debug("Set cache duration for 'customerBillCache' to: {}", customerBillDuration);
+        customerBillCache = cacheService.getOrCreateCache(
+                "customerBillCache",
+                String.class,
+                CustomerBill.class,
+                customerBillDuration
+        );
 
-    Duration productOfferingDuration = cacheDuration.getTmf().get("productOffering");
-    logger.debug("Set cache duration for 'productOfferingCache' to: {}", productOfferingDuration);
-    productOfferingCache = cacheService.getOrCreateCache(
-            "productOfferingCache",
-            String.class,
-            ProductOffering.class,
-            productOfferingDuration
-    );
+        Duration productDuration = cacheDuration.getTmf().get("product");
+        logger.debug("Set cache duration for 'productCache' to: {}", productDuration);
+        productCache = cacheService.getOrCreateCache(
+                "productCache",
+                String.class,
+                Product.class,
+                productDuration
+        );
 
-    Duration productOfferingPriceDuration = cacheDuration.getTmf().get("productOfferingPrice");
-    logger.debug("Set cache duration for 'productOfferingPriceCache' to: {}", productOfferingPriceDuration);
-    productOfferingPriceCache = cacheService.getOrCreateCache(
-            "productOfferingPriceCache",
-            String.class,
-            ProductOfferingPrice.class,
-            productOfferingPriceDuration
-    );
+        Duration productOfferingDuration = cacheDuration.getTmf().get("productOffering");
+        logger.debug("Set cache duration for 'productOfferingCache' to: {}", productOfferingDuration);
+        productOfferingCache = cacheService.getOrCreateCache(
+                "productOfferingCache",
+                String.class,
+                ProductOffering.class,
+                productOfferingDuration
+        );
 
-    Duration organizationDuration = cacheDuration.getTmf().get("organization");
-    logger.debug("Set cache duration for 'organizationCache' to: {}", organizationDuration);
-    organizationCache = cacheService.getOrCreateCache(
-            "organizationCache",
-            String.class,
-            Organization.class,
-            organizationDuration
-    );
+        Duration productOfferingPriceDuration = cacheDuration.getTmf().get("productOfferingPrice");
+        logger.debug("Set cache duration for 'productOfferingPriceCache' to: {}", productOfferingPriceDuration);
+        productOfferingPriceCache = cacheService.getOrCreateCache(
+                "productOfferingPriceCache",
+                String.class,
+                ProductOfferingPrice.class,
+                productOfferingPriceDuration
+        );
 
-    Duration acbrDuration = cacheDuration.getTmf().get("appliedCustomerBillingRate");
-    logger.debug("Set cache duration for 'acbrCache' to: {}", acbrDuration);
-    acbrCache = cacheService.getOrCreateCache(
-            "acbrCache",
-            String.class,
-            (Class<List<AppliedCustomerBillingRate>>)(Class<?>)List.class,
-            acbrDuration
-    );
+        Duration organizationDuration = cacheDuration.getTmf().get("organization");
+        logger.debug("Set cache duration for 'organizationCache' to: {}", organizationDuration);
+        organizationCache = cacheService.getOrCreateCache(
+                "organizationCache",
+                String.class,
+                Organization.class,
+                organizationDuration
+        );
 
-    // --- TMF List Service caches ---
-    Duration productListDuration = cacheDuration.getTmf().get("list-product");
-    logger.debug("Set cache duration for 'productListCache' to: {}", productListDuration);
-    productListCache = cacheService.getOrCreateCache(
-            "productListCache",
-            String.class,
-            (Class<List<Product>>)(Class<?>)List.class,
-            productListDuration
-    );
+        logger.debug("Set cache duration for 'organizationsCache' to: {}", organizationDuration);
+        organizationsCache = cacheService.getOrCreateCache(
+                "organizationsCache",
+                String.class,
+                (Class<List<Organization>>)(Class<?>)List.class,
+                organizationDuration
+        );
 
-    Duration productOfferingListDuration = cacheDuration.getTmf().get("list-productOffering");
-    logger.debug("Set cache duration for 'productOfferingListCache' to: {}", productOfferingListDuration);
-    productOfferingListCache = cacheService.getOrCreateCache(
-            "productOfferingListCache",
-            String.class,
-            (Class<List<ProductOffering>>)(Class<?>)List.class,
-            productOfferingListDuration
-    );
+        Duration acbrDuration = cacheDuration.getTmf().get("appliedCustomerBillingRate");
+        logger.debug("Set cache duration for 'acbrCache' to: {}", acbrDuration);
+        acbrCache = cacheService.getOrCreateCache(
+                "acbrCache",
+                String.class,
+                (Class<List<AppliedCustomerBillingRate>>)(Class<?>)List.class,
+                acbrDuration
+        );
 
-    Duration customerBillListDuration = cacheDuration.getTmf().get("list-customerBill");
-    logger.debug("Set cache duration for 'customerBillListCache' to: {}", customerBillListDuration);
-    customerBillListCache = cacheService.getOrCreateCache(
-            "customerBillListCache",
-            String.class,
-            (Class<List<CustomerBill>>)(Class<?>)List.class,
-            customerBillListDuration
-    );
-}
+        // --- TMF List Service caches ---
+        Duration productListDuration = cacheDuration.getTmf().get("list-product");
+        logger.debug("Set cache duration for 'productListCache' to: {}", productListDuration);
+        productListCache = cacheService.getOrCreateCache(
+                "productListCache",
+                String.class,
+                (Class<List<Product>>)(Class<?>)List.class,
+                productListDuration
+        );
 
+        Duration productOfferingListDuration = cacheDuration.getTmf().get("list-productOffering");
+        logger.debug("Set cache duration for 'productOfferingListCache' to: {}", productOfferingListDuration);
+        productOfferingListCache = cacheService.getOrCreateCache(
+                "productOfferingListCache",
+                String.class,
+                (Class<List<ProductOffering>>)(Class<?>)List.class,
+                productOfferingListDuration
+        );
+
+        Duration customerBillListDuration = cacheDuration.getTmf().get("list-customerBill");
+        logger.debug("Set cache duration for 'customerBillListCache' to: {}", customerBillListDuration);
+        customerBillListCache = cacheService.getOrCreateCache(
+                "customerBillListCache",
+                String.class,
+                (Class<List<CustomerBill>>)(Class<?>)List.class,
+                customerBillListDuration
+        );
+    }
+
+    protected List<CustomerBill> retrieveBills(String participantId, Role participantRole, TimePeriod timePeriod) throws ExternalServiceException {
+        String key = "all-bills-";
+        if(participantId!=null)
+			key  += participantId;
+        if(participantRole!=null)
+			key  += participantRole.getValue();
+		if(timePeriod!=null)
+			key  += timePeriod.toString();
+        if (!TMF_CACHE_ENABLED || !this.customerBillListCache.containsKey(key)) {
+            logger.debug("Cache MISS for {}", key);
+            List<CustomerBill> bills = super.retrieveBills(participantId, participantRole, timePeriod);
+            if (bills != null) {
+                this.customerBillListCache.put(key, bills);
+            } else {
+                logger.warn("CustomerBills not found for {}", key);
+                return null;
+            }
+        }
+        return this.customerBillListCache.get(key);        
+    }
 
 
     @Override
@@ -172,9 +203,9 @@ private void initCaches() {
 			key  += timePeriod.toString();
         if (!TMF_CACHE_ENABLED || !this.customerBillListCache.containsKey(key)) {
             logger.debug("Cache MISS for {}", key);
-            List<CustomerBill> acbrs = super.retrieveBills(sellerId, buyerId, timePeriod);
-            if (acbrs != null) {
-                this.customerBillListCache.put(key, acbrs);
+            List<CustomerBill> bills = super.retrieveBills(sellerId, buyerId, timePeriod);
+            if (bills != null) {
+                this.customerBillListCache.put(key, bills);
             } else {
                 logger.warn("CustomerBills not found for {}", key);
                 return null;
@@ -257,6 +288,7 @@ private void initCaches() {
     @Override
     public Product getProductById(String productId, String fields) throws BadTmfDataException, ExternalServiceException {
         String key = productId;
+        // CHECKME: why fields not in the key?
         if (!TMF_CACHE_ENABLED || !this.productCache.containsKey(key)) {
             logger.debug("Cache MISS for {}", key);
             Product prod = super.getProductById(productId, fields);
@@ -326,6 +358,7 @@ private void initCaches() {
     @Override
     public ProductOffering getProductOfferingById(String poId, String fields) throws BadTmfDataException, ExternalServiceException {
         String key = poId;
+        // CHECKME: why fields not in the key?
         if (!TMF_CACHE_ENABLED || !this.productOfferingCache.containsKey(key)) {
             logger.debug("Cache MISS for {}", key);
             ProductOffering po = super.getProductOfferingById(poId, fields);
@@ -390,6 +423,59 @@ private void initCaches() {
         }
         return this.organizationCache.get(key);
     }
+
+    @Override
+    public List<Organization> getAllPaginatedOrg() throws ExternalServiceException {
+        String key = "all-organizations";
+        if (!TMF_CACHE_ENABLED || !this.organizationsCache.containsKey(key)) {
+            logger.debug("Cache MISS for {}", key);
+            List<Organization> orgs = super.getAllPaginatedOrg();
+            if (orgs != null) {
+                this.organizationsCache.put(key, orgs);
+            } else {
+                return null;
+            }
+        }
+        return this.organizationsCache.get(key);
+    }
+
+    @Override
+    public List<Organization> listActiveSellersBehindFederatedMarketplace(String federatedMarketplaceId, TimePeriod timePeriod) throws BadTmfDataException, ExternalServiceException {
+        String key = "active-sellers-behind-marketplace-";
+        key += federatedMarketplaceId;
+		if(timePeriod!=null)
+			key  += timePeriod.toString();
+        if (!TMF_CACHE_ENABLED || !this.organizationsCache.containsKey(key)) {
+            logger.debug("Cache MISS for {}", key);
+            List<Organization> orgs = super.listActiveSellersBehindFederatedMarketplace(federatedMarketplaceId, timePeriod);
+            if (orgs != null) {
+                this.organizationsCache.put(key, orgs);
+            } else {
+                return null;
+            }
+        }
+        return this.organizationsCache.get(key);
+    }
+
+    @Override
+    public List<Organization> listBilledSellersBehindMarketplace(String federatedMarketplaceId, TimePeriod timePeriod) throws BadTmfDataException, ExternalServiceException {
+        String key = "billed-sellers-behind-marketplace-";
+        key += federatedMarketplaceId;
+		if(timePeriod!=null)
+			key  += timePeriod.toString();
+        if (!TMF_CACHE_ENABLED || !this.organizationsCache.containsKey(key)) {
+            logger.debug("Cache MISS for {}", key);
+            List<Organization> orgs = super.listBilledSellersBehindMarketplace(federatedMarketplaceId, timePeriod);
+            if (orgs != null) {
+                this.organizationsCache.put(key, orgs);
+            } else {
+                return null;
+            }
+        }
+        return this.organizationsCache.get(key);
+    }    
+
+
     /*
     public Organization getReferrerProvider(String referralOrganizationId) throws Exception {
         String key = referralOrganizationId;
