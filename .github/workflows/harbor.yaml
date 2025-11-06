@@ -22,7 +22,7 @@ jobs:
         with:
           java-version: "17"
           distribution: "temurin"
-          cache: maven
+          # cache: maven
       
       - name: Set up Maven settings
         run: |
@@ -43,18 +43,18 @@ jobs:
               <servers>
                   <server>
                       <id>almesl-snapshots</id>
-                      <username>${{ secrets.LDAP_USERNAME }}</username>
-                      <password>${{ secrets.LDAP_USERNAME }}</password>
+                      <username>${{ vars.LDAP_USERNAME }}</username>
+                      <password>${{ secrets.LDAP_PASSWORD }}</password>
                   </server>
                   <server>
                       <id>almesl-releases</id>
-                      <username>${{ secrets.LDAP_USERNAME }}</username>
-                      <password>${{ secrets.LDAP_USERNAME }}</password>
+                      <username>${{ vars.LDAP_USERNAME }}</username>
+                      <password>${{ secrets.LDAP_PASSWORD }}</password>
                   </server>
                   <server>
                       <id>nexus</id>
-                      <username>${{ secrets.LDAP_USERNAME }}</username>
-                      <password>${{ secrets.LDAP_USERNAME }}</password>
+                      <username>${{ vars.LDAP_USERNAME }}</username>
+                      <password>${{ secrets.LDAP_PASSWORD }}</password>
                   </server>
               </servers>
               <profiles>
@@ -152,18 +152,18 @@ jobs:
                <servers>
                    <server>
                        <id>almesl-snapshots</id>
-                       <username>${{ secrets.LDAP_USERNAME }}</username>
-                       <password>${{ secrets.LDAP_USERNAME }}</password>
+                       <username>${{ vars.LDAP_USERNAME }}</username>
+                       <password>${{ secrets.LDAP_PASSWORD }}</password>
                    </server>
                    <server>
                        <id>almesl-releases</id>
-                       <username>${{ secrets.LDAP_USERNAME }}</username>
-                       <password>${{ secrets.LDAP_USERNAME }}</password>
+                       <username>${{ vars.LDAP_USERNAME }}</username>
+                       <password>${{ secrets.LDAP_PASSWORD }}</password>
                    </server>
                    <server>
                        <id>nexus</id>
-                       <username>${{ secrets.LDAP_USERNAME }}</username>
-                       <password>${{ secrets.LDAP_USERNAME }}</password>
+                       <username>${{ vars.LDAP_USERNAME }}</username>
+                       <password>${{ secrets.LDAP_PASSWORD }}</password>
                    </server>
                </servers>
                <profiles>
