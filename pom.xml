@@ -14,7 +14,7 @@
 
 	<groupId>it.eng.dome.revenue</groupId>
 	<artifactId>engine</artifactId>
-	<version>1.2.6</version>
+	<version>1.2.5</version>
 	<name>Revenue Engine</name>
 	<description>Revenue Engine for DOME project</description>
 
