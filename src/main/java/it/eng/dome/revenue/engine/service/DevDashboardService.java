@@ -36,7 +36,7 @@ public class DevDashboardService {
 	private BillsService billService;
 
     public List<Organization> listOrganizations() throws Exception {
-        List<Organization> orgs = tmfDataRetriever.getAllPaginatedOrg();
+        List<Organization> orgs = tmfDataRetriever.getOrganizations();
         List<Organization> mutableOrgs = new ArrayList<>(orgs); // copy mutable list
         Collections.sort(mutableOrgs, new OrganizationComparator());
         return mutableOrgs;
@@ -50,7 +50,7 @@ public class DevDashboardService {
         tp.setStartDateTime(OffsetDateTime.now().minusYears(1));
 
         // sort transactions by billDate
-        List<CustomerBill> bills = tmfDataRetriever.retrieveBills(sellerId, null, tp);
+        List<CustomerBill> bills = tmfDataRetriever.retrieveCustomerBills(sellerId, null, tp);
         bills.sort(new CustomerBillComparator());
 
         return bills;

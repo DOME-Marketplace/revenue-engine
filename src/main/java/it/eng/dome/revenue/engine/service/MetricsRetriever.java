@@ -41,7 +41,7 @@ public class MetricsRetriever {
 
         try {
             // retrieve all seller billed invoices in the period
-            List<CustomerBill> bills = tmfDataRetriever.retrieveBills(sellerId, buyerId, timePeriod);
+            List<CustomerBill> bills = tmfDataRetriever.retrieveCustomerBills(sellerId, buyerId, timePeriod);
 
             // sum taxExcludedAmount.value
             double totalAmountNoTaxes = 0.0;

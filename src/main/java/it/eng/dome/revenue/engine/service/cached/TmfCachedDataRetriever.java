@@ -170,7 +170,7 @@ public class TmfCachedDataRetriever extends TmfDataRetriever {
         );
     }
 
-    protected List<CustomerBill> retrieveBills(String participantId, Role participantRole, TimePeriod timePeriod) throws ExternalServiceException {
+    protected List<CustomerBill> retrieveCustomerBills(String participantId, Role participantRole, TimePeriod timePeriod) throws ExternalServiceException {
         String key = "all-bills-";
         if(participantId!=null)
 			key  += participantId;
@@ -180,7 +180,7 @@ public class TmfCachedDataRetriever extends TmfDataRetriever {
 			key  += timePeriod.toString();
         if (!TMF_CACHE_ENABLED || !this.customerBillListCache.containsKey(key)) {
             logger.debug("Cache MISS for {}", key);
-            List<CustomerBill> bills = super.retrieveBills(participantId, participantRole, timePeriod);
+            List<CustomerBill> bills = super.retrieveCustomerBills(participantId, participantRole, timePeriod);
             if (bills != null) {
                 this.customerBillListCache.put(key, bills);
             } else {
@@ -193,8 +193,8 @@ public class TmfCachedDataRetriever extends TmfDataRetriever {
 
 
     @Override
-    public List<CustomerBill> retrieveBills(String sellerId, String buyerId, TimePeriod timePeriod) throws ExternalServiceException {
-        String key = "all-bills";
+    public List<CustomerBill> retrieveCustomerBills(String sellerId, String buyerId, TimePeriod timePeriod) throws ExternalServiceException {
+        String key = "all-customer-bills";
         if(sellerId!=null)
 			key  += sellerId;
         if(buyerId!=null)
@@ -203,7 +203,7 @@ public class TmfCachedDataRetriever extends TmfDataRetriever {
 			key  += timePeriod.toString();
         if (!TMF_CACHE_ENABLED || !this.customerBillListCache.containsKey(key)) {
             logger.debug("Cache MISS for {}", key);
-            List<CustomerBill> bills = super.retrieveBills(sellerId, buyerId, timePeriod);
+            List<CustomerBill> bills = super.retrieveCustomerBills(sellerId, buyerId, timePeriod);
             if (bills != null) {
                 this.customerBillListCache.put(key, bills);
             } else {
@@ -245,8 +245,6 @@ public class TmfCachedDataRetriever extends TmfDataRetriever {
         }
         return this.acbrCache.get(key);
     }
-    
-
 
     @Override
     public CustomerBill getCustomerBillById(String customerBillId) throws BadTmfDataException, ExternalServiceException {
@@ -425,11 +423,11 @@ public class TmfCachedDataRetriever extends TmfDataRetriever {
     }
 
     @Override
-    public List<Organization> getAllPaginatedOrg() throws ExternalServiceException {
+    public List<Organization> getOrganizations() throws ExternalServiceException {
         String key = "all-organizations";
         if (!TMF_CACHE_ENABLED || !this.organizationsCache.containsKey(key)) {
             logger.debug("Cache MISS for {}", key);
-            List<Organization> orgs = super.getAllPaginatedOrg();
+            List<Organization> orgs = super.getOrganizations();
             if (orgs != null) {
                 this.organizationsCache.put(key, orgs);
             } else {
@@ -474,7 +472,6 @@ public class TmfCachedDataRetriever extends TmfDataRetriever {
         }
         return this.organizationsCache.get(key);
     }    
-
 
     /*
     public Organization getReferrerProvider(String referralOrganizationId) throws Exception {

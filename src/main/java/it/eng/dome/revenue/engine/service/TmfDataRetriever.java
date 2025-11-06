@@ -132,16 +132,16 @@ public class TmfDataRetriever {
     }
 
     /**
-     * Retrieves bills from the TMF API based on the provided seller ID, time period, and billing status.
+     * Retrieves customer bills from the TMF API based on the provided seller ID, time period, and billing status.
      *
-     * @param sellerId The ID of the seller to filter bills by, or null to retrieve all bills.
-     * @param timePeriod The time period within which to retrieve bills.
-     * @return A list of AppliedCustomerBillingRate objects representing the retrieved bills.
+     * @param sellerId The ID of the seller to filter customer bills by, or null to retrieve all customer bills.
+     * @param timePeriod The time period within which to retrieve customer bills.
+     * @return A list of AppliedCustomerBillingRate objects representing the retrieved customer bills.
      * @throws ExternalServiceException If an error occurs during retrieval.
      */
-    public List<CustomerBill> retrieveBills(String sellerId, String buyerId, TimePeriod timePeriod) throws ExternalServiceException {
+    public List<CustomerBill> retrieveCustomerBills(String sellerId, String buyerId, TimePeriod timePeriod) throws ExternalServiceException {
         try {
-            logger.debug("Retrieving bills from TMF API between {} and {}", timePeriod.getStartDateTime(), timePeriod.getEndDateTime());
+            logger.debug("Retrieving Customer Bills from TMF API between {} and {}", timePeriod.getStartDateTime(), timePeriod.getEndDateTime());
 
             Map<String, String> filter = new HashMap<>();
 
@@ -155,9 +155,9 @@ public class TmfDataRetriever {
             if (sellerId != null) {
                 filter.put("relatedParty.id", sellerId);
                 filter.put("relatedParty.role", "Seller");
-                logger.debug("Retrieving bills for seller with id: {}", sellerId);
+                logger.debug("Retrieving Customer Bills for seller with id: {}", sellerId);
             } else {
-                logger.debug("Retrieving all bills in the specified period");
+                logger.debug("Retrieving all Customer Bills in the specified period");
             }
 
             //FIXME: fix retrieve of large CustomerBill lists
@@ -177,18 +177,18 @@ public class TmfDataRetriever {
                 filtered = RelatedPartyUtils.retainCustomerBillsWithParty(out, buyerId, Role.BUYER);
             }
 
-            logger.debug("Found {} bills in the specified period after role/id filter", filtered.size());
+            logger.debug("Found {} Customer Bills in the specified period after role/id filter", filtered.size());
             return filtered;
         } catch (Exception e) {
-            logger.error("Failed to retrieve bills for seller {} and buyer{}: {}", sellerId, buyerId, e.getMessage(), e);
+            logger.error("Failed to retrieve Customer Bills for seller {} and buyer{}: {}", sellerId, buyerId, e.getMessage(), e);
             throw new ExternalServiceException("Failed to retrieve bills for seller ID: " + sellerId, e);
         }
     }
 
-    protected List<CustomerBill> retrieveBills(String participantId, Role participantRole, TimePeriod timePeriod)
+    protected List<CustomerBill> retrieveCustomerBills(String participantId, Role participantRole, TimePeriod timePeriod)
             throws ExternalServiceException {
         try {
-            logger.debug("Retrieving bills from TMF API between {} and {}", timePeriod.getStartDateTime(), timePeriod.getEndDateTime());
+            logger.debug("Retrieving Customer Bills from TMF API between {} and {}", timePeriod.getStartDateTime(), timePeriod.getEndDateTime());
 
             Map<String, String> filter = new HashMap<>();
 
@@ -201,11 +201,11 @@ public class TmfDataRetriever {
 
             if (participantId != null) {
                 filter.put("relatedParty.id", participantId);
-                logger.debug("Retrieving bills for participant with id: {}", participantId);
+                logger.debug("Retrieving Customer Bills for participant with id: {}", participantId);
             }
             if (participantRole != null) {
                 filter.put("relatedParty.role", participantRole.getValue());
-                logger.debug("Retrieving bills for participant with role: {}", participantRole);
+                logger.debug("Retrieving Customer Bills for participant with role: {}", participantRole);
             }
 
             //FIXME: fix retrieve of large CustomerBill lists
@@ -217,11 +217,11 @@ public class TmfDataRetriever {
             ).toList();
             out = RelatedPartyUtils.retainCustomerBillsWithParty(out, participantId, participantRole);
 
-            logger.debug("Found {} bills in the specified period after role/id filter", out.size());
+            logger.debug("Found {} Customer Bills in the specified period after role/id filter", out.size());
             return out;
         } catch (Exception e) {
-            logger.error("Failed to retrieve bills for participant {} with role {}: {}", participantId, participantRole, e.getMessage(), e);
-            throw new ExternalServiceException("Failed to retrieve bills for participant ID: " + participantId, e);
+            logger.error("Failed to retrieve Customer Bills for participant {} with role {}: {}", participantId, participantRole, e.getMessage(), e);
+            throw new ExternalServiceException("Failed to retrieve Customer Bills for participant ID: " + participantId, e);
         }
     }
 
@@ -336,7 +336,7 @@ public class TmfDataRetriever {
         }
     }
 
-    public List<Organization> getAllPaginatedOrg() throws ExternalServiceException {
+    public List<Organization> getOrganizations() throws ExternalServiceException {
         logger.info("Retrieving all organizations from TMF API");
         try {
             //FIXME: fix retrieve of large Organization lists
@@ -536,10 +536,10 @@ public class TmfDataRetriever {
         }
 
         try {
-            List<CustomerBill> bills = this.retrieveBills(federatedMarketplaceId, Role.REFERENCE_MARKETPLACE, timePeriod);
+            List<CustomerBill> customerBills = this.retrieveCustomerBills(federatedMarketplaceId, Role.REFERENCE_MARKETPLACE, timePeriod);
             Set<String> sellersIds = new TreeSet<>();
 
-            for (CustomerBill cb : bills) {
+            for (CustomerBill cb : customerBills) {
                 if (cb == null) continue;
 
                 if (cb.getRelatedParty() != null) {
@@ -582,11 +582,11 @@ public class TmfDataRetriever {
         }
 
         // retrieve bills issued by the federated marketplace (as seller)
-        List<CustomerBill> bills = this.retrieveBills(federatedMarketplaceId, Role.SELLER, timePeriod);
+        List<CustomerBill> customerBills = this.retrieveCustomerBills(federatedMarketplaceId, Role.SELLER, timePeriod);
         Set<String> sellersIds = new TreeSet<>();
 
         // iterate over bills, and extract buyers (i.e. recipients of revenue invoices)
-        for (CustomerBill cb : bills) {
+        for (CustomerBill cb : customerBills) {
             if (cb == null)
                 continue;
             String billedSellerId = RelatedPartyUtils.partyIdWithRole(cb, Role.BUYER);
