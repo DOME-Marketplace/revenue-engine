@@ -139,8 +139,7 @@ public class TmfDataRetriever {
      * @return A list of AppliedCustomerBillingRate objects representing the retrieved bills.
      * @throws ExternalServiceException If an error occurs during retrieval.
      */
-    public List<CustomerBill> retrieveBills(String sellerId, TimePeriod timePeriod)
-            throws ExternalServiceException {
+    public List<CustomerBill> retrieveBills(String sellerId, String buyerId, TimePeriod timePeriod) throws ExternalServiceException {
         try {
             logger.debug("Retrieving bills from TMF API between {} and {}", timePeriod.getStartDateTime(), timePeriod.getEndDateTime());
 
@@ -174,10 +173,14 @@ public class TmfDataRetriever {
                 filtered = RelatedPartyUtils.retainCustomerBillsWithParty(out, sellerId, Role.SELLER);
             }
 
+            if(buyerId!=null) {
+                filtered = RelatedPartyUtils.retainCustomerBillsWithParty(out, buyerId, Role.BUYER);
+            }
+
             logger.debug("Found {} bills in the specified period after role/id filter", filtered.size());
             return filtered;
         } catch (Exception e) {
-            logger.error("Failed to retrieve bills for seller {}: {}", sellerId, e.getMessage(), e);
+            logger.error("Failed to retrieve bills for seller {} and buyer{}: {}", sellerId, buyerId, e.getMessage(), e);
             throw new ExternalServiceException("Failed to retrieve bills for seller ID: " + sellerId, e);
         }
     }
@@ -224,15 +227,15 @@ public class TmfDataRetriever {
 
     // ======== TMF ORGANIZATIONS ========
 
-    public List<Organization> retrieveActiveSellers(TimePeriod timePeriod)
-            throws ExternalServiceException {
+    /*
+    public List<Organization> retrieveActiveSellers(TimePeriod timePeriod) throws ExternalServiceException {
         try {
             logger.info("Retrieving active sellers from TMF API between {} and {}", timePeriod.getStartDateTime(), timePeriod.getEndDateTime());
 
             Set<String> sellersIds = new TreeSet<>();
             List<Organization> activeSellers = new ArrayList<>();
 
-            List<CustomerBill> bills = this.retrieveBills(null, timePeriod);
+            List<CustomerBill> bills = this.retrieveBills(null, null, timePeriod);
             for (CustomerBill cb : bills) {
                 if (cb == null) continue;
 
@@ -266,6 +269,7 @@ public class TmfDataRetriever {
             throw new ExternalServiceException("Failed to retrieve active sellers", e);
         }
     }
+    */
 
     public List<Organization> listReferralsProviders(String referrerOrganizationId)
             throws BadTmfDataException, ExternalServiceException {
@@ -525,9 +529,9 @@ public class TmfDataRetriever {
         }
     }
 
-    public List<Organization> listActiveSellersBehindFederatedMarketplace(String federatedMarketplaceId, TimePeriod timePeriod)
-            throws BadTmfDataException, ExternalServiceException {
+    public List<Organization> listActiveSellersBehindFederatedMarketplace(String federatedMarketplaceId, TimePeriod timePeriod) throws BadTmfDataException, ExternalServiceException {
         if (federatedMarketplaceId == null || federatedMarketplaceId.isEmpty()) {
+            // FIXME: this is not the correct exception type
             throw new BadTmfDataException("FederatedMarketplace", federatedMarketplaceId, "Federated Marketplace ID cannot be null or empty");
         }
 
@@ -568,6 +572,39 @@ public class TmfDataRetriever {
             logger.error("Failed to retrieve sellers behind federated marketplace {}", federatedMarketplaceId, e);
             throw new ExternalServiceException("Failed to retrieve sellers behind federated marketplace ID: " + federatedMarketplaceId, e);
         }
+    }
+
+    public List<Organization> listBilledSellersBehindMarketplace(String federatedMarketplaceId, TimePeriod timePeriod) throws BadTmfDataException, ExternalServiceException {
+        
+        if (federatedMarketplaceId == null || federatedMarketplaceId.isEmpty()) {
+            // FIXME: this is not the correct exception type
+            throw new BadTmfDataException("FederatedMarketplace", federatedMarketplaceId, "Federated Marketplace ID cannot be null or empty");
+        }
+
+        // retrieve bills issued by the federated marketplace (as seller)
+        List<CustomerBill> bills = this.retrieveBills(federatedMarketplaceId, Role.SELLER, timePeriod);
+        Set<String> sellersIds = new TreeSet<>();
+
+        // iterate over bills, and extract buyers (i.e. recipients of revenue invoices)
+        for (CustomerBill cb : bills) {
+            if (cb == null)
+                continue;
+            String billedSellerId = RelatedPartyUtils.partyIdWithRole(cb, Role.BUYER);
+            if(billedSellerId!=null)
+                sellersIds.add(billedSellerId);
+        }
+
+        // now retrieve the organizations
+        List<Organization> billedSellers = new ArrayList<>();
+        for (String s : sellersIds) {
+            logger.debug("Retrieving organisation with id: {}", s);
+            Organization org = this.getOrganization(s);
+            if (org != null) {
+                logger.debug("{} {} {}", org.getTradingName(), org.getName(), org.getId());
+                billedSellers.add(org);
+            }
+        }
+        return billedSellers;
     }
 
 }

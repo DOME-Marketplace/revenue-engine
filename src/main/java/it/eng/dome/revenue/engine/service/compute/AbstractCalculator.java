@@ -556,7 +556,7 @@ public abstract class AbstractCalculator implements Calculator {
 		TimePeriod applicabilityTimePeriod = this.getApplicableTimePeriod(tp.getStartDateTime());
 
 		if(applicabilityTimePeriod!=null) {
-			Double applicableValue = this.metricsRetriever.computeValueForKey(this.item.getApplicableBase(), subscriberId, applicabilityTimePeriod);
+			Double applicableValue = this.metricsRetriever.computeValueForKey(this.item.getApplicableBase(), subscriberId, null, applicabilityTimePeriod);
 			return applicableValue;
 		} else {
 			logger.debug("There's no applicableTimePeriod for {}. No applicableValue can be computed", this.item.getName());
@@ -579,7 +579,8 @@ public abstract class AbstractCalculator implements Calculator {
                 return null;
             }
             logger.debug("Using custom period for {}: {} - {}, based on reference: {}", this.item.getComputationBaseReferencePeriod(), computationPeriod.getStartDateTime(), computationPeriod.getEndDateTime());
-            Double computationBase = this.metricsRetriever.computeValueForKey(this.item.getComputationBase(), sellerId, computationPeriod);
+			String buyerId = this.getCalculatorContext().get("buyerId");
+            Double computationBase = this.metricsRetriever.computeValueForKey(this.item.getComputationBase(), sellerId, buyerId, computationPeriod);
             if(computationBase==null) {
                 logger.debug("Computation value is null");
                 return null;

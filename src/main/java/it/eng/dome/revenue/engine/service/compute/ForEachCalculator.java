@@ -1,12 +1,13 @@
 package it.eng.dome.revenue.engine.service.compute;
 
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import it.eng.dome.revenue.engine.exception.BadTmfDataException;
+import it.eng.dome.revenue.engine.exception.ExternalServiceException;
 import it.eng.dome.revenue.engine.model.PlanItem;
 import it.eng.dome.revenue.engine.model.RevenueItem;
 import it.eng.dome.revenue.engine.model.Subscription;
@@ -21,7 +22,7 @@ public class ForEachCalculator extends AbstractCalculator {
         super(subscription, bundle);
     }
 
-    public RevenueItem doCompute(TimePeriod timePeriod, Map<String, Double> computeContext) {
+    public RevenueItem doCompute(TimePeriod timePeriod, Map<String, Double> computeContext) throws ExternalServiceException, BadTmfDataException {
 
 		// prepare the output
 		RevenueItem outputItem = new RevenueItem(this.item.getName(), this.item.getCurrency());
@@ -33,64 +34,76 @@ public class ForEachCalculator extends AbstractCalculator {
 			return null;
 		}
 
-		// only 'activeMarketplaceIncludedMarketplace' is currently supported
-		if(!"activeSellersIncludedMarketplace".equalsIgnoreCase(iterateOver)) {
-			logger.error("{} is not supported. Currently, only 'marketplaceSeller' metric is supported.");
-			return null;
-		}
-
 		// now process them
-		if("activeSellersIncludedMarketplace".equalsIgnoreCase(iterateOver)) {
+		if("activeSellersBehindMarketplace".equalsIgnoreCase(iterateOver)) {
 			// retrieve the possible values
-			try {
-				List<String> activeSellerIds = this.metricsRetriever.getDistinctValuesForKey(iterateOver, this.getSubscription().getSubscriberId(), timePeriod);
+			List<String> activeSellerIds = this.metricsRetriever.getDistinctValuesForKey(iterateOver, this.getSubscription().getSubscriberId(), timePeriod);
 
-				logger.debug("Found {} sellers + marketplace {} in period {}", activeSellerIds.size(), this.getSubscription().getSubscriberId(), timePeriod);
+			logger.debug("Found {} sellers + marketplace {} in period {}", activeSellerIds.size(), this.getSubscription().getSubscriberId(), timePeriod);
 
-				// foreach 'iterator' property, build a sub-revenueItem with all child prices computed with the 'iterator' property.
-				for(String activeSellerId: activeSellerIds) {
+			// foreach 'iterator' property, build a sub-revenueItem with all child prices computed with the 'iterator' property.
+			for(String activeSellerId: activeSellerIds) {
 
-					String label = this.getLabel(activeSellerId);
+				String label = this.getLabel(activeSellerId);
+				logger.debug("looking for transactions of seller {} in period {}", label, timePeriod);
 
-					logger.debug("looking for transactions of seller {} in period {}", label, timePeriod);
-//					RevenueItem sellerRevenueItem = new RevenueItem(this.item.getName() + " - Share from '" + label + "'", this.item.getCurrency());
+				for (PlanItem childItem : this.item.getBundleItems()) {
 
-//					if(this.item.getType()!=null)
-//						sellerRevenueItem.setType(this.item.getType().toString());
+					Calculator childCalc = CalculatorFactory.getCalculatorFor(this.getSubscription(), childItem, this);
+					// update the context, to force the calculator to consider the sub-seller, instead of the subscriber
+					childCalc.getCalculatorContext().put("sellerId", activeSellerId);
+					childCalc.getCalculatorContext().put("sellerBehindMarketplace.id", activeSellerId);
+					childCalc.getCalculatorContext().put("sellerBehindMarketplace.name", label);
 
-					for (PlanItem childItem : this.item.getBundleItems()) {
-
-						Calculator childCalc = CalculatorFactory.getCalculatorFor(this.getSubscription(), childItem, this);
-						// update the context, to force the calculator to consider the sub-seller, instead of the subscriber
-						childCalc.getCalculatorContext().put("sellerId", activeSellerId);
-
-						RevenueItem childRevenueItem = childCalc.compute(timePeriod, computeContext);
-						// prefix the name with the label of the iterator
-						childRevenueItem.setName(childRevenueItem.getName() + " computed for " + label);
-						if (childRevenueItem != null) {
-							outputItem.addRevenueItem(childRevenueItem);
-						}
+					RevenueItem childRevenueItem = childCalc.compute(timePeriod, computeContext);
+					if (childRevenueItem != null) {
+						outputItem.addRevenueItem(childRevenueItem);
 					}
-
-//					outputItem.addRevenueItem(sellerRevenueItem);
 				}
-			} catch(Exception e) {
-				logger.error("Unable to retrieve bills for sellers behind marketplace {}", this.getSubscription().getSubscriberId());
-				logger.error(e.getMessage());
-				logger.error(e.getStackTrace().toString());
+			}
+		}
+		else if("billedSellersBehindMarketplace".equalsIgnoreCase(iterateOver)) {
+			// iterate over bills issued by a federarted marketplace to its own members
+			String federatedMarketplaceId = this.getSubscription().getSubscriberId();
+			String federatedMarketplaceLabel = this.getLabel(federatedMarketplaceId);
+
+			List<String> billedSellersBehindMarketplace = this.metricsRetriever.getDistinctValuesForKey(iterateOver, federatedMarketplaceId, timePeriod);
+			logger.debug("Found {} sellers {} in period {}", billedSellersBehindMarketplace.size(), federatedMarketplaceLabel, timePeriod);
+
+			// foreach 'iterator' property, build a sub-revenueItem with all child prices computed with the 'iterator' property.
+			for(String billedSellerId: billedSellersBehindMarketplace) {
+
+				String billedSellerLabel = this.getLabel(billedSellerId);
+				logger.debug("looking for revenue bills issued by federated marketplace '{}' to seller '{}'' in period {}", federatedMarketplaceLabel, billedSellerLabel, timePeriod);
+
+				for (PlanItem childItem : this.item.getBundleItems()) {
+
+					Calculator childCalc = CalculatorFactory.getCalculatorFor(this.getSubscription(), childItem, this);
+
+					// update the context, to force the calculator to consider the sub-seller, instead of the subscriber
+					childCalc.getCalculatorContext().put("sellerId", federatedMarketplaceId);
+					childCalc.getCalculatorContext().put("buyerId", billedSellerId);
+					childCalc.getCalculatorContext().put("sellerBehindMarketplace.id", billedSellerId);
+					childCalc.getCalculatorContext().put("sellerBehindMarketplace.name", billedSellerLabel);
+
+					RevenueItem childRevenueItem = childCalc.compute(timePeriod, computeContext);
+					if (childRevenueItem != null) {
+						outputItem.addRevenueItem(childRevenueItem);
+					}
+					
+				}
 			}
 		}
 		else {
-			// implement here other potential forEachMetrics
+			logger.error("Metric {} is not supported.", iterateOver);
+			return null;
 		}
 
-//		if(outputItem.getItems()!=null && !outputItem.getItems().isEmpty())
-			return outputItem;
-//		else
-//			return null;
+		return outputItem;
+
 	}
 
-	private String getLabel(String id) throws Exception {
+	private String getLabel(String id) throws BadTmfDataException, ExternalServiceException {
 		if(id.startsWith("urn:ngsi-ld:organization")) {
 			String orgLabel = "";
 			Organization seller = this.tmfDataRetriever.getOrganization(id);

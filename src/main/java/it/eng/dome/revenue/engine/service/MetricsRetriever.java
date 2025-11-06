@@ -30,17 +30,18 @@ public class MetricsRetriever {
     }
     
     // implement retriever for key 'bills-no-taxes'
-    private Double computeBillsNoTaxes(String sellerId, TimePeriod timePeriod)
+    private Double computeBillsNoTaxes(String sellerId, String buyerId, TimePeriod timePeriod)
             throws BadTmfDataException, ExternalServiceException {
 
         // TODO: when the new CB/ACBR approach will be done in the Billing Engine, retrieve CBs instead of ACBRs
         if (sellerId == null || sellerId.isEmpty()) {
+            // FIXME: wrong exception type
             throw new BadTmfDataException("Seller", sellerId, "Seller ID cannot be null or empty");
         }
 
         try {
             // retrieve all seller billed invoices in the period
-            List<CustomerBill> bills = tmfDataRetriever.retrieveBills(sellerId, timePeriod);
+            List<CustomerBill> bills = tmfDataRetriever.retrieveBills(sellerId, buyerId, timePeriod);
 
             // sum taxExcludedAmount.value
             double totalAmountNoTaxes = 0.0;
@@ -102,7 +103,7 @@ public class MetricsRetriever {
 
             // iterate over each referred provider
             for (Organization org : referred) {
-                totalTransactionVolume += this.computeBillsNoTaxes(org.getId(), timePeriod);
+                totalTransactionVolume += this.computeBillsNoTaxes(org.getId(), null, timePeriod);
             }
             logger.info("Total transaction volume for referred providers: {}", totalTransactionVolume);
             return totalTransactionVolume;	    
@@ -131,7 +132,7 @@ public class MetricsRetriever {
 
             // iterate over each referred provider	    
             for (Organization org : referred) {
-                maxTransactionVolume = Math.max(maxTransactionVolume, this.computeBillsNoTaxes(org.getId(), timePeriod));
+                maxTransactionVolume = Math.max(maxTransactionVolume, this.computeBillsNoTaxes(org.getId(), null, timePeriod));
             }
             return maxTransactionVolume;
         } catch (Exception e) {
@@ -140,11 +141,10 @@ public class MetricsRetriever {
         }
     }
 
-    public Double computeValueForKey(String key, String sellerId, TimePeriod timePeriod)
-            throws BadTmfDataException, ExternalServiceException {
+    public Double computeValueForKey(String key, String sellerId, String buyerId, TimePeriod timePeriod) throws BadTmfDataException, ExternalServiceException {
         switch (key) {
             case "bills-no-taxes":
-                return computeBillsNoTaxes(sellerId, timePeriod);
+                return computeBillsNoTaxes(sellerId, buyerId, timePeriod);
             case "referred-providers-number":
                 return (double) computeReferralsProvidersNumber(sellerId/*, timePeriod*/);
             case "referred-providers-transaction-volume":
@@ -152,6 +152,7 @@ public class MetricsRetriever {
             case "referred-provider-max-transaction-volume":
                 return computeReferralsProviderMaxTransactionVolume(sellerId, timePeriod);
             default:
+                // FIXME: wrong exception type
                 throw new BadTmfDataException("Metric", key, "Unknown metric key");
         }
     }
@@ -159,8 +160,9 @@ public class MetricsRetriever {
     public List<String> getDistinctValuesForKey(String key, String subscriberId, TimePeriod timePeriod)
             throws BadTmfDataException, ExternalServiceException {
         switch(key) {
-            case "activeSellersIncludedMarketplace":
+            case "activeSellersBehindMarketplace":
                 if (subscriberId == null || subscriberId.isEmpty()) {
+                    // FIXME: wrong exception
                     throw new BadTmfDataException("Subscriber", subscriberId, "Subscriber ID cannot be null or empty");
                 }
                 try {
@@ -169,27 +171,36 @@ public class MetricsRetriever {
                     for(Organization o: orgs) {
                         orgIds.add(o.getId());
                     }
-                    orgIds.add(subscriberId); // also add the marketplace itself
+//                    orgIds.add(subscriberId); // also add the marketplace itself
                     return orgIds;
                 } catch (Exception e) {
                     logger.error("Failed to retrieve active sellers behind marketplace {}: {}", subscriberId, e.getMessage(), e);
+                    // FIXME: this is not the correct exception
                     throw new ExternalServiceException("Failed to retrieve active sellers behind marketplace ID: " + subscriberId, e);
                 }
+            case "billedSellersBehindMarketplace":
+                if (subscriberId == null || subscriberId.isEmpty()) {
+                    throw new BadTmfDataException("Subscriber", subscriberId, "Subscriber ID cannot be null or empty");
+                }
+                List<Organization> orgs = this.listBilledSellersBehindMarketplace(subscriberId, timePeriod);
+                List<String> orgIds = new ArrayList<>();
+                for(Organization o: orgs)
+                    orgIds.add(o.getId());
+                return orgIds;
+                
             default:
+                // FIXME: this is not the correct exception
                 throw new BadTmfDataException("Metric", key, "Unknown metric key");
         }
+
     }
 
-    private List<Organization> getActiveSellersBehindMarketplace(String marketplaceId, TimePeriod timePeriod)
-            throws ExternalServiceException {
-        try {
-            List<Organization> out = new ArrayList<>();
-            out.addAll(this.tmfDataRetriever.listActiveSellersBehindFederatedMarketplace(marketplaceId, timePeriod));
-            return out;
-        } catch (Exception e) {
-            logger.error("Failed to retrieve sellers behind marketplace {}: {}", marketplaceId, e.getMessage(), e);
-            throw new ExternalServiceException("Failed to retrieve sellers behind marketplace ID: " + marketplaceId, e);
-        }
+    private List<Organization> getActiveSellersBehindMarketplace(String marketplaceId, TimePeriod timePeriod) throws ExternalServiceException, BadTmfDataException {
+            return this.tmfDataRetriever.listActiveSellersBehindFederatedMarketplace(marketplaceId, timePeriod);
+    }
+
+    private List<Organization> listBilledSellersBehindMarketplace(String marketplaceId, TimePeriod timePeriod) throws ExternalServiceException, BadTmfDataException {
+        return this.tmfDataRetriever.listBilledSellersBehindMarketplace(marketplaceId, timePeriod);
     }
 
 }

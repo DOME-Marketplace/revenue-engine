@@ -162,15 +162,17 @@ private void initCaches() {
 
 
     @Override
-    public List<CustomerBill> retrieveBills(String sellerId, TimePeriod timePeriod) throws ExternalServiceException {
+    public List<CustomerBill> retrieveBills(String sellerId, String buyerId, TimePeriod timePeriod) throws ExternalServiceException {
         String key = "all-bills";
         if(sellerId!=null)
 			key  += sellerId;
+        if(buyerId!=null)
+			key  += buyerId;
 		if(timePeriod!=null)
 			key  += timePeriod.toString();
         if (!TMF_CACHE_ENABLED || !this.customerBillListCache.containsKey(key)) {
             logger.debug("Cache MISS for {}", key);
-            List<CustomerBill> acbrs = super.retrieveBills(sellerId, timePeriod);
+            List<CustomerBill> acbrs = super.retrieveBills(sellerId, buyerId, timePeriod);
             if (acbrs != null) {
                 this.customerBillListCache.put(key, acbrs);
             } else {

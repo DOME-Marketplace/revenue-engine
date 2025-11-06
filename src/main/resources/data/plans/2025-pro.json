@@ -87,7 +87,7 @@
         }
       },
       {
-        "name": "(FM) Revenue sharing based on transactions of sub-sellers",
+        "name": "(FM) Revenue sharing based on transactions of sub-sellers (ver. 1: look at transactions of subsellers) ",
         "recurringChargePeriodType": "MONTH",
         "recurringChargePeriodLength": 1,
         "type": "RECURRING_POSTPAID",
@@ -96,26 +96,39 @@
         "collapse": false,
         "bundleOp": "FOREACH",
         "skipIfZero": false,
-        "forEachMetric": "activeSellersIncludedMarketplace",
+        "forEachMetric": "activeSellersBehindMarketplace",
         "prices": [
           {
-            "name": "Shares on €${computationbase} of transactions between ${period.startdate} and ${period.enddate}",
-            "applicableBase": "bills-no-taxes",
-            "applicableBaseReferencePeriod": "LAST_9_CHARGE_PERIODS",
+            "name": "Share of 1% on €${computationbase} of transactions of ${sellerBehindMarketplace.name} between ${period.startdate} and ${period.enddate}",
             "computationBaseReferencePeriod": "CURRENT_CHARGE_PERIOD",
             "computationBase": "bills-no-taxes",
+            "percent": 1,
             "currency": "EUR",
             "ignore": false,
-            "isBundle": true,
-            "bundleOp": "CUMULATIVE",
-            "prices": [
-              {
-                "name": "1% revenue sharing on trasaction volume",
-                "computationBase": "bills-no-taxes",
-                "percent": 1,
-                "skipIfZero": true
-              }
-            ]
+            "skipIfZero": true
+          }
+        ]
+      },      
+      {
+        "name": "(FM) Revenue sharing based on transactions of sub-sellers (ver. 2: look at revenue bills issued by FM) ",
+        "recurringChargePeriodType": "MONTH",
+        "recurringChargePeriodLength": 1,
+        "type": "RECURRING_POSTPAID",
+        "ignore": "'${subscription.characteristics.marketplaceSubscription}'!='true'",
+        "isBundle": true,
+        "collapse": false,
+        "bundleOp": "FOREACH",
+        "skipIfZero": false,
+        "forEachMetric": "billedSellersBehindMarketplace",
+        "prices": [
+          {
+            "name": "Share of 50% on €${computationbase} of fees received from ${sellerBehindMarketplace.name} between ${period.startdate} and ${period.enddate}",
+            "computationBaseReferencePeriod": "CURRENT_CHARGE_PERIOD",
+            "computationBase": "bills-no-taxes",
+            "percent": 50,
+            "currency": "EUR",
+            "ignore": false,
+            "skipIfZero": true
           }
         ]
       },
