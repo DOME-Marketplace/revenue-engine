@@ -76,8 +76,13 @@ private void initCaches() {
         String key = "all_subscriptions";
         if (!REVENUE_CACHE_ENABLED || !this.subscriptionsCache.containsKey(key)) {
             logger.debug("Cache MISS for " + key);
+
             List<Subscription> subscriptions = super.getAllSubscriptions();
-            this.subscriptionsCache.put(key, subscriptions);
+            if (subscriptions != null && !subscriptions.isEmpty()) {
+                this.subscriptionsCache.put(key, subscriptions);
+            } else {
+                logger.debug("No subscriptions found for {} — not caching null or empty list", key);
+            }
         }
         return this.subscriptionsCache.get(key);
     }
@@ -87,20 +92,30 @@ private void initCaches() {
     	String key = productId;
 		if (!REVENUE_CACHE_ENABLED || !this.subscriptionsCache.containsKey(key)) {
 			logger.debug("Cache MISS for " + key);
-			Subscription subscription = super.getSubscriptionByProductId(productId);
-			this.subscriptionCache.put(key, subscription);
-		}
+
+            Subscription subscription = super.getSubscriptionByProductId(productId);
+            if (subscription != null) {
+                this.subscriptionCache.put(key, subscription);
+            } else {
+                logger.debug("No subscription found for productId {} — not caching null value", key);
+            }
+        }
 		return this.subscriptionCache.get(key);
     }
     
     @Override
     public Subscription getActiveSubscriptionByRelatedPartyId(String relatedPartyId) throws ExternalServiceException, BadTmfDataException {
 		String key = relatedPartyId;
-		if (!REVENUE_CACHE_ENABLED || !this.subscriptionsCache.containsKey(key)) {
+		if (!REVENUE_CACHE_ENABLED || !this.subscriptionCache.containsKey(key)) {
 			logger.debug("Cache MISS for " + key);
-			Subscription subscription = super.getActiveSubscriptionByRelatedPartyId(relatedPartyId);
-			this.subscriptionCache.put(key, subscription);
-		}
+
+            Subscription subscription = super.getActiveSubscriptionByRelatedPartyId(relatedPartyId);
+            if (subscription != null) {
+                this.subscriptionCache.put(key, subscription);
+            } else {
+                logger.debug("No active subscription found for {} — not caching null value", key);
+            }
+        }
 		return this.subscriptionCache.get(key);
 	}
 
@@ -109,12 +124,15 @@ private void initCaches() {
     	String key = id + role.getValue();
 		if (!REVENUE_CACHE_ENABLED || !this.subscriptionsCache.containsKey(key)) {		
 			logger.debug("Cache MISS for " + key);
-			List<Subscription> subscriptions = super.getSubscriptionsByRelatedPartyId(id, role);
-			this.subscriptionsCache.put(key, subscriptions);
-		}
-		
+
+            List<Subscription> subscriptions = super.getSubscriptionsByRelatedPartyId(id, role);
+            if (subscriptions != null && !subscriptions.isEmpty()) {
+                this.subscriptionsCache.put(key, subscriptions);
+            } else {
+                logger.debug("No subscriptions found for {} and role {} — not caching null or empty list", id, role);
+            }
+        }
 		return this.subscriptionsCache.get(key);
 	}
-			
-	
+
 }

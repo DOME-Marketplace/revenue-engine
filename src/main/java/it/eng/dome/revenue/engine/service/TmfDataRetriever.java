@@ -523,9 +523,19 @@ public class TmfDataRetriever {
 
         try {
             return this.apiPartyApis.getOrganization(organizationId, null);
-        } catch (Exception e) {
-            logger.error("Failed to retrieve organization {}", organizationId, e);
+        } catch (it.eng.dome.tmforum.tmf632.v4.ApiException e) {
+            // 404 not found
+            if (e.getCode() == 404) {
+                logger.info("Organization {} not found", organizationId);
+                return null;
+            }
+            // Other errors
+            logger.error("Error retrieving organization {}: {}", organizationId, e.getMessage(), e);
             throw new ExternalServiceException("Failed to retrieve organization with ID: " + organizationId, e);
+        } catch (Exception e) {
+            // Unexpected errors (e.g., runtime, etc)
+            logger.error("Unexpected error retrieving organization {}", organizationId, e);
+            throw new ExternalServiceException("Unexpected error retrieving organization " + organizationId, e);
         }
     }
 

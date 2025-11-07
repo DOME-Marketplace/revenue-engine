@@ -118,15 +118,19 @@ public class SubscriptionService implements InitializingBean {
     public Subscription getActiveSubscriptionByRelatedPartyId(String id) throws ExternalServiceException, BadTmfDataException {
         logger.debug("Retrieving active subscription by related party id: {}", id);
 
-        if (id == null) return null;
+        if (id == null)
+            return null;
+
         // FIXME: now assuming that a party can have only one active subscription
-        for (Subscription sub : getAllSubscriptions()) {
-            if (sub.getStatus().equalsIgnoreCase("active")
+        for (Subscription sub : this.getAllSubscriptions()) {
+            String status = sub.getStatus();
+            logger.debug("Checking subscription {} with status {}", sub.getId(), sub.getStatus());
+
+            if ("active".equalsIgnoreCase(status)
                     && RelatedPartyUtils.subscriptionHasPartyWithRole(sub, id, Role.BUYER)) {
                 return sub;
             }
         }
-
         return null;
     }
 

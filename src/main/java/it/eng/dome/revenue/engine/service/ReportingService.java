@@ -1,10 +1,17 @@
 package it.eng.dome.revenue.engine.service;
 
-import java.time.LocalDate;
-import java.time.OffsetDateTime;
-import java.util.*;
-import java.util.stream.Collectors;
-
+import it.eng.dome.revenue.engine.model.*;
+import it.eng.dome.revenue.engine.model.comparator.CustomerBillComparator;
+import it.eng.dome.revenue.engine.service.cached.CachedPlanService;
+import it.eng.dome.revenue.engine.service.cached.CachedStatementsService;
+import it.eng.dome.revenue.engine.service.cached.CachedSubscriptionService;
+import it.eng.dome.revenue.engine.service.cached.TmfCachedDataRetriever;
+import it.eng.dome.revenue.engine.utils.RelatedPartyUtils;
+import it.eng.dome.tmforum.tmf632.v4.model.Organization;
+import it.eng.dome.tmforum.tmf637.v4.model.Characteristic;
+import it.eng.dome.tmforum.tmf637.v4.model.Product;
+import it.eng.dome.tmforum.tmf678.v4.model.CustomerBill;
+import it.eng.dome.tmforum.tmf678.v4.model.TimePeriod;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.InitializingBean;
@@ -14,15 +21,14 @@ import org.springframework.stereotype.Service;
 import it.eng.dome.revenue.engine.exception.BadRevenuePlanException;
 import it.eng.dome.revenue.engine.exception.BadTmfDataException;
 import it.eng.dome.revenue.engine.exception.ExternalServiceException;
-import it.eng.dome.revenue.engine.model.*;
-import it.eng.dome.revenue.engine.model.comparator.CustomerBillComparator;
-import it.eng.dome.revenue.engine.service.cached.*;
-import it.eng.dome.revenue.engine.utils.RelatedPartyUtils;
-import it.eng.dome.tmforum.tmf632.v4.model.Organization;
-import it.eng.dome.tmforum.tmf637.v4.model.Characteristic;
-import it.eng.dome.tmforum.tmf637.v4.model.Product;
-import it.eng.dome.tmforum.tmf678.v4.model.CustomerBill;
-import it.eng.dome.tmforum.tmf678.v4.model.TimePeriod;
+import it.eng.dome.revenue.engine.exception.NotFoundException;
+
+
+import java.time.LocalDate;
+import java.time.OffsetDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.*;
+import java.util.stream.Collectors;
 
 // FIXME: ACTIVE SUBSCRIPTIONS ONLY FOR NOW
 @Service
@@ -232,6 +238,11 @@ public class ReportingService implements InitializingBean {
             throw new BadTmfDataException("Organization", relatedPartyId, "Related Party ID cannot be null or empty");
         }
 
+        // check if organization exists
+        if (tmfDataRetriever.getOrganization(relatedPartyId) == null) {
+            throw new NotFoundException("Organization not found: " + relatedPartyId);
+        }
+
         List<Report> report = new ArrayList<>();
         List<Product> products = tmfDataRetriever.getAllSubscriptionProducts();
 
@@ -241,6 +252,9 @@ public class ReportingService implements InitializingBean {
         if (!isDomeOp) {
             report.add(getSubscriptionSection(relatedPartyId));
             report.add(getBillingHistorySection(relatedPartyId));
+            if ("Subscription".equalsIgnoreCase(report.get(0).getLabel())
+                    && ("No active subscription found for this user as of today, " + OffsetDateTime.now().toLocalDate().format(DateTimeFormatter.ofPattern("dd/MM/yyyy")) + ".").equalsIgnoreCase(report.get(0).getText()))
+                return report;
             report.add(getRevenueSection(relatedPartyId));
         } else {
             List<Report> revenueReports = totalSubscriptionRevenueSection();
@@ -254,7 +268,10 @@ public class ReportingService implements InitializingBean {
     public Report getSubscriptionSection (String relatedPartyId) throws BadTmfDataException, BadRevenuePlanException, ExternalServiceException {
         try {
             Subscription subscription = subscriptionService.getActiveSubscriptionByRelatedPartyId(relatedPartyId);
-            if (subscription == null) return new Report("Subscription", "No active subscription found for this user.");
+
+            if (subscription == null)
+                return new Report("Subscription", "No active subscription found for this user as of today, "
+                        + OffsetDateTime.now().toLocalDate().format(DateTimeFormatter.ofPattern("dd/MM/yyyy")) + ".");
 
             Plan plan = planService.getPlanById(subscription.getPlan().getId());
             String planName = plan.getName() != null ? plan.getName() : "Unknown Plan";

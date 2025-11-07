@@ -37,11 +37,6 @@ public class ReportingController {
         try {
             List<Report> reports = reportingService.getDashboardReport(relatedPartyId);
 
-            if (reports == null || reports.isEmpty()) {
-                logger.warn("No reports found for Organization with ID {}", relatedPartyId);
-                return ResponseEntity.noContent().build();
-            }
-
             return ResponseEntity.ok(reports);
         } catch (BadTmfDataException | BadRevenuePlanException | ExternalServiceException e) {
             logger.error("Failed to generate dashboard report for Organization with ID {}: {}", relatedPartyId, e.getMessage(), e);
