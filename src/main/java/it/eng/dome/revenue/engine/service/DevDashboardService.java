@@ -82,11 +82,17 @@ public class DevDashboardService {
         // prepare the output
         Map<String, Object> invoice = new HashMap<>();
 
-        // retrieve the customer bill
-        CustomerBill cb = this.billService.getCustomerBillByRevenueBillId(customerBillId);
-
-        // retrieve acbrs
-        List<AppliedCustomerBillingRate> acbrs = this.billService.getACBRsByRevenueBillId(customerBillId);
+        // retrieve the customer bill and associated acbrs
+        CustomerBill cb = null;
+        List<AppliedCustomerBillingRate> acbrs = null;
+        if(customerBillId.startsWith("urn:ngsi-ld:revenuebill")) {
+            cb = this.billService.getCustomerBillByRevenueBillId(customerBillId);
+            acbrs = this.billService.getACBRsByRevenueBillId(customerBillId);
+        } 
+        else {
+            cb = this.tmfDataRetriever.getCustomerBillById(customerBillId);
+            acbrs = this.tmfDataRetriever.getACBRsByCustomerBillId(customerBillId);
+        }
 
         // bill details section =========================================
         Map<String, Object> billDetails = new HashMap<>();
@@ -101,10 +107,12 @@ public class DevDashboardService {
         invoice.put("sellerInfo", sellerInfo);
         // retrieve the sellerid
         String sellerId = RelatedPartyUtils.partyIdWithRole(cb, Role.SELLER);
-        // retrieve the organization
-        Organization seller = this.tmfDataRetriever.getOrganization(sellerId);
-        sellerInfo.put("dome_id", sellerId);
-        sellerInfo.put("name", seller.getTradingName());
+        if(sellerId!=null) {
+            // retrieve the organization
+            Organization seller = this.tmfDataRetriever.getOrganization(sellerId);
+            sellerInfo.put("dome_id", sellerId);
+            sellerInfo.put("name", seller.getTradingName());
+        }
 
         // buyer info =========================================
         Map<String, Object> buyerInfo = new HashMap<>();
@@ -112,9 +120,11 @@ public class DevDashboardService {
         // retrieve the sellerid
         String buyerId = RelatedPartyUtils.partyIdWithRole(cb, Role.BUYER);
         // retrieve the organization
-        Organization buyer = this.tmfDataRetriever.getOrganization(buyerId);
-        buyerInfo.put("dome_id", buyerId);
-        buyerInfo.put("name", buyer.getTradingName());
+        if(buyerId!=null) {
+            Organization buyer = this.tmfDataRetriever.getOrganization(buyerId);
+            buyerInfo.put("dome_id", buyerId);
+            buyerInfo.put("name", buyer.getTradingName());
+        }
 
         // payment section =========================================
         Map<String, Object> paymentDetails = new HashMap<>();
@@ -129,11 +139,13 @@ public class DevDashboardService {
         summary.put("taxIncludedAmount", cb.getTaxIncludedAmount());
         // total of taxes
         float totalTaxes = 0f;
-        for(TaxItem ti: cb.getTaxItem()) {
-            if(ti.getTaxAmount()!= null && ti.getTaxAmount().getValue()!=null)
-                totalTaxes+=ti.getTaxAmount().getValue();
+        if(cb.getTaxItem()!=null) {
+            for(TaxItem ti: cb.getTaxItem()) {
+                if(ti.getTaxAmount()!= null && ti.getTaxAmount().getValue()!=null)
+                    totalTaxes+=ti.getTaxAmount().getValue();
+            }
+            summary.put("totalTaxAmount", new Money().value(totalTaxes).unit("EUR"));
         }
-        summary.put("totalTaxAmount", new Money().value(totalTaxes).unit("EUR"));
 
         // invoice items =========================================
 

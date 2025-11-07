@@ -12,6 +12,7 @@ import org.springframework.web.client.RestClient;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
@@ -20,6 +21,7 @@ import it.eng.dome.brokerage.billing.dto.BillingResponseDTO;
 import it.eng.dome.brokerage.observability.info.Info;
 import it.eng.dome.brokerage.utils.enumappers.TMF637EnumModule;
 import it.eng.dome.brokerage.utils.enumappers.TMF678EnumModule;
+import it.eng.dome.revenue.engine.exception.ExternalServiceException;
 import it.eng.dome.tmforum.tmf637.v4.model.Product;
 import it.eng.dome.tmforum.tmf678.v4.model.AppliedCustomerBillingRate;
 import it.eng.dome.tmforum.tmf678.v4.model.CustomerBill;
@@ -92,7 +94,7 @@ public class InvoicingService {
      * which is a list of enriched ACBRs.
      * @throws Exception 
      */
-    public BillingResponseDTO applyTaxees(Product product, CustomerBill customerBill, List<AppliedCustomerBillingRate> acbrs) throws Exception {
+    public BillingResponseDTO applyTaxees(Product product, CustomerBill customerBill, List<AppliedCustomerBillingRate> acbrs) throws ExternalServiceException {
         LocalApplyTaxesRequestDTO dto = new LocalApplyTaxesRequestDTO();
         dto.setProduct(product);
         dto.setCustomerBill(customerBill);
@@ -124,9 +126,10 @@ public class InvoicingService {
             logger.info("Taxes successfully applied by invoicing service.");
             return result;
 
-        } catch (Exception e) {
+        } 
+        catch (JsonProcessingException e) {
             logger.error("Failed to parse JSON response from invoicing service: {}", e.getMessage());
-            throw(e);
+            throw new ExternalServiceException("Unexpected response from Invoicing Service", e);
         }
     }
 

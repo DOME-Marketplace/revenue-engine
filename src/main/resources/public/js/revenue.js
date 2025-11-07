@@ -204,7 +204,8 @@ function showDashboard(data, clickedDOM) {
             div.appendChild(ul);
         }
 
-        container.appendChild(div);
+        getLanes().addToCurrentLane(div);
+//        container.appendChild(div);
     }
 
     data.forEach(section => renderItem(section, lane));
@@ -653,6 +654,13 @@ class Lanes {
             col.classList.add("lane");
         col.classList.add("empty");
         this.row.appendChild(col);
+
+        // adding a scrollable div inside
+        let div =document.createElement("div");
+        div.classList.add("scrollable");
+        col.appendChild(div);
+        div.setAttribute("name", "scrollable");
+
         return col;
     }
 
@@ -667,8 +675,28 @@ class Lanes {
 
     addToCurrentLane(dom) {
         let laneDOM = this.row.querySelector('[name="lane_'+this.currentCol+'"');
-        if(laneDOM)
-            laneDOM.appendChild(dom);
+        if(laneDOM) {
+            let scrollable = laneDOM.querySelector('[name="scrollable"');
+            if(scrollable) {
+                // look for the position (either trhough dates or name or id)
+                let idx1 = "";
+                if(dom.object)
+                    idx1 = dom.object.billDate || dom.object.startDate || dom.object.name || dom.object.tradingName || dom.object.id || idx1;
+                let inserted = false;
+                for(var child of scrollable.children) {
+                    if(!child.object)
+                        continue;
+                    let idx2 = child.object.billDate || child.object.startDate || child.object.name || child.object.tradingName || child.object.id;
+                    if(idx2 > idx1) {
+                        child.before(dom);
+                        inserted = true;
+                        break;
+                    }
+                }
+                if(!inserted)
+                    scrollable.appendChild(dom);
+            }
+        }
     }
 
     // removes all lanes after the one containing dom
@@ -693,7 +721,7 @@ class Lanes {
 
     _unselectAllBoxesInLane(domLane) {
         if(domLane) {
-            for(var box of domLane.children) {
+            for(var box of domLane.querySelectorAll(".selected")) {
                 box.classList.remove("selected");
             }
         }
@@ -727,6 +755,7 @@ class Lanes {
 
     _createDOM() {
         let table = document.createElement("table");
+        table.classList.add("main");
         let tr = document.createElement("tr");    
         this.row = tr;
         this.menuCol = this._createCol();
