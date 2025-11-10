@@ -347,7 +347,7 @@ public abstract class AbstractCalculator implements Calculator {
 		// no value & no condition => OK
 
 		if(applicableValue!=null) {
-			this.getCalculatorContext().put("applicablevalue", applicableValue.toString());
+			this.getCalculatorContext().put("activatingMetricValue", applicableValue.toString());
 			if (this.item.getApplicableBaseRange()!=null) {
 				return this.item.getApplicableBaseRange().inRange(applicableValue);
 			}
@@ -570,7 +570,7 @@ public abstract class AbstractCalculator implements Calculator {
             // TODO: make this more generic to look for any key in the map first; and only after ask the metrics retriever.
             Double computationBase = computeContext.get("parent-price");
             logger.debug("Using parent price amount as computation base: {}", computationBase);
-            this.getCalculatorContext().put("computationbase", computationBase.toString());
+            this.getCalculatorContext().put("computationMetricValue", computationBase.toString());
             return computationBase;
         } else {
             TimePeriod computationPeriod = this.getComputationTimePeriod(timePeriod.getEndDateTime().minusSeconds(1));
@@ -587,7 +587,7 @@ public abstract class AbstractCalculator implements Calculator {
             }
             logger.info("Computation base {} for metric '{}' in period {} - {} for seller {}",
                 computationBase, this.item.getComputationBase(), computationPeriod.getStartDateTime(), computationPeriod.getEndDateTime(), sellerId);				
-            this.getCalculatorContext().put("computationbase", computationBase.toString());
+            this.getCalculatorContext().put("computationMetricValue", computationBase.toString());
             return computationBase;
         }
 	}

@@ -189,6 +189,9 @@ public class SubscriptionTimeHelper {
             if("CURRENT_CHARGE_PERIOD".equals(keyword)) {
 				return this.getChargePeriodAt(time, price);
             }
+            else if("PREVIOUS_CHARGE_PERIOD".equals(keyword)) {
+				return this.getPreviousChargePeriod(time, price);
+            } 
             else if("CURRENT_SUBSCRIPTION_PERIOD".equals(keyword)) {
 				return this.getSubscriptionPeriodAt(time);
             } 
