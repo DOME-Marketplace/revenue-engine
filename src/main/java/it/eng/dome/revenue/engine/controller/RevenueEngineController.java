@@ -31,7 +31,7 @@ public class RevenueEngineController {
     }
 
     @GetMapping("/info")
-    public ResponseEntity<Info> getInfp() {
+    public ResponseEntity<Info> getInfo() {
         try {
             Info info = this.healthService.getInfo();
             return ResponseEntity.ok(info);
