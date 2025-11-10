@@ -18,7 +18,7 @@
   "subscriptionDurationPeriodType": "MONTH",
   "agreements": [],
   "price": {
-    "name": "Price components for ${subscription.name}",
+    "name": "Price components for \"${subscription.name}\" activated on ${subscription.startDate}",
     "isBundle": true,
     "currency": "EUR",
     "bundleOp": "CUMULATIVE",
@@ -32,7 +32,7 @@
         "currency": "EUR",
         "ignore": "'${subscription.characteristics.marketplaceSubscription}'=='true'",
         "discount": {
-          "name": "Discount based on previous subscription period's sales (€ ${applicablevalue})",
+          "name": "Discount based on previous subscription period's sales (€ ${activatingMetricValue})",
           "isBundle": true,
           "bundleOp": "ALTERNATIVE_HIGHER",
           "applicableBaseReferencePeriod": "PREVIOUS_SUBSCRIPTION_PERIOD",
@@ -99,7 +99,7 @@
         "forEachMetric": "activeSellersBehindMarketplace",
         "prices": [
           {
-            "name": "Share of 1% on €${computationbase} of transactions of ${sellerBehindMarketplace.name} between ${period.startdate} and ${period.enddate}",
+            "name": "Share of 1% on €${computationMetricValue} of transactions of ${sellerBehindMarketplace.name} between ${chargePeriod.startDate} and ${chargePeriod.endDate}",
             "computationBaseReferencePeriod": "CURRENT_CHARGE_PERIOD",
             "computationBase": "bills-no-taxes",
             "percent": 1,
@@ -122,7 +122,7 @@
         "forEachMetric": "billedSellersBehindMarketplace",
         "prices": [
           {
-            "name": "Share of 50% on €${computationbase} of fees received from ${sellerBehindMarketplace.name} between ${period.startdate} and ${period.enddate}",
+            "name": "Share of 50% on €${computationMetricValue} of fees received from ${sellerBehindMarketplace.name} between ${chargePeriod.startDate} and ${chargePeriod.endDate}",
             "computationBaseReferencePeriod": "CURRENT_CHARGE_PERIOD",
             "computationBase": "bills-no-taxes",
             "percent": 50,
@@ -133,7 +133,7 @@
         ]
       },
       {
-        "name": "(CSP) Revenue sharing based on transactions (€${computationbase}) between ${period.startdate} and ${period.enddate}",
+        "name": "(CSP) Revenue sharing based on transactions (€${computationMetricValue}) between ${chargePeriod.startDate} and ${chargePeriod.endDate}",
         "applicableBase": "bills-no-taxes",
         "applicableBaseReferencePeriod": "LAST_9_CHARGE_PERIODS",
         "computationBaseReferencePeriod": "CURRENT_CHARGE_PERIOD",

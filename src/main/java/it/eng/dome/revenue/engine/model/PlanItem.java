@@ -225,13 +225,6 @@ public abstract class PlanItem {
 	}
 
     public Range getApplicableBaseRange() {
-		/*
-		if(this.applicableBaseRange!=null)
-			return this.applicableBaseRange;
-		else if(this.getParentItem()!=null)
-			return this.getParentItem().getApplicableBaseRange();
-		return null;
-		*/
 		if(this.getParentItem()!=null && this.getParentItem().getApplicableBaseRange()!=null)
 			return this.getParentItem().getApplicableBaseRange();
 		else
