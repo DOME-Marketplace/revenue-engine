@@ -116,7 +116,7 @@ public class RevenueBillingMapper {
 		//id and base data
 	    AppliedCustomerBillingRate acbr = new AppliedCustomerBillingRate();
 	    acbr.setId("urn:ngsi-ld:applied-customer-billing-rate:" + UUID.randomUUID());
-	    acbr.setHref(acbr.getId());
+	    acbr.setHref("/customerBillManagement/v4/appliedCustomerBillingRate/"+ acbr.getId());
 	    acbr.setName(item.getName());
 	    acbr.setDescription((subscription != null ? subscription.getName() : "") 
 	        + " for period " + revenueBill.getPeriod().getStartDateTime() + " - " + revenueBill.getPeriod().getEndDateTime());
@@ -169,8 +169,7 @@ public class RevenueBillingMapper {
 
         String billId = revenueBill.getId();
         cb.setId(billId.replace("urn:ngsi-ld:revenuebill", "urn:ngsi-ld:customerbill"));
-//      cb.setHref(billId);
-//        cb.setBillDate(revenueBill.getBillTime());
+		cb.setHref("/customerBillManagement/v4/customerBill/"+ cb.getId());
         cb.setLastUpdate(OffsetDateTime.now()); //we can assume that the last update is now
 
         cb.setBillingPeriod(revenueBill.getPeriod());
@@ -192,7 +191,7 @@ public class RevenueBillingMapper {
 
 		// REF
 		cb.setRelatedParty(revenueBill.getRelatedParties());
-		cb.setBillingAccount(null); // set after
+//		cb.setBillingAccount(null); // set after
 		cb.setAppliedPayment(new ArrayList<>());
 		
 //        cb.setFinancialAccount(null);

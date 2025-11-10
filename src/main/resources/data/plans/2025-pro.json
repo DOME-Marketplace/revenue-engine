@@ -24,7 +24,7 @@
     "bundleOp": "CUMULATIVE",
     "prices": [
       {
-        "name": "Initial Fee",
+        "name": "Initial Subscription Fee",
         "type": "RECURRING_PREPAID",
         "recurringChargePeriodLength": 1,
         "recurringChargePeriodType": "YEAR",
@@ -32,7 +32,7 @@
         "currency": "EUR",
         "ignore": "'${subscription.characteristics.marketplaceSubscription}'=='true'",
         "discount": {
-          "name": "Discount based on previous subscription period's sales (€ ${activatingMetricValue})",
+          "name": "Discount based on transactions during the previous subscription period (€${activatingMetricValue})",
           "isBundle": true,
           "bundleOp": "ALTERNATIVE_HIGHER",
           "applicableBaseReferencePeriod": "PREVIOUS_SUBSCRIPTION_PERIOD",
@@ -40,7 +40,7 @@
           "computationBase": "parent-price",
           "discounts": [
             {
-              "name": "No discunt for previous-period transactions under 100k",
+              "name": "Transactions volume below 100.000€. No discount.",
               "applicableBaseRange": {
                 "min": 0,
                 "max": 100000
@@ -49,7 +49,7 @@
               "percent": 0
             },
             {
-              "name": "15% discount for previous-period transactions between 100k and 250k",
+              "name": "Transactions volume between 100.000€ and 250.000€: 15% discount.",
               "applicableBaseRange": {
                 "min": 100001,
                 "max": 250000
@@ -58,7 +58,7 @@
               "percent": 15
             },
             {
-              "name": "30% discount for previous-period transactions between 250k and 750k",
+              "name": "Transactions volume between 250.000€ and 750.000€: 30% discount.",
               "applicableBaseRange": {
                 "min": 250001,
                 "max": 750000
@@ -67,7 +67,7 @@
               "percent": 30
             },
             {
-              "name": "50% discount for previous-period transctions between 750k and 1M",
+              "name": "Transactions volume between 750.000€ and 1.000.000€: 50% discount.",
               "applicableBaseRange": {
                 "min": 750001,
                 "max": 1000000
@@ -76,7 +76,7 @@
               "percent": 50
             },
             {
-              "name": "80% discount for previous-period transctions over 1M",
+              "name": "Transactions volume above 1.000.000€: 80% discount",
               "applicableBaseRange": {
                 "min": 1000001
               },
@@ -149,12 +149,12 @@
         "ignore": "'${subscription.characteristics.marketplaceSubscription}'=='true'",
         "prices": [
           {
-            "name": "Tier 0: no revenue sharing for transactions below 100K",
+            "name": "Tier 0: no revenue sharing on transactions below 100.000€",
             "amount": 0,
             "skipIfZero": false
           },
           {
-            "name": "Tier 1: 4% revenue sharing in the range 100-200K",
+            "name": "Tier 1: 4% revenue sharing on transactions between 100.000€ and 200.000€",
             "computationBase": "bills-no-taxes",
             "percent": 4,
             "discount": {
@@ -170,7 +170,7 @@
             "skipIfZero": true
           },
           {
-            "name": "Tier 2: 3% revenue sharing in the range 200-500k",
+            "name": "Tier 2: 3% revenue sharing on transactions between 200.000€ and 500.000€",
             "percent": 3,
             "discount": {
               "name": "removing the lower part",
@@ -186,7 +186,7 @@
             "skipIfZero": true
           },
           {
-            "name": "Tier 3: 2% revenue sharing in the range 500-800k",
+            "name": "Tier 3: 2% revenue sharing on transactions between 500.000€ and 800.000€",
             "percent": 2,
             "discount": {
               "name": "removing the lower part",
@@ -202,7 +202,7 @@
             "skipIfZero": true
           },
           {
-            "name": "Tier 4: 1% revenue sharing for transactions above 800k",
+            "name": "Tier 4: 1% revenue sharing on transactions above 800.000€",
             "percent": 1,
             "discount": {
               "name": "removing the lower part",
