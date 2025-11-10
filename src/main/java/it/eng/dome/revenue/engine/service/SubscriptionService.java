@@ -1,17 +1,5 @@
 package it.eng.dome.revenue.engine.service;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.stream.Collectors;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.InitializingBean;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.stereotype.Service;
-
 import it.eng.dome.revenue.engine.exception.BadTmfDataException;
 import it.eng.dome.revenue.engine.exception.ExternalServiceException;
 import it.eng.dome.revenue.engine.mapper.RevenueProductMapper;
@@ -20,6 +8,16 @@ import it.eng.dome.revenue.engine.model.Subscription;
 import it.eng.dome.revenue.engine.service.cached.TmfCachedDataRetriever;
 import it.eng.dome.revenue.engine.utils.RelatedPartyUtils;
 import it.eng.dome.tmforum.tmf637.v4.model.Product;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.InitializingBean;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Service;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 public class SubscriptionService implements InitializingBean {
@@ -71,42 +69,19 @@ public class SubscriptionService implements InitializingBean {
      * @return A list of Subscription objects.
      */
     public List<Subscription> getAllSubscriptions() throws ExternalServiceException, BadTmfDataException {
-        logger.info("Fetching subscriptions from tmf products");
+        logger.info("Fetching all active subscriptions (category = DOME OPERATOR Plan)...");
 
-        List<Product> prods;
-        try {
-            prods = this.tmfDataRetriever.getAllSubscriptionProducts();
-            if (prods == null) {
-                return Collections.emptyList();
-            }
-        } catch (Exception e) {
-            logger.error("Failed to retrieve all subscription products: {}", e.getMessage(), e);
-            throw new ExternalServiceException("Failed to retrieve subscription products", e);
-        }
+        List<Subscription> subscriptions = new ArrayList<>();
 
-        List<Subscription> subs = new ArrayList<>();
-        for (Product prod : prods) {
-            try {
-                Product fullProduct = this.tmfDataRetriever.getProductById(prod.getId(), null);
-                if (fullProduct == null) {
-                    throw new BadTmfDataException("Product", prod.getId(), "Referenced product not found");
-                }
+        tmfDataRetriever.getAllActiveProducts(100,
+            product -> {
+                // mapping Product -> Subscription
+                Subscription sub = RevenueProductMapper.toSubscription(product);
+                subscriptions.add(sub);
+        });
 
-                // FIXME: but be careful with last invoices... sub might not be active
-                // TODO: CHECK IF EXIST IN TMF A STATUS THAT IS RECENTLY TERMINATED
-                if (!"active".equalsIgnoreCase(fullProduct.getStatus().getValue())) {
-                    continue;
-                }
-                subs.add(RevenueProductMapper.toSubscription(fullProduct));
-            } catch (BadTmfDataException e) {
-                throw e;
-            } catch (Exception e) {
-                logger.warn("Failed to process product {}: {}", prod.getId(), e.getMessage(), e);
-                throw new ExternalServiceException("Failed to process product with ID: " + prod.getId(), e);
-            }
-        }
-
-        return subs;
+        logger.info("Total active subscriptions retrieved: {}", subscriptions.size());
+        return subscriptions;
     }
 
     /**

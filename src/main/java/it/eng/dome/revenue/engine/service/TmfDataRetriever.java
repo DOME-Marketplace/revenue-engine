@@ -1,28 +1,11 @@
 package it.eng.dome.revenue.engine.service;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.TreeSet;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.stereotype.Service;
-
-import it.eng.dome.brokerage.api.APIPartyApis;
-import it.eng.dome.brokerage.api.AppliedCustomerBillRateApis;
-import it.eng.dome.brokerage.api.CustomerBillApis;
-import it.eng.dome.brokerage.api.ProductCatalogManagementApis;
-import it.eng.dome.brokerage.api.ProductInventoryApis;
+import it.eng.dome.brokerage.api.*;
 import it.eng.dome.brokerage.api.fetch.FetchUtils;
 import it.eng.dome.revenue.engine.exception.BadTmfDataException;
 import it.eng.dome.revenue.engine.exception.ExternalServiceException;
 import it.eng.dome.revenue.engine.model.Role;
 import it.eng.dome.revenue.engine.utils.RelatedPartyUtils;
-import it.eng.dome.tmforum.tmf620.v4.model.Category;
 import it.eng.dome.tmforum.tmf620.v4.model.ProductOffering;
 import it.eng.dome.tmforum.tmf620.v4.model.ProductOfferingPrice;
 import it.eng.dome.tmforum.tmf632.v4.model.Characteristic;
@@ -32,6 +15,12 @@ import it.eng.dome.tmforum.tmf637.v4.model.Product;
 import it.eng.dome.tmforum.tmf678.v4.model.AppliedCustomerBillingRate;
 import it.eng.dome.tmforum.tmf678.v4.model.CustomerBill;
 import it.eng.dome.tmforum.tmf678.v4.model.TimePeriod;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.stereotype.Service;
+
+import java.util.*;
+import java.util.function.Consumer;
 
 @Service
 public class TmfDataRetriever {
@@ -79,22 +68,6 @@ public class TmfDataRetriever {
         } catch (Exception e) {
             logger.error("Error retrieving Customer Bill {}: {}", customerBillId, e.getMessage(), e);
             throw new ExternalServiceException("Failed to retrieve Customer Bill with ID: " + customerBillId, e);
-        }
-    }
-
-    public List<CustomerBill> getAllCustomerBills(String fields, Map<String, String> filter, int pageSize)
-            throws ExternalServiceException {
-        try {
-            //FIXME: fix retrieve of large CustomerBill lists
-            return FetchUtils.streamAll(
-                    customerBillApis::listCustomerBills,    // method reference
-                    fields,                       		   // fields
-                    filter,            					   // filter
-                    pageSize                         	   // pageSize
-            ).toList();
-        } catch (Exception e) {
-            logger.error("Error retrieving all customer bills", e);
-            throw new ExternalServiceException("Failed to retrieve all customer bills", e);
         }
     }
 
@@ -401,68 +374,49 @@ public class TmfDataRetriever {
         }
     }
 
-    public List<Product> getAllProducts(String fields, Map<String, String> filter)
-            throws ExternalServiceException {
+    public void getAllActiveProducts(int batchSize, Consumer<Product> consumer ) throws ExternalServiceException {
         try {
-            //FIXME: fix retrieve of large Product lists
-            return FetchUtils.streamAll(
-        		productInventoryApis::listProducts,    // method reference
-                fields,                       		   // fields
-                filter,            					   // filter
-                100                         	   // pageSize
-            ).toList();
-        } catch (Exception e) {
-            logger.error("Failed to retrieve products", e);
-            throw new ExternalServiceException("Failed to retrieve products", e);
-        }
-    }
+            // Batch on ProductOffering category "DOME OPERATOR Plan"
+            this.fetchAllSubscriptionProductOfferings(null, batchSize, po -> {
+                try {
+                    Map<String, String> filter = Map.of("productOffering.id", po.getId());
 
-    public List<ProductOffering> getAllSubscriptionProductOfferings()
-            throws ExternalServiceException {
-        try {
-            
-        	//CategoryApis categoryApis = new CategoryApis(tmfApiFactory.getTMF620ProductCatalogManagementApiClient());
-        	//List<Category> listCategory = categoryApis.getAllCategory(null, null);
-        	//FIXME: fix retrieve of large category lists
-        	
-        	List<Category> listCategory = FetchUtils.streamAll(
-        		productCatalogManagementApis::listCategories,    // method reference
-                null,                       		   // fields
-                null,            					   // filter
-                100                         	   // pageSize
-            ).toList();
-            
-            
-            Map<String, String> filter = new HashMap<>();
-            for (Category c : listCategory) {
-                if (c.getName() != null && c.getName().equalsIgnoreCase("DOME OPERATOR Plan")) {
-                    filter.put("category.id", c.getId());
+                    // Batch of Products filtered by ProductOffering.id
+                    this.fetchAllProducts(null, filter, batchSize, product -> {
+                        try {
+                            // only active products
+                            // FIXME: but be careful with last invoices... sub might not be active
+                            // TODO: CHECK IF EXIST IN TMF A STATUS THAT IS RECENTLY TERMINATED
+                            if (product.getStatus() != null && "active".equalsIgnoreCase(product.getStatus().getValue())) {
+                                consumer.accept(product);
+                            }
+                        } catch (Exception e) {
+                            logger.warn("Failed to process product {}: {}", product.getId(), e.getMessage(), e);
+                        }
+                    });
+
+                } catch (Exception e) {
+                    logger.warn("Failed to process ProductOffering {}: {}", po.getId(), e.getMessage(), e);
                 }
-            }
-
-            return this.getAllProductOfferings(null, filter);
+            });
         } catch (Exception e) {
-            logger.error("Failed to retrieve subscription product offerings", e);
-            throw new ExternalServiceException("Failed to retrieve subscription product offerings", e);
+            logger.error("Failed to fetch subscription products", e);
+            throw new ExternalServiceException("Failed to fetch subscription products", e);
         }
     }
 
-    public List<Product> getAllSubscriptionProducts()
-            throws ExternalServiceException {
+    public void fetchAllProducts(String fields, Map<String, String> filter, int batchSize, Consumer<Product> consumer) throws ExternalServiceException {
         try {
-            List<String> offeringIds = new ArrayList<>();
-            List<ProductOffering> pos = this.getAllSubscriptionProductOfferings();
-            for (ProductOffering po : pos) {
-                offeringIds.add(po.getId());
-            }
-
-            Map<String, String> filter = new HashMap<>();
-            filter.put("productOffering.id", String.join(",", offeringIds)); // OR
-
-            return this.getAllProducts(null, filter);
+            FetchUtils.fetchByBatch(
+                    (FetchUtils.ListedFetcher<Product>) (f, flt, size, offset) ->
+                            productInventoryApis.listProducts(f, flt, size, offset),
+                    fields,
+                    filter,
+                    batchSize,
+                    batch -> batch.forEach(consumer)
+            );
         } catch (Exception e) {
-            logger.error("Failed to retrieve subscription products", e);
-            throw new ExternalServiceException("Failed to retrieve subscription products", e);
+            throw new ExternalServiceException("Failed to fetch Products by batch", e);
         }
     }
 
@@ -484,19 +438,18 @@ public class TmfDataRetriever {
         }
     }
 
-    public List<ProductOffering> getAllProductOfferings(String fields, Map<String, String> filter)
-            throws ExternalServiceException {
+    public void fetchAllSubscriptionProductOfferings(String fields, int batchSize, Consumer<ProductOffering> consumer) throws ExternalServiceException {
         try {
-            //FIXME: fix retrieve of large Product Offering lists
-            return FetchUtils.streamAll(
-                    productCatalogManagementApis::listProductOfferings,    // method reference
-                    fields,                       		   // fields
-                    filter,            					   // filter
-                    100                         	   // pageSize
-            ).toList();
+            FetchUtils.fetchByBatch(
+                    (FetchUtils.ListedFetcher<ProductOffering>) (f, flt, size, offset) ->
+                            productCatalogManagementApis.listProductOfferings(f, flt, size, offset),
+                    fields,
+                    Map.of("category.name", "DOME OPERATOR Plan"),
+                    batchSize,
+                    batch -> batch.forEach(consumer)
+            );
         } catch (Exception e) {
-            logger.error("Failed to retrieve product offerings", e);
-            throw new ExternalServiceException("Failed to retrieve product offerings", e);
+            throw new ExternalServiceException("Failed to fetch ProductOfferings by batch", e);
         }
     }
 
@@ -539,10 +492,11 @@ public class TmfDataRetriever {
         }
     }
 
+    // ======== ORGANIZATIONS BEHIND MARKETPLACES ========
+
     public List<Organization> listActiveSellersBehindFederatedMarketplace(String federatedMarketplaceId, TimePeriod timePeriod) throws BadTmfDataException, ExternalServiceException {
         if (federatedMarketplaceId == null || federatedMarketplaceId.isEmpty()) {
-            // FIXME: this is not the correct exception type
-            throw new BadTmfDataException("FederatedMarketplace", federatedMarketplaceId, "Federated Marketplace ID cannot be null or empty");
+            throw new IllegalArgumentException("Federated Marketplace ID cannot be null or empty");
         }
 
         try {
@@ -587,8 +541,7 @@ public class TmfDataRetriever {
     public List<Organization> listBilledSellersBehindMarketplace(String federatedMarketplaceId, TimePeriod timePeriod) throws BadTmfDataException, ExternalServiceException {
         
         if (federatedMarketplaceId == null || federatedMarketplaceId.isEmpty()) {
-            // FIXME: this is not the correct exception type
-            throw new BadTmfDataException("FederatedMarketplace", federatedMarketplaceId, "Federated Marketplace ID cannot be null or empty");
+            throw new IllegalArgumentException("Federated Marketplace ID cannot be null or empty");
         }
 
         // retrieve bills issued by the federated marketplace (as seller)

@@ -1,28 +1,9 @@
 package it.eng.dome.revenue.engine.service;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.net.URL;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.InitializingBean;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.stereotype.Service;
-
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
-
 import it.eng.dome.revenue.engine.exception.BadRevenuePlanException;
 import it.eng.dome.revenue.engine.exception.BadTmfDataException;
 import it.eng.dome.revenue.engine.exception.ExternalServiceException;
@@ -36,6 +17,23 @@ import it.eng.dome.revenue.engine.utils.IdUtils;
 import it.eng.dome.tmforum.tmf620.v4.model.ProductOffering;
 import it.eng.dome.tmforum.tmf620.v4.model.ProductOfferingPrice;
 import it.eng.dome.tmforum.tmf620.v4.model.ProductOfferingPriceRefOrValue;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.InitializingBean;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Service;
+
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.URL;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * Service responsible for loading and caching revenue engine plans defined as external JSON files.
@@ -73,14 +71,20 @@ public class PlanService implements InitializingBean {
     public List<Plan> getAllPlans() throws BadTmfDataException, BadRevenuePlanException, ExternalServiceException {
         logger.info("Fetching all plans...");
 
-        List<ProductOffering> pos = tmfDataRetriever.getAllSubscriptionProductOfferings();
-        if (pos == null) 
-			return Collections.emptyList();
-
         List<Plan> plans = new ArrayList<>();
-        for (ProductOffering po : pos) {
-            plans.addAll(findPlans(po.getId()));
-        }
+
+        // fetch by batch, process each ProductOffering on the fly
+        tmfDataRetriever.fetchAllSubscriptionProductOfferings(null, 100,
+            po -> {
+                try {
+                    plans.addAll(findPlans(po.getId()));
+                } catch (BadTmfDataException | ExternalServiceException e) {
+                    logger.warn("Skipping ProductOffering {} due to exception: {}", po.getId(), e.getMessage());
+                } catch (BadRevenuePlanException e) {
+                    logger.warn("Skipping ProductOffering {} due to bad plan data: {}", po.getId(), e.getMessage());
+                }
+            }
+        );
 
         logger.info("Total plans fetched: {}", plans.size());
         return plans;

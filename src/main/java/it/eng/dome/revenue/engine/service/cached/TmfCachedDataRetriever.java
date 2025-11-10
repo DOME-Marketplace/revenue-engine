@@ -262,26 +262,26 @@ public class TmfCachedDataRetriever extends TmfDataRetriever {
         return this.customerBillCache.get(key);
     }
     
-    @Override
-    public List<CustomerBill> getAllCustomerBills(String fields, Map<String, String> filter, int pageSize) throws ExternalServiceException {
-        String key = "all-customer-bills";
-        if(fields!=null)
-            key += fields;
-        if(filter!=null)
-            key += filter.toString();
-		if (!TMF_CACHE_ENABLED || !this.customerBillListCache.containsKey(key)) {
-			
-			logger.debug("Cache MISS for {}", key);
-			List<CustomerBill> cbs = super.getAllCustomerBills(fields, filter, pageSize);
-			if (cbs != null) {
-				this.customerBillListCache.put(key, cbs);
-			} else {
-				logger.warn("CustomerBills not found");
-				return null;
-			}
-		}
-		return (List<CustomerBill>) this.customerBillListCache.get(key);
-    }
+//    @Override
+//    public List<CustomerBill> getAllCustomerBills(String fields, Map<String, String> filter, int pageSize) throws ExternalServiceException {
+//        String key = "all-customer-bills";
+//        if(fields!=null)
+//            key += fields;
+//        if(filter!=null)
+//            key += filter.toString();
+//		if (!TMF_CACHE_ENABLED || !this.customerBillListCache.containsKey(key)) {
+//
+//			logger.debug("Cache MISS for {}", key);
+//			List<CustomerBill> cbs = super.getAllCustomerBills(fields, filter, pageSize);
+//			if (cbs != null) {
+//				this.customerBillListCache.put(key, cbs);
+//			} else {
+//				logger.warn("CustomerBills not found");
+//				return null;
+//			}
+//		}
+//		return (List<CustomerBill>) this.customerBillListCache.get(key);
+//    }
 
     @Override
     public Product getProductById(String productId, String fields) throws BadTmfDataException, ExternalServiceException {
@@ -300,58 +300,58 @@ public class TmfCachedDataRetriever extends TmfDataRetriever {
         return this.productCache.get(key);
     }
 
-    @Override
-    public List<Product> getAllProducts(String fields, Map<String, String> filter) throws ExternalServiceException {
-        String key = "all-products";
-        if(fields!=null)
-            key += fields;
-        if(filter!=null)
-            key += filter.toString();
-        if (!TMF_CACHE_ENABLED || !this.productListCache.containsKey(key)) {
-            logger.debug("Cache MISS for {}", key);
-            List<Product> prods = super.getAllProducts(fields, filter);
-            if (prods != null) {
-                this.productListCache.put(key, prods);
-            } else {
-                logger.warn("Products not found");
-                return null;
-            }
-        }
-        return this.productListCache.get(key);
-    }
+//    @Override
+//    public List<Product> getAllProducts(String fields, Map<String, String> filter) throws ExternalServiceException {
+//        String key = "all-products";
+//        if(fields!=null)
+//            key += fields;
+//        if(filter!=null)
+//            key += filter.toString();
+//        if (!TMF_CACHE_ENABLED || !this.productListCache.containsKey(key)) {
+//            logger.debug("Cache MISS for {}", key);
+//            List<Product> prods = super.getAllProducts(fields, filter);
+//            if (prods != null) {
+//                this.productListCache.put(key, prods);
+//            } else {
+//                logger.warn("Products not found");
+//                return null;
+//            }
+//        }
+//        return this.productListCache.get(key);
+//    }
     
-    @Override
-    public List<Product> getAllSubscriptionProducts() throws ExternalServiceException {
-		String key = "all-subscription-products";
-		if (!TMF_CACHE_ENABLED || !this.productListCache.containsKey(key)) {
-			logger.debug("Cache MISS for {}", key);
-			List<Product> prods = super.getAllSubscriptionProducts();
-			if (prods != null) {
-				this.productListCache.put(key, prods);
-			} else {
-				logger.warn("Subscription Products not found");
-				return null;
-			}
-		}
-		return this.productListCache.get(key);
-	}
+//    @Override
+//    public List<Product> getAllSubscriptionProducts() throws ExternalServiceException {
+//		String key = "all-subscription-products";
+//		if (!TMF_CACHE_ENABLED || !this.productListCache.containsKey(key)) {
+//			logger.debug("Cache MISS for {}", key);
+//			List<Product> prods = super.getAllSubscriptionProducts();
+//			if (prods != null) {
+//				this.productListCache.put(key, prods);
+//			} else {
+//				logger.warn("Subscription Products not found");
+//				return null;
+//			}
+//		}
+//		return this.productListCache.get(key);
+//	}
 
-    @Override
-    public List<ProductOffering> getAllSubscriptionProductOfferings() throws ExternalServiceException {
-    	String key = "all-subscription-product-offerings";
-		if (!TMF_CACHE_ENABLED || !this.productOfferingListCache.containsKey(key)) {
-			logger.debug("Cache MISS for {}", key);
-			List<ProductOffering> pos = super.getAllSubscriptionProductOfferings();
-			if (pos != null) {
-				this.productOfferingListCache.put(key, pos);
-			} else {
-				logger.warn("Subscription ProductOfferings not found");
-				return null;
-			}
-
-		}
-    	return this.productOfferingListCache.get(key);
-    }
+//    @Override
+//    public List<ProductOffering> getAllSubscriptionProductOfferings() throws ExternalServiceException {
+//    	String key = "all-subscription-product-offerings";
+//		if (!TMF_CACHE_ENABLED || !this.productOfferingListCache.containsKey(key)) {
+//			logger.debug("Cache MISS for {}", key);
+//			List<ProductOffering> pos = super.getAllSubscriptionProductOfferings();
+//			if (pos != null) {
+//				this.productOfferingListCache.put(key, pos);
+//			} else {
+//				logger.warn("Subscription ProductOfferings not found");
+//				return null;
+//			}
+//
+//		}
+//    	return this.productOfferingListCache.get(key);
+//    }
     
     @Override
     public ProductOffering getProductOfferingById(String poId, String fields) throws BadTmfDataException, ExternalServiceException {
@@ -370,25 +370,25 @@ public class TmfCachedDataRetriever extends TmfDataRetriever {
         return this.productOfferingCache.get(key);
     }
 
-    @Override
-    public List<ProductOffering> getAllProductOfferings(String fields, Map<String, String> filter) throws ExternalServiceException {
-        String key = "all-product-offerings";
-        if(fields!=null)
-            key += fields;
-        if(filter!=null)
-            key += filter.toString();
-        if (!TMF_CACHE_ENABLED || !this.productOfferingListCache.containsKey(key)) {
-            logger.debug("Cache MISS for {}", key);
-            List<ProductOffering> pos = super.getAllProductOfferings(fields, filter);
-            if (pos != null) {
-                this.productOfferingListCache.put(key, pos);
-            } else {
-                logger.warn("ProductOfferings not found");
-                return null;
-            }
-        }
-        return this.productOfferingListCache.get(key);
-    }
+//    @Override
+//    public List<ProductOffering> getAllProductOfferings(String fields, Map<String, String> filter) throws ExternalServiceException {
+//        String key = "all-product-offerings";
+//        if(fields!=null)
+//            key += fields;
+//        if(filter!=null)
+//            key += filter.toString();
+//        if (!TMF_CACHE_ENABLED || !this.productOfferingListCache.containsKey(key)) {
+//            logger.debug("Cache MISS for {}", key);
+//            List<ProductOffering> pos = super.getAllProductOfferings(fields, filter);
+//            if (pos != null) {
+//                this.productOfferingListCache.put(key, pos);
+//            } else {
+//                logger.warn("ProductOfferings not found");
+//                return null;
+//            }
+//        }
+//        return this.productOfferingListCache.get(key);
+//    }
 
     @Override
     public ProductOfferingPrice getProductOfferingPrice(String popId, String fields) throws BadTmfDataException, ExternalServiceException {

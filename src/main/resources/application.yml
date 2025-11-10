@@ -92,7 +92,6 @@ caching:
     enabled: true
     duration: 1m
 
-
 persistence:
   monthsBack: ${MONTHS_BACK:12}
   scheduler:

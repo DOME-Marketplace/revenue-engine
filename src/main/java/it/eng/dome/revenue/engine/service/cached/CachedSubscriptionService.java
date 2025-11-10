@@ -73,7 +73,7 @@ private void initCaches() {
     */
     @Override
     public List<Subscription> getAllSubscriptions() throws ExternalServiceException, BadTmfDataException {
-        String key = "all_subscriptions";
+        String key = "all-active-subscriptions";
         if (!REVENUE_CACHE_ENABLED || !this.subscriptionsCache.containsKey(key)) {
             logger.debug("Cache MISS for " + key);
 

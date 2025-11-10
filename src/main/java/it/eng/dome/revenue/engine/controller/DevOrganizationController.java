@@ -62,7 +62,7 @@ public class DevOrganizationController {
     @GetMapping("organizations/{organizationId}/purchasedProducts")
     public ResponseEntity<List<Product>> listPurchasedProducts(@PathVariable String organizationId) {
         try {
-            List<Product> products = this.dashboardService.getPurchasedproducts(organizationId);
+            List<Product> products = this.dashboardService.getPurchasedProducts(organizationId);
             return ResponseEntity.ok(products);
         } catch (Exception e) {
             logger.error("Error retrieving purchased products {} {}", e.getMessage(), e);

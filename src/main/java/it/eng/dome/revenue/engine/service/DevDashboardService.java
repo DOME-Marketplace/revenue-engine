@@ -8,6 +8,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import it.eng.dome.revenue.engine.exception.ExternalServiceException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -64,18 +65,33 @@ public class DevDashboardService {
         return tmfDataRetriever.getACBRsByCustomerBillId(customerbillId);
     }
 
-    public List<Product> getPurchasedproducts(String buyerId) throws Exception {
-        Map<String, String> filter = new HashMap<>();
-        filter.put("relatedParty.id", buyerId);
-        List<Product> products = tmfDataRetriever.getAllProducts(null, filter);
-        return RelatedPartyUtils.retainProductsWithParty(products, buyerId, Role.BUYER);
+    public List<Product> getPurchasedProducts(String buyerId) throws ExternalServiceException, ExternalServiceException {
+        List<Product> purchasedProducts = new ArrayList<>();
+        // Batch processing of all active products
+        tmfDataRetriever.getAllActiveProducts(100,
+            product -> {
+                // Keep only products where the buyer has the BUYER role
+                if (RelatedPartyUtils.productHasPartyWithRole(product, buyerId, Role.BUYER)) {
+                    purchasedProducts.add(product);
+                }
+        });
+
+        return purchasedProducts;
     }
 
-    public List<Product> getSoldProducts(String sellerId) throws Exception {
-        Map<String, String> filter = new HashMap<>();
-        filter.put("relatedParty.id", sellerId);
-        List<Product> products = tmfDataRetriever.getAllProducts(null, filter);
-        return RelatedPartyUtils.retainProductsWithParty(products, sellerId, Role.SELLER);
+    public List<Product> getSoldProducts(String sellerId) throws ExternalServiceException {
+        List<Product> soldProducts = new ArrayList<>();
+
+        // Batch processing of all active products
+        tmfDataRetriever.getAllActiveProducts(100,
+            product -> {
+                // Keep only products where the seller has the SELLER role
+                if (RelatedPartyUtils.productHasPartyWithRole(product, sellerId, Role.SELLER)) {
+                    soldProducts.add(product);
+                }
+        });
+
+        return soldProducts;
     }
 
     public Map<String, Object> getInvoice(String customerBillId) throws Exception {

@@ -12,6 +12,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
@@ -217,15 +218,18 @@ public class ReportingService implements InitializingBean {
 
     public Report membersSection() {
         try {
-            List<Product> allProducts = tmfDataRetriever.getAllSubscriptionProducts();
 
             List<Product> singleProviders = new ArrayList<>();
             List<Product> federatedProviders = new ArrayList<>();
 
-            for (Product p : allProducts) {
-                if (isFederated(p)) federatedProviders.add(p);
-                else singleProviders.add(p);
-            }
+            tmfDataRetriever.getAllActiveProducts(100,
+                product -> {
+                    if (isFederated(product)) {
+                        federatedProviders.add(product);
+                    } else {
+                        singleProviders.add(product);
+                    }
+            });
 
             int nrSingle = singleProviders.size();
             int nrFederated = federatedProviders.size();
@@ -278,18 +282,21 @@ public class ReportingService implements InitializingBean {
             }
 
             List<Report> report;
-            List<Product> products = tmfDataRetriever.getAllSubscriptionProducts();
-            
-            // FIXME: replace with domeOperator Role
-            boolean isDomeOp = products.stream().anyMatch(p -> RelatedPartyUtils.productHasPartyWithRole(p, relatedPartyId, Role.SELLER_OPERATOR));
+            AtomicBoolean isDomeOp = new AtomicBoolean(false);
 
-            if (!isDomeOp) {
-                report = handleProvider(relatedPartyId);
+            tmfDataRetriever.getAllActiveProducts(100,
+                product -> {
+                    // FIXME: replace with domeOperator Role// FIXME: replace with domeOperator Role
+                    if (RelatedPartyUtils.productHasPartyWithRole(product, relatedPartyId, Role.SELLER_OPERATOR)) {
+                        isDomeOp.set(true);
+                    }
+            });
+
+            if (isDomeOp.get()) {
+                return handleDomeOperator();
             } else {
-                report = handleDomeOperator();
+                return handleProvider(relatedPartyId);
             }
-
-            return report;
     }
 
     private List<Report> handleProvider(String relatedPartyId) throws BadTmfDataException, BadRevenuePlanException, ExternalServiceException {
