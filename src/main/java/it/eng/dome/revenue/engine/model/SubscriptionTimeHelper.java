@@ -185,6 +185,10 @@ public class SubscriptionTimeHelper {
 
     public TimePeriod getCustomPeriod(OffsetDateTime time, Price price, String keyword) {
         // if the keyword is null or empty, return null
+
+        final Pattern p1 = Pattern.compile("^(FIRST|LAST|PREVIOUS)_(\\d+)_CHARGE_PERIODS?$");
+        final Pattern p2 = Pattern.compile("^BETWEEN (\\d{4}-\\d{1,2}-\\d{1,2}) AND (\\d{4}-\\d{1,2}-\\d{1,2})");
+
         if(keyword != null && !keyword.isEmpty()) {
             if("CURRENT_CHARGE_PERIOD".equals(keyword)) {
 				return this.getChargePeriodAt(time, price);
@@ -198,9 +202,13 @@ public class SubscriptionTimeHelper {
             else if("PREVIOUS_SUBSCRIPTION_PERIOD".equals(keyword)) {
 				return this.getPreviousSubscriptionPeriod(time);
             }
-            else {
-                Pattern p = Pattern.compile("^(FIRST|LAST|PREVIOUS)_(\\d+)_CHARGE_PERIODS?$");
-                var matcher = p.matcher(keyword);
+            else if(p2.matcher(keyword).matches()) {
+                var matcher = p2.matcher(keyword);
+                logger.debug("***** PF {}", matcher.group(0));
+            }
+            else if(p1.matcher(keyword).matches()) {
+//                Pattern p = Pattern.compile("^(FIRST|LAST|PREVIOUS)_(\\d+)_CHARGE_PERIODS?$");
+                var matcher = p1.matcher(keyword);
                 if(matcher.matches()) {
                     Integer howManyPeriods = Integer.parseInt(matcher.group(2));
                     String timeWindowEndType = matcher.group(1);

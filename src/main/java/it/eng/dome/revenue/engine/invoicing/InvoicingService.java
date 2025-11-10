@@ -94,9 +94,8 @@ public class InvoicingService {
      * which is a list of enriched ACBRs.
      * @throws Exception 
      */
-    public BillingResponseDTO applyTaxees(Product product, CustomerBill customerBill, List<AppliedCustomerBillingRate> acbrs) throws ExternalServiceException {
+    public BillingResponseDTO applyTaxes(CustomerBill customerBill, List<AppliedCustomerBillingRate> acbrs) throws ExternalServiceException {
         LocalApplyTaxesRequestDTO dto = new LocalApplyTaxesRequestDTO();
-        dto.setProduct(product);
         dto.setCustomerBill(customerBill);
         dto.setAppliedCustomerBillingRate(acbrs);
 

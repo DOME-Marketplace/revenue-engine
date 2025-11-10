@@ -284,23 +284,12 @@ public class BillsService {
  	 * @return a list of ACBR with AppliedBillingTaxRate attribute for each object.
  	*/
     private BillingResponseDTO applyTaxes(CustomerBill customerBill, List<AppliedCustomerBillingRate> acbrs) throws Exception {
-
-        if (acbrs == null || acbrs.isEmpty()) {
-            logger.info("no acbrs received, no taxes to apply");
-            return null;
-        } else if (customerBill == null) {
+        if (customerBill == null) {
             logger.info("no customer bill received, no taxes to apply");
             return null;
-        } else {
-            // first, retrieve the product
-            String productId = acbrs.get(0).getProduct().getId();
-            Product product = tmfDataRetriever.getProductById(productId, null);
-
-            // invoke the invoicing service
-            BillingResponseDTO response = this.invoicingService.applyTaxees(product, customerBill, acbrs);
-
-            // return the updated ACBRs
-            return response;
+        }
+        else {
+            return this.invoicingService.applyTaxes(customerBill, acbrs);
         }
     }
 
