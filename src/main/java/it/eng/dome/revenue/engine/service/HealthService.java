@@ -2,6 +2,8 @@ package it.eng.dome.revenue.engine.service;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Supplier;
+import java.util.stream.Stream;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -83,19 +85,19 @@ public class HealthService extends AbstractHealthService {
 	        health.setStatus(HealthStatus.WARN);
 	    }
 
-		// 3: check self info
-	    for(Check c: getChecksOnSelf()) {
-	    	health.addCheck(c);
-	    	health.elevateStatus(c.getStatus());
-        }
-		
-	    // 4: check invoicing service
+	    // 3: check invoicing service
 	    for(Check c: getInvoicingServiceCheck()) {
 	    	health.addCheck(c);
 	    	health.elevateStatus(c.getStatus());
         }
-	    
-	    // 5: build human-readable notes
+
+		// 4: check self info
+		for(Check c: getChecksOnSelf()) {
+			health.addCheck(c);
+			health.elevateStatus(c.getStatus());
+		}
+
+		// 5: build human-readable notes
 	    health.setNotes(buildNotes(health));
 		
 		logger.debug("Health response: {}", toJson(health));
@@ -131,7 +133,7 @@ public class HealthService extends AbstractHealthService {
             connectivity.setOutput(toJson(invoicingInfo));
         }
         catch(Exception e) {
-            connectivity.setStatus(HealthStatus.FAIL);
+            connectivity.setStatus(HealthStatus.WARN);
             connectivity.setOutput(e.getMessage());
         }
         out.add(connectivity);
@@ -139,108 +141,37 @@ public class HealthService extends AbstractHealthService {
         return out;
     }
 
-    private List<Check> getTMFChecks() {
+	private List<Check> getTMFChecks() {
+		List<Check> out = new ArrayList<>();
 
-    	List<Check> out = new ArrayList<>();
-    	
-    	// TMF620
-		Check tmf620 = createCheck("tmf-api", "connectivity", "tmf620");
+		out.add(tmfCheck("tmf620", () -> FetchUtils.streamAll(productCatalogManagementApis::listCatalogs, null, null, 1)));
+		out.add(tmfCheck("tmf629", () -> FetchUtils.streamAll(customerManagementApis::listCustomers, null, null, 1)));
+		out.add(tmfCheck("tmf632", () -> FetchUtils.streamAll(apiPartyApis::listOrganizations, null, null, 1)));
+		out.add(tmfCheck("tmf637", () -> FetchUtils.streamAll(productInventoryApis::listProducts, null, null, 1)));
+		out.add(tmfCheck("tmf651", () -> FetchUtils.streamAll(agreementManagementApis::listAgreements, null, null, 1)));
+		out.add(tmfCheck("tmf678", () -> FetchUtils.streamAll(appliedCustomerBillRateApis::listAppliedCustomerBillingRates, null, null, 1)));
 
-		try {
-			FetchUtils.streamAll(productCatalogManagementApis::listCatalogs, null, null, 1).findAny();
+		return out;
+	}
 
-			tmf620.setStatus(HealthStatus.PASS);
-
-		} catch (Exception e) {
-			tmf620.setStatus(HealthStatus.FAIL);
-			tmf620.setOutput(e.toString());
-		}
-
-		out.add(tmf620);
-		
-		// TMF629
-		Check tmf629 = createCheck("tmf-api", "connectivity", "tmf629");
+	private Check tmfCheck(String name, CheckedSupplier<Stream<?>> fetcher) {
+		Check check = createCheck("tmf-api", "connectivity", name);
 
 		try {
-			FetchUtils.streamAll(customerManagementApis::listCustomers, null, null, 1).findAny();
-
-			tmf629.setStatus(HealthStatus.PASS);
-
+			fetcher.get().findAny();
+			check.setStatus(HealthStatus.PASS);
 		} catch (Exception e) {
-			tmf629.setStatus(HealthStatus.FAIL);
-			tmf629.setOutput(e.toString());
+			check.setStatus(HealthStatus.FAIL);
+			check.setOutput(e.toString());
 		}
 
-		out.add(tmf629);
+		return check;
+	}
 
-		// TMF632
-		Check tmf632 = createCheck("tmf-api", "connectivity", "tmf632");
-
-		try {
-			FetchUtils.streamAll(apiPartyApis::listOrganizations, null, null, 1).findAny();
-
-			tmf632.setStatus(HealthStatus.PASS);
-
-		} catch (Exception e) {
-			tmf632.setStatus(HealthStatus.FAIL);
-			tmf632.setOutput(e.toString());
-		}
-
-		out.add(tmf632);
-		
-		// TMF637
-		Check tmf637 = createCheck("tmf-api", "connectivity", "tmf637");
-
-		try {
-			FetchUtils.streamAll(productInventoryApis::listProducts, null, null, 1).findAny();
-
-			tmf637.setStatus(HealthStatus.PASS);
-
-		} catch (Exception e) {
-			tmf637.setStatus(HealthStatus.FAIL);
-			tmf637.setOutput(e.toString());
-		}
-
-		out.add(tmf637);
-		
-		// TMF651
-		Check tmf651 = createCheck("tmf-api", "connectivity", "tmf651");
-
-		try {
-			FetchUtils.streamAll(agreementManagementApis::listAgreements, null, null, 1).findAny();
-
-			tmf651.setStatus(HealthStatus.PASS);
-
-		} catch (Exception e) {
-			tmf651.setStatus(HealthStatus.FAIL);
-			tmf651.setOutput(e.toString());
-		}
-
-		out.add(tmf651);
-		
-		// TMF678
-		Check tmf678 = createCheck("tmf-api", "connectivity", "tmf678");
-
-		try {
-			FetchUtils.streamAll(
-				appliedCustomerBillRateApis::listAppliedCustomerBillingRates,
-			    null,
-			    null,
-			    1
-			)
-			.findAny();
-			
-			tmf678.setStatus(HealthStatus.PASS);
-		} catch (Exception e) {
-			tmf678.setStatus(HealthStatus.FAIL);
-			tmf678.setOutput(e.toString());
-		}
-
-		out.add(tmf678);
-		
-        return out;
-    }
-
+	@FunctionalInterface
+	private interface CheckedSupplier<T> {
+		T get() throws Exception;
+	}
 }
 
 
