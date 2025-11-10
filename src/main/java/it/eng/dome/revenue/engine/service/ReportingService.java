@@ -63,10 +63,7 @@ public class ReportingService implements InitializingBean {
 
     public void afterPropertiesSet() {}
 
-
-
-    public List<Report> totalSubscriptionRevenueSection() 
-            throws BadTmfDataException, BadRevenuePlanException, ExternalServiceException {
+    public List<Report> totalSubscriptionRevenueSection() {
         try {
             List<Subscription> subscriptions = subscriptionService.getAllSubscriptions();
             if (subscriptions == null || subscriptions.isEmpty()) {
@@ -171,7 +168,6 @@ public class ReportingService implements InitializingBean {
         }
     }
 
-
     public List<Report> buildTopAndTotalBoxes(Report totalRevenueReport) {
         try {
             if (totalRevenueReport.getItems() == null || totalRevenueReport.getItems().isEmpty()) {
@@ -219,7 +215,7 @@ public class ReportingService implements InitializingBean {
         }
     }
 
-    public Report membersSection() throws ExternalServiceException, BadTmfDataException {
+    public Report membersSection() {
         try {
             List<Product> allProducts = tmfDataRetriever.getAllSubscriptionProducts();
 
@@ -273,7 +269,7 @@ public class ReportingService implements InitializingBean {
     }
 
     public List<Report> getDashboardReport(String relatedPartyId) throws BadTmfDataException, BadRevenuePlanException, ExternalServiceException {
-        
+
             if (relatedPartyId == null || relatedPartyId.isEmpty()) {
                 throw new BadTmfDataException("Organization", relatedPartyId, "Related Party ID cannot be null or empty");
             }
@@ -281,36 +277,54 @@ public class ReportingService implements InitializingBean {
                 throw new NotFoundException("Organization not found: " + relatedPartyId);
             }
 
-            List<Report> report = new ArrayList<>();
+            List<Report> report;
             List<Product> products = tmfDataRetriever.getAllSubscriptionProducts();
             
             // FIXME: replace with domeOperator Role
             boolean isDomeOp = products.stream().anyMatch(p -> RelatedPartyUtils.productHasPartyWithRole(p, relatedPartyId, Role.SELLER_OPERATOR));
 
             if (!isDomeOp) {
-                report.add(getSubscriptionSection(relatedPartyId));
-                report.add(getBillingHistorySection(relatedPartyId));
-                if ("Subscription".equalsIgnoreCase(report.get(0).getLabel())
-                        && ("No active subscription found for this user as of today, " + OffsetDateTime.now().toLocalDate().format(DateTimeFormatter.ofPattern("dd/MM/yyyy")) + ".").equalsIgnoreCase(report.get(0).getText()))
-                    return report;
-                report.add(getRevenueSection(relatedPartyId));
+                report = handleProvider(relatedPartyId);
             } else {
-                List<Report> revenueReports = totalSubscriptionRevenueSection();
-                report.addAll(revenueReports);
-                report.add(membersSection());
+                report = handleDomeOperator();
             }
 
             return report;
-        
-
     }
 
-    public Report getSubscriptionSection(String relatedPartyId) throws BadTmfDataException, BadRevenuePlanException, ExternalServiceException {
+    private List<Report> handleProvider(String relatedPartyId) throws BadTmfDataException, BadRevenuePlanException, ExternalServiceException {
+        List<Report> report = new ArrayList<>();
+
+        Report subscriptionReport = getSubscriptionSection(relatedPartyId);
+        report.add(subscriptionReport);
+        report.add(getBillingHistorySection(relatedPartyId));
+        if (Boolean.TRUE.equals(subscriptionReport.isNoActiveSubscription())) {
+            return report;
+        }
+        report.add(getRevenueSection(relatedPartyId));
+
+        return report;
+    }
+
+    private List<Report> handleDomeOperator() {
+        List<Report> report = new ArrayList<>();
+
+        List<Report> revenueReports = totalSubscriptionRevenueSection();
+        report.addAll(revenueReports);
+        report.add(membersSection());
+
+        return report;
+    }
+
+    public Report getSubscriptionSection(String relatedPartyId) {
         try {
             Subscription subscription = subscriptionService.getActiveSubscriptionByRelatedPartyId(relatedPartyId);
-            if (subscription == null)
-                return new Report("Subscription", "No active subscription found for this user as of today, "
-                        + OffsetDateTime.now().toLocalDate().format(DateTimeFormatter.ofPattern("dd/MM/yyyy")) + ".");
+
+            if (subscription == null) {
+                return new Report("Subscription", "You have no subscription as of today, "
+                        + OffsetDateTime.now().toLocalDate().format(DateTimeFormatter.ofPattern("dd/MM/yyyy")) + ".", true);
+            }
+
             Plan plan = planService.getPlanById(subscription.getPlan().getId());
             String planName = plan.getName() != null ? plan.getName() : "Unknown Plan";
             SubscriptionTimeHelper th = new SubscriptionTimeHelper(subscription);
@@ -378,12 +392,12 @@ public class ReportingService implements InitializingBean {
 //            return new Report("Billing History", "No billing data available");
 //        }
 //    }
-    
-	  // FIXME: Note: For now, it's preferable to display the statements directly rather than using the method above
+
+    // FIXME: Note: For now, it's preferable to display the statements directly rather than using the method above
     public Report getBillingHistorySection(String relatedPartyId) {
         try {
             Subscription subscription = subscriptionService.getActiveSubscriptionByRelatedPartyId(relatedPartyId);
-            if (subscription == null) 
+            if (subscription == null)
                 return new Report("Billing History", "No active subscription found");
 
             List<RevenueItem> statements = statementsService.getItemsForSubscription(subscription.getId());
@@ -394,13 +408,13 @@ public class ReportingService implements InitializingBean {
 
             List<Report> invoices = new ArrayList<>();
             for (RevenueItem ri : statements) {
-                String date = ri.getChargeTime() != null 
-                        ? ri.getChargeTime().toLocalDate().toString() 
+                String date = ri.getChargeTime() != null
+                        ? ri.getChargeTime().toLocalDate().toString()
                         : "Unknown Date";
-                String amount = String.format("%.2f %s", 
-                        ri.getOverallValue(), 
+                String amount = String.format("%.2f %s",
+                        ri.getOverallValue(),
                         ri.getCurrency() != null ? ri.getCurrency() : "");
-                
+
 
                 List<Report> details = new ArrayList<>();
 
@@ -421,7 +435,7 @@ public class ReportingService implements InitializingBean {
         }
     }
     
-	public Report getRevenueSection(String relatedPartyId) throws BadTmfDataException, BadRevenuePlanException, ExternalServiceException {
+	public Report getRevenueSection(String relatedPartyId) {
 	    try {
 	        Subscription subscription = subscriptionService.getActiveSubscriptionByRelatedPartyId(relatedPartyId);
 	        if (subscription == null || subscription.getId() == null || subscription.getId().isEmpty())
@@ -481,17 +495,6 @@ public class ReportingService implements InitializingBean {
 	    }
 	}
 
-
-    public List<RevenueItem> getRevenueStatements(String relatedPartyId) throws BadTmfDataException, ExternalServiceException {
-        try {
-            Subscription subscription = subscriptionService.getActiveSubscriptionByRelatedPartyId(relatedPartyId);
-            return statementsService.getItemsForSubscription(subscription.getId());
-        } catch (Exception e) {
-            logger.error("Unexpected error retrieving statements", e);
-            return Collections.emptyList();
-        }
-    }
-    
     private boolean isFederated(Product p) {
         if (p.getProductCharacteristic() == null) return false;
         for (Characteristic ch : p.getProductCharacteristic()) {
