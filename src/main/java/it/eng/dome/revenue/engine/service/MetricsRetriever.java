@@ -35,8 +35,7 @@ public class MetricsRetriever {
 
         // TODO: when the new CB/ACBR approach will be done in the Billing Engine, retrieve CBs instead of ACBRs
         if (sellerId == null || sellerId.isEmpty()) {
-            // FIXME: wrong exception type
-            throw new BadTmfDataException("Seller", sellerId, "Seller ID cannot be null or empty");
+            throw new IllegalArgumentException("Seller ID cannot be null or empty: " + sellerId);
         }
 
         try {
@@ -152,47 +151,39 @@ public class MetricsRetriever {
             case "referred-provider-max-transaction-volume":
                 return computeReferralsProviderMaxTransactionVolume(sellerId, timePeriod);
             default:
-                // FIXME: wrong exception type
-                throw new BadTmfDataException("Metric", key, "Unknown metric key");
+                // TODO: evaluate creating an enum to centralise metric keys
+                throw new IllegalArgumentException("Unknown metric key: " + key);
         }
     }
 
-    public List<String> getDistinctValuesForKey(String key, String subscriberId, TimePeriod timePeriod)
-            throws BadTmfDataException, ExternalServiceException {
+    public List<String> getDistinctValuesForKey(String key, String subscriberId, TimePeriod timePeriod) throws BadTmfDataException, ExternalServiceException {
         switch(key) {
-            case "activeSellersBehindMarketplace":
+            case "activeSellersBehindMarketplace": {
                 if (subscriberId == null || subscriberId.isEmpty()) {
-                    // FIXME: wrong exception
-                    throw new BadTmfDataException("Subscriber", subscriberId, "Subscriber ID cannot be null or empty");
+                    throw new IllegalArgumentException("Subscriber ID cannot be null or empty: " + subscriberId);
                 }
-                try {
-                    List<Organization> orgs = this.getActiveSellersBehindMarketplace(subscriberId, timePeriod);
-                    List<String> orgIds = new ArrayList<>();
-                    for(Organization o: orgs) {
-                        orgIds.add(o.getId());
-                    }
+                List<Organization> orgs = this.getActiveSellersBehindMarketplace(subscriberId, timePeriod);
+                List<String> orgIds = new ArrayList<>();
+                for (Organization o : orgs) {
+                    orgIds.add(o.getId());
+                }
 //                    orgIds.add(subscriberId); // also add the marketplace itself
-                    return orgIds;
-                } catch (Exception e) {
-                    logger.error("Failed to retrieve active sellers behind marketplace {}: {}", subscriberId, e.getMessage(), e);
-                    // FIXME: this is not the correct exception
-                    throw new ExternalServiceException("Failed to retrieve active sellers behind marketplace ID: " + subscriberId, e);
-                }
-            case "billedSellersBehindMarketplace":
+                return orgIds;
+            }
+            case "billedSellersBehindMarketplace": {
                 if (subscriberId == null || subscriberId.isEmpty()) {
-                    throw new BadTmfDataException("Subscriber", subscriberId, "Subscriber ID cannot be null or empty");
+                    throw new IllegalArgumentException("Subscriber ID cannot be null or empty: " + subscriberId);
                 }
                 List<Organization> orgs = this.listBilledSellersBehindMarketplace(subscriberId, timePeriod);
                 List<String> orgIds = new ArrayList<>();
-                for(Organization o: orgs)
+                for (Organization o : orgs)
                     orgIds.add(o.getId());
                 return orgIds;
+            }
                 
             default:
-                // FIXME: this is not the correct exception
-                throw new BadTmfDataException("Metric", key, "Unknown metric key");
+                throw new IllegalArgumentException("Unknown metric key: " + key);
         }
-
     }
 
     private List<Organization> getActiveSellersBehindMarketplace(String marketplaceId, TimePeriod timePeriod) throws ExternalServiceException, BadTmfDataException {
