@@ -1,7 +1,10 @@
 package it.eng.dome.revenue.engine.model;
 
 import java.time.DayOfWeek;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.TreeSet;
@@ -184,19 +187,15 @@ public class SubscriptionTimeHelper {
     }
 
     public TimePeriod getCustomPeriod(OffsetDateTime time, Price price, String keyword) {
-        // if the keyword is null or empty, return null
 
-        final Pattern p1 = Pattern.compile("^(FIRST|LAST|PREVIOUS)_(\\d+)_CHARGE_PERIODS?$");
-        final Pattern p2 = Pattern.compile("^BETWEEN (\\d{4}-\\d{1,2}-\\d{1,2}) AND (\\d{4}-\\d{1,2}-\\d{1,2})");
+        final Pattern p1 = Pattern.compile("^\\s+(FIRST|LAST|PREVIOUS)_(\\d+)_CHARGE_PERIODS?\\s+$", Pattern.CASE_INSENSITIVE);
+        final Pattern p2 = Pattern.compile("^\\s*BETWEEN\\s+(\\d{4}-\\d{2}-\\d{2})\\s+AND\\s+(\\d{4}-\\d{2}-\\d{2})\\s*$", Pattern.CASE_INSENSITIVE);
 
         if(keyword != null && !keyword.isEmpty()) {
             if("CURRENT_CHARGE_PERIOD".equals(keyword)) {
 				return this.getChargePeriodAt(time, price);
             }
             else if("PREVIOUS_CHARGE_PERIOD".equals(keyword)) {
-				return this.getPreviousChargePeriod(time, price);
-            } 
-            else if("CURRENT_SUBSCRIPTION_PERIOD".equals(keyword)) {
 				return this.getSubscriptionPeriodAt(time);
             } 
             else if("PREVIOUS_SUBSCRIPTION_PERIOD".equals(keyword)) {
@@ -204,10 +203,16 @@ public class SubscriptionTimeHelper {
             }
             else if(p2.matcher(keyword).matches()) {
                 var matcher = p2.matcher(keyword);
-                logger.debug("***** PF {}", matcher.group(0));
+                if(matcher.matches()) {
+                    LocalDateTime start = LocalDate.parse(matcher.group(1)).atStartOfDay();
+                    LocalDateTime end = LocalDate.parse(matcher.group(2)).plusDays(1).atStartOfDay().minusSeconds(1);
+                    TimePeriod tp = new TimePeriod();
+                    tp.setStartDateTime(OffsetDateTime.of(start,ZoneOffset.UTC));
+                    tp.setEndDateTime(OffsetDateTime.of(end,ZoneOffset.UTC));
+                    return tp;
+                }
             }
             else if(p1.matcher(keyword).matches()) {
-//                Pattern p = Pattern.compile("^(FIRST|LAST|PREVIOUS)_(\\d+)_CHARGE_PERIODS?$");
                 var matcher = p1.matcher(keyword);
                 if(matcher.matches()) {
                     Integer howManyPeriods = Integer.parseInt(matcher.group(2));
@@ -365,6 +370,5 @@ public class SubscriptionTimeHelper {
 			return null;
 		}
 	}
-
 
 }

@@ -267,12 +267,16 @@ public abstract class AbstractCalculator implements Calculator {
 		    TimePeriod validPeriod = sth.getCustomPeriod(null, this.item.getReferencePrice(), this.item.getValidPeriod().getValue());
 			if(validPeriod!=null) {
 				logger.debug("For this price/discount, only considering the period {} - {}", validPeriod.getStartDateTime(), validPeriod.getEndDateTime());
-				if(!timePeriod.getStartDateTime().isBefore(validPeriod.getEndDateTime())) {
-					logger.debug("Ignoring the price/discount entirely as it starts after the validPeriod");
+				if(validPeriod.getEndDateTime().isBefore(timePeriod.getStartDateTime())) {
+					logger.debug("Ignoring the price/discount entirely as it ends before the period");
+					return false;
+				}
+				if(validPeriod.getStartDateTime().isAfter(timePeriod.getEndDateTime())) {
+					logger.debug("Ignoring the price/discount entirely as it starts after the period");
 					return false;
 				}
 			}
-			logger.debug("The price/discount starts before the validPeriod {}", this.item.getValidPeriod());
+			logger.debug("The price/discount {} is compatible with the validPeriod {}", this.item.getName(), this.item.getValidPeriod());
 		}
 
         return true;
