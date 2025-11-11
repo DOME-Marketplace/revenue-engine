@@ -27,7 +27,7 @@ public class PlanValidator {
         issues.addAll(validateAdvancedBillingProperties(plan));
 
         if (plan.getPrice() != null) {
-            issues.addAll(validatePrice(plan.getPrice()));
+            issues.addAll(validatePrice(plan.getPrice(), null));
         }
 
         return issues;
@@ -46,17 +46,35 @@ public class PlanValidator {
             issues.add(new PlanValidationIssue("the plan must include a lifecycle status", PlanValidationIssueSeverity.ERROR));
         if(plan.getSubscriptionDurationLength() != null && plan.getSubscriptionDurationLength() < 0)
             issues.add(new PlanValidationIssue("subscriptionDurationLength must be >= 0", PlanValidationIssueSeverity.WARNING));
+        if (plan.getId() == null || plan.getId().isEmpty())
+            issues.add(new PlanValidationIssue("the plan must include an id", PlanValidationIssueSeverity.WARNING));
+        if (plan.getSubscriptionDurationPeriodType() == null)
+            issues.add(new PlanValidationIssue("the plan must include subscriptionDurationPeriodType", PlanValidationIssueSeverity.WARNING));
+        if (plan.getAgreements() == null)
+            issues.add(new PlanValidationIssue("the plan can include an agreements", PlanValidationIssueSeverity.INFO));
         return issues;
     }
 
     private List<PlanValidationIssue> validateBillingCycleSection(Plan plan) {
         List<PlanValidationIssue> issues = new ArrayList<>();
+        if(plan.getBillCycleSpecification() == null)
+            issues.add(new PlanValidationIssue("the plan must include a BillCycleSpecification", PlanValidationIssueSeverity.ERROR));
         if (plan.getBillCycleSpecification().getBillingPeriodLength() == null)
-            issues.add(new PlanValidationIssue("the plan must include a billingPeriodLength (an integer)", PlanValidationIssueSeverity.ERROR));
+            issues.add(new PlanValidationIssue("the plan must include a billingPeriodLength", PlanValidationIssueSeverity.ERROR));
         if (plan.getBillCycleSpecification().getBillingPeriodType() == null)
             issues.add(new PlanValidationIssue("the plan must include a billingPeriodType", PlanValidationIssueSeverity.ERROR));
         if (plan.getBillCycleSpecification().getBillingPeriodEnd() == null)
             issues.add(new PlanValidationIssue("the plan does not provide a 'billingPeriodEnd'", PlanValidationIssueSeverity.WARNING));
+
+        if (plan.getBillCycleSpecification().getBillingPeriodType() != null) {
+            List<String> allowed = Arrays.asList("DAY", "MONTH", "YEAR");
+            if (!allowed.contains(plan.getBillCycleSpecification().getBillingPeriodType().toString()))
+                issues.add(new PlanValidationIssue("Invalid billingPeriodType: " + plan.getBillCycleSpecification().getBillingPeriodType(), PlanValidationIssueSeverity.ERROR));
+        }
+
+        if (plan.getBillCycleSpecification().getBillingPeriodEnd() != null && plan.getBillCycleSpecification().getBillingPeriodEnd().isEmpty())
+            issues.add(new PlanValidationIssue("billingPeriodEnd is empty", PlanValidationIssueSeverity.WARNING));
+
         return issues;
     }
 
@@ -72,27 +90,87 @@ public class PlanValidator {
     }
 
     // ---------- PLAN ITEM LEVEL ----------
-    private List<PlanValidationIssue> validatePlanItem(PlanItem item) {
+    private List<PlanValidationIssue> validatePlanItem(PlanItem item, PlanItem parent) {
         List<PlanValidationIssue> issues = new ArrayList<>();
-        issues.addAll(validatePlanItemCommon(item));
+        issues.addAll(validatePlanItemCommon(item, parent));
         issues.addAll(validatePlanItemApplicable(item));
         issues.addAll(validatePlanItemComputation(item));
         issues.addAll(validatePlanItemIgnore(item));
-        issues.addAll(validatePlanItemAmounts(item));
+        issues.addAll(validatePlanItemAmounts(item, parent));
         issues.addAll(validatePlanItemChargeProperties(item));
         issues.addAll(validatePlanItemBundle(item));
         issues.addAll(validatePlanItemForEach(item));
         issues.addAll(validatePlanItemChildItems(item));
         issues.addAll(validatePlanItemConditional(item));
+
+        if (item.getResultingAmountRange() != null &&
+            item.getResultingAmountRange().getMax() != null &&
+            item.getResultingAmountRange().getMin() != null &&
+            item.getResultingAmountRange().getMax() < item.getResultingAmountRange().getMin())
+            issues.add(new PlanValidationIssue("resultingAmountRange min > max", PlanValidationIssueSeverity.ERROR));
+
+        if (item.getAmount() != null && item.getPercent() != null)
+            issues.add(new PlanValidationIssue("PlanItem defines both amount and percent — only one should be set", PlanValidationIssueSeverity.WARNING));
+
         return issues;
     }
 
-    private List<PlanValidationIssue> validatePlanItemCommon(PlanItem item) {
+    private List<PlanValidationIssue> validatePlanItemCommon(PlanItem item, PlanItem parent) {
         List<PlanValidationIssue> issues = new ArrayList<>();
-        if (item.getName() == null || item.getName().isEmpty())
+        boolean hasName = (item.getName() != null && !item.getName().isEmpty()) || (parent != null && parent.getName() != null);
+        if (!hasName)
             issues.add(new PlanValidationIssue("PlanItem must have a name", PlanValidationIssueSeverity.WARNING));
+
+        if (item.getCurrency() != null && parent != null &&
+            parent.getCurrency() != null &&
+            !item.getCurrency().equals(parent.getCurrency()))
+            issues.add(new PlanValidationIssue("Currency mismatch between parent and child item", PlanValidationIssueSeverity.WARNING));
+
         return issues;
     }
+
+	private List<PlanValidationIssue> validatePlanItemAmounts(PlanItem item, PlanItem parent) {
+	    List<PlanValidationIssue> issues = new ArrayList<>();
+	
+	    if (item instanceof Price) {
+	        Price price = (Price) item;
+	
+	        if (price.getAmount() != null && price.getAmount() < 0)
+	            issues.add(new PlanValidationIssue("Price amount must be >= 0", PlanValidationIssueSeverity.ERROR));
+	
+	        if (price.getCurrency() == null && (parent == null || parent.getCurrency() == null))
+	            issues.add(new PlanValidationIssue("Price must have a currency", PlanValidationIssueSeverity.ERROR));
+	
+	        if (!hasTypeDefined(price, parent))
+	            issues.add(new PlanValidationIssue(
+	                "Price must have a type (e.g. RECURRING_PREPAID, RECURRING_POSTPAID, ONE_TIME)", 
+	                PlanValidationIssueSeverity.WARNING
+	            ));
+	
+	    } else if (item instanceof Discount) {
+	        Discount discount = (Discount) item;
+	        boolean hasName = (discount.getName() != null && !discount.getName().isEmpty()) ||
+	                          (parent != null && parent.getName() != null);
+	        if (!hasName)
+	            issues.add(new PlanValidationIssue("Discount must have a name", PlanValidationIssueSeverity.WARNING));
+	    }
+	
+	    return issues;
+	}
+	
+	private boolean hasTypeDefined(Price price, PlanItem parent) {
+	    if (price.getType() != null) return true;
+	    if (parent != null && parent instanceof Price && ((Price) parent).getType() != null) return true;
+	
+	    if (price.getPrices() != null) {
+	        for (Price child : price.getPrices()) {
+	            if (hasTypeDefined(child, price)) return true;
+	        }
+	    }
+	
+	    return false;
+	}
+
 
     private List<PlanValidationIssue> validatePlanItemApplicable(PlanItem item) {
         List<PlanValidationIssue> issues = new ArrayList<>();
@@ -126,26 +204,6 @@ public class PlanValidator {
         return issues;
     }
 
-    private List<PlanValidationIssue> validatePlanItemAmounts(PlanItem item) {
-        List<PlanValidationIssue> issues = new ArrayList<>();
-        if (item instanceof Price) {
-            Price price = (Price) item;
-            if (price.getAmount() != null && price.getAmount() < 0)
-                issues.add(new PlanValidationIssue("Price amount must be >= 0", PlanValidationIssueSeverity.ERROR));
-            if (price.getCurrency() == null || price.getCurrency().isEmpty())
-                issues.add(new PlanValidationIssue("Price must have a currency", PlanValidationIssueSeverity.ERROR));
-        } else if (item instanceof Discount) {
-            Discount discount = (Discount) item;
-            if (discount.getName() == null || discount.getName().isEmpty())
-                issues.add(new PlanValidationIssue("Discount must have a name", PlanValidationIssueSeverity.WARNING));
-            if (discount.getPercent() != null && (discount.getPercent() < 0 || discount.getPercent() > 100))
-                issues.add(new PlanValidationIssue("Discount percent must be between 0 and 100", PlanValidationIssueSeverity.ERROR));
-            if (discount.getAmount() != null && discount.getAmount() < 0)
-                issues.add(new PlanValidationIssue("Discount amount must be >= 0", PlanValidationIssueSeverity.ERROR));
-        }
-        return issues;
-    }
-
     private List<PlanValidationIssue> validatePlanItemChargeProperties(PlanItem item) {
         List<PlanValidationIssue> issues = new ArrayList<>();
         if (item instanceof Price) {
@@ -171,9 +229,15 @@ public class PlanValidator {
         if (item.getIsBundle()) {
             if (item.getBundleOp() == null)
                 issues.add(new PlanValidationIssue("Bundle item must have bundleOp defined", PlanValidationIssueSeverity.ERROR));
+            if (item.getBundleOp() != null) {
+                boolean valid = Arrays.stream(BundleOperator.values())
+                                      .anyMatch(op -> op == item.getBundleOp());
+                if (!valid)
+                    issues.add(new PlanValidationIssue("Invalid bundleOp value: " + item.getBundleOp(), PlanValidationIssueSeverity.ERROR));
+            }
             if (item.getBundleItems() != null) {
                 for (PlanItem child : item.getBundleItems()) {
-                    issues.addAll(validatePlanItem(child));
+                    issues.addAll(validatePlanItem(child, item));
                 }
             }
         }
@@ -193,7 +257,7 @@ public class PlanValidator {
         List<PlanValidationIssue> issues = new ArrayList<>();
         if (item.getChildItems() != null) {
             for (PlanItem child : item.getChildItems()) {
-                issues.addAll(validatePlanItem(child));
+                issues.addAll(validatePlanItem(child, item));
             }
         }
         return issues;
@@ -211,33 +275,33 @@ public class PlanValidator {
         return issues;
     }
 
-    private List<PlanValidationIssue> validatePrice(Price price) {
+    private List<PlanValidationIssue> validatePrice(Price price, PlanItem parent) {
         List<PlanValidationIssue> issues = new ArrayList<>();
-        issues.addAll(validatePlanItem(price));
+        issues.addAll(validatePlanItem(price, parent));
 
         if (price.getPrices() != null) {
             for (Price p : price.getPrices()) {
                 if (p.getType() == null) p.setType(price.getType());
                 if (p.getRecurringChargePeriodType() == null) p.setRecurringChargePeriodType(price.getRecurringChargePeriodType());
                 if (p.getRecurringChargePeriodLength() == null) p.setRecurringChargePeriodLength(price.getRecurringChargePeriodLength());
-                issues.addAll(validatePrice(p));
+                issues.addAll(validatePrice(p, price));
             }
         }
 
         if (price.getDiscount() != null) {
-            issues.addAll(validateDiscount(price.getDiscount()));
+            issues.addAll(validateDiscount(price.getDiscount(), price));
         }
 
         return issues;
     }
 
-    private List<PlanValidationIssue> validateDiscount(Discount discount) {
+    private List<PlanValidationIssue> validateDiscount(Discount discount, PlanItem parent) {
         List<PlanValidationIssue> issues = new ArrayList<>();
-        issues.addAll(validatePlanItem(discount));
+        issues.addAll(validatePlanItem(discount, parent));
 
         if (discount.getDiscounts() != null) {
             for (Discount d : discount.getDiscounts()) {
-                issues.addAll(validateDiscount(d));
+                issues.addAll(validateDiscount(d, discount));
             }
         }
 
