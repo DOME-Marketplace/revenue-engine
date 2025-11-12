@@ -70,25 +70,23 @@ public class HealthService extends AbstractHealthService {
 			health.elevateStatus(c.getStatus());
 		}
 
-		// 2: check dependencies: in case of FAIL or WARN set it to WARN
-		boolean onlyDependenciesFailing = health.getChecks("self", null).stream()
-				.allMatch(c -> c.getStatus() == HealthStatus.PASS);
-		
-		if (onlyDependenciesFailing && health.getStatus() == HealthStatus.FAIL) {
-	        health.setStatus(HealthStatus.WARN);
-	    }
-
-	    // 3: check invoicing service
+	    // 2: check invoicing service
 	    for(Check c: getInvoicingServiceCheck()) {
 	    	health.addCheck(c);
 	    	health.elevateStatus(c.getStatus());
         }
 
-		// 4: check self info
+		// 3: check self info
 		for(Check c: getChecksOnSelf()) {
 			health.addCheck(c);
 			health.elevateStatus(c.getStatus());
 		}
+
+		// 4: if self is ok, but overall status is FAIL, change it to WARN (not a local problem)
+		boolean selfIsOk = health.getChecks("self", null).stream().allMatch(c -> c.getStatus() == HealthStatus.PASS);		
+		if (selfIsOk && health.getStatus() == HealthStatus.FAIL) {
+	        health.setStatus(HealthStatus.WARN);
+	    }
 
 		// 5: build human-readable notes
 	    health.setNotes(buildNotes(health));
@@ -134,7 +132,7 @@ public class HealthService extends AbstractHealthService {
 	        out.add(responsetime);
         }
         catch(Exception e) {
-            connectivity.setStatus(HealthStatus.WARN);
+            connectivity.setStatus(HealthStatus.FAIL);
             connectivity.setOutput(e.getMessage());
         }
 		out.add(connectivity);
