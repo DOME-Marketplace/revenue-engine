@@ -120,7 +120,7 @@ public class RevenueBillingMapper {
 	    acbr.setName(item.getName());
 	    acbr.setDescription((subscription != null ? subscription.getName() : "") 
 	        + " for period " + revenueBill.getPeriod().getStartDateTime() + " - " + revenueBill.getPeriod().getEndDateTime());
-	    acbr.setDate(revenueBill.getPeriod().getEndDateTime());	// from specs, date is the acbr creation date. So, review this.
+	    acbr.setDate(item.getChargeTime());	// from specs, date is the acbr creation date. So, review this.
 	    acbr.setIsBilled(false); 
 	    acbr.setType(item.getType());
 	    acbr.setPeriodCoverage(revenueBill.getPeriod());
