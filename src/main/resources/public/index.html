@@ -31,9 +31,9 @@
             <table name="invoice_details_template" class="box">
                 <tr><td><h4>Bill</h4></td></tr>
                 <tr><td>Order&nbsp;ref.</td><td name="orderRef" style="text-align:right">n/a</td></tr>
-                <tr><td>Product&nbsp;ref.</td><td name="productRef" style="text-align:right">n/a</td></tr>
+                <tr><td>Product&nbsp;ref.</td><td name="productRef" style="text-align:right"></td></tr>
                 <tr><td colspan="2"><hr></td></tr>
-                <tr><td>Bill no</td><td name="billNo" style="text-align:right">n/a</td></tr>
+                <tr><td>Bill no.</td><td name="billNo" style="text-align:right">n/a</td></tr>
                 <tr><td>Bill period</td><td name="billPeriod" use_template="period" style="text-align:right"></td></tr>
                 <tr><td>Bill date</td><td name="billDate" style="text-align:right"></td></tr>
                 <tr><td>Next&nbsp;bill&nbsp;date</td><td name="nextBillDate" style="text-align:right"></td></tr>
@@ -53,7 +53,7 @@
             </table>
 
             <div name="invoice_summary_template" class="invoice tmfbox">
-                <h3>Invoice (generated from CB and ACBRs)</h3>
+                <h3>Invoice (generated from CB and ACBRs; not on TMF)</h3>
                 <table style="width:100%">
                     <tr>
                         <td style="vertical-align:bottom">
@@ -191,9 +191,10 @@
                 <div name="taxItemx"></div>
                 <hr/>
                 <button onclick="fetchAndShowACBRs(this.parentNode);">ACBRs</button>
-                <button onclick="fetchAndShowRaw(this.parentNode);">raw</button>
+                <button onclick="fetchAndShowRawACBRs(this.parentNode);">raw ACBRs</button>
                 <button onclick="fetchAndShowInvoice(this.parentNode);">Invoice</button>
                 <button onclick="fetchAndShowRawInvoice(this.parentNode);">raw invoice</button>
+                <button onclick="fetchAndShowRaw(this.parentNode);">raw</button>
             </div>
 
             <div name="acbr_short_summary_template" class="acbr tmfbox">
@@ -203,6 +204,9 @@
 
                 <table class="box">
                     <tr><td>Period Coverage</td><td name="periodCoverage" use_template="period" style="text-align:right"></td></tr>
+                    <tr><td>Charge Date</td><td name="date" style="text-align:right"></td></tr>
+                </table>
+                <table class="box">
                     <tr><td>Tax-excluded amount</td><td name="taxExcludedAmount" use_template="money" style="text-align:right"></td></tr>
                     <tbody name="appliedTax" use_template="taxItem"></tbody>
                     <tr style="border:1px solid gray"><td>Tax-included amount</td><td name="taxIncludedAmount" use_template="money" style="text-align:right"></td></tr>

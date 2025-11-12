@@ -24,7 +24,7 @@
     "bundleOp": "CUMULATIVE",
     "prices": [
       {
-        "name": "Initial Subscription Fee",
+        "name": "Initial Subscription Fee (pre-paid)",
         "type": "RECURRING_PREPAID",
         "recurringChargePeriodLength": 1,
         "recurringChargePeriodType": "YEAR",
@@ -87,7 +87,7 @@
         }
       },
       {
-        "name": "(FM) Revenue sharing based on transactions of sub-sellers (ver. 1: look at transactions of subsellers) ",
+        "name": "(FM) Revenue sharing based on transactions of sub-sellers (ver. 1: look at transactions of subsellers) (post-paid)",
         "recurringChargePeriodType": "MONTH",
         "recurringChargePeriodLength": 1,
         "type": "RECURRING_POSTPAID",
@@ -110,7 +110,7 @@
         ]
       },      
       {
-        "name": "(FM) Revenue sharing based on transactions of sub-sellers (ver. 2: look at revenue bills issued by FM) ",
+        "name": "(FM) Revenue sharing based on transactions of sub-sellers (ver. 2: look at revenue bills issued by FM) (post-paid)",
         "recurringChargePeriodType": "MONTH",
         "recurringChargePeriodLength": 1,
         "type": "RECURRING_POSTPAID",
@@ -133,7 +133,7 @@
         ]
       },
       {
-        "name": "(CSP) Revenue sharing based on transactions (€${computationMetricValue}) between ${chargePeriod.startDate} and ${chargePeriod.endDate}",
+        "name": "(CSP) Revenue sharing based on transactions (€${computationMetricValue}) between ${chargePeriod.startDate} and ${chargePeriod.endDate} (post-paid)",
         "applicableBase": "bills-no-taxes",
         "applicableBaseReferencePeriod": "LAST_9_CHARGE_PERIODS",
         "computationBaseReferencePeriod": "CURRENT_CHARGE_PERIOD",

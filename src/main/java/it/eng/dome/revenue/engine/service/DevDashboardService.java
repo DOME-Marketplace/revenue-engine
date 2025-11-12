@@ -117,6 +117,10 @@ public class DevDashboardService {
         billDetails.put("billNo", cb.getBillNo());
         billDetails.put("billPeriod", cb.getBillingPeriod());
         billDetails.put("nextBillDate", cb.getNextBillDate());
+        if(acbrs!=null && acbrs.size()>1) {
+            if(acbrs.get(0).getProduct()!=null)
+                billDetails.put("productRef", acbrs.get(0).getProduct().getId());
+        }
 
         // seller info =========================================
         Map<String, Object> sellerInfo = new HashMap<>();

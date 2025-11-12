@@ -135,6 +135,10 @@ function fetchAndShowACBRs(clickedDOM) {
     genericFetchAndShow("acbrs", clickedDOM.getAttribute("objectId"), showACBRs, clickedDOM);
 }
 
+function fetchAndShowRawACBRs(clickedDOM) {
+    showRaw("acbrs:" + clickedDOM.getAttribute("objectId"), clickedDOM);
+}
+
 function fetchAndShowTransactions(clickedDOM) {
     getLanes().prepareFor(clickedDOM);
     genericFetchAndShow("organizationTransactions", clickedDOM.getAttribute("objectId"), showCustomerBills, clickedDOM);
@@ -313,7 +317,11 @@ function appendCustomerBill(customerBill, clickedDOM) {
 
 function showRaw(id, _unused_clickedDOM) {
     let url = null;
-    if(id.indexOf("urn:ngsi-ld:customerbill:urn:ngsi-ld:product")!=-1) {
+    if(id.indexOf("acbrs:")==0) {
+        id = id.substring(6);
+        url = getEndpointFor("acbrs", id);
+    }
+    else if(id.indexOf("urn:ngsi-ld:customerbill:urn:ngsi-ld:product")!=-1) {
         id = id.replace("customerbill", "revenuebill");
         url = getEndpointFor("customerBill", id);
     }
