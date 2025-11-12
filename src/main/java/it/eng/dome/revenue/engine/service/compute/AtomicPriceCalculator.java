@@ -52,14 +52,12 @@ public class AtomicPriceCalculator extends AbstractCalculator {
 
 	/**
 	 * Computes discount items for a price
-	 * @param price the Price object containing discount information
 	 * @param timePeriod the TimePeriod for computation
 	 * @return List of RevenueItems representing discounts
 	 */
 	private RevenueItem computeDiscountRevenueItem(TimePeriod timePeriod, Map<String, Double> computationContext) throws BadTmfDataException, ExternalServiceException {
 		Calculator dc = CalculatorFactory.getCalculatorFor(this.getSubscription(), ((Price)this.item).getDiscount(), this);
-		RevenueItem discountItem = dc.compute(timePeriod, computationContext);
-		return discountItem;
+        return dc.compute(timePeriod, computationContext); //discountItem
 	}
 
     private RevenueItem computeAtomicPrice(TimePeriod timePeriod) throws ExternalServiceException, BadTmfDataException {
