@@ -453,6 +453,21 @@ public class TmfDataRetriever {
         }
     }
 
+    public void fetchProductOfferings(Map<String, String> filter, int batchSize, Consumer<ProductOffering> consumer) throws ExternalServiceException {
+        try {
+            FetchUtils.fetchByBatch(
+                    (FetchUtils.ListedFetcher<ProductOffering>) (f, flt, size, offset) ->
+                            productCatalogManagementApis.listProductOfferings(f, flt, size, offset),
+                    null,
+                    filter,
+                    batchSize,
+                    batch -> batch.forEach(consumer)
+            );
+        } catch (Exception e) {
+            throw new ExternalServiceException("Failed to fetch ProductOfferings by batch", e);
+        }
+    }
+
     // ======== PRODUCT OFFERING PRICE ========
     public ProductOfferingPrice getProductOfferingPrice(String popId, String fields)
             throws BadTmfDataException, ExternalServiceException {

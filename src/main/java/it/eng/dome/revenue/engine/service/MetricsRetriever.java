@@ -2,6 +2,7 @@ package it.eng.dome.revenue.engine.service;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -10,9 +11,14 @@ import org.springframework.beans.factory.config.ConfigurableBeanFactory;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
 
+import it.eng.dome.brokerage.api.fetch.FetchUtils;
 import it.eng.dome.revenue.engine.exception.BadTmfDataException;
 import it.eng.dome.revenue.engine.exception.ExternalServiceException;
+import it.eng.dome.revenue.engine.model.Role;
 import it.eng.dome.revenue.engine.service.cached.TmfCachedDataRetriever;
+import it.eng.dome.revenue.engine.utils.ProductOfferingUtils;
+import it.eng.dome.revenue.engine.utils.RelatedPartyUtils;
+import it.eng.dome.tmforum.tmf620.v4.model.ProductOffering;
 import it.eng.dome.tmforum.tmf632.v4.model.Organization;
 import it.eng.dome.tmforum.tmf678.v4.model.CustomerBill;
 import it.eng.dome.tmforum.tmf678.v4.model.TimePeriod;
@@ -57,6 +63,55 @@ public class MetricsRetriever {
             logger.error("Failed to compute bills no taxes for seller {}: {}", sellerId, e.getMessage(), e);
             throw new ExternalServiceException("Failed to retrieve bills for seller ID: " + sellerId, e);
         }
+    }
+
+    // TODO: test me
+    /**
+     * Retrieve the product offerings from the given seller (with role Seller) available in the given time period (validFor.startDate)
+     * @param sellerId
+     * @param timePeriod
+     * @return
+     * @throws ExternalServiceException
+     */
+    private List<ProductOffering> getPublishedOfferings(String sellerId, TimePeriod timePeriod) throws ExternalServiceException {
+        if (sellerId == null || sellerId.isEmpty()) {
+            throw new IllegalArgumentException("Seller ID cannot be null or empty: " + sellerId);
+        }
+        try {
+            // filter on offerings valid in the given period
+            Map<String, String> filter = Map.of("relatedParty.id", sellerId, "validFor.startDateTime.gt", timePeriod.getStartDateTime().toString(), "validFor.startDateTime.lt", timePeriod.getEndDateTime().toString());
+            filter = Map.of();
+
+            List<ProductOffering> publishedOfferings = new ArrayList<>();
+            tmfDataRetriever.fetchProductOfferings(filter, 100, productOffering -> {
+                    if(RelatedPartyUtils.offeringHasPartyWithRole(productOffering, sellerId, Role.SELLER))
+                        publishedOfferings.add(productOffering);
+                }
+            );
+            return publishedOfferings;
+
+        } catch (Exception e) {
+            logger.error("Failed to compute bills no taxes for seller {}: {}", sellerId, e.getMessage(), e);
+            throw new ExternalServiceException("Failed to retrieve bills for seller ID: " + sellerId, e);
+        }
+    }    
+
+    // TODO: test me
+    private Integer countPublishedOfferings(String sellerId, TimePeriod timePeriod) throws ExternalServiceException {
+        List<ProductOffering> publishedOfferings = this.getPublishedOfferings(sellerId, timePeriod);
+        return publishedOfferings.size();
+    }
+
+    // TODO: test me
+    private Integer countPublishedSelfserviceOfferings(String sellerId, TimePeriod timePeriod) throws ExternalServiceException {
+        int count = 0;
+        List<ProductOffering> publishedOfferings = this.getPublishedOfferings(sellerId, timePeriod);
+        for(ProductOffering offering: publishedOfferings) {
+            if(ProductOfferingUtils.hasSelfservicePlan(offering)) {
+                count++;
+            }
+        }
+        return count;
     }
 
     // implement retriever for key 'referred-providers-number'
@@ -150,6 +205,10 @@ public class MetricsRetriever {
                 return computeReferralsProvidersTransactionVolume(sellerId, timePeriod);
             case "referred-provider-max-transaction-volume":
                 return computeReferralsProviderMaxTransactionVolume(sellerId, timePeriod);
+            case "published-product-offerings":
+                return this.countPublishedOfferings(sellerId, timePeriod).doubleValue();
+            case "published-selfservice-product-offerings":
+                return this.countPublishedSelfserviceOfferings(sellerId, timePeriod).doubleValue();
             default:
                 // TODO: evaluate creating an enum to centralise metric keys
                 throw new IllegalArgumentException("Unknown metric key: " + key);
