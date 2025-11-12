@@ -11,7 +11,6 @@ import org.springframework.beans.factory.config.ConfigurableBeanFactory;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
 
-import it.eng.dome.brokerage.api.fetch.FetchUtils;
 import it.eng.dome.revenue.engine.exception.BadTmfDataException;
 import it.eng.dome.revenue.engine.exception.ExternalServiceException;
 import it.eng.dome.revenue.engine.model.Role;
