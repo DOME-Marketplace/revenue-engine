@@ -1,5 +1,7 @@
 package it.eng.dome.revenue.engine.service.compute;
 
+import java.text.DecimalFormat;
+import java.text.NumberFormat;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -351,7 +353,7 @@ public abstract class AbstractCalculator implements Calculator {
 		// no value & no condition => OK
 
 		if(applicableValue!=null) {
-			this.getCalculatorContext().put("activatingMetricValue", applicableValue.toString());
+			this.getCalculatorContext().put("activatingMetricValue", formatDouble(applicableValue));
 			if (this.item.getApplicableBaseRange()!=null) {
 				return this.item.getApplicableBaseRange().inRange(applicableValue);
 			}
@@ -569,12 +571,24 @@ public abstract class AbstractCalculator implements Calculator {
 		
 	}
 
+	private static String formatDouble(Double d) {
+		if(d==Math.round(d)) {
+			// the decimal part is zero 
+			NumberFormat nf = DecimalFormat.getInstance();
+			nf.setMaximumFractionDigits(0);
+			return nf.format(d);
+		}
+		else {
+			return d.toString();
+		}
+	}
+
 	protected Double getComputationBase(String sellerId, TimePeriod timePeriod, Map<String, Double> computeContext) throws ExternalServiceException, BadTmfDataException {
         if ("parent-price".equals(this.item.getComputationBase()) && computeContext.containsKey("parent-price")) {
             // TODO: make this more generic to look for any key in the map first; and only after ask the metrics retriever.
             Double computationBase = computeContext.get("parent-price");
             logger.debug("Using parent price amount as computation base: {}", computationBase);
-            this.getCalculatorContext().put("computationMetricValue", computationBase.toString());
+            this.getCalculatorContext().put("computationMetricValue", formatDouble(computationBase));
             return computationBase;
         } else {
             TimePeriod computationPeriod = this.getComputationTimePeriod(timePeriod.getEndDateTime().minusSeconds(1));
@@ -591,7 +605,7 @@ public abstract class AbstractCalculator implements Calculator {
             }
             logger.info("Computation base {} for metric '{}' in period {} - {} for seller {}",
                 computationBase, this.item.getComputationBase(), computationPeriod.getStartDateTime(), computationPeriod.getEndDateTime(), sellerId);				
-            this.getCalculatorContext().put("computationMetricValue", computationBase.toString());
+            this.getCalculatorContext().put("computationMetricValue", formatDouble(computationBase));
             return computationBase;
         }
 	}
