@@ -5,6 +5,7 @@ import java.util.List;
 
 import it.eng.dome.revenue.engine.model.Role;
 import it.eng.dome.revenue.engine.model.Subscription;
+import it.eng.dome.tmforum.tmf620.v4.model.ProductOffering;
 import it.eng.dome.tmforum.tmf637.v4.model.Product;
 import it.eng.dome.tmforum.tmf678.v4.model.CustomerBill;
 import it.eng.dome.tmforum.tmf678.v4.model.RelatedParty;
@@ -66,6 +67,16 @@ public class RelatedPartyUtils {
         return RelatedPartyUtils.hasRPWithRole(parties, partyId, partyRole);
     }
 
+    public static Boolean offeringHasPartyWithRole(ProductOffering productOffering, String partyId, Role partyRole) {
+        // TODO: uncomment the following when the ProductOffering will have relatedParties
+        /*
+        List<RP> parties = productOffering.getRelatedParties().stream()
+                .map(party -> new RP(party.getId(), party.getRole())).toList();
+        return RelatedPartyUtils.hasRPWithRole(parties, partyId, partyRole);
+        */
+        return true;
+    }
+
     public static List<Product> retainProductsWithParty(List<Product> products, String partyId, Role partyRole) {
         List<Product> retainedProducts = new ArrayList<>();
         for (Product p : products)
@@ -90,6 +101,14 @@ public class RelatedPartyUtils {
             if (RelatedPartyUtils.subscriptionHasPartyWithRole(s, partyId, partyRole))
                 retainedSubscriptions.add((s));
         return retainedSubscriptions;
+    }
+
+    public static List<ProductOffering> retainProductOfferingsWithParty(List<ProductOffering> offerings, String partyId, Role partyRole) {
+        List<ProductOffering> retainedOfferings = new ArrayList<>();
+        for (ProductOffering o : offerings)
+            if (RelatedPartyUtils.offeringHasPartyWithRole(o, partyId, partyRole))
+                retainedOfferings.add((o));
+        return retainedOfferings;
     }
 
 }
