@@ -58,7 +58,7 @@ public class DevDashboardService {
     }
 
     public CustomerBill getCustomerBill(String customerbillId) throws Exception {
-        return tmfDataRetriever.getCustomerBillById(customerbillId);
+        return tmfDataRetriever.getCustomerBill(customerbillId);
     }
 
     public List<AppliedCustomerBillingRate> getAppliedCustomerBillingRates(String customerbillId) throws Exception {
@@ -68,7 +68,7 @@ public class DevDashboardService {
     public List<Product> getPurchasedProducts(String buyerId) throws ExternalServiceException, ExternalServiceException {
         List<Product> purchasedProducts = new ArrayList<>();
         // Batch processing of all active products
-        tmfDataRetriever.getAllActiveProducts(100,
+        tmfDataRetriever.fetchActiveProducts(50,
             product -> {
                 // Keep only products where the buyer has the BUYER role
                 if (RelatedPartyUtils.productHasPartyWithRole(product, buyerId, Role.BUYER)) {
@@ -83,7 +83,7 @@ public class DevDashboardService {
         List<Product> soldProducts = new ArrayList<>();
 
         // Batch processing of all active products
-        tmfDataRetriever.getAllActiveProducts(100,
+        tmfDataRetriever.fetchActiveProducts(50,
             product -> {
                 // Keep only products where the seller has the SELLER role
                 if (RelatedPartyUtils.productHasPartyWithRole(product, sellerId, Role.SELLER)) {
@@ -106,7 +106,7 @@ public class DevDashboardService {
             acbrs = this.billService.getACBRsByRevenueBillId(customerBillId);
         } 
         else {
-            cb = this.tmfDataRetriever.getCustomerBillById(customerBillId);
+            cb = this.tmfDataRetriever.getCustomerBill(customerBillId);
             acbrs = this.tmfDataRetriever.getACBRsByCustomerBillId(customerBillId);
         }
 

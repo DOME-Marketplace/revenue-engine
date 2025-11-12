@@ -82,7 +82,7 @@ public class MetricsRetriever {
             Map<String, String> filter = Map.of("validFor.startDateTime.gt", timePeriod.getStartDateTime().toString(), "validFor.startDateTime.lt", timePeriod.getEndDateTime().toString());
 
             List<ProductOffering> publishedOfferings = new ArrayList<>();
-            tmfDataRetriever.fetchProductOfferings(filter, 100, productOffering -> {
+            tmfDataRetriever.fetchProductOfferings(null, filter, 50, productOffering -> {
                     if(RelatedPartyUtils.offeringHasPartyWithRole(productOffering, sellerId, Role.SELLER))
                         publishedOfferings.add(productOffering);
                 }

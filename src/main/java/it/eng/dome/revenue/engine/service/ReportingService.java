@@ -99,7 +99,7 @@ public class ReportingService implements InitializingBean {
                         currency = items.get(0).getCurrency() + " ";
                     }
 
-                    Product product = tmfDataRetriever.getProductById(sub.getId(), null);
+                    Product product = tmfDataRetriever.getProduct(sub.getId(), null);
                     String buyerId = product.getRelatedParty().stream()
                             .filter(rp -> Role.BUYER.getValue().equalsIgnoreCase(rp.getRole()))
                             .map(rp -> rp.getId())
@@ -222,7 +222,7 @@ public class ReportingService implements InitializingBean {
             List<Product> singleProviders = new ArrayList<>();
             List<Product> federatedProviders = new ArrayList<>();
 
-            tmfDataRetriever.getAllActiveProducts(100,
+            tmfDataRetriever.fetchActiveProducts(50,
                 product -> {
                     if (isFederated(product)) {
                         federatedProviders.add(product);
@@ -281,15 +281,18 @@ public class ReportingService implements InitializingBean {
                 throw new NotFoundException("Organization not found: " + relatedPartyId);
             }
 
-            List<Report> report;
+            // Flag to track if the related party is a Dome Operator
             AtomicBoolean isDomeOp = new AtomicBoolean(false);
+            // Local stop flag for short-circuiting this specific batch iteration
+            AtomicBoolean stop = new AtomicBoolean(false);
 
-            tmfDataRetriever.getAllActiveProducts(100,
-                product -> {
-                    // FIXME: replace with domeOperator Role// FIXME: replace with domeOperator Role
-                    if (RelatedPartyUtils.productHasPartyWithRole(product, relatedPartyId, Role.SELLER_OPERATOR)) {
-                        isDomeOp.set(true);
-                    }
+            tmfDataRetriever.fetchActiveProducts(50, product -> {
+                if (stop.get()) return; // stop consuming further products for this check
+
+                if (RelatedPartyUtils.productHasPartyWithRole(product, relatedPartyId, Role.SELLER_OPERATOR)) {
+                    isDomeOp.set(true);
+                    stop.set(true); // short-circuit locally
+                }
             });
 
             if (isDomeOp.get()) {

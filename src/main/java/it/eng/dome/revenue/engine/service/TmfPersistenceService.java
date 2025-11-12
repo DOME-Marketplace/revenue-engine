@@ -5,8 +5,10 @@ import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 
+import it.eng.dome.revenue.engine.exception.ExternalServiceException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -96,7 +98,7 @@ public class TmfPersistenceService {
 
     /**
      * Persist all revenue bills for a subscription; where needed and applicable.
-     * @param subscriptionId
+     * @param subscriptionId the subscription id
      */
     public List<CustomerBill> persistSubscriptionRevenueBills(String subscriptionId) throws Exception {
         OffsetDateTime startDate = OffsetDateTime.now(ZoneOffset.UTC)
@@ -159,7 +161,7 @@ public class TmfPersistenceService {
             CustomerBill cbToPersist = watermark(cb);
             String id = customerBillApis.createCustomerBill(CustomerBillCreate.fromJson(cbToPersist.toJson()));
             logger.info("PERSISTENCE: created CB with id {}", id);
-            return tmfDataRetriever.getCustomerBillById(id);
+            return tmfDataRetriever.getCustomerBill(id);
         } else {
             logger.info("Local CB {} is already on TMF with id {}", cb.getId(), existingCustomerBill.getId());
             return null;
@@ -195,49 +197,79 @@ public class TmfPersistenceService {
      * Checks if a given CustomerBill already exists in TMF.
      * Stops fetching batches as soon as a match is found (early stop).
      */
-    private CustomerBill isCbAlreadyInTMF(CustomerBill cb, String revenueBillId) throws Exception {
+    private CustomerBill isCbAlreadyInTMF(CustomerBill cb, String revenueBillId)
+            throws Exception {
+
+        // Retrieve local productId from RevenueBill ---
         List<AppliedCustomerBillingRate> localAcbrs = billService.getACBRsByRevenueBillId(revenueBillId);
         String localProductId = localAcbrs.isEmpty() || localAcbrs.get(0).getProduct() == null
                 ? null
                 : localAcbrs.get(0).getProduct().getId();
 
-        return FetchUtils.streamAll(customerBillApis::listCustomerBills, null, null, 100)
-                .filter(candidate -> {
-                    try {
-                        // Truncate CB dates to seconds
-                        OffsetDateTime cbStart = cb.getBillingPeriod() != null
-                                ? cb.getBillingPeriod().getStartDateTime().truncatedTo(ChronoUnit.SECONDS)
-                                : null;
-                        OffsetDateTime cbEnd = cb.getBillingPeriod() != null
-                                ? cb.getBillingPeriod().getEndDateTime().truncatedTo(ChronoUnit.SECONDS)
-                                : null;
-                        OffsetDateTime candStart = candidate.getBillingPeriod() != null
-                                ? candidate.getBillingPeriod().getStartDateTime().truncatedTo(ChronoUnit.SECONDS)
-                                : null;
-                        OffsetDateTime candEnd = candidate.getBillingPeriod() != null
-                                ? candidate.getBillingPeriod().getEndDateTime().truncatedTo(ChronoUnit.SECONDS)
-                                : null;
+        if (localProductId == null) {
+            logger.warn("No productId found for RevenueBill {}", revenueBillId);
+            return null;
+        }
 
-                        boolean periodMatch = Objects.equals(cbStart, candStart) && Objects.equals(cbEnd, candEnd);
+        // Prepare containers for result & loop control ---
+        final CustomerBill[] found = {null};
+        final AtomicBoolean stop = new AtomicBoolean(false);
 
-                        // Compare product IDs of first ACBR
-                        List<AppliedCustomerBillingRate> candAcbrs = tmfDataRetriever.getACBRsByCustomerBillId(candidate.getId());
-                        String candProductId = candAcbrs.isEmpty() || candAcbrs.get(0).getProduct() == null
-                                ? null
-                                : candAcbrs.get(0).getProduct().getId();
+        try {
+            // Iterate all CustomerBills in TMF by batch ---
+            tmfDataRetriever.fetchCustomerBills(null, null, 50, candidate -> {
+                if (stop.get()) return; // short-circuit if already found
 
-                        return periodMatch
-                                && Objects.equals(localProductId, candProductId)
-                                && relatedPartyMatch(cb.getRelatedParty(), candidate.getRelatedParty());
-                    } catch (Exception e) {
-                        logger.error("Error in isCbAlreadyInTMF filter: {}", e.getMessage());
-                        return false;
+                try {
+                    // --- Step 4: Compare billing periods (truncate to seconds for precision consistency) ---
+                    OffsetDateTime cbStart = cb.getBillingPeriod() != null
+                            ? cb.getBillingPeriod().getStartDateTime().truncatedTo(ChronoUnit.SECONDS)
+                            : null;
+                    OffsetDateTime cbEnd = cb.getBillingPeriod() != null
+                            ? cb.getBillingPeriod().getEndDateTime().truncatedTo(ChronoUnit.SECONDS)
+                            : null;
+                    OffsetDateTime candStart = candidate.getBillingPeriod() != null
+                            ? candidate.getBillingPeriod().getStartDateTime().truncatedTo(ChronoUnit.SECONDS)
+                            : null;
+                    OffsetDateTime candEnd = candidate.getBillingPeriod() != null
+                            ? candidate.getBillingPeriod().getEndDateTime().truncatedTo(ChronoUnit.SECONDS)
+                            : null;
+
+                    boolean periodMatch = Objects.equals(cbStart, candStart)
+                            && Objects.equals(cbEnd, candEnd);
+
+                    // Compare Product IDs via first AppliedCustomerBillingRate ---
+                    List<AppliedCustomerBillingRate> candAcbrs =
+                            tmfDataRetriever.getACBRsByCustomerBillId(candidate.getId());
+                    String candProductId = candAcbrs.isEmpty() || candAcbrs.get(0).getProduct() == null
+                            ? null
+                            : candAcbrs.get(0).getProduct().getId();
+
+                    // Compare related parties ---
+                    boolean relatedPartyMatch = relatedPartyMatch(cb.getRelatedParty(), candidate.getRelatedParty());
+
+                    // If all conditions match, store & stop ---
+                    if (periodMatch && Objects.equals(localProductId, candProductId) && relatedPartyMatch) {
+                        found[0] = candidate;
+                        stop.set(true);
+                        logger.debug("Matching CustomerBill found in TMF: {}", candidate.getId());
                     }
-                })
-                .findFirst()
-                .orElse(null);
+
+                } catch (Exception e) {
+                    logger.warn("Error while checking CustomerBill {}: {}", candidate.getId(), e.getMessage());
+                }
+            });
+
+        } catch (Exception e) {
+            logger.error("Error during fetchAllCustomerBills: {}", e.getMessage(), e);
+            throw new ExternalServiceException("Failed to search CustomerBill in TMF", e);
+        }
+
+        // Return the found match (or null if none) ---
+        return found[0];
     }
-    
+
+
     /**
 	 * Retrieve ACBRs on TMF that, potentially match the local ACBR. 
 	 * @param acbr the local AppliedCustomerBillingRate
@@ -250,7 +282,7 @@ public class TmfPersistenceService {
         Map<String, String> filter = Map.of(
                 "periodCoverage.startDateTime", acbr.getPeriodCoverage().getStartDateTime().truncatedTo(ChronoUnit.SECONDS).toString()
         );
-        return FetchUtils.streamAll(appliedCustomerBillRateApis::listAppliedCustomerBillingRates, null, filter, 10)
+        return FetchUtils.streamAll(appliedCustomerBillRateApis::listAppliedCustomerBillingRates, null, filter, 5)
                 .filter(candidate -> match(acbr, candidate))
                 .findFirst()
                 .orElse(null);
