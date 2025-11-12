@@ -32,6 +32,7 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -74,7 +75,7 @@ public class PlanService implements InitializingBean {
         List<Plan> plans = new ArrayList<>();
 
         // fetch by batch, process each ProductOffering on the fly
-        tmfDataRetriever.fetchAllSubscriptionProductOfferings(null, 100,
+        tmfDataRetriever.fetchProductOfferings(null, Map.of("category.name", "DOME OPERATOR Plan"), 50,
             po -> {
                 try {
                     plans.addAll(findPlans(po.getId()));
@@ -114,7 +115,7 @@ public class PlanService implements InitializingBean {
             throw new BadTmfDataException("ProductOffering", offeringId, "Offering ID cannot be null or empty");
         }
 
-        ProductOffering po = tmfDataRetriever.getProductOfferingById(offeringId, null);
+        ProductOffering po = tmfDataRetriever.getProductOffering(offeringId, null);
         if (po == null) {
             throw new BadTmfDataException("ProductOffering", offeringId, "ProductOffering not found");
         }
@@ -160,7 +161,7 @@ public class PlanService implements InitializingBean {
             throw new BadTmfDataException("ProductOffering", offeringId, "Offering ID cannot be null or empty");
         }
 
-        ProductOffering po = tmfDataRetriever.getProductOfferingById(offeringId, null);
+        ProductOffering po = tmfDataRetriever.getProductOffering(offeringId, null);
         if (po == null) {
             throw new BadTmfDataException("ProductOffering", offeringId, "ProductOffering not found");
         }

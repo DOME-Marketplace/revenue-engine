@@ -1,9 +1,12 @@
 package it.eng.dome.revenue.engine.service.cached;
 
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Consumer;
 
+import it.eng.dome.brokerage.api.fetch.FetchUtils;
 import org.ehcache.Cache;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -247,11 +250,11 @@ public class TmfCachedDataRetriever extends TmfDataRetriever {
     }
 
     @Override
-    public CustomerBill getCustomerBillById(String customerBillId) throws BadTmfDataException, ExternalServiceException {
+    public CustomerBill getCustomerBill(String customerBillId) throws BadTmfDataException, ExternalServiceException {
         String key = customerBillId;
         if (!TMF_CACHE_ENABLED || !this.customerBillCache.containsKey(key)) {
             logger.debug("Cache MISS for {}", key);
-            CustomerBill cb = super.getCustomerBillById(customerBillId);
+            CustomerBill cb = super.getCustomerBill(customerBillId);
             if (cb != null) {
                 this.customerBillCache.put(key, cb);
             } else {
@@ -261,7 +264,47 @@ public class TmfCachedDataRetriever extends TmfDataRetriever {
         }
         return this.customerBillCache.get(key);
     }
-    
+
+    @Override
+    public void fetchCustomerBills(String fields, Map<String, String> filter, int batchSize, Consumer<CustomerBill> consumer)
+            throws ExternalServiceException {
+
+        StringBuilder keyBuilder = new StringBuilder("all-customer-bills");
+        if (fields != null && !fields.isEmpty()) {
+            keyBuilder.append("|fields=").append(fields);
+        }
+        if (filter != null && !filter.isEmpty()) {
+            keyBuilder.append("|filter=").append(filter.toString());
+        }
+        keyBuilder.append("|batch=").append(batchSize);
+        String key = keyBuilder.toString();
+
+        if (!TMF_CACHE_ENABLED || !customerBillListCache.containsKey(key)) {
+            logger.debug("Cache MISS for {}", key);
+
+            List<CustomerBill> localList = new ArrayList<>();
+            Consumer<CustomerBill> localConsumer = localList::add;
+
+            try {
+                super.fetchCustomerBills(fields, filter, batchSize, localConsumer);
+            } catch (Exception e) {
+                logger.error("Failed to fetch CustomerBills by batch", e);
+                throw new ExternalServiceException("Failed to fetch CustomerBills by batch", e);
+            }
+
+            customerBillListCache.put(key, localList);
+        } else {
+            logger.debug("Cache HIT for {}", key);
+        }
+
+        List<CustomerBill> cachedList = customerBillListCache.get(key);
+        if (cachedList != null) {
+            cachedList.forEach(consumer);
+        } else {
+            logger.warn("CustomerBills not found in cache for key {}", key);
+        }
+    }
+
 //    @Override
 //    public List<CustomerBill> getAllCustomerBills(String fields, Map<String, String> filter, int pageSize) throws ExternalServiceException {
 //        String key = "all-customer-bills";
@@ -284,12 +327,12 @@ public class TmfCachedDataRetriever extends TmfDataRetriever {
 //    }
 
     @Override
-    public Product getProductById(String productId, String fields) throws BadTmfDataException, ExternalServiceException {
+    public Product getProduct(String productId, String fields) throws BadTmfDataException, ExternalServiceException {
         String key = productId;
         // CHECKME: why fields not in the key?
         if (!TMF_CACHE_ENABLED || !this.productCache.containsKey(key)) {
             logger.debug("Cache MISS for {}", key);
-            Product prod = super.getProductById(productId, fields);
+            Product prod = super.getProduct(productId, fields);
             if (prod != null) {
                 this.productCache.put(key, prod);
             } else {
@@ -299,6 +342,37 @@ public class TmfCachedDataRetriever extends TmfDataRetriever {
         }
         return this.productCache.get(key);
     }
+
+    @Override
+    public void fetchActiveProducts(int batchSize, Consumer<Product> consumer)
+            throws ExternalServiceException {
+
+        String key = "active-products|batch=" + batchSize;
+
+        if (!TMF_CACHE_ENABLED || !productListCache.containsKey(key)) {
+            logger.debug("Cache MISS for {}", key);
+
+            List<Product> localList = new ArrayList<>();
+            Consumer<Product> localConsumer = localList::add;
+            try {
+                super.fetchActiveProducts(batchSize, localConsumer);
+            } catch (Exception e) {
+                logger.error("Failed to fetch active products from TMF", e);
+                throw new ExternalServiceException("Failed to fetch active products from TMF", e);
+            }
+            productListCache.put(key, localList);
+        } else {
+            logger.debug("Cache HIT for {}", key);
+        }
+
+        List<Product> cachedList = productListCache.get(key);
+        if (cachedList != null) {
+            cachedList.forEach(consumer);
+        } else {
+            logger.warn("Active products not found in cache for key {}", key);
+        }
+    }
+
 
 //    @Override
 //    public List<Product> getAllProducts(String fields, Map<String, String> filter) throws ExternalServiceException {
@@ -354,12 +428,12 @@ public class TmfCachedDataRetriever extends TmfDataRetriever {
 //    }
     
     @Override
-    public ProductOffering getProductOfferingById(String poId, String fields) throws BadTmfDataException, ExternalServiceException {
+    public ProductOffering getProductOffering(String poId, String fields) throws BadTmfDataException, ExternalServiceException {
         String key = poId;
         // CHECKME: why fields not in the key?
         if (!TMF_CACHE_ENABLED || !this.productOfferingCache.containsKey(key)) {
             logger.debug("Cache MISS for {}", key);
-            ProductOffering po = super.getProductOfferingById(poId, fields);
+            ProductOffering po = super.getProductOffering(poId, fields);
             if (po != null) {
                 this.productOfferingCache.put(key, po);
             } else {
@@ -368,6 +442,42 @@ public class TmfCachedDataRetriever extends TmfDataRetriever {
             }
         }
         return this.productOfferingCache.get(key);
+    }
+
+    @Override
+    public void fetchProductOfferings(String fields, Map<String, String> filter, int batchSize, Consumer<ProductOffering> consumer) throws ExternalServiceException {
+        StringBuilder keyBuilder = new StringBuilder("all-product-offerings");
+        if (fields != null && !fields.isEmpty()) {
+            keyBuilder.append("|fields=").append(fields);
+        }
+        if (filter != null && !filter.isEmpty()) {
+            keyBuilder.append("|filter=").append(filter.toString());
+        }
+        String key = keyBuilder.toString();
+
+        if (!TMF_CACHE_ENABLED || !productOfferingListCache.containsKey(key)) {
+            logger.debug("Cache MISS for {}", key);
+
+            List<ProductOffering> localList = new ArrayList<>();
+            Consumer<ProductOffering> localConsumer = localList::add;
+
+            try {
+                super.fetchProductOfferings(fields, filter, batchSize, localConsumer);
+            } catch (Exception e) {
+                throw new ExternalServiceException("Failed to fetch ProductOfferings by batch", e);
+            }
+
+            productOfferingListCache.put(key, localList);
+        } else {
+            logger.debug("Cache HIT for {}", key);
+        }
+
+        List<ProductOffering> cachedList = productOfferingListCache.get(key);
+        if (cachedList != null) {
+            cachedList.forEach(consumer);
+        } else {
+            logger.warn("ProductOfferings not found for key {}", key);
+        }
     }
 
 //    @Override

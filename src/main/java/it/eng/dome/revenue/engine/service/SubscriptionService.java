@@ -51,7 +51,7 @@ public class SubscriptionService implements InitializingBean {
 
         Product prod;
         try {
-            prod = this.tmfDataRetriever.getProductById(productId, null);
+            prod = this.tmfDataRetriever.getProduct(productId, null);
             if (prod == null) {
                 return null;
             }
@@ -73,7 +73,7 @@ public class SubscriptionService implements InitializingBean {
 
         List<Subscription> subscriptions = new ArrayList<>();
 
-        tmfDataRetriever.getAllActiveProducts(100,
+        tmfDataRetriever.fetchActiveProducts(50,
             product -> {
                 // mapping Product -> Subscription
                 Subscription sub = RevenueProductMapper.toSubscription(product);
