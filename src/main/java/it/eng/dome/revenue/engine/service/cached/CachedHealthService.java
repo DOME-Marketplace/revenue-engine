@@ -10,7 +10,6 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import it.eng.dome.brokerage.api.APIPartyApis;
-import it.eng.dome.brokerage.api.AgreementManagementApis;
 import it.eng.dome.brokerage.api.AppliedCustomerBillRateApis;
 import it.eng.dome.brokerage.api.CustomerManagementApis;
 import it.eng.dome.brokerage.api.ProductCatalogManagementApis;
@@ -25,11 +24,10 @@ public class CachedHealthService extends HealthService {
 
 	public CachedHealthService(ProductCatalogManagementApis productCatalogManagementApis,
 			CustomerManagementApis customerManagementApis, APIPartyApis apiPartyApis,
-			ProductInventoryApis productInventoryApis, AgreementManagementApis agreementManagementApis,
+			ProductInventoryApis productInventoryApis,
 			AppliedCustomerBillRateApis appliedCustomerBillRateApis) {
 		
-		super(productCatalogManagementApis, customerManagementApis, apiPartyApis, productInventoryApis,
-				agreementManagementApis, appliedCustomerBillRateApis);
+		super(productCatalogManagementApis, customerManagementApis, apiPartyApis, productInventoryApis, appliedCustomerBillRateApis);
 	}
 
 	private final Logger logger = LoggerFactory.getLogger(CachedHealthService.class);

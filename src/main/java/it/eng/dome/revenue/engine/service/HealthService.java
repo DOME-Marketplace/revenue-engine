@@ -2,7 +2,6 @@ package it.eng.dome.revenue.engine.service;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.function.Supplier;
 import java.util.stream.Stream;
 
 import org.slf4j.Logger;
@@ -11,7 +10,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import it.eng.dome.brokerage.api.APIPartyApis;
-import it.eng.dome.brokerage.api.AgreementManagementApis;
 import it.eng.dome.brokerage.api.AppliedCustomerBillRateApis;
 import it.eng.dome.brokerage.api.CustomerManagementApis;
 import it.eng.dome.brokerage.api.ProductCatalogManagementApis;
@@ -24,13 +22,11 @@ import it.eng.dome.brokerage.observability.health.HealthStatus;
 import it.eng.dome.brokerage.observability.info.Info;
 import it.eng.dome.revenue.engine.invoicing.InvoicingService;
 
-
-
 @Service
 public class HealthService extends AbstractHealthService {
 	
 	private final Logger logger = LoggerFactory.getLogger(HealthService.class);
-	private final static String SERVICE_NAME = "Invoicing Service";
+	private final static String SERVICE_NAME = "Revenue Sharing Service";
 	
     @Autowired
     private InvoicingService invoicingService;
@@ -39,20 +35,17 @@ public class HealthService extends AbstractHealthService {
     private final CustomerManagementApis customerManagementApis;
     private final APIPartyApis apiPartyApis;
     private final ProductInventoryApis productInventoryApis;
-    private final AgreementManagementApis agreementManagementApis;
     private final AppliedCustomerBillRateApis appliedCustomerBillRateApis;
 
     public HealthService(ProductCatalogManagementApis productCatalogManagementApis, 
     		CustomerManagementApis customerManagementApis,
     		APIPartyApis apiPartyApis, ProductInventoryApis productInventoryApis,
-    		AgreementManagementApis agreementManagementApis,
     		AppliedCustomerBillRateApis appliedCustomerBillRateApis) {
     	
     	this.productCatalogManagementApis = productCatalogManagementApis;
     	this.customerManagementApis = customerManagementApis;
 		this.apiPartyApis = apiPartyApis;
 		this.productInventoryApis = productInventoryApis;
-		this.agreementManagementApis = agreementManagementApis;
 		this.appliedCustomerBillRateApis = appliedCustomerBillRateApis;
 	}
     
@@ -110,12 +103,14 @@ public class HealthService extends AbstractHealthService {
 
 	    // Check getInfo API
 	    Info info = getInfo();
+
 	    HealthStatus infoStatus = (info != null) ? HealthStatus.PASS : HealthStatus.FAIL;
-	    String infoOutput = (info != null)
-	            ? SERVICE_NAME + " version: " + info.getVersion()
+	    
+		String infoOutput = (info != null)
+	            ? SERVICE_NAME + " (ver. " + info.getVersion() + ")"
 	            : SERVICE_NAME + " getInfo returned unexpected response";
 	    
-	    Check infoCheck = createCheck("self", "get-info", "api", infoStatus, infoOutput);
+	    Check infoCheck = createCheck("self", "getInfo", "api", infoStatus, infoOutput);
 	    out.add(infoCheck);
 
 	    return out;
@@ -125,18 +120,24 @@ public class HealthService extends AbstractHealthService {
 
         List<Check> out = new ArrayList<>();
 
-        Check connectivity = createCheck("invoicing-service", "connectivity", "external");
+        Check connectivity = createCheck("invoicing-service", "connectivity", "api");
+        Check responsetime = createCheck("invoicing-service", "responseTime", "api");
 
-        try {
+		try {
+			long start = System.currentTimeMillis();
         	Info invoicingInfo = invoicingService.getInfo();
+			long end = System.currentTimeMillis();
             connectivity.setStatus(HealthStatus.PASS);
             connectivity.setOutput(toJson(invoicingInfo));
+			responsetime.setOutput(""+(end-start)+"ms");
+			responsetime.setStatus(HealthStatus.PASS);
+	        out.add(responsetime);
         }
         catch(Exception e) {
             connectivity.setStatus(HealthStatus.WARN);
             connectivity.setOutput(e.getMessage());
         }
-        out.add(connectivity);
+		out.add(connectivity);
 
         return out;
     }
@@ -144,28 +145,38 @@ public class HealthService extends AbstractHealthService {
 	private List<Check> getTMFChecks() {
 		List<Check> out = new ArrayList<>();
 
-		out.add(tmfCheck("tmf620", () -> FetchUtils.streamAll(productCatalogManagementApis::listCatalogs, null, null, 1)));
-		out.add(tmfCheck("tmf629", () -> FetchUtils.streamAll(customerManagementApis::listCustomers, null, null, 1)));
-		out.add(tmfCheck("tmf632", () -> FetchUtils.streamAll(apiPartyApis::listOrganizations, null, null, 1)));
-		out.add(tmfCheck("tmf637", () -> FetchUtils.streamAll(productInventoryApis::listProducts, null, null, 1)));
-		out.add(tmfCheck("tmf651", () -> FetchUtils.streamAll(agreementManagementApis::listAgreements, null, null, 1)));
-		out.add(tmfCheck("tmf678", () -> FetchUtils.streamAll(appliedCustomerBillRateApis::listAppliedCustomerBillingRates, null, null, 1)));
+		out.addAll(tmfCheck("tmf620-catalogManagement", () -> FetchUtils.streamAll(productCatalogManagementApis::listCatalogs, null, null, 1)));
+		out.addAll(tmfCheck("tmf629-customerManagement", () -> FetchUtils.streamAll(customerManagementApis::listCustomers, null, null, 1)));
+		out.addAll(tmfCheck("tmf632-partyManagement", () -> FetchUtils.streamAll(apiPartyApis::listOrganizations, null, null, 1)));
+		out.addAll(tmfCheck("tmf637-productInventory", () -> FetchUtils.streamAll(productInventoryApis::listProducts, null, null, 1)));
+		out.addAll(tmfCheck("tmf678-customerBillManagement", () -> FetchUtils.streamAll(appliedCustomerBillRateApis::listAppliedCustomerBillingRates, null, null, 1)));
 
 		return out;
 	}
 
-	private Check tmfCheck(String name, CheckedSupplier<Stream<?>> fetcher) {
-		Check check = createCheck("tmf-api", "connectivity", name);
+	private List<Check> tmfCheck(String name, CheckedSupplier<Stream<?>> fetcher) {
+
+		List<Check> checks = new ArrayList<>();
+
+		Check connectivity = createCheck(name, "connectivity", "api");
+		Check responsetime = createCheck(name, "responseTime", "api");
 
 		try {
+			long start = System.currentTimeMillis();
 			fetcher.get().findAny();
-			check.setStatus(HealthStatus.PASS);
+			long end = System.currentTimeMillis();
+			connectivity.setStatus(HealthStatus.PASS);
+			checks.add(connectivity);
+			responsetime.setOutput(""+(end-start)+"ms");
+			responsetime.setStatus(HealthStatus.PASS);
+			checks.add(responsetime);
 		} catch (Exception e) {
-			check.setStatus(HealthStatus.FAIL);
-			check.setOutput(e.toString());
+			connectivity.setStatus(HealthStatus.FAIL);
+			connectivity.setOutput(e.toString());
+			checks.add(connectivity);
 		}
-
-		return check;
+		
+		return checks;
 	}
 
 	@FunctionalInterface

@@ -78,8 +78,8 @@ public class MetricsRetriever {
         }
         try {
             // filter on offerings valid in the given period
-            Map<String, String> filter = Map.of("relatedParty.id", sellerId, "validFor.startDateTime.gt", timePeriod.getStartDateTime().toString(), "validFor.startDateTime.lt", timePeriod.getEndDateTime().toString());
-            filter = Map.of();
+//            Map<String, String> filter = Map.of("relatedParty.id", sellerId, "validFor.startDateTime.gt", timePeriod.getStartDateTime().toString(), "validFor.startDateTime.lt", timePeriod.getEndDateTime().toString());
+            Map<String, String> filter = Map.of("validFor.startDateTime.gt", timePeriod.getStartDateTime().toString(), "validFor.startDateTime.lt", timePeriod.getEndDateTime().toString());
 
             List<ProductOffering> publishedOfferings = new ArrayList<>();
             tmfDataRetriever.fetchProductOfferings(filter, 100, productOffering -> {
