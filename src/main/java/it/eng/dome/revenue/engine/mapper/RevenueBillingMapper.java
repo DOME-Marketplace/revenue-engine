@@ -123,7 +123,7 @@ public class RevenueBillingMapper {
 	    acbr.setDate(item.getChargeTime());	// from specs, date is the acbr creation date. So, review this.
 	    acbr.setIsBilled(false); 
 	    acbr.setType(item.getType());
-	    acbr.setPeriodCoverage(revenueBill.getPeriod());
+	    acbr.setPeriodCoverage(item.getPeriod());
 
 		//ref
 		acbr.setRelatedParty(revenueBill.getRelatedParties());

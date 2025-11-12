@@ -158,6 +158,8 @@ public abstract class AbstractCalculator implements Calculator {
 			}
 		}
 
+		outRevenueItem.setPeriod(timePeriod);
+
 		// Resolve remaining tokens
 		RevenueItemResolver resolver = new RevenueItemResolver().setPlanItem(item).setReplacements(computeContext).setRevenueItem(outRevenueItem).setSubscription(subscription).setTimePeriod(timePeriod).setCalculatorContext(this.getCalculatorContext());
 		outRevenueItem = resolver.getResolvedRevenueItem(outRevenueItem);
