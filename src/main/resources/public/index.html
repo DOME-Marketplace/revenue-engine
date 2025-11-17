@@ -7,6 +7,7 @@
         <link rel="stylesheet" type="text/css" href="css/revenue.css">
         <link rel="icon" type="image/png" href="media/dome_logo.png">
         <script type="text/javascript" src="js/revenue.js"></script>
+        
     </head>
     
     <body onload="getLanes()">
@@ -84,6 +85,7 @@
                         </td>
                     </tr>
                 </table>
+
             </div>
 
             <table>
@@ -138,6 +140,9 @@
                 Status: <span name="status"></span>
                 <div>
                 Subscribed on: <b name="startDate"></b>
+                </div>
+                <div>
+                Percentage: <span name="percentage"></span> 
                 </div>
                 <hr/>
                 <button onclick="fetchAndShowStatements(this.parentNode);">statements</button>

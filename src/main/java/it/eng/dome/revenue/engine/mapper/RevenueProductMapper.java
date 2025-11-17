@@ -47,6 +47,12 @@ public class RevenueProductMapper {
 		sub.setHref(product.getHref());
 		sub.setName(product.getName());
 		sub.setStartDate(product.getStartDate());
+		sub.setPercentage(product.getProductCharacteristic().stream()
+				.filter(ch -> "percentage".equalsIgnoreCase(ch.getName()))
+				.findFirst()
+				.map(ch -> ch.getValue().toString())
+				.orElse(null));			
+		
 		ProductStatusType status = product.getStatus();
 		if(status!=null)
 			sub.setStatus(status.toString()); //convert status
