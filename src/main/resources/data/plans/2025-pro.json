@@ -35,52 +35,52 @@
           "name": "Discount based on transactions during the previous subscription period (€${activatingMetricValue})",
           "isBundle": true,
           "bundleOp": "ALTERNATIVE_HIGHER",
-          "applicableBaseReferencePeriod": "PREVIOUS_SUBSCRIPTION_PERIOD",
-          "applicableBase": "bills-no-taxes",
-          "computationBase": "parent-price",
+          "activatingMeticReferencePeriod": "PREVIOUS_SUBSCRIPTION_PERIOD",
+          "activatingMetric": "bills-no-taxes",
+          "computationMetric": "parent-price",
           "discounts": [
             {
               "name": "Transactions volume below 100.000€. No discount.",
-              "applicableBaseRange": {
+              "activatingMetricValuerange": {
                 "min": 0,
                 "max": 100000
               },
-              "computationBase": "parent-price",
+              "computationMetric": "parent-price",
               "percent": 0
             },
             {
               "name": "Transactions volume between 100.000€ and 250.000€: 15% discount.",
-              "applicableBaseRange": {
+              "activatingMetricValuerange": {
                 "min": 100001,
                 "max": 250000
               },
-              "computationBase": "parent-price",
+              "computationMetric": "parent-price",
               "percent": 15
             },
             {
               "name": "Transactions volume between 250.000€ and 750.000€: 30% discount.",
-              "applicableBaseRange": {
+              "activatingMetricValuerange": {
                 "min": 250001,
                 "max": 750000
               },
-              "computationBase": "parent-price",
+              "computationMetric": "parent-price",
               "percent": 30
             },
             {
               "name": "Transactions volume between 750.000€ and 1.000.000€: 50% discount.",
-              "applicableBaseRange": {
+              "activatingMetricValuerange": {
                 "min": 750001,
                 "max": 1000000
               },
-              "computationBase": "parent-price",
+              "computationMetric": "parent-price",
               "percent": 50
             },
             {
               "name": "Transactions volume above 1.000.000€: 80% discount",
-              "applicableBaseRange": {
+              "activatingMetricValuerange": {
                 "min": 1000001
               },
-              "computationBase": "parent-price",
+              "computationMetric": "parent-price",
               "percent": 80
             }
           ]
@@ -100,8 +100,8 @@
         "prices": [
           {
             "name": "Share of 1% on €${computationMetricValue} of transactions of ${sellerBehindMarketplace.name} between ${chargePeriod.startDate} and ${chargePeriod.endDate}",
-            "computationBaseReferencePeriod": "CURRENT_CHARGE_PERIOD",
-            "computationBase": "bills-no-taxes",
+            "computationMetricReferencePeriod": "CURRENT_CHARGE_PERIOD",
+            "computationMetric": "bills-no-taxes",
             "percent": 1,
             "currency": "EUR",
             "ignore": false,
@@ -123,8 +123,8 @@
         "prices": [
           {
             "name": "Share of 50% on €${computationMetricValue} of fees received from ${sellerBehindMarketplace.name} between ${chargePeriod.startDate} and ${chargePeriod.endDate}",
-            "computationBaseReferencePeriod": "CURRENT_CHARGE_PERIOD",
-            "computationBase": "bills-no-taxes",
+            "computationMetricReferencePeriod": "CURRENT_CHARGE_PERIOD",
+            "computationMetric": "bills-no-taxes",
             "percent": 50,
             "currency": "EUR",
             "ignore": false,
@@ -134,10 +134,10 @@
       },
       {
         "name": "(CSP) Revenue sharing based on transactions (€${computationMetricValue}) between ${chargePeriod.startDate} and ${chargePeriod.endDate} (post-paid)",
-        "applicableBase": "bills-no-taxes",
-        "applicableBaseReferencePeriod": "LAST_9_CHARGE_PERIODS",
-        "computationBaseReferencePeriod": "CURRENT_CHARGE_PERIOD",
-        "computationBase": "bills-no-taxes",
+        "activatingMetric": "bills-no-taxes",
+        "activatingMetricReferencePeriod": "LAST_9_CHARGE_PERIODS",
+        "computationMetricReferencePeriod": "CURRENT_CHARGE_PERIOD",
+        "computationMetric": "bills-no-taxes",
         "currency": "EUR",
         "isBundle": true,
         "bundleOp": "CUMULATIVE",
@@ -155,7 +155,7 @@
           },
           {
             "name": "Tier 1: 4% revenue sharing on transactions between 100.000€ and 200.000€",
-            "computationBase": "bills-no-taxes",
+            "computationMetric": "bills-no-taxes",
             "percent": 4,
             "discount": {
               "comment": "this is the 'min' of the tier x tier percentage",

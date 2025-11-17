@@ -73,16 +73,15 @@ public abstract class PlanItem {
 	 * The following properties are used to check if the computation is applicable. If not, the item
 	 * is skipped from computation (and not included in the report? To be confirmed).
 	 */
-    @JsonProperty("applicableBase")
-    private String applicableBase;
+    @JsonProperty("activatingMetric")
+    private String activatingMetric;
 
-    @JsonProperty("applicableBaseRange")
+    @JsonProperty("activatingMetricValueRange")
     @Valid
-    private Range applicableBaseRange;
+    private Range activatingMetricValueRange;
 
-	@JsonProperty("applicableBaseReferencePeriod")
-	@Deprecated 
-    private ReferencePeriod applicableBaseReferencePeriod;
+	@JsonProperty("activatingMetricReferencePeriod")
+    private ReferencePeriod activatingMetricReferencePeriod;
 
 
 //	@JsonProperty("applicableFrom")
@@ -92,11 +91,11 @@ public abstract class PlanItem {
 	/**
 	 * These properties drive the computation, in particular when the price/discount is expressed as a percentage or amount per unit
 	 */
-	@JsonProperty("computationBase")
-	private String computationBase;
+	@JsonProperty("computationMetric")
+	private String computationMetric;
 	
-	@JsonProperty("computationBaseReferencePeriod")
-    private ReferencePeriod computationBaseReferencePeriod;
+	@JsonProperty("computationMetricReferencePeriod")
+    private ReferencePeriod computationMetricReferencePeriod;
 
 	@JsonProperty("percent")
     @PositiveOrZero
@@ -168,15 +167,15 @@ public abstract class PlanItem {
 		this.ignore = ignore;
 	}
 
-	public String getApplicableBase() {
-		if(this.getParentItem()!=null && this.getParentItem().getApplicableBase()!=null)
-			return this.getParentItem().getApplicableBase();
+	public String getActivatingMetric() {
+		if(this.getParentItem()!=null && this.getParentItem().getActivatingMetric()!=null)
+			return this.getParentItem().getActivatingMetric();
 		else
-			return this.applicableBase;
+			return this.activatingMetric;
 	}
 
-	public void setApplicableBase(String applicableBase) {
-		this.applicableBase = applicableBase;
+	public void setActivatingMetric(String activatingMetric) {
+		this.activatingMetric = activatingMetric;
 	}
 
 	public String getName() {
@@ -215,27 +214,27 @@ public abstract class PlanItem {
 	 * Propagated. Can be overridden.
 	 * @return
 	 */
-    public String getComputationBase() {
-		if(this.computationBase!=null)
-			return this.computationBase;
+    public String getComputationMetric() {
+		if(this.computationMetric!=null)
+			return this.computationMetric;
 		else if(this.getParentItem()!=null)
-			return this.getParentItem().getComputationBase();
+			return this.getParentItem().getComputationMetric();
 		return null;
 	}
 
-	public void setComputationBase(String computationBase) {
-		this.computationBase = computationBase;
+	public void setComputationMetric(String computationMetric) {
+		this.computationMetric = computationMetric;
 	}
 
-    public Range getApplicableBaseRange() {
-		if(this.getParentItem()!=null && this.getParentItem().getApplicableBaseRange()!=null)
-			return this.getParentItem().getApplicableBaseRange();
+    public Range getActivatingMetricValueRange() {
+		if(this.getParentItem()!=null && this.getParentItem().getActivatingMetricValueRange()!=null)
+			return this.getParentItem().getActivatingMetricValueRange();
 		else
-			return this.applicableBaseRange;
+			return this.activatingMetricValueRange;
 	}
 
-	public void setApplicableBaseRange(Range applicableBaseRange) {
-		this.applicableBaseRange = applicableBaseRange;
+	public void setActivatingMetricValueRange(Range activatingMetricValueRange) {
+		this.activatingMetricValueRange = activatingMetricValueRange;
 	}
 
 	public String getCurrency() {
@@ -278,26 +277,26 @@ public abstract class PlanItem {
 		this.unitAmount = unitAmount;
 	}
 
-	public ReferencePeriod getApplicableBaseReferencePeriod() {
-		if(this.getParentItem()!=null && this.getParentItem().getApplicableBaseReferencePeriod()!=null)
-			return this.getParentItem().getApplicableBaseReferencePeriod();
+	public ReferencePeriod getActivatingMetricReferencePeriod() {
+		if(this.getParentItem()!=null && this.getParentItem().getActivatingMetricReferencePeriod()!=null)
+			return this.getParentItem().getActivatingMetricReferencePeriod();
 		else
-			return this.applicableBaseReferencePeriod;
+			return this.activatingMetricReferencePeriod;
 	}
 
-	public void setApplicableBaseReferencePeriod(ReferencePeriod applicableBaseReferencePeriod) {
-		this.applicableBaseReferencePeriod = applicableBaseReferencePeriod;
+	public void setActivatingMetricReferencePeriod(ReferencePeriod activatingMetricReferencePeriod) {
+		this.activatingMetricReferencePeriod = activatingMetricReferencePeriod;
 	}
 
 	/**
 	 * Propagated. Can be overridden.
 	 * @return
 	 */
-	public ReferencePeriod getComputationBaseReferencePeriod() {
-		if(this.computationBaseReferencePeriod!=null)
-			return this.computationBaseReferencePeriod;
+	public ReferencePeriod getComputationMeticReferencePeriod() {
+		if(this.computationMetricReferencePeriod!=null)
+			return this.computationMetricReferencePeriod;
 		else if(this.getParentItem()!=null)
-			return this.getParentItem().getComputationBaseReferencePeriod();
+			return this.getParentItem().getComputationMeticReferencePeriod();
 		return null;
 		/*
 		if(this.getParentItem()!=null && this.getParentItem().getComputationBaseReferencePeriod()!=null)
@@ -307,8 +306,8 @@ public abstract class PlanItem {
 		*/
 	}
 
-	public void setComputationBaseReferencePeriod(ReferencePeriod computationBaseReferencePeriod) {
-		this.computationBaseReferencePeriod = computationBaseReferencePeriod;
+	public void setComputationMetricReferencePeriod(ReferencePeriod computationMetricReferencePeriod) {
+		this.computationMetricReferencePeriod = computationMetricReferencePeriod;
 	}
 
 	/**
@@ -379,7 +378,7 @@ public abstract class PlanItem {
 
 	@JsonIgnore
 	public boolean isConditional() {
-		if(this.getApplicableBase()!=null || this.getApplicableBaseRange()!=null || this.getApplicableBaseReferencePeriod()!=null || this.getApplicableFrom()!=null)
+		if(this.getActivatingMetric()!=null || this.getActivatingMetricValueRange()!=null || this.getActivatingMetricReferencePeriod()!=null || this.getApplicableFrom()!=null)
 			return true;
 		// Q: what was the rationale behind the following check?
 		if(this.getPercent()!=null || this.getUnitAmount()!=null)

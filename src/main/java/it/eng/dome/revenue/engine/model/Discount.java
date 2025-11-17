@@ -75,9 +75,9 @@ public class Discount extends PlanItem{
 	@Override
 	public String toString() {
 		return "Discount [isBundle=" + getIsBundle() + ", bundleOp=" + getBundleOp() + ", discounts=" + discounts
-				+ ", computationBase=" + this.getComputationBase() + ", ABreferencePeriod=" + getApplicableBaseReferencePeriod()
-				+ ", CBreferencePeriod=" + getComputationBaseReferencePeriod()
-				+ ", applicableBaseRange=" + getApplicableBaseRange() + ", percent=" + getPercent() + ", amount=" + this.getAmount()
+				+ ", computationBase=" + this.getComputationMetric() + ", activatingMetricreferencePeriod=" + getActivatingMetricReferencePeriod()
+				+ ", CBreferencePeriod=" + getComputationMeticReferencePeriod()
+				+ ", activatingMetricValueRange=" + getActivatingMetricValueRange() + ", percent=" + getPercent() + ", amount=" + this.getAmount()
 				+ "]";
 	}
 

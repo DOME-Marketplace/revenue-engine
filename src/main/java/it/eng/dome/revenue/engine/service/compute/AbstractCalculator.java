@@ -347,17 +347,17 @@ public abstract class AbstractCalculator implements Calculator {
 
 		String subscriberId = this.getSubscription().getSubscriberId();
 
-		Double applicableValue = this.getApplicableValue(subscriberId, timePeriod);
+		Double activatingMetricValue = this.getActivatingMetricValue(subscriberId, timePeriod);
 
 		// value & condition => check
 		// value & no condition => OK, with warning
 		// no value & condition => KO, with error
 		// no value & no condition => OK
 
-		if(applicableValue!=null) {
-			this.getCalculatorContext().put("activatingMetricValue", formatDouble(applicableValue));
-			if (this.item.getApplicableBaseRange()!=null) {
-				return this.item.getApplicableBaseRange().inRange(applicableValue);
+		if(activatingMetricValue!=null) {
+			this.getCalculatorContext().put("activatingMetricValue", formatDouble(activatingMetricValue));
+			if (this.item.getActivatingMetricValueRange()!=null) {
+				return this.item.getActivatingMetricValueRange().inRange(activatingMetricValue);
 			}
 			else {
 				logger.warn("The item {} specifies an applicability metric, but it sets no range for it");
@@ -365,7 +365,7 @@ public abstract class AbstractCalculator implements Calculator {
 			}
 		}
 		else {
-			if (this.item.getApplicableBaseRange()!=null) {
+			if (this.item.getActivatingMetricValueRange()!=null) {
 				logger.error("The item {} specifies an applicability range, but no metric is defined");
 				return false;
 			}
@@ -402,16 +402,16 @@ public abstract class AbstractCalculator implements Calculator {
 		}
 
 		// make sure a computationBase is set if a percent or unitAmount are used
-		if ((this.item.getPercent()!=null || this.item.getUnitAmount()!=null) && (this.item.getComputationBase() == null || this.item.getComputationBase().isEmpty())) {
+		if ((this.item.getPercent()!=null || this.item.getUnitAmount()!=null) && (this.item.getComputationMetric() == null || this.item.getComputationMetric().isEmpty())) {
 			logger.warn("A percent is set, but no computation base defined!");
 			return false;
 		}
 
 		// also a reference period for the computation base is needed
-		if ((this.item.getPercent()!=null || this.item.getUnitAmount()!=null) && !"parent-price".equals(this.item.getComputationBase()) && (
-				this.item.getComputationBaseReferencePeriod() == null 
-				|| this.item.getComputationBaseReferencePeriod().getValue() == null
-				|| this.item.getComputationBaseReferencePeriod().getValue().isEmpty())) {
+		if ((this.item.getPercent()!=null || this.item.getUnitAmount()!=null) && !"parent-price".equals(this.item.getComputationMetric()) && (
+				this.item.getComputationMeticReferencePeriod() == null 
+				|| this.item.getComputationMeticReferencePeriod().getValue() == null
+				|| this.item.getComputationMeticReferencePeriod().getValue().isEmpty())) {
 			logger.warn("A percent or unitAmount are set, but no computation base reference period is defined!");
 			return false;
 		}
@@ -472,10 +472,10 @@ public abstract class AbstractCalculator implements Calculator {
 	protected TimePeriod getComputationTimePeriod(OffsetDateTime time) {
 		// extract the keyword of reference period for the computation base
 		String computationPeriodKeyword = null;
-		if(this.item.getComputationBaseReferencePeriod() != null) 
-			computationPeriodKeyword = this.item.getComputationBaseReferencePeriod().getValue();
+		if(this.item.getComputationMeticReferencePeriod() != null) 
+			computationPeriodKeyword = this.item.getComputationMeticReferencePeriod().getValue();
 		if(computationPeriodKeyword==null) {
-			logger.debug("No reference period specified. ComputationBaseReferencePeriod is null");
+			logger.debug("No reference period specified. 'computationMetricReferencePeriod' is null");
 			return null;
 		}
 		SubscriptionTimeHelper helper = new SubscriptionTimeHelper(this.getSubscription());
@@ -483,18 +483,18 @@ public abstract class AbstractCalculator implements Calculator {
 		return computationPeriod;
 	}
 
-	protected TimePeriod getApplicableTimePeriod(OffsetDateTime time) {
+	protected TimePeriod getActivatingMetricReferencePeriod(OffsetDateTime time) {
 		// extract the keyword of reference period for the applicable base
-		String applicablePeriodKeyword = null;
-		if(this.item.getApplicableBaseReferencePeriod() != null) 
-			applicablePeriodKeyword = this.item.getApplicableBaseReferencePeriod().getValue();
-		if(applicablePeriodKeyword==null) {
-			logger.debug("No reference period specified. ApplicableBaseReferencePeriod is null");
+		String activatingPeriodKeyword = null;
+		if(this.item.getActivatingMetricReferencePeriod() != null) 
+			activatingPeriodKeyword = this.item.getActivatingMetricReferencePeriod().getValue();
+		if(activatingPeriodKeyword==null) {
+			logger.debug("No reference period specified. 'activatingMetricReferencePeriod' is null");
 			return null;
 		}
 		SubscriptionTimeHelper helper = new SubscriptionTimeHelper(this.getSubscription());
-		TimePeriod applicablePeriod = helper.getCustomPeriod(time, this.item.getReferencePrice(), applicablePeriodKeyword);
-		return applicablePeriod;
+		TimePeriod activatingPeriod = helper.getCustomPeriod(time, this.item.getReferencePrice(), activatingPeriodKeyword);
+		return activatingPeriod;
 	}
 
 	/*
@@ -561,20 +561,20 @@ public abstract class AbstractCalculator implements Calculator {
     }
 	*/
 
-	private Double getApplicableValue(String subscriberId, TimePeriod tp) throws BadTmfDataException, ExternalServiceException {
+	private Double getActivatingMetricValue(String subscriberId, TimePeriod tp) throws BadTmfDataException, ExternalServiceException {
 
 		// TODO: the applicable base can also be 'parent-price'. This is not currently supported.
 		// In general, the context is not considered here. Shuould it?
 
-		if (this.item.getApplicableBase() == null || this.item.getApplicableBase().isEmpty()) {
+		if (this.item.getActivatingMetric() == null || this.item.getActivatingMetric().isEmpty()) {
 			return null;
 		}
 
-		TimePeriod applicabilityTimePeriod = this.getApplicableTimePeriod(tp.getStartDateTime());
+		TimePeriod applicabilityTimePeriod = this.getActivatingMetricReferencePeriod(tp.getStartDateTime());
 
 		if(applicabilityTimePeriod!=null) {
-			Double applicableValue = this.metricsRetriever.computeValueForKey(this.item.getApplicableBase(), subscriberId, null, applicabilityTimePeriod);
-			return applicableValue;
+			Double activatingMetricValue = this.metricsRetriever.computeValueForKey(this.item.getActivatingMetric(), subscriberId, null, applicabilityTimePeriod);
+			return activatingMetricValue;
 		} else {
 			logger.debug("There's no applicableTimePeriod for {}. No applicableValue can be computed", this.item.getName());
 			return null;
@@ -595,7 +595,7 @@ public abstract class AbstractCalculator implements Calculator {
 	}
 
 	protected Double getComputationBase(String sellerId, TimePeriod timePeriod, Map<String, Double> computeContext) throws ExternalServiceException, BadTmfDataException {
-        if ("parent-price".equals(this.item.getComputationBase()) && computeContext.containsKey("parent-price")) {
+        if ("parent-price".equals(this.item.getComputationMetric()) && computeContext.containsKey("parent-price")) {
             // TODO: make this more generic to look for any key in the map first; and only after ask the metrics retriever.
             Double computationBase = computeContext.get("parent-price");
             logger.debug("Using parent price amount as computation base: {}", computationBase);
@@ -604,18 +604,18 @@ public abstract class AbstractCalculator implements Calculator {
         } else {
             TimePeriod computationPeriod = this.getComputationTimePeriod(timePeriod.getEndDateTime().minusSeconds(1));
             if (computationPeriod == null) {
-                logger.debug("Could not compute custom period for reference: {}", this.item.getComputationBaseReferencePeriod());
+                logger.debug("Could not compute custom period for reference: {}", this.item.getComputationMeticReferencePeriod());
                 return null;
             }
-            logger.debug("Using custom period for {}: {} - {}, based on reference: {}", this.item.getComputationBaseReferencePeriod(), computationPeriod.getStartDateTime(), computationPeriod.getEndDateTime());
+            logger.debug("Using custom period for {}: {} - {}, based on reference: {}", this.item.getComputationMeticReferencePeriod(), computationPeriod.getStartDateTime(), computationPeriod.getEndDateTime());
 			String buyerId = this.getCalculatorContext().get("buyerId");
-            Double computationBase = this.metricsRetriever.computeValueForKey(this.item.getComputationBase(), sellerId, buyerId, computationPeriod);
+            Double computationBase = this.metricsRetriever.computeValueForKey(this.item.getComputationMetric(), sellerId, buyerId, computationPeriod);
             if(computationBase==null) {
                 logger.debug("Computation value is null");
                 return null;
             }
             logger.info("Computation base {} for metric '{}' in period {} - {} for seller {}",
-                computationBase, this.item.getComputationBase(), computationPeriod.getStartDateTime(), computationPeriod.getEndDateTime(), sellerId);				
+                computationBase, this.item.getComputationMetric(), computationPeriod.getStartDateTime(), computationPeriod.getEndDateTime(), sellerId);				
             this.getCalculatorContext().put("computationMetricValue", formatDouble(computationBase));
             return computationBase;
         }

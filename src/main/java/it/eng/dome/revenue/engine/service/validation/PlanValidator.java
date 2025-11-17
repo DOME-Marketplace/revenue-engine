@@ -174,23 +174,23 @@ public class PlanValidator {
 
     private List<PlanValidationIssue> validatePlanItemApplicable(PlanItem item) {
         List<PlanValidationIssue> issues = new ArrayList<>();
-        if (item.getApplicableBase() != null && item.getApplicableBase().isEmpty())
+        if (item.getActivatingMetric() != null && item.getActivatingMetric().isEmpty())
             issues.add(new PlanValidationIssue("applicableBase is empty", PlanValidationIssueSeverity.ERROR));
-        if (item.getApplicableBaseRange() != null &&
-            item.getApplicableBaseRange().getMax() != null &&
-            item.getApplicableBaseRange().getMin() != null &&
-            item.getApplicableBaseRange().getMax() < item.getApplicableBaseRange().getMin()) 
+        if (item.getActivatingMetricValueRange() != null &&
+            item.getActivatingMetricValueRange().getMax() != null &&
+            item.getActivatingMetricValueRange().getMin() != null &&
+            item.getActivatingMetricValueRange().getMax() < item.getActivatingMetricValueRange().getMin()) 
             issues.add(new PlanValidationIssue("applicableBaseRange min > max", PlanValidationIssueSeverity.ERROR));
-        if (item.getApplicableBaseReferencePeriod() != null && item.getApplicableBaseReferencePeriod().toString().isEmpty())
+        if (item.getActivatingMetricReferencePeriod() != null && item.getActivatingMetricReferencePeriod().toString().isEmpty())
             issues.add(new PlanValidationIssue("applicableBaseReferencePeriod is empty", PlanValidationIssueSeverity.WARNING));
         return issues;
     }
 
     private List<PlanValidationIssue> validatePlanItemComputation(PlanItem item) {
         List<PlanValidationIssue> issues = new ArrayList<>();
-        if (item.getComputationBaseReferencePeriod() != null && item.getComputationBaseReferencePeriod().toString().isEmpty())
+        if (item.getComputationMeticReferencePeriod() != null && item.getComputationMeticReferencePeriod().toString().isEmpty())
             issues.add(new PlanValidationIssue("computationBaseReferencePeriod is empty", PlanValidationIssueSeverity.WARNING));
-        if (item.getComputationBase() != null && item.getComputationBase().isEmpty())
+        if (item.getComputationMetric() != null && item.getComputationMetric().isEmpty())
             issues.add(new PlanValidationIssue("computationBase is empty", PlanValidationIssueSeverity.WARNING));
         return issues;
     }
@@ -266,7 +266,7 @@ public class PlanValidator {
     private List<PlanValidationIssue> validatePlanItemConditional(PlanItem item) {
         List<PlanValidationIssue> issues = new ArrayList<>();
         if (item.isConditional()) {
-            boolean hasValue = item.getPercent() != null || item.getApplicableBase() != null || item.getApplicableBaseRange() != null;
+            boolean hasValue = item.getPercent() != null || item.getActivatingMetric() != null || item.getActivatingMetricValueRange() != null;
             boolean isAtomicItem = !(item instanceof Price && ((Price)item).getPrices() != null)
                                 && !(item instanceof Discount && ((Discount)item).getDiscounts() != null);
             if (!hasValue && isAtomicItem)

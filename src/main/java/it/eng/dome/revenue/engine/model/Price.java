@@ -165,8 +165,8 @@ public class Price extends PlanItem {
 				+ ", prices=" + prices + ", amount=" + this.getAmount() + ", currency=" + getCurrency() + ", percent=" + getPercent()
 				+ ", recurringChargePeriodLength=" + recurringChargePeriodLength
 				+ ", recurringChargePeriodType=" + recurringChargePeriodType + ", discount=" + discount
-				+ ", computationBase=" + getComputationBase() + ", ABreferencePeriod=" + getApplicableBaseReferencePeriod()
-				+ ", CBreferencePeriod=" + getComputationBaseReferencePeriod()
-				+ ", applicableBaseRange=" + getApplicableBaseRange() + "]";
+				+ ", computationBase=" + getComputationMetric() + ", activtingMetricReferencePeriod=" + getActivatingMetricReferencePeriod()
+				+ ", computationMetricReferencePeriod=" + getComputationMeticReferencePeriod()
+				+ ", activtingMetricValueRange=" + getActivatingMetricValueRange() + "]";
 	}
 }
