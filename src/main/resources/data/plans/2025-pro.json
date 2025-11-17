@@ -122,10 +122,10 @@
         "forEachMetric": "billedSellersBehindMarketplace",
         "prices": [
           {
-            "name": "Share of 50% on €${computationMetricValue} of fees received from ${sellerBehindMarketplace.name} between ${chargePeriod.startDate} and ${chargePeriod.endDate}",
+            "name": "Share of ${subscription.percentage}% on €${computationMetricValue} of fees received from ${sellerBehindMarketplace.name} between ${chargePeriod.startDate} and ${chargePeriod.endDate}",
             "computationMetricReferencePeriod": "CURRENT_CHARGE_PERIOD",
             "computationMetric": "bills-no-taxes",
-            "percent": 50,
+            "percent": "${subscription.percentage}",
             "currency": "EUR",
             "ignore": false,
             "skipIfZero": true

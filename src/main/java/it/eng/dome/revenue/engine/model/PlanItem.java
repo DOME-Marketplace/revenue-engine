@@ -9,7 +9,6 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 
 import it.eng.dome.tmforum.tmf678.v4.model.TimePeriod;
 import jakarta.validation.Valid;
-import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.PositiveOrZero;
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
@@ -96,11 +95,17 @@ public abstract class PlanItem {
 	
 	@JsonProperty("computationMetricReferencePeriod")
     private ReferencePeriod computationMetricReferencePeriod;
-
+	
 	@JsonProperty("percent")
-    @PositiveOrZero
-    @Max(100)
-    private Double percent;
+	private String percentRaw;
+
+//	@JsonProperty("percent")
+//    @PositiveOrZero
+//    @Max(100)
+//    private Double percent;
+	
+//	@JsonProperty("percent")
+//	private String percentAsString;
 
     @JsonProperty("unitAmount")
     private Double unitAmount;
@@ -256,9 +261,36 @@ public abstract class PlanItem {
 	public PlanItem getParentItem() {
 		return this.parentItem;
 	}
-	
+
+	public String getPercentAsString() {
+	    if (percentRaw != null) return percentRaw;
+	    if (getParentItem() != null) return getParentItem().getPercentAsString();
+	    return null;
+	}
+
+	public void setPercent(String s) {
+	    this.percentRaw = s;
+	}
+
+	public void setPercent(Double d) {
+	    this.percentRaw = (d == null ? null : d.toString());
+	}
+
+
 	public Double getPercent() {
-		return percent;
+	    String s = getPercentAsString();
+	    if (s == null) return null;
+
+	    if (s.contains("${") || s.contains("{")) {
+	        return null;
+	    }
+
+	    try {
+	        return Double.parseDouble(s);
+	    } catch (NumberFormatException e) {
+
+	        return null;
+	    }
 	}
 
 	public Double getUnitAmount() {
@@ -269,9 +301,6 @@ public abstract class PlanItem {
 		return null;
 	}
 
-	public void setPercent(Double percent) {
-		this.percent = percent;
-	}
 
 	public void setUnitAmount(Double unitAmount) {
 		this.unitAmount = unitAmount;

@@ -29,8 +29,10 @@ public class PlanResolver {
         if (item != null) {
             String resolvedIgnore = resolveString(item.getIgnore(), item);
             String resolvedName = resolveString(item.getName(), item);
+            String resolvedPercent = resolveString(item.getPercentAsString(), item);
             item.setIgnore(resolvedIgnore);
             item.setName(resolvedName);
+            item.setPercent(resolvedPercent);
         }
         return item;
     }
@@ -67,6 +69,7 @@ public class PlanResolver {
         }
 
         String resolvedText = input;
+
         final Pattern pattern = Pattern.compile("!?\\$\\{([a-zA-Z\\.]+)\\}");
         Matcher matcher = pattern.matcher(input);
 
@@ -116,6 +119,8 @@ public class PlanResolver {
                     return subscription.getName();
                 case "startdate":
                     return subscription.getStartDate().toString();
+                case "percentage":
+                    return subscription.getPercentage();
                 default:
                     break; // TODO: add more subscription properties if needed
             }
@@ -144,10 +149,10 @@ public class PlanResolver {
                         .findFirst()
                         .orElse("");
                 default:
-                	break; // TODO: add more seller properties if needed
+                    break; // TODO: add more seller properties if needed
             }
         }
-
+        
         // properties of the plan item itself
         Pattern p5 = Pattern.compile("([a-zA-Z]+)");
         m = p5.matcher(token);
