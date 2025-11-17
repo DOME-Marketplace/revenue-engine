@@ -279,10 +279,6 @@ public abstract class PlanItem {
 	    String s = getPercentAsString();
 	    if (s == null) return null;
 
-	    if (s.contains("${") || s.contains("{")) {
-	        return null;
-	    }
-
 	    try {
 	        return Double.parseDouble(s);
 	    } catch (NumberFormatException e) {

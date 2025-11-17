@@ -119,8 +119,6 @@ public class PlanResolver {
                     return subscription.getName();
                 case "startdate":
                     return subscription.getStartDate().toString();
-                case "percentage":
-                    return subscription.getPercentage();
                 default:
                     break; // TODO: add more subscription properties if needed
             }

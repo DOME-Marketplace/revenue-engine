@@ -21,9 +21,7 @@ public class Subscription {
     private String href;
 	
     private String name;
-    
-    private String percentage;
-    
+        
     @JsonProperty("plan")
     private Plan plan;
     
@@ -166,13 +164,6 @@ public class Subscription {
         return timeHelper.getChargePeriodTimes();
     }
 
-	public String getPercentage() {
-		return percentage;
-	}
-
-	public void setPercentage(String percentage) {
-		this.percentage = percentage;
-	}
 
     // TODO: create an new class BillCycle for this, instead of TimePeriod
     // the BillCycle should also contain the billdate and the payment due date
