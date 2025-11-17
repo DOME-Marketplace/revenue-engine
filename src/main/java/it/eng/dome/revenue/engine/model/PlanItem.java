@@ -263,9 +263,7 @@ public abstract class PlanItem {
 	}
 
 	public String getPercentAsString() {
-	    if (percentRaw != null) return percentRaw;
-	    if (getParentItem() != null) return getParentItem().getPercentAsString();
-	    return null;
+		return percentRaw;
 	}
 
 	public void setPercent(String s) {
