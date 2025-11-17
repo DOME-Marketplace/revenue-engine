@@ -386,24 +386,33 @@ public abstract class AbstractCalculator implements Calculator {
 		if(this.item.getIsBundle())
 			return true;
 
+		int count =  0;
+		count += (this.item.getPercent()!=null ? 1 : 0);
+		count += (this.item.getAmount()!=null ? 1 : 0);
+		count += (this.item.getUnitAmount()!=null ? 1 : 0);
 		// for atomic items, make sure an amount or a percent are set
-		if (this.item.getPercent() == null && this.item.getAmount() == null) {
-			logger.warn("Neither percent nor amount defined for computation!");
+		if(count==0) {
+			logger.warn("Neither percent nor amount, nor unitAmount defined!");
+			return false;
+		}
+		// make sure exactly one of (amount, percent, unitAmount) is set
+		if(count>1) {
+			logger.warn("More than one property among (percent, amount, unitAmount) are set");
 			return false;
 		}
 
-		// make sure a computationBase is set (TODISCUSS: is this true? maybe a fixed amount do)
-		if (this.item.getPercent()!=null && (this.item.getComputationBase() == null || this.item.getComputationBase().isEmpty())) {
+		// make sure a computationBase is set if a percent or unitAmount are used
+		if ((this.item.getPercent()!=null || this.item.getUnitAmount()!=null) && (this.item.getComputationBase() == null || this.item.getComputationBase().isEmpty())) {
 			logger.warn("A percent is set, but no computation base defined!");
 			return false;
 		}
 
 		// also a reference period for the computation base is needed
-		if (this.item.getPercent()!=null && !"parent-price".equals(this.item.getComputationBase()) && (
+		if ((this.item.getPercent()!=null || this.item.getUnitAmount()!=null) && !"parent-price".equals(this.item.getComputationBase()) && (
 				this.item.getComputationBaseReferencePeriod() == null 
 				|| this.item.getComputationBaseReferencePeriod().getValue() == null
 				|| this.item.getComputationBaseReferencePeriod().getValue().isEmpty())) {
-			logger.warn("A percent is set, but no computation base reference period is defined!");
+			logger.warn("A percent or unitAmount are set, but no computation base reference period is defined!");
 			return false;
 		}
 

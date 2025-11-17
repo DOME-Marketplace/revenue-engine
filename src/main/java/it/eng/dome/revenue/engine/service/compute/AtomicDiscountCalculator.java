@@ -43,6 +43,9 @@ public class AtomicDiscountCalculator extends AbstractCalculator {
 		if (this.item.getPercent() != null) {
 			return this.getComputationBase(sellerId, tp, computeContext) * (this.item.getPercent() / 100);
 		}
+		else if (this.item.getUnitAmount() != null) {
+			return this.getComputationBase(sellerId, tp, computeContext) * this.item.getUnitAmount();
+		}
 		else {
 			return this.item.getAmount();
 		}

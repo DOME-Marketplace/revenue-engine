@@ -41,7 +41,7 @@ public abstract class PlanItem {
 	private String forEachMetric;
 
 	/**
-	 * The following property provide information about the due amount, either as absolute value or in perc.
+	 * The following property provide information about the due amount.
 	 */
     @JsonProperty("amount")
     @PositiveOrZero
@@ -90,7 +90,7 @@ public abstract class PlanItem {
 //	private OffsetDateTime applicableFrom;
 	
 	/**
-	 * These properties drive the computation, in particular when the price/discount is expressed as a percentage.
+	 * These properties drive the computation, in particular when the price/discount is expressed as a percentage or amount per unit
 	 */
 	@JsonProperty("computationBase")
 	private String computationBase;
@@ -102,6 +102,9 @@ public abstract class PlanItem {
     @PositiveOrZero
     @Max(100)
     private Double percent;
+
+    @JsonProperty("unitAmount")
+    private Double unitAmount;
 
 	/**
 	 * this is to force the resulting amount in the given range
@@ -259,12 +262,20 @@ public abstract class PlanItem {
 		return percent;
 	}
 
+	public Double getUnitAmount() {
+		return unitAmount;
+	}
+
 	public PriceType getType() {
 		return null;
 	}
 
 	public void setPercent(Double percent) {
 		this.percent = percent;
+	}
+
+	public void setUnitAmount(Double unitAmount) {
+		this.unitAmount = unitAmount;
 	}
 
 	public ReferencePeriod getApplicableBaseReferencePeriod() {
@@ -370,7 +381,8 @@ public abstract class PlanItem {
 	public boolean isConditional() {
 		if(this.getApplicableBase()!=null || this.getApplicableBaseRange()!=null || this.getApplicableBaseReferencePeriod()!=null || this.getApplicableFrom()!=null)
 			return true;
-		if(this.getPercent()!=null)
+		// Q: what was the rationale behind the following check?
+		if(this.getPercent()!=null || this.getUnitAmount()!=null)
 			return true;
 		return false;
 	}
