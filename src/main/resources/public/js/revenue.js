@@ -238,11 +238,20 @@ function showPlan(plan, clickedDOM) {
 function showSubscriptions(subscriptions, clickedDOM) {
     getLanes().cleanAfter(clickedDOM);
     getLanes().pushLane("some title");
-    for(sub of subscriptions)
-        getLanes().addToCurrentLane(getNodeFor("subscription_short_summary", sub));
-    if(subscriptions.length==0)
-        getLanes().addToCurrentLane(getNodeForMessage("No subscriptions found"));
+    for (sub of subscriptions) {
+        if (sub.characteristics && sub.characteristics.revenuePercentage != null) {
+            sub.revenuePercentage = sub.characteristics.revenuePercentage;
+        }
+        getLanes().addToCurrentLane(
+            getNodeFor("subscription_short_summary", sub)
+        );
+    }
+    if (subscriptions.length == 0)
+        getLanes().addToCurrentLane(
+            getNodeForMessage("No subscriptions found")
+        );
 }
+
 
 function showStatements(statements, clickedDOM) {
     getLanes().cleanAfter(clickedDOM);
