@@ -40,12 +40,10 @@ public class Price extends PlanItem {
 		PriceType inheritedType = null;
 		if(this.getParentPrice() != null) {
 			inheritedType = this.getParentPrice().getType();
+			if(inheritedType != null)
+				return inheritedType;
 		}
-		if(inheritedType != null) {
-			return inheritedType;
-		} else {
-			return this.type;
-		}
+		return this.type;
 	}
 
 
@@ -76,16 +74,13 @@ public class Price extends PlanItem {
 
 	/* Return the inherited length, if any. Otherwise the local value. */
 	public Integer getRecurringChargePeriodLength() {
-		Integer inheritedLength;
+		Integer inheritedLength = null;
 		if(this.getParentPrice() != null) {
 			inheritedLength = this.getParentPrice().getRecurringChargePeriodLength();
-		} else {
-			inheritedLength = null;
+			if(inheritedLength != null)
+				return inheritedLength;
 		}
-		if(inheritedLength != null) {
-			return inheritedLength;
-		} else {}
-			return this.recurringChargePeriodLength;
+		return this.recurringChargePeriodLength;
 	}
 
 	public void setRecurringChargePeriodLength(Integer recurringChargePeriodLength) {
@@ -94,16 +89,13 @@ public class Price extends PlanItem {
 
 	/* Return the inherited period type, if any. Otherwise the local value. */
 	public RecurringPeriod getRecurringChargePeriodType() {
-		RecurringPeriod inheritedPeriod;
+		RecurringPeriod inheritedPeriod = null;
 		if(this.getParentPrice() != null) {
 			inheritedPeriod = this.getParentPrice().getRecurringChargePeriodType();
-		} else {
-			inheritedPeriod = null;
+			if(inheritedPeriod != null)
+				return inheritedPeriod;
 		}
-		if(inheritedPeriod != null) {
-			return inheritedPeriod;
-		} else {}
-			return this.recurringChargePeriodType;
+		return this.recurringChargePeriodType;
 	}
 
 	public void setRecurringChargePeriodType(RecurringPeriod recurringChargePeriodType) {

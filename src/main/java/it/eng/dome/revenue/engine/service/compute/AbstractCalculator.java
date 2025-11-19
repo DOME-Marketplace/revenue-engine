@@ -88,10 +88,10 @@ public abstract class AbstractCalculator implements Calculator {
 		if(outRevenueItem==null)
 			return null;
 
-		if(this.item instanceof Price) {
+//		if(this.item instanceof Price) {
 			// TODO: if this works here, remove the setting done in atomic calculators
 			outRevenueItem.setChargeTime(new SubscriptionTimeHelper(this.getSubscription()).getChargeTime(timePeriod, this.item.getReferencePrice()));
-		}
+//		}
 
 		// zero the item, if needed
 		if(zeroIt) {
@@ -243,12 +243,12 @@ public abstract class AbstractCalculator implements Calculator {
 		// Q: and what if the ignorePeriod is entirely contained (and smaller) in the charge period?
 		// Need to split in two? Resulting in two items? Not working for flat prices... maybe it's price-dependent behaviour.
 		// Needs more branistorming.
-		if (this.item.getApplicableFrom() != null && timePeriod.getStartDateTime().isBefore(this.item.getApplicableFrom())) {
+		if (this.item.getValidFrom() != null && timePeriod.getStartDateTime().isBefore(this.item.getValidFrom())) {
 			logger.debug("Price {} not applicable for time period {} (applicable from {})", this.item.getName(), timePeriod,
-					this.item.getApplicableFrom());
+					this.item.getValidFrom());
 			return false;
 		}
-		logger.debug("[FIXME] Price {} is applicable for time period {} (applicable from {})", this.item.getName(), timePeriod, this.item.getApplicableFrom());
+		logger.debug("[FIXME] Price {} is applicable for time period {} (applicable from {})", this.item.getName(), timePeriod, this.item.getValidFrom());
 
 		// now also check the 'ignorePeriod' property. Resolve it and check if the period is affected.
 		// FIXME: same considerations as above

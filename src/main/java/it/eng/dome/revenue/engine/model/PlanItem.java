@@ -172,11 +172,20 @@ public abstract class PlanItem {
 		this.ignore = ignore;
 	}
 
+	// priority on local setting
 	public String getActivatingMetric() {
+		if(this.activatingMetric!=null)
+			return this.activatingMetric;
+		else if(this.hasParentItem())
+			return this.getParentItem().getActivatingMetric();
+		else
+			return null;
+		/*
 		if(this.getParentItem()!=null && this.getParentItem().getActivatingMetric()!=null)
 			return this.getParentItem().getActivatingMetric();
 		else
 			return this.activatingMetric;
+		 */
 	}
 
 	public void setActivatingMetric(String activatingMetric) {
@@ -216,13 +225,12 @@ public abstract class PlanItem {
 	}
 
 	/**
-	 * Propagated. Can be overridden.
 	 * @return
 	 */
     public String getComputationMetric() {
 		if(this.computationMetric!=null)
 			return this.computationMetric;
-		else if(this.getParentItem()!=null)
+		else if(this.hasParentItem())
 			return this.getParentItem().getComputationMetric();
 		return null;
 	}
@@ -232,18 +240,30 @@ public abstract class PlanItem {
 	}
 
     public Range getActivatingMetricValueRange() {
+		if(this.activatingMetricValueRange!=null)
+			return this.activatingMetricValueRange;
+		else if(this.hasParentItem())
+			return this.getParentItem().getActivatingMetricValueRange();
+		else 
+			return null;
+		/*
 		if(this.getParentItem()!=null && this.getParentItem().getActivatingMetricValueRange()!=null)
 			return this.getParentItem().getActivatingMetricValueRange();
 		else
 			return this.activatingMetricValueRange;
+		*/
 	}
 
 	public void setActivatingMetricValueRange(Range activatingMetricValueRange) {
 		this.activatingMetricValueRange = activatingMetricValueRange;
 	}
 
+	/**
+	 * Inherited. Can't be overridden.
+	 * @return
+	 */
 	public String getCurrency() {
-		if(this.getParentItem()!=null && this.getParentItem().getCurrency()!=null)
+		if(this.hasParentItem() && this.getParentItem().getCurrency()!=null)
 			return this.getParentItem().getCurrency();
 		else
 			return this.currency;
@@ -255,6 +275,10 @@ public abstract class PlanItem {
 
     public void setParentItem(PlanItem parentItem) {
 		this.parentItem = parentItem;
+	}
+
+	public Boolean hasParentItem() {
+		return this.parentItem!=null;
 	}
 
 	@JsonIgnore
@@ -300,11 +324,23 @@ public abstract class PlanItem {
 		this.unitAmount = unitAmount;
 	}
 
+	/**
+	 * Priority on local value
+	 * @return
+	 */
 	public ReferencePeriod getActivatingMetricReferencePeriod() {
+		if(this.activatingMetricReferencePeriod!=null)
+			return this.activatingMetricReferencePeriod;
+		else if(this.hasParentItem()) 
+			return this.getParentItem().getActivatingMetricReferencePeriod();
+		else
+			return null;
+		/*
 		if(this.getParentItem()!=null && this.getParentItem().getActivatingMetricReferencePeriod()!=null)
 			return this.getParentItem().getActivatingMetricReferencePeriod();
 		else
 			return this.activatingMetricReferencePeriod;
+		*/
 	}
 
 	public void setActivatingMetricReferencePeriod(ReferencePeriod activatingMetricReferencePeriod) {
@@ -312,13 +348,13 @@ public abstract class PlanItem {
 	}
 
 	/**
-	 * Propagated. Can be overridden.
+	 * Priority on local value.
 	 * @return
 	 */
 	public ReferencePeriod getComputationMeticReferencePeriod() {
 		if(this.computationMetricReferencePeriod!=null)
 			return this.computationMetricReferencePeriod;
-		else if(this.getParentItem()!=null)
+		else if(this.hasParentItem())
 			return this.getParentItem().getComputationMeticReferencePeriod();
 		return null;
 		/*
@@ -336,7 +372,7 @@ public abstract class PlanItem {
 	/**
 	 * @deprecated getValidBetween().getStartDateTime()
 	 */
-	public OffsetDateTime getApplicableFrom() {
+	public OffsetDateTime getValidFrom() {
 		TimePeriod validBetween = this.getValidBetween();
 		if(validBetween!=null)
 			return validBetween.getStartDateTime();
@@ -353,9 +389,17 @@ public abstract class PlanItem {
 	 * @return
 	 */
 	public TimePeriod getValidBetween() {
+		if(this.validBetween!=null)
+			return this.validBetween;
+		else if(this.hasParentItem())
+			return this.getParentItem().getValidBetween();
+		else 
+			return null;
+		/*
 		if(this.getParentItem()!=null && this.getParentItem().getValidBetween()!=null)
 			return this.getParentItem().getValidBetween();
 		return this.validBetween;
+		*/
 	}
 
 	/*
@@ -376,11 +420,19 @@ public abstract class PlanItem {
 	 * @return
 	 */
 	public ReferencePeriod getIgnorePeriod() {
+		if(this.ignorePeriod!=null)
+			return this.ignorePeriod;
+		else if(this.hasParentItem())
+			return this.getParentItem().getIgnorePeriod();
+		else 
+			return null;
+		/*
 		if(this.getParentItem()!=null && this.getParentItem().getIgnorePeriod()!=null)
 			return this.getParentItem().getIgnorePeriod();
 		else {
 			return this.ignorePeriod;
 		}
+ 		*/			
 	}
 
 	/**
@@ -388,11 +440,19 @@ public abstract class PlanItem {
 	 * @return
 	 */
 	public ReferencePeriod getValidPeriod() {
+		if(this.validPeriod!=null)
+			return this.validPeriod;
+		else if(this.hasParentItem())
+			return this.getParentItem().getValidPeriod();
+		else 
+			return null;
+		/*
 		if(this.getParentItem()!=null && this.getParentItem().getValidPeriod()!=null)
 			return this.getParentItem().getValidPeriod();
 		else {
 			return this.validPeriod;
 		}
+ 		*/			
 	}
 
 	public void setIgnorePeriod(ReferencePeriod ignorePeriod) {
@@ -401,7 +461,7 @@ public abstract class PlanItem {
 
 	@JsonIgnore
 	public boolean isConditional() {
-		if(this.getActivatingMetric()!=null || this.getActivatingMetricValueRange()!=null || this.getActivatingMetricReferencePeriod()!=null || this.getApplicableFrom()!=null)
+		if(this.getActivatingMetric()!=null || this.getActivatingMetricValueRange()!=null || this.getActivatingMetricReferencePeriod()!=null || this.getValidFrom()!=null)
 			return true;
 		// Q: what was the rationale behind the following check?
 		if(this.getPercent()!=null || this.getUnitAmount()!=null)
