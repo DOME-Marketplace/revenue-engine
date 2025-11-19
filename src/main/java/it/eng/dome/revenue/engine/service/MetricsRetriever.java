@@ -78,8 +78,7 @@ public class MetricsRetriever {
         }
         try {
             // filter on offerings valid in the given period
-//            Map<String, String> filter = Map.of("relatedParty.id", sellerId, "validFor.startDateTime.gt", timePeriod.getStartDateTime().toString(), "validFor.startDateTime.lt", timePeriod.getEndDateTime().toString());
-            Map<String, String> filter = Map.of("validFor.startDateTime.gt", timePeriod.getStartDateTime().toString(), "validFor.startDateTime.lt", timePeriod.getEndDateTime().toString());
+            Map<String, String> filter = Map.of("relatedParty.id", sellerId, "validFor.startDateTime.gt", timePeriod.getStartDateTime().toString(), "validFor.startDateTime.lt", timePeriod.getEndDateTime().toString());
 
             List<ProductOffering> publishedOfferings = new ArrayList<>();
             tmfDataRetriever.fetchProductOfferings(null, filter, 50, productOffering -> {
@@ -95,18 +94,19 @@ public class MetricsRetriever {
         }
     }    
 
-    // TODO: test me
     private Integer countPublishedOfferings(String sellerId, TimePeriod timePeriod) throws ExternalServiceException {
         List<ProductOffering> publishedOfferings = this.getPublishedOfferings(sellerId, timePeriod);
         return publishedOfferings.size();
     }
 
-    // TODO: test me
     private Integer countPublishedSelfserviceOfferings(String sellerId, TimePeriod timePeriod) throws ExternalServiceException {
         int count = 0;
         List<ProductOffering> publishedOfferings = this.getPublishedOfferings(sellerId, timePeriod);
         for(ProductOffering offering: publishedOfferings) {
-            if(ProductOfferingUtils.hasSelfservicePlan(offering)) {
+            if(ProductOfferingUtils.isDomeManagingBilling(offering)
+                    && ProductOfferingUtils.isDomeManagingPayment(offering)
+                    && ProductOfferingUtils.isDomeManagingProcurement(offering)
+                ) {
                 count++;
             }
         }
