@@ -123,6 +123,11 @@ public class SubscriptionTimeHelper {
             } else {
                 // the start date of the subscription
                 OffsetDateTime start = this.subscription.getStartDate();
+                /*
+                if(price.getChargeDateOffsetUnit()!=null && price.getChargeDateOffsetLength()!=null) {
+                    start = this.applyOffset(start, price.getChargeDateOffsetUnit(), price.getChargeDateOffsetLength());
+                }
+                */
                 if(PriceType.ONE_TIME_PREPAID.equals(price.getType())) {
                     TimePeriod tp = new TimePeriod();
                     // if the price is a one-time prepaid, return only one period for the first subscription period
@@ -188,8 +193,9 @@ public class SubscriptionTimeHelper {
 
     public TimePeriod getCustomPeriod(OffsetDateTime time, Price price, String keyword) {
 
-        final Pattern p1 = Pattern.compile("^\\s+(FIRST|LAST|PREVIOUS)_(\\d+)_CHARGE_PERIODS?\\s+$", Pattern.CASE_INSENSITIVE);
+        final Pattern p1 = Pattern.compile("^\\s*(FIRST|LAST|PREVIOUS)_(\\d+)_CHARGE_PERIODS?\\s*$", Pattern.CASE_INSENSITIVE);
         final Pattern p2 = Pattern.compile("^\\s*BETWEEN\\s+(\\d{4}-\\d{2}-\\d{2})\\s+AND\\s+(\\d{4}-\\d{2}-\\d{2})\\s*$", Pattern.CASE_INSENSITIVE);
+        final Pattern p3 = Pattern.compile("^\\s*CHARGE_PERIOD_(\\d+)\\s*$", Pattern.CASE_INSENSITIVE);
 
         if(keyword != null && !keyword.isEmpty()) {
             if("CURRENT_CHARGE_PERIOD".equals(keyword)) {
@@ -210,6 +216,20 @@ public class SubscriptionTimeHelper {
                     tp.setStartDateTime(OffsetDateTime.of(start,ZoneOffset.UTC));
                     tp.setEndDateTime(OffsetDateTime.of(end,ZoneOffset.UTC));
                     return tp;
+                }
+            }
+            else if(p3.matcher(keyword).matches()) {
+                var matcher = p3.matcher(keyword);
+                if(matcher.matches()) {
+                    Integer howManyPeriods = Integer.parseInt(matcher.group(1))-1;
+                    OffsetDateTime start = this.rollChargePeriod(this.subscription.getStartDate(), price, howManyPeriods);
+                    OffsetDateTime end = this.rollChargePeriod(start, price, 1);//.minusSeconds(1);
+                    if(start != null && end != null) {
+                        TimePeriod tp = new TimePeriod();
+                        tp.setStartDateTime(start);
+                        tp.setEndDateTime(end);
+                        return tp;
+                    }
                 }
             }
             else if(p1.matcher(keyword).matches()) {
@@ -317,6 +337,7 @@ public class SubscriptionTimeHelper {
             throw new IllegalArgumentException("Price does not have a valid recurring charge period type or length");
         }
         // increase according to pType and pLength and howManyPeriods
+//        return this.applyOffset(time, pType, pLength*howManyPeriods);
         switch(pType) {
             case DAY:
                 return time.plusDays(pLength * howManyPeriods);
@@ -330,6 +351,23 @@ public class SubscriptionTimeHelper {
                 throw new IllegalArgumentException("Unknown RecurringPeriod type: " + pType);
         }
     }
+
+    /*
+    private OffsetDateTime applyOffset(OffsetDateTime time, RecurringPeriod unit, Integer howManyPeriods) {
+        switch(unit) {
+            case DAY:
+                return time.plusDays(howManyPeriods);
+            case WEEK:
+                return time.plusWeeks(howManyPeriods);
+            case MONTH:
+                return time.plusMonths(howManyPeriods);
+            case YEAR:
+                return time.plusYears(howManyPeriods);
+            default:
+                throw new IllegalArgumentException("Unknown RecurringPeriod type: " + unit);
+        }
+    }
+    */
 
     public OffsetDateTime rollBillPeriod(OffsetDateTime time, int howManyPeriods) {
         // retrive subscriptino length unit
@@ -356,19 +394,31 @@ public class SubscriptionTimeHelper {
     }
 
     public OffsetDateTime getChargeTime(TimePeriod timePeriod, Price price) {
-		if (price.getType() == null) {
+		if (price.getType() == null)
 			return null;
-		}
 		switch (price.getType()) {
-		case RECURRING_PREPAID:
-		case ONE_TIME_PREPAID:
-			return timePeriod.getStartDateTime();
-		case RECURRING_POSTPAID:
-			return timePeriod.getEndDateTime().minusSeconds(1);
-		default:
-            logger.warn("Unknown price type for charge time: {}", price.getType());
-			return null;
+            case RECURRING_PREPAID:
+            case ONE_TIME_PREPAID:
+                return timePeriod.getStartDateTime();
+//                return this.applyOffsetIfAny(timePeriod.getStartDateTime(), price.getChargeDateOffsetUnit(), price.getChargeDateOffsetLength());
+            case RECURRING_POSTPAID:
+                return timePeriod.getEndDateTime().minusSeconds(1);
+//                return this.applyOffsetIfAny(timePeriod.getEndDateTime(), price.getChargeDateOffsetUnit(), price.getChargeDateOffsetLength()).minusSeconds(1);
+            default:
+                logger.warn("Unknown price type for charge time: {}", price.getType());
+                return null;
 		}
 	}
+
+    /*
+    private OffsetDateTime applyOffsetIfAny(OffsetDateTime time, RecurringPeriod unit, Integer amount) {
+        if(unit!=null && amount!=null) {
+            return this.applyOffset(time, unit, amount);
+        }
+        else
+            return time;
+
+    }
+    */
 
 }
