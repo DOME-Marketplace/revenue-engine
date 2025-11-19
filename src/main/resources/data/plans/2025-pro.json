@@ -1,7 +1,7 @@
 {
   "id": "urn:ngsi-ld:plan:55761it5-3d4q-2321-p009-44bro198re0q",
-  "name": "DOME Cloud Service Provider Subscription plan for 2025",
-  "description": "DOME Cloud Service Provider Subscription plan for 2025",
+  "name": "DOME Subscription plan for 2025",
+  "description": "DOME Subscription plan for 2025",
   "validFor": {
     "startDateTime": "2025-01-01T00:00:00Z",
     "endDateTime": "2025-12-31T23:59:59Z"
@@ -24,118 +24,108 @@
     "bundleOp": "CUMULATIVE",
     "prices": [
       {
-        "name": "Initial Subscription Fee (pre-paid)",
+        "name": "(CSP) Initial fee (charged after three months trial)",
+        "ignore": "'${subscription.characteristics.marketplaceSubscription}'=='true'",
         "type": "RECURRING_PREPAID",
         "recurringChargePeriodLength": 1,
-        "recurringChargePeriodType": "YEAR",
-        "amount": 8000,
-        "currency": "EUR",
-        "ignore": "'${subscription.characteristics.marketplaceSubscription}'=='true'",
+        "recurringChargePeriodType": "MONTH",
+        "validPeriod": "CHARGE_PERIOD_4",
+        "amount": 5000,
         "discount": {
-          "name": "Discount based on transactions during the previous subscription period (€${activatingMetricValue})",
+          "name": "Discount for publishing offering(s) during the trial period",
           "isBundle": true,
           "bundleOp": "ALTERNATIVE_HIGHER",
-          "activatingMeticReferencePeriod": "PREVIOUS_SUBSCRIPTION_PERIOD",
-          "activatingMetric": "bills-no-taxes",
-          "computationMetric": "parent-price",
+          "activatingMetric": "published-product-offerings",
+          "activatingMetricReferencePeriod": "FIRST_12_CHARGE_PERIODS",
           "discounts": [
             {
-              "name": "Transactions volume below 100.000€. No discount.",
-              "activatingMetricValuerange": {
-                "min": 0,
-                "max": 100000
-              },
-              "computationMetric": "parent-price",
-              "percent": 0
+              "name": "No discount. You published ${activatingMetricValue} offerings",
+              "activatingMetricValueRange": {"min": 0, "max": 0},
+              "amount": 0
             },
             {
-              "name": "Transactions volume between 100.000€ and 250.000€: 15% discount.",
-              "activatingMetricValuerange": {
-                "min": 100001,
-                "max": 250000
-              },
-              "computationMetric": "parent-price",
-              "percent": 15
+              "name": "Discount for publishing 1 offering. You published ${activatingMetricValue}",
+              "isBundle": true,
+              "bundleOp": "CUMULATIVE",
+              "activatingMetricValueRange": {"min": 1, "max": 1},
+              "discounts": [
+                {
+                  "name": "-40%",
+                  "percent": 40,
+                  "computationMetric": "parent-price"
+                },
+                {
+                  "name": "Further discount for publishing at least 1 offering which can be directly procured. You published ${activatingMetricValue}",
+                  "activatingMetric": "published-selfservice-product-offerings",
+                  "activatingMetricValueRange": {"min": 1},
+                  "amount": 500
+                }
+              ]
             },
             {
-              "name": "Transactions volume between 250.000€ and 750.000€: 30% discount.",
-              "activatingMetricValuerange": {
-                "min": 250001,
-                "max": 750000
-              },
-              "computationMetric": "parent-price",
-              "percent": 30
+              "name": "Discount for publishing 2-3 offering. You published ${activatingMetricValue}",
+              "isBundle": true,
+              "bundleOp": "CUMULATIVE",
+              "activatingMetricValueRange": {"min": 2, "max": 3},
+              "discounts": [
+                {
+                  "name": "-50%",
+                  "percent": 50,
+                  "computationMetric": "parent-price"
+                },
+                {
+                  "name": "Further discount for publishing at least 1 offering which can be directly procured. You published ${activatingMetricValue}",
+                  "activatingMetric": "published-selfservice-product-offerings",
+                  "activatingMetricValueRange": {"min": 1},
+                  "amount": 500
+                }
+              ]
             },
             {
-              "name": "Transactions volume between 750.000€ and 1.000.000€: 50% discount.",
-              "activatingMetricValuerange": {
-                "min": 750001,
-                "max": 1000000
-              },
-              "computationMetric": "parent-price",
-              "percent": 50
+              "name": "Discount for publishing 4-5 offering. You published ${activatingMetricValue}",
+              "isBundle": true,
+              "bundleOp": "CUMULATIVE",
+              "activatingMetricValueRange": {"min": 4, "max": 5},
+              "discounts": [
+                {
+                  "name": "-60%",
+                  "percent": 60,
+                  "computationMetric": "parent-price"
+                },
+                {
+                  "name": "Further discount for publishing at least 2 offering which can be directly procured. You published ${activatingMetricValue}",
+                  "activatingMetric": "published-selfservice-product-offerings",
+                  "activatingMetricValueRange": {"min": 2},
+                  "amount": 500
+                }
+              ]
             },
             {
-              "name": "Transactions volume above 1.000.000€: 80% discount",
-              "activatingMetricValuerange": {
-                "min": 1000001
-              },
-              "computationMetric": "parent-price",
-              "percent": 80
-            }
+              "name": "Discount for publishing 6+ offerings. You published ${activatingMetricValue}",
+              "isBundle": true,
+              "bundleOp": "CUMULATIVE",
+              "activatingMetricValueRange": {"min": 6},
+              "discounts": [
+                {
+                  "name": "-70%",
+                  "percent": 70,
+                  "computationMetric": "parent-price"
+                },
+                {
+                  "name": "Further discount for publishing at least 3 offering which can be directly procured. You published ${activatingMetricValue}",
+                  "activatingMetric": "published-selfservice-product-offerings",
+                  "activatingMetricValueRange": {"min": 3},
+                  "amount": 500
+                }
+              ]
+            }  
           ]
         }
       },
       {
-        "name": "(FM) Revenue sharing based on transactions of sub-sellers (ver. 1: look at transactions of subsellers) (post-paid)",
-        "recurringChargePeriodType": "MONTH",
-        "recurringChargePeriodLength": 1,
-        "type": "RECURRING_POSTPAID",
-        "ignore": "'${subscription.characteristics.marketplaceSubscription}'!='true'",
-        "isBundle": true,
-        "collapse": false,
-        "bundleOp": "FOREACH",
-        "skipIfZero": false,
-        "forEachMetric": "activeSellersBehindMarketplace",
-        "prices": [
-          {
-            "name": "Share of 1% on €${computationMetricValue} of transactions of ${sellerBehindMarketplace.name} between ${chargePeriod.startDate} and ${chargePeriod.endDate}",
-            "computationMetricReferencePeriod": "CURRENT_CHARGE_PERIOD",
-            "computationMetric": "bills-no-taxes",
-            "percent": 1,
-            "currency": "EUR",
-            "ignore": false,
-            "skipIfZero": true
-          }
-        ]
-      },      
-      {
-        "name": "(FM) Revenue sharing based on transactions of sub-sellers (ver. 2: look at revenue bills issued by FM) (post-paid)",
-        "recurringChargePeriodType": "MONTH",
-        "recurringChargePeriodLength": 1,
-        "type": "RECURRING_POSTPAID",
-        "ignore": "'${subscription.characteristics.marketplaceSubscription}'!='true'",
-        "isBundle": true,
-        "collapse": false,
-        "bundleOp": "FOREACH",
-        "skipIfZero": false,
-        "forEachMetric": "billedSellersBehindMarketplace",
-        "prices": [
-          {
-            "name": "Share of ${subscription.characteristics.revenuePercentage}% on €${computationMetricValue} of fees received from ${sellerBehindMarketplace.name} between ${chargePeriod.startDate} and ${chargePeriod.endDate}",
-            "computationMetricReferencePeriod": "CURRENT_CHARGE_PERIOD",
-            "computationMetric": "bills-no-taxes",
-            "percent": "${subscription.characteristics.revenuePercentage}",
-            "currency": "EUR",
-            "ignore": false,
-            "skipIfZero": true
-          }
-        ]
-      },
-      {
         "name": "(CSP) Revenue sharing based on transactions (€${computationMetricValue}) between ${chargePeriod.startDate} and ${chargePeriod.endDate} (post-paid)",
         "activatingMetric": "bills-no-taxes",
-        "activatingMetricReferencePeriod": "LAST_9_CHARGE_PERIODS",
+        "activatingMetricReferencePeriod": "LAST_12_CHARGE_PERIODS",
         "computationMetricReferencePeriod": "CURRENT_CHARGE_PERIOD",
         "computationMetric": "bills-no-taxes",
         "currency": "EUR",
@@ -147,11 +137,16 @@
         "skipIfZero": false,
         "type": "RECURRING_POSTPAID",
         "ignore": "'${subscription.characteristics.marketplaceSubscription}'=='true'",
+        "discount" : {
+            "name":"100% discount on revenue sharing during the FIRST SIX charge periods",
+            "validPeriod": "FIRST_6_CHARGE_PERIODS",
+            "percent": 100,
+            "computationMetric": "parent-price"
+        },
         "prices": [
           {
             "name": "Tier 0: no revenue sharing on transactions below 100.000€",
-            "amount": 0,
-            "skipIfZero": false
+            "amount": 0
           },
           {
             "name": "Tier 1: 4% revenue sharing on transactions between 100.000€ and 200.000€",
@@ -214,6 +209,53 @@
               "min": 0
             },
             "collapse": true,
+            "skipIfZero": true
+          }
+        ]
+      },
+
+      {
+        "name": "(FM) Revenue sharing based on transactions of sub-sellers (ver. 1: look at transactions of subsellers) (post-paid)",
+        "recurringChargePeriodType": "MONTH",
+        "recurringChargePeriodLength": 1,
+        "type": "RECURRING_POSTPAID",
+        "ignore": "'${subscription.characteristics.marketplaceSubscription}'!='true'",
+        "isBundle": true,
+        "collapse": false,
+        "bundleOp": "FOREACH",
+        "skipIfZero": false,
+        "forEachMetric": "activeSellersBehindMarketplace",
+        "prices": [
+          {
+            "name": "Share of 1% on €${computationMetricValue} of transactions of ${sellerBehindMarketplace.name} between ${chargePeriod.startDate} and ${chargePeriod.endDate}",
+            "computationMetricReferencePeriod": "CURRENT_CHARGE_PERIOD",
+            "computationMetric": "bills-no-taxes",
+            "percent": 1,
+            "currency": "EUR",
+            "ignore": false,
+            "skipIfZero": true
+          }
+        ]
+      },      
+      {
+        "name": "(FM) Revenue sharing based on transactions of sub-sellers (ver. 2: look at revenue bills issued by FM) (post-paid)",
+        "recurringChargePeriodType": "MONTH",
+        "recurringChargePeriodLength": 1,
+        "type": "RECURRING_POSTPAID",
+        "ignore": "'${subscription.characteristics.marketplaceSubscription}'!='true'",
+        "isBundle": true,
+        "collapse": false,
+        "bundleOp": "FOREACH",
+        "skipIfZero": false,
+        "forEachMetric": "billedSellersBehindMarketplace",
+        "prices": [
+          {
+            "name": "Share of ${subscription.characteristics.revenuePercentage}% on €${computationMetricValue} of fees received from ${sellerBehindMarketplace.name} between ${chargePeriod.startDate} and ${chargePeriod.endDate}",
+            "computationMetricReferencePeriod": "CURRENT_CHARGE_PERIOD",
+            "computationMetric": "bills-no-taxes",
+            "percent": "${subscription.characteristics.revenuePercentage}",
+            "currency": "EUR",
+            "ignore": false,
             "skipIfZero": true
           }
         ]
