@@ -138,71 +138,71 @@
         "type": "RECURRING_POSTPAID",
         "ignore": "'${subscription.characteristics.marketplaceSubscription}'=='true'",
         "discount" : {
-            "name":"100% discount on revenue sharing during the FIRST SIX charge periods",
-            "validPeriod": "FIRST_6_CHARGE_PERIODS",
+            "name":"100% discount on revenue sharing during the FIRST THREE charge periods",
+            "validPeriod": "FIRST_3_CHARGE_PERIODS",
             "percent": 100,
             "computationMetric": "parent-price"
         },
         "prices": [
           {
-            "name": "Tier 0: no revenue sharing on transactions below 100.000€",
+            "name": "No revenue sharing on transactions below 100.000€",
             "amount": 0
           },
           {
-            "name": "Tier 1: 4% revenue sharing on transactions between 100.000€ and 200.000€",
+            "name": "3% revenue sharing on transactions between 100.000€ and 250.000€",
             "computationMetric": "bills-no-taxes",
-            "percent": 4,
+            "percent": 3,
             "discount": {
               "comment": "this is the 'min' of the tier x tier percentage",
-              "amount": 4000
+              "amount": 3000
             },
             "resultingAmountRange": {
               "comment": "min is always zero. Max is the tier width x tier percentage (i.e. the max revenue for the tier window)",
               "min": 0,
-              "max": 4000
+              "max": 4500
             },
             "collapse": true,
             "skipIfZero": true
           },
           {
-            "name": "Tier 2: 3% revenue sharing on transactions between 200.000€ and 500.000€",
-            "percent": 3,
+            "name": "2.5% revenue sharing on transactions between 250.000€ and 750.000€",
+            "percent": 2.5,
             "discount": {
               "name": "removing the lower part",
               "comment": "this is the 'min' of the tier x tier percentage",
-              "amount": 6000
+              "amount": 6250
             },
             "resultingAmountRange": {
               "comment": "min is always zero. Max is the tier width x tier percentage (i.e. the max revenue for the tier window)",
               "min": 0,
-              "max": 9000
+              "max": 12500
             },
             "collapse": true,
             "skipIfZero": true
           },
           {
-            "name": "Tier 3: 2% revenue sharing on transactions between 500.000€ and 800.000€",
+            "name": "2% revenue sharing on transactions between 750.000€ and 1.000.000€",
             "percent": 2,
             "discount": {
               "name": "removing the lower part",
               "comment": "this is the 'min' of the tier x tier percentage",
-              "amount": 10000
+              "amount": 15000
             },
             "resultingAmountRange": {
               "comment": "min is always zero. Max is the tier width x tier percentage (i.e. the max revenue for the tier window)",
               "min": 0,
-              "max": 6000
+              "max": 5000
             },
             "collapse": true,
             "skipIfZero": true
           },
           {
-            "name": "Tier 4: 1% revenue sharing on transactions above 800.000€",
-            "percent": 1,
+            "name": "1.5% revenue sharing on transactions above 1.000.000€",
+            "percent": 1.5,
             "discount": {
               "name": "removing the lower part",
               "comment": "this is the 'min' of the tier x tier percentage",
-              "amount": 8000
+              "amount": 15000
             },
             "resultingAmountRange": {
               "comment": "min is always zero. Max is the tier width x tier percentage (i.e. the max revenue for the tier window)",
