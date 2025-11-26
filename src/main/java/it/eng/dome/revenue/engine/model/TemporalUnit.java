@@ -1,7 +1,6 @@
 package it.eng.dome.revenue.engine.model;
 
-// TODO: rename as TemporalUnit
-public enum RecurringPeriod {
+public enum TemporalUnit {
     DAY,
     WEEK,
     MONTH,

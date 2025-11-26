@@ -27,7 +27,7 @@ public class Price extends PlanItem {
     private Integer recurringChargePeriodLength;
     
     @JsonProperty("recurringChargePeriodType")
-    private RecurringPeriod recurringChargePeriodType; // "DAY", "MONTH", "YEAR", ecc.
+    private TemporalUnit recurringChargePeriodType; // "DAY", "MONTH", "YEAR", ecc.
     
     @JsonProperty("discount")
     @Valid
@@ -88,8 +88,8 @@ public class Price extends PlanItem {
 	}
 
 	/* Return the inherited period type, if any. Otherwise the local value. */
-	public RecurringPeriod getRecurringChargePeriodType() {
-		RecurringPeriod inheritedPeriod = null;
+	public TemporalUnit getRecurringChargePeriodType() {
+		TemporalUnit inheritedPeriod = null;
 		if(this.getParentPrice() != null) {
 			inheritedPeriod = this.getParentPrice().getRecurringChargePeriodType();
 			if(inheritedPeriod != null)
@@ -98,7 +98,7 @@ public class Price extends PlanItem {
 		return this.recurringChargePeriodType;
 	}
 
-	public void setRecurringChargePeriodType(RecurringPeriod recurringChargePeriodType) {
+	public void setRecurringChargePeriodType(TemporalUnit recurringChargePeriodType) {
 		this.recurringChargePeriodType = recurringChargePeriodType;
 	}
 

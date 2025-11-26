@@ -9,7 +9,7 @@ import it.eng.dome.revenue.engine.model.Discount;
 import it.eng.dome.revenue.engine.model.Plan;
 import it.eng.dome.revenue.engine.model.PlanItem;
 import it.eng.dome.revenue.engine.model.Price;
-import it.eng.dome.revenue.engine.model.RecurringPeriod;
+import it.eng.dome.revenue.engine.model.TemporalUnit;
 
 //TODO: check other possible validations
 public class PlanValidator {
@@ -211,12 +211,12 @@ public class PlanValidator {
             if (price.getRecurringChargePeriodLength() != null && price.getRecurringChargePeriodLength() <= 0)
                 issues.add(new PlanValidationIssue("RecurringChargePeriodLength must be > 0", PlanValidationIssueSeverity.ERROR));
             if (price.getRecurringChargePeriodType() != null) {
-                boolean valid = Arrays.stream(RecurringPeriod.values())
+                boolean valid = Arrays.stream(TemporalUnit.values())
                                       .anyMatch(p -> p == price.getRecurringChargePeriodType());
                 if (!valid) {
                     issues.add(new PlanValidationIssue(
                             "Invalid RecurringChargePeriodType: " + price.getRecurringChargePeriodType() +
-                            ". Allowed values: " + Arrays.toString(RecurringPeriod.values()),
+                            ". Allowed values: " + Arrays.toString(TemporalUnit.values()),
                             PlanValidationIssueSeverity.ERROR));
                 }
             }

@@ -7,7 +7,7 @@ public class BillCycleSpecification {
 
     // Type and length to specify the duration of the bill cycle. From here, an initial billing period is computed on the product activation day.
     private Integer billingPeriodLength;
-	private RecurringPeriod billingPeriodType;
+	private TemporalUnit billingPeriodType;
 	
     // This is to modify the end of the billing cycle, computed using the above two. 
     // Currently supported: LAST_DAY_OF_CALENDAR_MONTH
@@ -28,11 +28,11 @@ public class BillCycleSpecification {
         this.billingPeriodLength = billingPeriodLength;
     }
 
-    public RecurringPeriod getBillingPeriodType() {
+    public TemporalUnit getBillingPeriodType() {
         return billingPeriodType;
     }
 
-    public void setBillingPeriodType(RecurringPeriod billingPeriodType) {
+    public void setBillingPeriodType(TemporalUnit billingPeriodType) {
         this.billingPeriodType = billingPeriodType;
     }
 

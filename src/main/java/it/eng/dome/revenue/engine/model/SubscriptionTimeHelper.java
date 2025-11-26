@@ -307,11 +307,11 @@ public class SubscriptionTimeHelper {
 
     private OffsetDateTime rollSubscriptionPeriod(OffsetDateTime time, int howManyPeriods) {
         // retrive subscriptino length unit
-        RecurringPeriod pType = this.subscription.getPlan().getSubscriptionDurationPeriodType();
+        TemporalUnit pType = this.subscription.getPlan().getSubscriptionDurationPeriodType();
         // retrieve subscription length
         Integer pLength = this.subscription.getPlan().getSubscriptionDurationLength();
         // increase according to pType and pLength and howManyPeriods
-        pType = (pType != null) ? pType : RecurringPeriod.YEAR; // default to YEAR if not set
+        pType = (pType != null) ? pType : TemporalUnit.YEAR; // default to YEAR if not set
         pLength = (pLength != null) ? pLength : 1; // default to 1 if not set
         switch(pType) {
             case DAY:
@@ -329,7 +329,7 @@ public class SubscriptionTimeHelper {
 
     private OffsetDateTime rollChargePeriod(OffsetDateTime time, Price price, int howManyPeriods) {
         // retrive subscriptino length unit
-        RecurringPeriod pType = price.getRecurringChargePeriodType();
+        TemporalUnit pType = price.getRecurringChargePeriodType();
         // retrieve subscription length
         Integer pLength = price.getRecurringChargePeriodLength();
         // ensure the two above are set
@@ -371,7 +371,7 @@ public class SubscriptionTimeHelper {
 
     public OffsetDateTime rollBillPeriod(OffsetDateTime time, int howManyPeriods) {
         // retrive subscriptino length unit
-        RecurringPeriod pType = this.subscription.getPlan().getBillCycleSpecification().getBillingPeriodType();
+        TemporalUnit pType = this.subscription.getPlan().getBillCycleSpecification().getBillingPeriodType();
         // retrieve subscription length
         Integer pLength = this.subscription.getPlan().getBillCycleSpecification().getBillingPeriodLength();
         // ensure the two above are set
