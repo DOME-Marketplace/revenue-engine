@@ -116,7 +116,7 @@ public class SubscriptionService implements InitializingBean {
      * @param role role of related party
      */
     public List<Subscription> getSubscriptionsByRelatedPartyId(String id, Role role) throws ExternalServiceException, BadTmfDataException {
-        return RelatedPartyUtils.retainSubscriptionsWithParty(this.getAllSubscriptions(), id, role);
+        return RelatedPartyUtils.retainSubscriptionsWithParty(this.getAllSubscriptions(), id, role, false);
     }
 
     /**
