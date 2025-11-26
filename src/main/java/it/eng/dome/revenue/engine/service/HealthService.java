@@ -23,6 +23,10 @@ import it.eng.dome.brokerage.observability.info.Info;
 import it.eng.dome.revenue.engine.invoicing.InvoicingService;
 
 @Service
+/**
+ * Service responsible for checking the health and information of the Revenue Sharing Service
+ * and its dependencies, including TMF APIs and the invoicing service.
+ */
 public class HealthService extends AbstractHealthService {
 	
 	private final Logger logger = LoggerFactory.getLogger(HealthService.class);
@@ -37,6 +41,15 @@ public class HealthService extends AbstractHealthService {
     private final ProductInventoryApis productInventoryApis;
     private final AppliedCustomerBillRateApis appliedCustomerBillRateApis;
 
+    /**
+     * Constructor for HealthService.
+     *
+     * @param productCatalogManagementApis TMF Product Catalog Management API
+     * @param customerManagementApis TMF Customer Management API
+     * @param apiPartyApis TMF Party Management API
+     * @param productInventoryApis TMF Product Inventory API
+     * @param appliedCustomerBillRateApis TMF Customer Bill Management API
+     */
     public HealthService(ProductCatalogManagementApis productCatalogManagementApis, 
     		CustomerManagementApis customerManagementApis,
     		APIPartyApis apiPartyApis, ProductInventoryApis productInventoryApis,
@@ -49,6 +62,11 @@ public class HealthService extends AbstractHealthService {
 		this.appliedCustomerBillRateApis = appliedCustomerBillRateApis;
 	}
     
+    /**
+     * Retrieves service information.
+     *
+     * @return {@link Info} containing service version and metadata
+     */
 	@Override
 	public Info getInfo() {
 
@@ -58,6 +76,11 @@ public class HealthService extends AbstractHealthService {
 		return info;
 	}
 
+    /**
+     * Performs health checks on the service and its dependencies.
+     *
+     * @return {@link Health} object representing overall service health
+     */
     public Health getHealth() {
     	Health health = new Health();
 		health.setDescription("Health for the " + SERVICE_NAME);
@@ -96,6 +119,11 @@ public class HealthService extends AbstractHealthService {
 		return health;
     }
 
+    /**
+     * Performs health checks on the service itself.
+     *
+     * @return list of {@link Check} representing self health checks
+     */
     private List<Check> getChecksOnSelf() {
 	    List<Check> out = new ArrayList<>();
 
@@ -114,6 +142,11 @@ public class HealthService extends AbstractHealthService {
 	    return out;
 	}
 
+    /**
+     * Performs health checks on the invoicing service.
+     *
+     * @return list of {@link Check} representing invoicing service health checks
+     */
     private List<Check> getInvoicingServiceCheck() {
 
         List<Check> out = new ArrayList<>();
@@ -140,6 +173,11 @@ public class HealthService extends AbstractHealthService {
         return out;
     }
 
+    /**
+     * Performs health checks on all TMF API dependencies.
+     *
+     * @return list of {@link Check} representing TMF API health checks
+     */
 	private List<Check> getTMFChecks() {
 		List<Check> out = new ArrayList<>();
 
@@ -152,6 +190,13 @@ public class HealthService extends AbstractHealthService {
 		return out;
 	}
 
+    /**
+     * Performs connectivity and response time check for a given TMF API.
+     *
+     * @param name name of the TMF API
+     * @param fetcher function that retrieves a stream of data from the API
+     * @return list of {@link Check} representing connectivity and response time
+     */
 	private List<Check> tmfCheck(String name, CheckedSupplier<Stream<?>> fetcher) {
 
 		List<Check> checks = new ArrayList<>();
@@ -177,11 +222,11 @@ public class HealthService extends AbstractHealthService {
 		return checks;
 	}
 
+    /**
+     * Functional interface to wrap suppliers that throw checked exceptions.
+     */
 	@FunctionalInterface
 	private interface CheckedSupplier<T> {
 		T get() throws Exception;
 	}
 }
-
-
-	

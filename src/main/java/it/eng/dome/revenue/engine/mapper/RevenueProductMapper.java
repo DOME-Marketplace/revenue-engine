@@ -20,6 +20,13 @@ public class RevenueProductMapper {
 	 * SUBSCRIPTION TO PRODUCT
 	 */
 	
+
+	/**
+	 * Converts a {@link Subscription} to a {@link ProductRef}.
+	 *
+	 * @param subscription the subscription to convert
+	 * @return a ProductRef representing the subscription, or null if input is null
+	 */
 	// Used in toACBR of RevenueBillingMapper
     public static ProductRef toProductRef(Subscription subscription) {
         if (subscription == null) return null;
@@ -35,7 +42,12 @@ public class RevenueProductMapper {
 	/*
 	 * PRODUCT TO SUBSCRIPTION
 	 */
-    
+    /**
+     * Converts a {@link Product} to a {@link Subscription}.
+     *
+     * @param product the product to convert
+     * @return a Subscription representing the product, or null if required fields are missing
+     */
 	public static Subscription toSubscription(Product product) {
 		
 		logger.debug("Converting Product {} to Subscription", product.getId());

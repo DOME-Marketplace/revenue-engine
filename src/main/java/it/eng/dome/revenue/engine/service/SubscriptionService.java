@@ -38,8 +38,12 @@ public class SubscriptionService implements InitializingBean {
     public void afterPropertiesSet() throws Exception {
     }
 
-    /*
+    /**
+     * 
      * Retrieves a subscription by its product ID.
+     * 
+     * @param productId The ID of the product to retrieve the subscription for.
+     * @return The Subscription object if found, null otherwise.
      */
     public Subscription getSubscriptionByProductId(String productId) throws BadTmfDataException, ExternalServiceException {
 

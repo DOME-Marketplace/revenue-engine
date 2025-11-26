@@ -47,6 +47,15 @@ public class TmfDataRetriever {
     }
 
     // ======= TMF Customer Bill ========
+    
+    /**
+	 * Retrieves a customer bill from the TMF API by its ID.
+	 *
+	 * @param customerBillId The ID of the customer bill to retrieve.
+	 * @return The CustomerBill object if found, null otherwise.
+	 * @throws BadTmfDataException If the provided customer bill ID is invalid.
+	 * @throws ExternalServiceException If an error occurs while retrieving the customer bill.
+	 */
 
     public CustomerBill getCustomerBill(String customerBillId)
             throws BadTmfDataException, ExternalServiceException {
@@ -70,6 +79,14 @@ public class TmfDataRetriever {
             throw new ExternalServiceException("Failed to retrieve Customer Bill with ID: " + customerBillId, e);
         }
     }
+    /**
+     * 	Fetches customer bills in batches from the TMF API based on the provided fields and filter.
+     * @param fields
+     * @param filter
+     * @param batchSize
+     * @param consumer
+     * @throws ExternalServiceException
+     */
 
     public void fetchCustomerBills(String fields, Map<String, String> filter, int batchSize, Consumer<CustomerBill> consumer) throws ExternalServiceException {
         try {
@@ -88,6 +105,13 @@ public class TmfDataRetriever {
     }
 
     // ======== TMF ACBRs ========
+    /**
+     * 	Retrieves AppliedCustomerBillingRates (ACBRs) from the TMF API by Customer Bill ID.
+     * @param customerBillId
+     * @return
+     * @throws BadTmfDataException
+     * @throws ExternalServiceException
+     */
 
     public List<AppliedCustomerBillingRate> getACBRsByCustomerBillId(String customerBillId)
             throws BadTmfDataException, ExternalServiceException {
@@ -174,6 +198,15 @@ public class TmfDataRetriever {
         }
     }
 
+    /**
+     * 
+     * 	Retrieves customer bills from the TMF API based on the provided participant ID, role, and time period.
+     * @param participantId
+     * @param participantRole
+     * @param timePeriod
+     * @return
+     * @throws ExternalServiceException
+     */
     protected List<CustomerBill> retrieveCustomerBills(String participantId, Role participantRole, TimePeriod timePeriod)
             throws ExternalServiceException {
         try {
@@ -259,7 +292,13 @@ public class TmfDataRetriever {
         }
     }
     */
-
+    /**
+     * 	Lists referral providers for a given referrer organization ID.
+     * @param referrerOrganizationId
+     * @return
+     * @throws BadTmfDataException
+     * @throws ExternalServiceException
+     */
     public List<Organization> listReferralsProviders(String referrerOrganizationId)
             throws BadTmfDataException, ExternalServiceException {
         logger.info("List referrals for referrerOrganizationId {}", referrerOrganizationId);
@@ -294,6 +333,14 @@ public class TmfDataRetriever {
             throw new ExternalServiceException("Failed to retrieve referred providers for ID: " + referrerOrganizationId, e);
         }
     }
+    
+    /**
+     * 	Retrieves the referrer provider for a given referral organization ID.
+     * @param referralOrganizationId
+     * @return
+     * @throws BadTmfDataException
+     * @throws ExternalServiceException
+     */
 
     public Organization getReferrerProvider(String referralOrganizationId)
             throws BadTmfDataException, ExternalServiceException {
@@ -325,6 +372,13 @@ public class TmfDataRetriever {
         }
     }
 
+    /**
+	 * Retrieves all organizations from the TMF API.
+	 *
+	 * @return A list of Organization objects representing all organizations.
+	 * @throws ExternalServiceException If an error occurs during retrieval.
+	 */
+    
     public List<Organization> getOrganizations()
             throws ExternalServiceException {
         logger.info("Retrieving all organizations from TMF API");
@@ -368,6 +422,15 @@ public class TmfDataRetriever {
     }
 
     // ======== ORGANIZATIONS BEHIND MARKETPLACES ========
+    
+    /**
+     * 	Lists active sellers behind a given federated marketplace ID within a specified time period.
+     * @param federatedMarketplaceId
+     * @param timePeriod
+     * @return
+     * @throws BadTmfDataException
+     * @throws ExternalServiceException
+     */
 
     public List<Organization> listActiveSellersBehindFederatedMarketplace(String federatedMarketplaceId, TimePeriod timePeriod)
             throws BadTmfDataException, ExternalServiceException {
@@ -413,6 +476,15 @@ public class TmfDataRetriever {
             throw new ExternalServiceException("Failed to retrieve sellers behind federated marketplace ID: " + federatedMarketplaceId, e);
         }
     }
+    
+    /**
+     * 	Lists billed sellers behind a given federated marketplace ID within a specified time period.
+     * @param federatedMarketplaceId
+     * @param timePeriod
+     * @return
+     * @throws BadTmfDataException
+     * @throws ExternalServiceException
+     */
 
     public List<Organization> listBilledSellersBehindMarketplace(String federatedMarketplaceId, TimePeriod timePeriod)
             throws BadTmfDataException, ExternalServiceException {
@@ -448,7 +520,14 @@ public class TmfDataRetriever {
     }
 
     // ======== TMF BILLING ACCOUNTS ========
-
+    
+    /**
+     * 	Retrieves the billing account associated with a given product ID.
+     * @param productId
+     * @return
+     * @throws BadTmfDataException
+     * @throws ExternalServiceException
+     */
     public BillingAccountRef retrieveBillingAccountByProductId(String productId)
             throws BadTmfDataException, ExternalServiceException {
         logger.debug("Retrieving Billing Account from TMF API By Product with id: {}", productId);
@@ -474,6 +553,14 @@ public class TmfDataRetriever {
     }
 
     // ======== TMF PRODUCTS ========
+    /**
+     * 	Retrieves a product from the TMF API by its ID.
+     * @param productId
+     * @param fields
+     * @return
+     * @throws BadTmfDataException
+     * @throws ExternalServiceException
+     */
 
     public Product getProduct(String productId, String fields)
             throws BadTmfDataException, ExternalServiceException {
@@ -494,6 +581,12 @@ public class TmfDataRetriever {
         }
     }
 
+    /**
+     * 	Fetches active products in batches from the TMF API and processes them using the provided consumer.
+     * @param batchSize
+     * @param consumer
+     * @throws ExternalServiceException
+     */
     public void fetchActiveProducts(int batchSize, Consumer<Product> consumer )
             throws ExternalServiceException {
         try {
@@ -526,6 +619,15 @@ public class TmfDataRetriever {
         }
     }
 
+    /**
+     * 
+     * Fetches products in batches from the TMF API based on the provided fields and filter.
+     * @param fields
+     * @param filter
+     * @param batchSize
+     * @param consumer
+     * @throws ExternalServiceException
+     */
     public void fetchProducts(String fields, Map<String, String> filter, int batchSize, Consumer<Product> consumer)
             throws ExternalServiceException {
         try {
@@ -543,6 +645,15 @@ public class TmfDataRetriever {
     }
 
     // ======== PRODUCT OFFERING ========
+    
+    /**
+     * 	Retrieves a product offering from the TMF API by its ID.
+     * @param poId
+     * @param fields
+     * @return
+     * @throws BadTmfDataException
+     * @throws ExternalServiceException
+     */
 
     public ProductOffering getProductOffering(String poId, String fields)
             throws BadTmfDataException, ExternalServiceException {
@@ -559,6 +670,14 @@ public class TmfDataRetriever {
             throw new ExternalServiceException("Failed to retrieve product offering with ID: " + poId, e);
         }
     }
+    /**
+     * 	Fetches product offerings in batches from the TMF API based on the provided fields and filter.
+     * @param fields
+     * @param filter
+     * @param batchSize
+     * @param consumer
+     * @throws ExternalServiceException
+     */
 
     public void fetchProductOfferings(String fields, Map<String, String> filter, int batchSize, Consumer<ProductOffering> consumer)
             throws ExternalServiceException {
@@ -577,6 +696,15 @@ public class TmfDataRetriever {
     }
 
     // ======== PRODUCT OFFERING PRICE ========
+    
+    /**
+     * 	Retrieves a product offering price from the TMF API by its ID.
+     * @param popId
+     * @param fields
+     * @return
+     * @throws BadTmfDataException
+     * @throws ExternalServiceException
+     */
     public ProductOfferingPrice getProductOfferingPrice(String popId, String fields)
             throws BadTmfDataException, ExternalServiceException {
         if (popId == null) {

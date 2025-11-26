@@ -64,8 +64,11 @@ public class TmfPersistenceService {
     }
 
     /**
+     * 
      * Persists all revenue bills for all organizations.
      * Uses batch processing to fetch organizations and persist bills on the fly.
+     * 
+     * @return List of created CustomerBills
      */
     public List<CustomerBill> persistAllRevenueBills() throws Exception {
         List<CustomerBill> createdCustomerBills = new ArrayList<>();
@@ -153,6 +156,9 @@ public class TmfPersistenceService {
 
     /**
      * Persist a CustomerBill if not already present on TMF. 
+     * @param cb the local CustomerBill
+     * @param revenueBillId the associated revenue bill id for product comparison
+     * @return the persisted CustomerBill, or null if already present
      */
     public CustomerBill persistCustomerBill(CustomerBill cb, String revenueBillId) throws Exception {
         CustomerBill existingCustomerBill = isCbAlreadyInTMF(cb, revenueBillId);
@@ -169,6 +175,9 @@ public class TmfPersistenceService {
 
     /**
      * Persist an AppliedCustomerBillingRate if not already present on TMF. 
+     * @param acbr the local AppliedCustomerBillingRate
+     * @throws Exception in case of error
+     * 
      */
     public void persistAppliedCustomerBillingRate(AppliedCustomerBillingRate acbr) throws Exception {
         AppliedCustomerBillingRate existingACBR = isAcbrAlreadyInTMF(acbr);
@@ -290,6 +299,9 @@ public class TmfPersistenceService {
     
     /**
      *  Compare on the following fields: product, periodcoverage, name, description, type, taxExcludedAmount
+     *  @param acbr1 first ACBR
+     *  @param acbr2 second ACBR
+     *  @return true if match, false otherwise
      */
     private static boolean match(AppliedCustomerBillingRate acbr1, AppliedCustomerBillingRate acbr2) {
         Map<String, String> acbr1map = buildComparisonMap(acbr1);
@@ -297,6 +309,12 @@ public class TmfPersistenceService {
         return mapsMatch(acbr1map, acbr2map);
     }
 
+    /**
+     * 	Build a map of fields to compare for an ACBR.
+     * @param acbr
+     * @return map of fields to compare
+     * 
+     */
     private static Map<String, String> buildComparisonMap(AppliedCustomerBillingRate acbr) {
         Map<String, String> map = new HashMap<>();
         if (acbr.getProduct() != null && acbr.getProduct().getId() != null)
@@ -318,6 +336,13 @@ public class TmfPersistenceService {
         return map;
     }
 
+    /**
+	 * Compare two maps for matching keys and values.
+	 * @param map1 first map
+	 * @param map2 second map
+	 * @return true if maps match, false otherwise
+	 */
+    
     private static boolean mapsMatch(Map<String, String> map1, Map<String, String> map2) {
         // check all elements in map1 are also in map2 with the same value
         for(String k:map1.keySet()) {
@@ -331,6 +356,7 @@ public class TmfPersistenceService {
         }
         return true;
     }
+
 
     private static AppliedCustomerBillingRate watermark(AppliedCustomerBillingRate acbr) {
         // FIXME: marking ACBR for dev, remove before flight
@@ -356,6 +382,12 @@ public class TmfPersistenceService {
         return cb;
     }
 
+    /**
+     * 	Compare related parties of two CustomerBills for matching BUYER roles.
+     * @param rl1
+     * @param rl2
+     * @return
+     */
     private boolean relatedPartyMatch(List<RelatedParty> rl1, List<RelatedParty> rl2) {
         String rlId1 = this.getRelatedPartyIdByRole(rl1, Role.BUYER);
         String rlId2 = this.getRelatedPartyIdByRole(rl2, Role.BUYER);
@@ -363,6 +395,12 @@ public class TmfPersistenceService {
         return rlId1.equals(rlId2);
     }
 
+    /**
+     * 
+     * @param relatedParties
+     * @param role
+     * @return the related party id for the given role, or null if not found
+     */
     private String getRelatedPartyIdByRole(List<RelatedParty> relatedParties, Role role) {
         if (relatedParties == null || role == null) return null;
         for (RelatedParty rp : relatedParties) {
