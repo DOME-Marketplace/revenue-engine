@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import it.eng.dome.revenue.engine.model.ComputeMetric;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -33,10 +34,19 @@ public class MetricsRetriever {
 
     public MetricsRetriever() {
     }
-    
-    // implement retriever for key 'bills-no-taxes'
+
+    /**
+     * Computes the total billed amount excluding taxes between a seller and an optional buyer in a given period.
+     *
+     * @param sellerId the seller identifier
+     * @param buyerId the buyer identifier (optional)
+     * @param timePeriod the time period to consider
+     * @return the total amount without taxes
+     * @throws ExternalServiceException if bills cannot be retrieved
+     * @throws IllegalArgumentException if sellerId is invalid
+     */
     private Double computeBillsNoTaxes(String sellerId, String buyerId, TimePeriod timePeriod)
-            throws BadTmfDataException, ExternalServiceException {
+            throws ExternalServiceException {
 
         // TODO: when the new CB/ACBR approach will be done in the Billing Engine, retrieve CBs instead of ACBRs
         if (sellerId == null || sellerId.isEmpty()) {
@@ -67,10 +77,10 @@ public class MetricsRetriever {
     // TODO: test me
     /**
      * Retrieve the product offerings from the given seller (with role Seller) available in the given time period (validFor.startDate)
-     * @param sellerId
-     * @param timePeriod
-     * @return
-     * @throws ExternalServiceException
+     * @param sellerId the seller identifier
+     * @param timePeriod the time window to filter offerings
+     * @return the list of published offerings
+     * @throws ExternalServiceException if offerings cannot be retrieved
      */
     private List<ProductOffering> getPublishedOfferings(String sellerId, TimePeriod timePeriod) throws ExternalServiceException {
         if (sellerId == null || sellerId.isEmpty()) {
@@ -89,16 +99,32 @@ public class MetricsRetriever {
             return publishedOfferings;
 
         } catch (Exception e) {
-            logger.error("Failed to compute bills no taxes for seller {}: {}", sellerId, e.getMessage(), e);
-            throw new ExternalServiceException("Failed to retrieve bills for seller ID: " + sellerId, e);
+            logger.error("Failed to retrieve product offerings for seller {}: {}", sellerId, e.getMessage(), e);
+            throw new ExternalServiceException("Failed to retrieve product offerings for seller ID: " + sellerId, e);
         }
-    }    
+    }
 
+    /**
+     * Counts the published product offerings of a seller in the given period.
+     *
+     * @param sellerId the seller identifier
+     * @param timePeriod the time window to consider
+     * @return the number of published offerings
+     * @throws ExternalServiceException if offerings cannot be retrieved
+     */
     private Integer countPublishedOfferings(String sellerId, TimePeriod timePeriod) throws ExternalServiceException {
         List<ProductOffering> publishedOfferings = this.getPublishedOfferings(sellerId, timePeriod);
         return publishedOfferings.size();
     }
 
+    /**
+     * Counts the published self-service product offerings of a seller.
+     *
+     * @param sellerId the seller identifier
+     * @param timePeriod the time period to consider
+     * @return the number of published self-service offerings
+     * @throws ExternalServiceException if offerings cannot be retrieved
+     */
     private Integer countPublishedSelfserviceOfferings(String sellerId, TimePeriod timePeriod) throws ExternalServiceException {
         int count = 0;
         List<ProductOffering> publishedOfferings = this.getPublishedOfferings(sellerId, timePeriod);
@@ -113,7 +139,14 @@ public class MetricsRetriever {
         return count;
     }
 
-    // implement retriever for key 'referred-providers-number'
+    /**
+     * Computes the number of providers referred by the given seller.
+     *
+     * @param sellerId the seller identifier
+     * @return the number of referred providers
+     * @throws BadTmfDataException if sellerId is invalid
+     * @throws ExternalServiceException if referred providers cannot be retrieved
+     */
     private Integer computeReferralsProvidersNumber(String sellerId/*, TimePeriod timePeriod*/)
             throws BadTmfDataException, ExternalServiceException {
         // retrieves the list of providers referenced by the seller
@@ -138,7 +171,15 @@ public class MetricsRetriever {
         }
     }
 
-    // implement retriever for key 'referred-providers-transaction-volume'
+    /**
+     * Computes the total transaction volume of providers referred by the seller.
+     *
+     * @param sellerId the seller identifier
+     * @param timePeriod the time period to consider
+     * @return the total transaction volume of referred providers
+     * @throws BadTmfDataException if sellerId is invalid
+     * @throws ExternalServiceException if computation fails
+     */
     private Double computeReferralsProvidersTransactionVolume(String sellerId, TimePeriod timePeriod)
             throws BadTmfDataException, ExternalServiceException {
         // retrieve the list of providers referred by the given seller
@@ -166,7 +207,15 @@ public class MetricsRetriever {
         }
     }
 
-    // implement retriever for key 'referred-provider-max-transaction-volume'
+    /**
+     * Computes the maximum transaction volume among providers referred by the seller.
+     *
+     * @param sellerId the seller identifier
+     * @param timePeriod the period to consider
+     * @return the maximum transaction volume
+     * @throws BadTmfDataException if sellerId is invalid
+     * @throws ExternalServiceException if computation fails
+     */
     private Double computeReferralsProviderMaxTransactionVolume(String sellerId, TimePeriod timePeriod)
             throws BadTmfDataException, ExternalServiceException {
         // retrieve the list of providers referred by the given seller
@@ -183,7 +232,7 @@ public class MetricsRetriever {
                 return maxTransactionVolume;
             }
 
-            // iterate over each referred provider	    
+            // iterate over each referred provider
             for (Organization org : referred) {
                 maxTransactionVolume = Math.max(maxTransactionVolume, this.computeBillsNoTaxes(org.getId(), null, timePeriod));
             }
@@ -194,26 +243,48 @@ public class MetricsRetriever {
         }
     }
 
+    /**
+     * Computes a metric identified by its key and contextual parameters.
+     *
+     * @param key the metric key
+     * @param sellerId the seller identifier
+     * @param buyerId the buyer identifier
+     * @param timePeriod the time period to consider
+     * @return the computed metric value
+     * @throws BadTmfDataException if parameters are invalid
+     * @throws ExternalServiceException if computation fails
+     */
     public Double computeValueForKey(String key, String sellerId, String buyerId, TimePeriod timePeriod) throws BadTmfDataException, ExternalServiceException {
-        switch (key) {
-            case "bills-no-taxes":
+        ComputeMetric metric = ComputeMetric.fromKey(key);
+        logger.debug("ComputeMetric: mapped key {} to metric {}", key, metric);
+        switch (metric) {
+            case BILLS_NO_TAXES:
                 return computeBillsNoTaxes(sellerId, buyerId, timePeriod);
-            case "referred-providers-number":
+            case REFERRED_PROVIDERS_NUMBER:
                 return (double) computeReferralsProvidersNumber(sellerId/*, timePeriod*/);
-            case "referred-providers-transaction-volume":
+            case REFERRED_PROVIDERS_TRANSACTION_VOLUME:
                 return computeReferralsProvidersTransactionVolume(sellerId, timePeriod);
-            case "referred-provider-max-transaction-volume":
+            case REFERRED_PROVIDER_MAX_TRANSACTION_VOLUME:
                 return computeReferralsProviderMaxTransactionVolume(sellerId, timePeriod);
-            case "published-product-offerings":
+            case PUBLISHED_PRODUCT_OFFERINGS:
                 return this.countPublishedOfferings(sellerId, timePeriod).doubleValue();
-            case "published-selfservice-product-offerings":
+            case PUBLISHED_SELFSERVICE_PRODUCT_OFFERINGS:
                 return this.countPublishedSelfserviceOfferings(sellerId, timePeriod).doubleValue();
             default:
-                // TODO: evaluate creating an enum to centralise metric keys
-                throw new IllegalArgumentException("Unknown metric key: " + key);
+                throw new IllegalStateException("Unknown metric: " + metric);
         }
     }
 
+    /**
+     * Retrieves a distinct list of IDs associated with a given metric key.
+     *
+     * @param key the metric key
+     * @param subscriberId the subscriber identifier
+     * @param timePeriod the time period to consider
+     * @return the list of distinct IDs
+     * @throws BadTmfDataException if parameters are invalid
+     * @throws ExternalServiceException if lookup fails
+     */
     public List<String> getDistinctValuesForKey(String key, String subscriberId, TimePeriod timePeriod) throws BadTmfDataException, ExternalServiceException {
         switch(key) {
             case "activeSellersBehindMarketplace": {
@@ -244,10 +315,28 @@ public class MetricsRetriever {
         }
     }
 
+    /**
+     * Retrieves the active sellers behind a federated marketplace.
+     *
+     * @param marketplaceId the marketplace identifier
+     * @param timePeriod the time period to consider
+     * @return the list of active sellers
+     * @throws ExternalServiceException if retrieval fails
+     * @throws BadTmfDataException if marketplaceId is invalid
+     */
     private List<Organization> getActiveSellersBehindMarketplace(String marketplaceId, TimePeriod timePeriod) throws ExternalServiceException, BadTmfDataException {
             return this.tmfDataRetriever.listActiveSellersBehindFederatedMarketplace(marketplaceId, timePeriod);
     }
 
+    /**
+     * Retrieves the billed sellers behind a marketplace.
+     *
+     * @param marketplaceId the marketplace identifier
+     * @param timePeriod the time period to consider
+     * @return the list of billed sellers
+     * @throws ExternalServiceException if retrieval fails
+     * @throws BadTmfDataException if marketplaceId is invalid
+     */
     private List<Organization> listBilledSellersBehindMarketplace(String marketplaceId, TimePeriod timePeriod) throws ExternalServiceException, BadTmfDataException {
         return this.tmfDataRetriever.listBilledSellersBehindMarketplace(marketplaceId, timePeriod);
     }
