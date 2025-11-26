@@ -87,9 +87,8 @@ public class TmfPersistenceService {
      */
     public List<CustomerBill> persistProviderRevenueBills(String providerId) throws Exception {
         List<CustomerBill> createdCustomerBills = new ArrayList<>();
-        // FIXME: consider filtering only active subscriptions
         List<Subscription> buyerSubscriptions = RelatedPartyUtils.retainSubscriptionsWithParty(
-                this.subscriptionService.getAllSubscriptions(), providerId, Role.BUYER);
+                this.subscriptionService.getAllSubscriptions(), providerId, Role.BUYER, true);
         for (Subscription sub : buyerSubscriptions) {
             createdCustomerBills.addAll(this.persistSubscriptionRevenueBills(sub.getId()));
         }

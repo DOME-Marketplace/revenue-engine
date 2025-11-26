@@ -95,11 +95,19 @@ public class RelatedPartyUtils {
     }
 
     public static List<Subscription> retainSubscriptionsWithParty(List<Subscription> subscriptions, String partyId,
-            Role partyRole) {
+            Role partyRole, boolean onlyActiveSub) {
         List<Subscription> retainedSubscriptions = new ArrayList<>();
-        for (Subscription s : subscriptions)
-            if (RelatedPartyUtils.subscriptionHasPartyWithRole(s, partyId, partyRole))
-                retainedSubscriptions.add((s));
+        for (Subscription s : subscriptions) {
+            // skip if subscription does NOT have that party/role
+            if (!RelatedPartyUtils.subscriptionHasPartyWithRole(s, partyId, partyRole)) {
+                continue;
+            }
+            // skip if onlyActive required and subscription is not Active
+            if (onlyActiveSub && !"active".equalsIgnoreCase(s.getStatus())) {
+                continue;
+            }
+            retainedSubscriptions.add(s);
+        }
         return retainedSubscriptions;
     }
 
