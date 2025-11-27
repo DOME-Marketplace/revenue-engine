@@ -2,6 +2,7 @@ package it.eng.dome.revenue.engine.service;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Stream;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -9,7 +10,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import it.eng.dome.brokerage.api.APIPartyApis;
-import it.eng.dome.brokerage.api.AgreementManagementApis;
 import it.eng.dome.brokerage.api.AppliedCustomerBillRateApis;
 import it.eng.dome.brokerage.api.CustomerManagementApis;
 import it.eng.dome.brokerage.api.ProductCatalogManagementApis;
@@ -22,13 +22,15 @@ import it.eng.dome.brokerage.observability.health.HealthStatus;
 import it.eng.dome.brokerage.observability.info.Info;
 import it.eng.dome.revenue.engine.invoicing.InvoicingService;
 
-
-
 @Service
+/**
+ * Service responsible for checking the health and information of the Revenue Sharing Service
+ * and its dependencies, including TMF APIs and the invoicing service.
+ */
 public class HealthService extends AbstractHealthService {
 	
 	private final Logger logger = LoggerFactory.getLogger(HealthService.class);
-	private final static String SERVICE_NAME = "Invoicing Service";
+	private final static String SERVICE_NAME = "Revenue Sharing Service";
 	
     @Autowired
     private InvoicingService invoicingService;
@@ -37,23 +39,34 @@ public class HealthService extends AbstractHealthService {
     private final CustomerManagementApis customerManagementApis;
     private final APIPartyApis apiPartyApis;
     private final ProductInventoryApis productInventoryApis;
-    private final AgreementManagementApis agreementManagementApis;
     private final AppliedCustomerBillRateApis appliedCustomerBillRateApis;
 
+    /**
+     * Constructor for HealthService.
+     *
+     * @param productCatalogManagementApis TMF Product Catalog Management API
+     * @param customerManagementApis TMF Customer Management API
+     * @param apiPartyApis TMF Party Management API
+     * @param productInventoryApis TMF Product Inventory API
+     * @param appliedCustomerBillRateApis TMF Customer Bill Management API
+     */
     public HealthService(ProductCatalogManagementApis productCatalogManagementApis, 
     		CustomerManagementApis customerManagementApis,
     		APIPartyApis apiPartyApis, ProductInventoryApis productInventoryApis,
-    		AgreementManagementApis agreementManagementApis,
     		AppliedCustomerBillRateApis appliedCustomerBillRateApis) {
     	
     	this.productCatalogManagementApis = productCatalogManagementApis;
     	this.customerManagementApis = customerManagementApis;
 		this.apiPartyApis = apiPartyApis;
 		this.productInventoryApis = productInventoryApis;
-		this.agreementManagementApis = agreementManagementApis;
 		this.appliedCustomerBillRateApis = appliedCustomerBillRateApis;
 	}
     
+    /**
+     * Retrieves service information.
+     *
+     * @return {@link Info} containing service version and metadata
+     */
 	@Override
 	public Info getInfo() {
 
@@ -63,6 +76,11 @@ public class HealthService extends AbstractHealthService {
 		return info;
 	}
 
+    /**
+     * Performs health checks on the service and its dependencies.
+     *
+     * @return {@link Health} object representing overall service health
+     */
     public Health getHealth() {
     	Health health = new Health();
 		health.setDescription("Health for the " + SERVICE_NAME);
@@ -75,27 +93,25 @@ public class HealthService extends AbstractHealthService {
 			health.elevateStatus(c.getStatus());
 		}
 
-		// 2: check dependencies: in case of FAIL or WARN set it to WARN
-		boolean onlyDependenciesFailing = health.getChecks("self", null).stream()
-				.allMatch(c -> c.getStatus() == HealthStatus.PASS);
-		
-		if (onlyDependenciesFailing && health.getStatus() == HealthStatus.FAIL) {
-	        health.setStatus(HealthStatus.WARN);
-	    }
-
-		// 3: check self info
-	    for(Check c: getChecksOnSelf()) {
-	    	health.addCheck(c);
-	    	health.elevateStatus(c.getStatus());
-        }
-		
-	    // 4: check invoicing service
+	    // 2: check invoicing service
 	    for(Check c: getInvoicingServiceCheck()) {
 	    	health.addCheck(c);
 	    	health.elevateStatus(c.getStatus());
         }
-	    
-	    // 5: build human-readable notes
+
+		// 3: check self info
+		for(Check c: getChecksOnSelf()) {
+			health.addCheck(c);
+			health.elevateStatus(c.getStatus());
+		}
+
+		// 4: if self is ok, but overall status is FAIL, change it to WARN (not a local problem)
+		boolean selfIsOk = health.getChecks("self", null).stream().allMatch(c -> c.getStatus() == HealthStatus.PASS);		
+		if (selfIsOk && health.getStatus() == HealthStatus.FAIL) {
+	        health.setStatus(HealthStatus.WARN);
+	    }
+
+		// 5: build human-readable notes
 	    health.setNotes(buildNotes(health));
 		
 		logger.debug("Health response: {}", toJson(health));
@@ -103,145 +119,114 @@ public class HealthService extends AbstractHealthService {
 		return health;
     }
 
+    /**
+     * Performs health checks on the service itself.
+     *
+     * @return list of {@link Check} representing self health checks
+     */
     private List<Check> getChecksOnSelf() {
 	    List<Check> out = new ArrayList<>();
 
 	    // Check getInfo API
 	    Info info = getInfo();
+
 	    HealthStatus infoStatus = (info != null) ? HealthStatus.PASS : HealthStatus.FAIL;
-	    String infoOutput = (info != null)
-	            ? SERVICE_NAME + " version: " + info.getVersion()
+	    
+		String infoOutput = (info != null)
+	            ? SERVICE_NAME + " (ver. " + info.getVersion() + ")"
 	            : SERVICE_NAME + " getInfo returned unexpected response";
 	    
-	    Check infoCheck = createCheck("self", "get-info", "api", infoStatus, infoOutput);
+	    Check infoCheck = createCheck("self", "getInfo", "api", infoStatus, infoOutput);
 	    out.add(infoCheck);
 
 	    return out;
 	}
 
+    /**
+     * Performs health checks on the invoicing service.
+     *
+     * @return list of {@link Check} representing invoicing service health checks
+     */
     private List<Check> getInvoicingServiceCheck() {
 
         List<Check> out = new ArrayList<>();
 
-        Check connectivity = createCheck("invoicing-service", "connectivity", "external");
+        Check connectivity = createCheck("invoicing-service", "connectivity", "api");
+        Check responsetime = createCheck("invoicing-service", "responseTime", "api");
 
-        try {
+		try {
+			long start = System.currentTimeMillis();
         	Info invoicingInfo = invoicingService.getInfo();
+			long end = System.currentTimeMillis();
             connectivity.setStatus(HealthStatus.PASS);
             connectivity.setOutput(toJson(invoicingInfo));
+			responsetime.setOutput(""+(end-start)+"ms");
+			responsetime.setStatus(HealthStatus.PASS);
+	        out.add(responsetime);
         }
         catch(Exception e) {
             connectivity.setStatus(HealthStatus.FAIL);
             connectivity.setOutput(e.getMessage());
         }
-        out.add(connectivity);
+		out.add(connectivity);
 
         return out;
     }
 
-    private List<Check> getTMFChecks() {
+    /**
+     * Performs health checks on all TMF API dependencies.
+     *
+     * @return list of {@link Check} representing TMF API health checks
+     */
+	private List<Check> getTMFChecks() {
+		List<Check> out = new ArrayList<>();
 
-    	List<Check> out = new ArrayList<>();
-    	
-    	// TMF620
-		Check tmf620 = createCheck("tmf-api", "connectivity", "tmf620");
+		out.addAll(tmfCheck("tmf620-catalogManagement", () -> FetchUtils.streamAll(productCatalogManagementApis::listCatalogs, null, null, 1)));
+		out.addAll(tmfCheck("tmf629-customerManagement", () -> FetchUtils.streamAll(customerManagementApis::listCustomers, null, null, 1)));
+		out.addAll(tmfCheck("tmf632-partyManagement", () -> FetchUtils.streamAll(apiPartyApis::listOrganizations, null, null, 1)));
+		out.addAll(tmfCheck("tmf637-productInventory", () -> FetchUtils.streamAll(productInventoryApis::listProducts, null, null, 1)));
+		out.addAll(tmfCheck("tmf678-customerBillManagement", () -> FetchUtils.streamAll(appliedCustomerBillRateApis::listAppliedCustomerBillingRates, null, null, 1)));
+
+		return out;
+	}
+
+    /**
+     * Performs connectivity and response time check for a given TMF API.
+     *
+     * @param name name of the TMF API
+     * @param fetcher function that retrieves a stream of data from the API
+     * @return list of {@link Check} representing connectivity and response time
+     */
+	private List<Check> tmfCheck(String name, CheckedSupplier<Stream<?>> fetcher) {
+
+		List<Check> checks = new ArrayList<>();
+
+		Check connectivity = createCheck(name, "connectivity", "api");
+		Check responsetime = createCheck(name, "responseTime", "api");
 
 		try {
-			FetchUtils.streamAll(productCatalogManagementApis::listCatalogs, null, null, 1).findAny();
-
-			tmf620.setStatus(HealthStatus.PASS);
-
+			long start = System.currentTimeMillis();
+			fetcher.get().findAny();
+			long end = System.currentTimeMillis();
+			connectivity.setStatus(HealthStatus.PASS);
+			checks.add(connectivity);
+			responsetime.setOutput(""+(end-start)+"ms");
+			responsetime.setStatus(HealthStatus.PASS);
+			checks.add(responsetime);
 		} catch (Exception e) {
-			tmf620.setStatus(HealthStatus.FAIL);
-			tmf620.setOutput(e.toString());
+			connectivity.setStatus(HealthStatus.FAIL);
+			connectivity.setOutput(e.toString());
+			checks.add(connectivity);
 		}
-
-		out.add(tmf620);
 		
-		// TMF629
-		Check tmf629 = createCheck("tmf-api", "connectivity", "tmf629");
+		return checks;
+	}
 
-		try {
-			FetchUtils.streamAll(customerManagementApis::listCustomers, null, null, 1).findAny();
-
-			tmf629.setStatus(HealthStatus.PASS);
-
-		} catch (Exception e) {
-			tmf629.setStatus(HealthStatus.FAIL);
-			tmf629.setOutput(e.toString());
-		}
-
-		out.add(tmf629);
-
-		// TMF632
-		Check tmf632 = createCheck("tmf-api", "connectivity", "tmf632");
-
-		try {
-			FetchUtils.streamAll(apiPartyApis::listOrganizations, null, null, 1).findAny();
-
-			tmf632.setStatus(HealthStatus.PASS);
-
-		} catch (Exception e) {
-			tmf632.setStatus(HealthStatus.FAIL);
-			tmf632.setOutput(e.toString());
-		}
-
-		out.add(tmf632);
-		
-		// TMF637
-		Check tmf637 = createCheck("tmf-api", "connectivity", "tmf637");
-
-		try {
-			FetchUtils.streamAll(productInventoryApis::listProducts, null, null, 1).findAny();
-
-			tmf637.setStatus(HealthStatus.PASS);
-
-		} catch (Exception e) {
-			tmf637.setStatus(HealthStatus.FAIL);
-			tmf637.setOutput(e.toString());
-		}
-
-		out.add(tmf637);
-		
-		// TMF651
-		Check tmf651 = createCheck("tmf-api", "connectivity", "tmf651");
-
-		try {
-			FetchUtils.streamAll(agreementManagementApis::listAgreements, null, null, 1).findAny();
-
-			tmf651.setStatus(HealthStatus.PASS);
-
-		} catch (Exception e) {
-			tmf651.setStatus(HealthStatus.FAIL);
-			tmf651.setOutput(e.toString());
-		}
-
-		out.add(tmf651);
-		
-		// TMF678
-		Check tmf678 = createCheck("tmf-api", "connectivity", "tmf678");
-
-		try {
-			FetchUtils.streamAll(
-				appliedCustomerBillRateApis::listAppliedCustomerBillingRates,
-			    null,
-			    null,
-			    1
-			)
-			.findAny();
-			
-			tmf678.setStatus(HealthStatus.PASS);
-		} catch (Exception e) {
-			tmf678.setStatus(HealthStatus.FAIL);
-			tmf678.setOutput(e.toString());
-		}
-
-		out.add(tmf678);
-		
-        return out;
-    }
-
+    /**
+     * Functional interface to wrap suppliers that throw checked exceptions.
+     */
+	@FunctionalInterface
+	private interface CheckedSupplier<T> {
+		T get() throws Exception;
+	}
 }
-
-
-	

@@ -12,7 +12,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.bind.annotation.PathVariable;
 
-import it.eng.dome.revenue.engine.service.TmfPeristenceService;
+import it.eng.dome.revenue.engine.service.TmfPersistenceService;
 import it.eng.dome.tmforum.tmf678.v4.model.CustomerBill;
 
 @RestController
@@ -23,7 +23,7 @@ public class PersistenceController {
 	protected final Logger logger = LoggerFactory.getLogger(PersistenceController.class);
 	
     @Autowired
-    private TmfPeristenceService tmfPersistenceService;
+    private TmfPersistenceService tmfPersistenceService;
 
     public PersistenceController() {
     }

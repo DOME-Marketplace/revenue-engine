@@ -40,7 +40,6 @@ public class SubscriptionsController {
 
 	@GetMapping("")
 	public ResponseEntity<List<Subscription>> getAllSubscriptions() {
-//	    logger.info("Request received: get all subscriptions");
 	    try {
 	        List<Subscription> subscriptions = subscriptionService.getAllSubscriptions();
 
@@ -58,7 +57,6 @@ public class SubscriptionsController {
 
 	@GetMapping("/{subscriptionId}")
 	public ResponseEntity<Subscription> getSubscription(@PathVariable String subscriptionId) {
-//	    logger.info("Request received: get subscription with ID {}", subscriptionId);
 	    try {
 	        Subscription subscription = subscriptionService.getSubscriptionByProductId(subscriptionId);
 
@@ -76,7 +74,6 @@ public class SubscriptionsController {
 
 	@GetMapping("{subscriptionId}/statements")
 	public ResponseEntity<List<RevenueStatement>> statementCalculator(@PathVariable String subscriptionId) {
-//	    logger.info("Request received: get statements for subscription {}", subscriptionId);
 	    try {
 	        List<RevenueStatement> statements = statementsService.getStatementsForSubscription(subscriptionId);
 
@@ -94,8 +91,7 @@ public class SubscriptionsController {
 
 	@GetMapping("{subscriptionId}/statements/itemsonly")
 	public ResponseEntity<List<RevenueItem>> statementItems(@PathVariable String subscriptionId) {
-//	    logger.info("Request received: get revenue items only for subscription {}", subscriptionId);
-	    try {
+		try {
 	        List<RevenueItem> items = statementsService.getItemsForSubscription(subscriptionId);
 
 	        if (items == null || items.isEmpty()) {
@@ -112,7 +108,6 @@ public class SubscriptionsController {
 
 	@GetMapping("{subscriptionId}/bills")
 	public ResponseEntity<List<RevenueBill>> getBillPeriods(@PathVariable String subscriptionId) {
-//	    logger.info("Request received: get bills for subscription {}", subscriptionId);
 	    try {
 	        List<RevenueBill> bills = billsService.getSubscriptionBills(subscriptionId);
 

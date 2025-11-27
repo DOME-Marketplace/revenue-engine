@@ -89,9 +89,9 @@ public class TmfConverter {
 	
 	        rp678.setId(rp637.getId());
 	        try {
-				rp678.setHref(new URI(rp637.getId()));
+				rp678.setHref(new URI(rp637.getHref()));
 			} catch (URISyntaxException e) {
-				logger.warn("Invalid URI for RelatedParty id={} -> {}", rp637.getId(), e.getMessage());
+				logger.warn("Invalid URI for RelatedParty href={} -> {}", rp637.getHref(), e.getMessage());
 			}
 	        rp678.setName(rp637.getName());
 	        rp678.setRole(rp637.getRole());

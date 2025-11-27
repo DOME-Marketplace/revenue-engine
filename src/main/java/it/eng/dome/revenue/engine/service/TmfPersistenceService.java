@@ -5,8 +5,10 @@ import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 
+import it.eng.dome.revenue.engine.exception.ExternalServiceException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -29,15 +31,16 @@ import it.eng.dome.tmforum.tmf678.v4.model.CustomerBill;
 import it.eng.dome.tmforum.tmf678.v4.model.CustomerBillCreate;
 import it.eng.dome.tmforum.tmf678.v4.model.RelatedParty;
 
-
 /**
  * FIXME: Enhancements and fixes:
  * [H] only consider active subscriptions ([L] but be careful with last invoices... sub might not be active)
  */
 @Service
-public class TmfPeristenceService {
+public class TmfPersistenceService {
 
-    private final Logger logger = LoggerFactory.getLogger(TmfPeristenceService.class);
+    private final Logger logger = LoggerFactory.getLogger(TmfPersistenceService.class);
+    
+    private static final String SCHEMA_LOCATION = "https://github.com/DOME-Marketplace/tmf-api/blob/main/DOME/TrackedShareableEntity.schema.json";
 
     @Autowired 
     private BillsService billService;
@@ -55,7 +58,7 @@ public class TmfPeristenceService {
     private CustomerBillApis customerBillApis;
     private AppliedCustomerBillRateApis appliedCustomerBillRateApis;
 
-    public TmfPeristenceService(APIPartyApis apiPartyApis, CustomerBillApis customerBillApis,
+    public TmfPersistenceService(APIPartyApis apiPartyApis, CustomerBillApis customerBillApis,
                                 AppliedCustomerBillRateApis appliedCustomerBillRateApis) {
         this.apiPartyApis = apiPartyApis;
         this.customerBillApis = customerBillApis;
@@ -63,8 +66,11 @@ public class TmfPeristenceService {
     }
 
     /**
+     * 
      * Persists all revenue bills for all organizations.
      * Uses batch processing to fetch organizations and persist bills on the fly.
+     * 
+     * @return List of created CustomerBills
      */
     public List<CustomerBill> persistAllRevenueBills() throws Exception {
         List<CustomerBill> createdCustomerBills = new ArrayList<>();
@@ -86,9 +92,8 @@ public class TmfPeristenceService {
      */
     public List<CustomerBill> persistProviderRevenueBills(String providerId) throws Exception {
         List<CustomerBill> createdCustomerBills = new ArrayList<>();
-        // FIXME: consider filtering only active subscriptions
         List<Subscription> buyerSubscriptions = RelatedPartyUtils.retainSubscriptionsWithParty(
-                this.subscriptionService.getAllSubscriptions(), providerId, Role.BUYER);
+                this.subscriptionService.getAllSubscriptions(), providerId, Role.BUYER, true);
         for (Subscription sub : buyerSubscriptions) {
             createdCustomerBills.addAll(this.persistSubscriptionRevenueBills(sub.getId()));
         }
@@ -97,7 +102,7 @@ public class TmfPeristenceService {
 
     /**
      * Persist all revenue bills for a subscription; where needed and applicable.
-     * @param subscriptionId
+     * @param subscriptionId the subscription id
      */
     public List<CustomerBill> persistSubscriptionRevenueBills(String subscriptionId) throws Exception {
         OffsetDateTime startDate = OffsetDateTime.now(ZoneOffset.UTC)
@@ -153,6 +158,9 @@ public class TmfPeristenceService {
 
     /**
      * Persist a CustomerBill if not already present on TMF. 
+     * @param cb the local CustomerBill
+     * @param revenueBillId the associated revenue bill id for product comparison
+     * @return the persisted CustomerBill, or null if already present
      */
     public CustomerBill persistCustomerBill(CustomerBill cb, String revenueBillId) throws Exception {
         CustomerBill existingCustomerBill = isCbAlreadyInTMF(cb, revenueBillId);
@@ -160,7 +168,7 @@ public class TmfPeristenceService {
             CustomerBill cbToPersist = watermark(cb);
             String id = customerBillApis.createCustomerBill(CustomerBillCreate.fromJson(cbToPersist.toJson()));
             logger.info("PERSISTENCE: created CB with id {}", id);
-            return tmfDataRetriever.getCustomerBillById(id);
+            return tmfDataRetriever.getCustomerBill(id);
         } else {
             logger.info("Local CB {} is already on TMF with id {}", cb.getId(), existingCustomerBill.getId());
             return null;
@@ -169,6 +177,9 @@ public class TmfPeristenceService {
 
     /**
      * Persist an AppliedCustomerBillingRate if not already present on TMF. 
+     * @param acbr the local AppliedCustomerBillingRate
+     * @throws Exception in case of error
+     * 
      */
     public void persistAppliedCustomerBillingRate(AppliedCustomerBillingRate acbr) throws Exception {
         AppliedCustomerBillingRate existingACBR = isAcbrAlreadyInTMF(acbr);
@@ -176,8 +187,7 @@ public class TmfPeristenceService {
         if (existingACBR == null) {
             AppliedCustomerBillingRate acbrToPersist = watermark(acbr);
             AppliedCustomerBillingRateCreate acbrc = AppliedCustomerBillingRateCreate.fromJson(acbrToPersist.toJson());
-            acbrc.setAtSchemaLocation(new URI(
-                    "https://raw.githubusercontent.com/DOME-Marketplace/dome-odrl-profile/refs/heads/add-related-party-ref/schemas/simplified/RelatedPartyRef.schema.json"));
+            acbrc.setAtSchemaLocation(new URI(SCHEMA_LOCATION));
             String createdId = appliedCustomerBillRateApis.createAppliedCustomerBillingRate(acbrc);
             logger.info("PERSISTENCE: created ACBR with id {}", createdId);
         } else {
@@ -196,49 +206,79 @@ public class TmfPeristenceService {
      * Checks if a given CustomerBill already exists in TMF.
      * Stops fetching batches as soon as a match is found (early stop).
      */
-    private CustomerBill isCbAlreadyInTMF(CustomerBill cb, String revenueBillId) throws Exception {
+    private CustomerBill isCbAlreadyInTMF(CustomerBill cb, String revenueBillId)
+            throws Exception {
+
+        // Retrieve local productId from RevenueBill ---
         List<AppliedCustomerBillingRate> localAcbrs = billService.getACBRsByRevenueBillId(revenueBillId);
         String localProductId = localAcbrs.isEmpty() || localAcbrs.get(0).getProduct() == null
                 ? null
                 : localAcbrs.get(0).getProduct().getId();
 
-        return FetchUtils.streamAll(customerBillApis::listCustomerBills, null, null, 100)
-                .filter(candidate -> {
-                    try {
-                        // Truncate CB dates to seconds
-                        OffsetDateTime cbStart = cb.getBillingPeriod() != null
-                                ? cb.getBillingPeriod().getStartDateTime().truncatedTo(ChronoUnit.SECONDS)
-                                : null;
-                        OffsetDateTime cbEnd = cb.getBillingPeriod() != null
-                                ? cb.getBillingPeriod().getEndDateTime().truncatedTo(ChronoUnit.SECONDS)
-                                : null;
-                        OffsetDateTime candStart = candidate.getBillingPeriod() != null
-                                ? candidate.getBillingPeriod().getStartDateTime().truncatedTo(ChronoUnit.SECONDS)
-                                : null;
-                        OffsetDateTime candEnd = candidate.getBillingPeriod() != null
-                                ? candidate.getBillingPeriod().getEndDateTime().truncatedTo(ChronoUnit.SECONDS)
-                                : null;
+        if (localProductId == null) {
+            logger.warn("No productId found for RevenueBill {}", revenueBillId);
+            return null;
+        }
 
-                        boolean periodMatch = Objects.equals(cbStart, candStart) && Objects.equals(cbEnd, candEnd);
+        // Prepare containers for result & loop control ---
+        final CustomerBill[] found = {null};
+        final AtomicBoolean stop = new AtomicBoolean(false);
 
-                        // Compare product IDs of first ACBR
-                        List<AppliedCustomerBillingRate> candAcbrs = tmfDataRetriever.getACBRsByCustomerBillId(candidate.getId());
-                        String candProductId = candAcbrs.isEmpty() || candAcbrs.get(0).getProduct() == null
-                                ? null
-                                : candAcbrs.get(0).getProduct().getId();
+        try {
+            // Iterate all CustomerBills in TMF by batch ---
+            tmfDataRetriever.fetchCustomerBills(null, null, 50, candidate -> {
+                if (stop.get()) return; // short-circuit if already found
 
-                        return periodMatch
-                                && Objects.equals(localProductId, candProductId)
-                                && relatedPartyMatch(cb.getRelatedParty(), candidate.getRelatedParty());
-                    } catch (Exception e) {
-                        logger.error("Error in isCbAlreadyInTMF filter: {}", e.getMessage());
-                        return false;
+                try {
+                    // --- Step 4: Compare billing periods (truncate to seconds for precision consistency) ---
+                    OffsetDateTime cbStart = cb.getBillingPeriod() != null
+                            ? cb.getBillingPeriod().getStartDateTime().truncatedTo(ChronoUnit.SECONDS)
+                            : null;
+                    OffsetDateTime cbEnd = cb.getBillingPeriod() != null
+                            ? cb.getBillingPeriod().getEndDateTime().truncatedTo(ChronoUnit.SECONDS)
+                            : null;
+                    OffsetDateTime candStart = candidate.getBillingPeriod() != null
+                            ? candidate.getBillingPeriod().getStartDateTime().truncatedTo(ChronoUnit.SECONDS)
+                            : null;
+                    OffsetDateTime candEnd = candidate.getBillingPeriod() != null
+                            ? candidate.getBillingPeriod().getEndDateTime().truncatedTo(ChronoUnit.SECONDS)
+                            : null;
+
+                    boolean periodMatch = Objects.equals(cbStart, candStart)
+                            && Objects.equals(cbEnd, candEnd);
+
+                    // Compare Product IDs via first AppliedCustomerBillingRate ---
+                    List<AppliedCustomerBillingRate> candAcbrs =
+                            tmfDataRetriever.getACBRsByCustomerBillId(candidate.getId());
+                    String candProductId = candAcbrs.isEmpty() || candAcbrs.get(0).getProduct() == null
+                            ? null
+                            : candAcbrs.get(0).getProduct().getId();
+
+                    // Compare related parties ---
+                    boolean relatedPartyMatch = relatedPartyMatch(cb.getRelatedParty(), candidate.getRelatedParty());
+
+                    // If all conditions match, store & stop ---
+                    if (periodMatch && Objects.equals(localProductId, candProductId) && relatedPartyMatch) {
+                        found[0] = candidate;
+                        stop.set(true);
+                        logger.debug("Matching CustomerBill found in TMF: {}", candidate.getId());
                     }
-                })
-                .findFirst()
-                .orElse(null);
+
+                } catch (Exception e) {
+                    logger.warn("Error while checking CustomerBill {}: {}", candidate.getId(), e.getMessage());
+                }
+            });
+
+        } catch (Exception e) {
+            logger.error("Error during fetchAllCustomerBills: {}", e.getMessage(), e);
+            throw new ExternalServiceException("Failed to search CustomerBill in TMF", e);
+        }
+
+        // Return the found match (or null if none) ---
+        return found[0];
     }
-    
+
+
     /**
 	 * Retrieve ACBRs on TMF that, potentially match the local ACBR. 
 	 * @param acbr the local AppliedCustomerBillingRate
@@ -251,7 +291,7 @@ public class TmfPeristenceService {
         Map<String, String> filter = Map.of(
                 "periodCoverage.startDateTime", acbr.getPeriodCoverage().getStartDateTime().truncatedTo(ChronoUnit.SECONDS).toString()
         );
-        return FetchUtils.streamAll(appliedCustomerBillRateApis::listAppliedCustomerBillingRates, null, filter, 10)
+        return FetchUtils.streamAll(appliedCustomerBillRateApis::listAppliedCustomerBillingRates, null, filter, 5)
                 .filter(candidate -> match(acbr, candidate))
                 .findFirst()
                 .orElse(null);
@@ -260,6 +300,9 @@ public class TmfPeristenceService {
     
     /**
      *  Compare on the following fields: product, periodcoverage, name, description, type, taxExcludedAmount
+     *  @param acbr1 first ACBR
+     *  @param acbr2 second ACBR
+     *  @return true if match, false otherwise
      */
     private static boolean match(AppliedCustomerBillingRate acbr1, AppliedCustomerBillingRate acbr2) {
         Map<String, String> acbr1map = buildComparisonMap(acbr1);
@@ -267,6 +310,12 @@ public class TmfPeristenceService {
         return mapsMatch(acbr1map, acbr2map);
     }
 
+    /**
+     * 	Build a map of fields to compare for an ACBR.
+     * @param acbr
+     * @return map of fields to compare
+     * 
+     */
     private static Map<String, String> buildComparisonMap(AppliedCustomerBillingRate acbr) {
         Map<String, String> map = new HashMap<>();
         if (acbr.getProduct() != null && acbr.getProduct().getId() != null)
@@ -288,6 +337,13 @@ public class TmfPeristenceService {
         return map;
     }
 
+    /**
+	 * Compare two maps for matching keys and values.
+	 * @param map1 first map
+	 * @param map2 second map
+	 * @return true if maps match, false otherwise
+	 */
+    
     private static boolean mapsMatch(Map<String, String> map1, Map<String, String> map2) {
         // check all elements in map1 are also in map2 with the same value
         for(String k:map1.keySet()) {
@@ -301,6 +357,7 @@ public class TmfPeristenceService {
         }
         return true;
     }
+
 
     private static AppliedCustomerBillingRate watermark(AppliedCustomerBillingRate acbr) {
         // FIXME: marking ACBR for dev, remove before flight
@@ -326,6 +383,12 @@ public class TmfPeristenceService {
         return cb;
     }
 
+    /**
+     * 	Compare related parties of two CustomerBills for matching BUYER roles.
+     * @param rl1
+     * @param rl2
+     * @return
+     */
     private boolean relatedPartyMatch(List<RelatedParty> rl1, List<RelatedParty> rl2) {
         String rlId1 = this.getRelatedPartyIdByRole(rl1, Role.BUYER);
         String rlId2 = this.getRelatedPartyIdByRole(rl2, Role.BUYER);
@@ -333,6 +396,12 @@ public class TmfPeristenceService {
         return rlId1.equals(rlId2);
     }
 
+    /**
+     * 
+     * @param relatedParties
+     * @param role
+     * @return the related party id for the given role, or null if not found
+     */
     private String getRelatedPartyIdByRole(List<RelatedParty> relatedParties, Role role) {
         if (relatedParties == null || role == null) return null;
         for (RelatedParty rp : relatedParties) {

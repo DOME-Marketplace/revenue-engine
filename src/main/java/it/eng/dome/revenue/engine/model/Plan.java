@@ -37,11 +37,11 @@ public class Plan {
 	// terms
 	@Positive
 	private Integer subscriptionDurationLength; // es. 12
-	private RecurringPeriod subscriptionDurationPeriodType; // es. MONTH
+	private TemporalUnit subscriptionDurationPeriodType; // es. MONTH
 
 	@Positive
 	private Integer renewalTermLength; // es. 1
-	private RecurringPeriod renewalTermPeriodType; // es. YEAR
+	private TemporalUnit renewalTermPeriodType; // es. YEAR
 
 	private BillCycleSpecification billCycleSpecification;
 
@@ -126,11 +126,11 @@ public class Plan {
 		this.subscriptionDurationLength = subscriptionDurationLength;
 	}
 
-	public RecurringPeriod getSubscriptionDurationPeriodType() {
+	public TemporalUnit getSubscriptionDurationPeriodType() {
 		return subscriptionDurationPeriodType;
 	}
 
-	public void setSubscriptionDurationPeriodType(RecurringPeriod subscriptionDurationPeriodType) {
+	public void setSubscriptionDurationPeriodType(TemporalUnit subscriptionDurationPeriodType) {
 		this.subscriptionDurationPeriodType = subscriptionDurationPeriodType;
 	}
 	
@@ -142,11 +142,11 @@ public class Plan {
 		this.renewalTermLength = renewalTermLength;
 	}
 
-	public RecurringPeriod getRenewalTermPeriodType() {
+	public TemporalUnit getRenewalTermPeriodType() {
 		return renewalTermPeriodType;
 	}
 
-	public void setRenewalTermPeriodType(RecurringPeriod renewalTermPeriodType) {
+	public void setRenewalTermPeriodType(TemporalUnit renewalTermPeriodType) {
 		this.renewalTermPeriodType = renewalTermPeriodType;
 	}
 

@@ -25,8 +25,7 @@ import it.eng.dome.tmforum.tmf637.v4.model.Product;
  * - preview
  * - bill
  * - instantBill
- * 
- * However, since the revneue is managed by an internal scheduling policy, empty responses are provided to the billing scheduler,
+ * However, since the revenue is managed by an internal scheduling policy, empty responses are provided to the billing scheduler,
  * so that no cb/acbr are created by him.
  */
 

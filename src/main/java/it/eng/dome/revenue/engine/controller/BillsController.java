@@ -17,7 +17,6 @@ import it.eng.dome.revenue.engine.service.BillsService;
 import it.eng.dome.tmforum.tmf678.v4.model.AppliedCustomerBillingRate;
 import it.eng.dome.tmforum.tmf678.v4.model.CustomerBill;
 
-
 @RestController
 //@RequiredArgsConstructor
 @RequestMapping("revenue/bills")

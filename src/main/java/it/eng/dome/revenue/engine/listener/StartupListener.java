@@ -21,7 +21,6 @@ import org.springframework.web.client.RestTemplate;
 
 import it.eng.dome.revenue.engine.model.InfoRevenue;
 
-
 @Component
 public class StartupListener implements ApplicationListener<ApplicationReadyEvent> {
 

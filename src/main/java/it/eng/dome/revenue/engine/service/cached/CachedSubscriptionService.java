@@ -1,5 +1,6 @@
 package it.eng.dome.revenue.engine.service.cached;
 
+import java.time.Duration;
 import java.util.List;
 
 import org.ehcache.Cache;
@@ -45,33 +46,43 @@ public class CachedSubscriptionService extends SubscriptionService {
         this.initCaches();
     }
 
-    @SuppressWarnings("unchecked")
-	private void initCaches() {
-    	logger.debug("Set cache duration for 'subscription-service' to: {}", cacheDuration.get("subscription-service"));
-        subscriptionsCache = cacheService.getOrCreateCache(
-        		"subscriptionsCache", 
-        		String.class, 
-        		(Class<List<Subscription>>)(Class<?>)List.class, 
-        		cacheDuration.get("subscription-service"));
-        
-        subscriptionCache = cacheService.getOrCreateCache(
-        		"subscriptionCache", 
-        		String.class, 
-        		Subscription.class, 
-        		cacheDuration.get("subscription-service"));
-    }
-    
+@SuppressWarnings("unchecked")
+private void initCaches() {
+    // Subscription-service caches
+    Duration subscriptionsDuration = cacheDuration.getRevenue().get("list-subscription");
+    logger.debug("Set cache duration for 'subscriptionsCache' to: {}", subscriptionsDuration);
+    subscriptionsCache = cacheService.getOrCreateCache(
+            "subscriptionsCache",
+            String.class,
+            (Class<List<Subscription>>)(Class<?>)List.class,
+            subscriptionsDuration
+    );
+
+    Duration subscriptionDuration = cacheDuration.getRevenue().get("subscription");
+    logger.debug("Set cache duration for 'subscriptionCache' to: {}", subscriptionDuration);
+    subscriptionCache = cacheService.getOrCreateCache(
+            "subscriptionCache",
+            String.class,
+            Subscription.class,
+            subscriptionDuration
+    );
+}
 
     /*
      * Retrieve bills from cache or from the parent class if not cached.
     */
     @Override
     public List<Subscription> getAllSubscriptions() throws ExternalServiceException, BadTmfDataException {
-        String key = "all_subscriptions";
+        String key = "all-active-subscriptions";
         if (!REVENUE_CACHE_ENABLED || !this.subscriptionsCache.containsKey(key)) {
             logger.debug("Cache MISS for " + key);
+
             List<Subscription> subscriptions = super.getAllSubscriptions();
-            this.subscriptionsCache.put(key, subscriptions);
+            if (subscriptions != null && !subscriptions.isEmpty()) {
+                this.subscriptionsCache.put(key, subscriptions);
+            } else {
+                logger.debug("No subscriptions found for {} — not caching null or empty list", key);
+            }
         }
         return this.subscriptionsCache.get(key);
     }
@@ -81,20 +92,30 @@ public class CachedSubscriptionService extends SubscriptionService {
     	String key = productId;
 		if (!REVENUE_CACHE_ENABLED || !this.subscriptionsCache.containsKey(key)) {
 			logger.debug("Cache MISS for " + key);
-			Subscription subscription = super.getSubscriptionByProductId(productId);
-			this.subscriptionCache.put(key, subscription);
-		}
+
+            Subscription subscription = super.getSubscriptionByProductId(productId);
+            if (subscription != null) {
+                this.subscriptionCache.put(key, subscription);
+            } else {
+                logger.debug("No subscription found for productId {} — not caching null value", key);
+            }
+        }
 		return this.subscriptionCache.get(key);
     }
     
     @Override
     public Subscription getActiveSubscriptionByRelatedPartyId(String relatedPartyId) throws ExternalServiceException, BadTmfDataException {
 		String key = relatedPartyId;
-		if (!REVENUE_CACHE_ENABLED || !this.subscriptionsCache.containsKey(key)) {
+		if (!REVENUE_CACHE_ENABLED || !this.subscriptionCache.containsKey(key)) {
 			logger.debug("Cache MISS for " + key);
-			Subscription subscription = super.getActiveSubscriptionByRelatedPartyId(relatedPartyId);
-			this.subscriptionCache.put(key, subscription);
-		}
+
+            Subscription subscription = super.getActiveSubscriptionByRelatedPartyId(relatedPartyId);
+            if (subscription != null) {
+                this.subscriptionCache.put(key, subscription);
+            } else {
+                logger.debug("No active subscription found for {} — not caching null value", key);
+            }
+        }
 		return this.subscriptionCache.get(key);
 	}
 
@@ -103,12 +124,15 @@ public class CachedSubscriptionService extends SubscriptionService {
     	String key = id + role.getValue();
 		if (!REVENUE_CACHE_ENABLED || !this.subscriptionsCache.containsKey(key)) {		
 			logger.debug("Cache MISS for " + key);
-			List<Subscription> subscriptions = super.getSubscriptionsByRelatedPartyId(id, role);
-			this.subscriptionsCache.put(key, subscriptions);
-		}
-		
+
+            List<Subscription> subscriptions = super.getSubscriptionsByRelatedPartyId(id, role);
+            if (subscriptions != null && !subscriptions.isEmpty()) {
+                this.subscriptionsCache.put(key, subscriptions);
+            } else {
+                logger.debug("No subscriptions found for {} and role {} — not caching null or empty list", id, role);
+            }
+        }
 		return this.subscriptionsCache.get(key);
 	}
-			
-	
+
 }

@@ -1,5 +1,7 @@
 package it.eng.dome.revenue.engine.controller;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -17,6 +19,8 @@ import it.eng.dome.revenue.engine.service.cached.CachedHealthService;
 @Tag(name = "Revenue Engine Controller", description = "APIs to manage the revenue-engine")
 public class RevenueEngineController {
 
+	private final Logger logger = LoggerFactory.getLogger(RevenueEngineController.class);
+
     @Autowired
     private CachedHealthService healthService;
 
@@ -26,16 +30,18 @@ public class RevenueEngineController {
             Health health = this.healthService.getHealth();
             return ResponseEntity.ok(health);
         } catch (Exception e) {
+            logger.error(e.getMessage(), e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
 
     @GetMapping("/info")
-    public ResponseEntity<Info> getInfp() {
+    public ResponseEntity<Info> getInfo() {
         try {
             Info info = this.healthService.getInfo();
             return ResponseEntity.ok(info);
         } catch (Exception e) {
+            logger.error(e.getMessage(), e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }

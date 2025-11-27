@@ -23,3 +23,9 @@ tmp/
 /.factorypath
 /logs
 src/test/java/it/eng/dome/revenue/testcase/TestCaseBuilder.java
+
+
+##############################
+## IntelliJ
+##############################
+.idea/

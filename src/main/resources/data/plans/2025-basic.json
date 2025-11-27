@@ -1,195 +1,185 @@
 {
   "id": "urn:ngsi-ld:plan:887a7ba9-2626-4f88-9252-5bc20239f61a-33e2752d-d9d8-4bb4-afa1-c63238db3bd7",
-  "name": "BASIC",
-  "description": "Standard access and features, Dome Foundation Membership, Basic Reporting & Analytics, Basic Marketing Promotion",
-  "validFor": {
-    "startDateTime": "2025-01-01T00:00:00Z",
-    "endDateTime": "2025-12-31T23:59:59Z"
-  },
-  "lifecycleStatus": "Launched",
-
-  "billCycleSpecification": {
-    
-    "": "type and length to specify the duration of the bill cycle. Initially computed on the product activation day",
-    "billingPeriodLength": "1",
-    "billingPeriodType": "MONTH",
-
-    "": "When the bill cycle ends. Modifies the previous. Alternative values are COMPUTED_DAY, NEXT_FRIDAY, NEXT_MONDAY, 15_OF_CALENDAR_MONTH, ...",
-    "billingPeriodEnd": "LAST_DAY_OF_CALENDAR_MONTH",
-
-    "": "When the bill is computed and issued. Offset from the end of the billing cycle ",
-    "billingDateShift": "5",
-
-    "": "When the bill is expected to be paid. Offset from the billDate",
-    "paymentDueDateOffset": "45"
-  },
-
-  "contractDurationLength": 1,
-  "contractDurationPeriodType": "YEAR",
-  "renewalTermLength": 1,
-  "renewalTermPeriodType": "YEAR",
-  "billingPeriod": "YEAR",
-  "agreements": [
-    "Annual subscription with renewal. Providers can receive up to 80% discount based on the sales volume from the previous year",
-    "Referral bonus: an extra 10% discount on next year's fee for bringing 3 new providers or if a referred provider reaches 100k+ in sales"
-  ],
-
-  "price": {
-    "name": "BASIC Plan price components (2025)",
-    "isBundle": true,
-    "currency": "EUR",
-    "bundleOp": "CUMULATIVE",
-    "prices": [
-      {
-        "name": "Recurring Yearly Fee",
-        "type": "RECURRING_PREPAID",
-        "amount": 5000,
-        "currency": "EUR",
-        "recurringChargePeriodLength": 1,
-        "recurringChargePeriodType": "YEAR",
-        "discount": {
-          "name": "Discount on yearly fee based on previous years sales and referrals",
+    "name": "DOME Federated Marketplace Subscription plan for 2025",
+    "description": "DOME Federated Marketplace Subscription plan for 2025",
+    "validFor": {
+      "startDateTime": "2025-01-01T00:00:00Z",
+      "endDateTime": "2025-12-31T23:59:59Z"
+    },
+    "lifecycleStatus": "launched",
+    "billCycleSpecification": {
+      "billingPeriodLength": "1",
+      "billingPeriodType": "MONTH",
+      "billingPeriodEnd": "LAST_DAY_OF_CALENDAR_MONTH",
+      "billingDateShift": "5",
+      "paymentDueDateOffset": "45"
+    },
+    "subscriptionDurationLength": 12,
+    "subscriptionDurationPeriodType": "MONTH",
+    "agreements": [],
+    "price": {
+      "name": "Price components for DOME Federated Marketplace Subscription plan for 2025",
+      "isBundle": true,
+      "currency": "EUR",
+      "bundleOp": "CUMULATIVE",
+      "prices": [
+        {
+          "name": "Pre-paid Initial Fee",
+          "type": "RECURRING_PREPAID",
+          "recurringChargePeriodLength": 1,
+          "recurringChargePeriodType": "YEAR",
+          "amount": 8000,
+          "currency": "EUR",
+          "ignore": "${subscription.characteristics.marketplaceSubscription}",
+          "discount": {
+            "name": "Discount based on previous year's sales",
+            "isBundle": true,
+            "bundleOp": "ALTERNATIVE_HIGHER",
+            "applicableBaseReferencePeriod": "PREVIOUS_SUBSCRIPTION_PERIOD",
+            "applicableBase": "bills-no-taxes",
+            "discounts": [
+              {
+                "name": "No discunt for previous-period transactions under 100k",
+                "applicableBaseRange": {
+                  "min": 0,
+                  "max": 100000
+                },
+                "computationBase": "parent-price",
+                "percent": 0
+              },
+              {
+                "name": "15% discount for previous-period transactions between 100k and 250k",
+                "applicableBaseRange": {
+                  "min": 100001,
+                  "max": 250000
+                },
+                "computationBase": "parent-price",
+                "percent": 15
+              },
+              {
+                "name": "30% discount for previous-period transactions between 250k and 750k",
+                "applicableBaseRange": {
+                  "min": 250001,
+                  "max": 750000
+                },
+                "computationBase": "parent-price",
+                "percent": 30
+              },
+              {
+                "name": "50% discount for previous-period transctions between 750k and 1M",
+                "applicableBaseRange": {
+                  "min": 750001,
+                  "max": 1000000
+                },
+                "computationBase": "parent-price",
+                "percent": 50
+              },
+              {
+                "name": "80% discount for previous-period transctions over 1M",
+                "applicableBaseRange": {
+                  "min": 1000001
+                },
+                "computationBase": "parent-price",
+                "percent": 80
+              }
+            ]
+          }
+        },
+        {
+          "name": "Revenue sharing based on transactions",
+          "recurringChargePeriodType": "MONTH",
+          "recurringChargePeriodLength": 1,
+          "type": "RECURRING_POSTPAID",
+          "ignore": false,
           "isBundle": true,
-          "bundleOp": "CUMULATIVE",
-          "discounts": [
+          "collapse": false,
+          "bundleOp": "FOREACH",
+          "skipIfZero": false,
+          "forEachMetric": "activeMarketplaceIncludedMarketplace",
+          "prices": [
             {
-              "name": "Discount based on previous year's sales",
-              "isBundle": true,
-              "bundleOp": "ALTERNATIVE_HIGHER",
-              "applicableBaseReferencePeriod": "PREVIOUS_SUBSCRIPTION_PERIOD",
+              "name": "Revenue on transactions in the current period for ${seller.tradingName}",
               "applicableBase": "bills-no-taxes",
-              "discounts": [
-                {
-                  "name": "Discount Tier 1",
-                  "applicableBaseRange": {
-                    "min": 0,
-                    "max": 100000
-                  },
-                  "computationBase": "parent-price",
-                  "percent": 0
-                },
-                {
-                  "name": "Discount Tier 2",
-                  "applicableBaseRange": {
-                    "min": 100001,
-                    "max": 250000
-                  },
-                  "computationBase": "parent-price",
-                  "percent": 15
-                },
-                {
-                  "name": "Discount Tier 3",
-                  "applicableBaseRange": {
-                    "min": 250001,
-                    "max": 750000
-                  },
-                  "computationBase": "parent-price",
-                  "percent": 30
-                },
-                {
-                  "name": "Discount Tier 4",
-                  "applicableBaseRange": {
-                    "min": 750001,
-                    "max": 1000000
-                  },
-                  "computationBase": "parent-price",
-                  "percent": 50
-                },
-                {
-                  "name": "Discount Tier 5",
-                  "applicableBaseRange": {
-                    "min": 1000001
-                  },
-                  "computationBase": "parent-price",
-                  "percent": 80
-                }
-              ]
-            },
-            {
-              "name": "Referred-based Discount",
+              "applicableBaseReferencePeriod": "LAST_9_CHARGE_PERIODS",
+              "computationBaseReferencePeriod": "CURRENT_CHARGE_PERIOD",
+              "computationBase": "bills-no-taxes",
+              "currency": "EUR",
+              "ignore": false,
               "isBundle": true,
-              "bundleOp": "ALTERNATIVE_HIGHER",
-              "computationBase": "parent-price",
-              "applicableBaseReferencePeriod": "PREVIOUS_SUBSCRIPTION_PERIOD",
-              "discounts": 
-              [
+              "bundleOp": "CUMULATIVE",
+              "prices": [
                 {
-                  "name": "Discount for referring 3 providers",
-                  "applicableBase": "referred-providers-number",
-                   "applicableBaseRange": {
-                        "min": 3
-                    },
-                  "percent": 10			
+                  "name": "tier 0: no revenue sharing for transactions below 100K",
+                  "amount": 0,
+                  "skipIfZero": false
                 },
                 {
-                  "name": "Discount for referred provider with sales over 100k",
-                  "applicableBase": "referred-providers-transaction-volume",
-                  "applicableBaseRange": {
-                    "min": 100000
+                  "name": "tier 1: 4% revenue sharing in the range 100-200K",
+                  "computationBase": "bills-no-taxes",
+                  "percent": 4,
+                  "discount": {
+                    "comment": "this is the 'min' of the tier x tier percentage",
+                    "amount": 4000
                   },
-                  "percent": 10
+                  "resultingAmountRange": {
+                    "comment": "min is always zero. Max is the tier width x tier percentage (i.e. the max revenue for the tier window)",
+                    "min": 0,
+                    "max": 4000
+                  },
+                  "collapse": true,
+                  "skipIfZero": true
+                },
+                {
+                  "name": "tier 2: 3% revenue sharing in the range 200-500k",
+                  "percent": 3,
+                  "discount": {
+                    "name": "removing the lower part",
+                    "comment": "this is the 'min' of the tier x tier percentage",
+                    "amount": 6000
+                  },
+                  "resultingAmountRange": {
+                    "comment": "min is always zero. Max is the tier width x tier percentage (i.e. the max revenue for the tier window)",
+                    "min": 0,
+                    "max": 9000
+                  },
+                  "collapse": true,
+                  "skipIfZero": true
+                },
+                {
+                  "name": "tier 3: 2% revenue sharing in the range 500-800k",
+                  "percent": 2,
+                  "discount": {
+                    "name": "removing the lower part",
+                    "comment": "this is the 'min' of the tier x tier percentage",
+                    "amount": 10000
+                  },
+                  "resultingAmountRange": {
+                    "comment": "min is always zero. Max is the tier width x tier percentage (i.e. the max revenue for the tier window)",
+                    "min": 0,
+                    "max": 6000
+                  },
+                  "collapse": true,
+                  "skipIfZero": true
+                },
+                {
+                  "name": "tier 4: 1% revenue sharing for transactions above 800k",
+                  "percent": 1,
+                  "discount": {
+                    "name": "removing the lower part",
+                    "comment": "this is the 'min' of the tier x tier percentage",
+                    "amount": 8000
+                  },
+                  "resultingAmountRange": {
+                    "comment": "min is always zero. Max is the tier width x tier percentage (i.e. the max revenue for the tier window)",
+                    "min": 0
+                  },
+                  "collapse": true,
+                  "skipIfZero": true
                 }
               ]
             }
           ]
         }
-      },
-      {
-        "name": "Montly revenue-sharing based on transactions",
-        "type": "RECURRING_POSTPAID",
-  	  	"isBundle": true,
-	  	  "bundleOp": "CUMULATIVE",
-        "recurringChargePeriodLength": 1,
-        "recurringChargePeriodType": "MONTH",
-        "ignorePeriod": "FIRST_3_CHARGE_PERIODS",
-        "applicableBaseReferencePeriod": "LAST_9_CHARGE_PERIODS",
-        "applicableFrom": "2025-01-01T00:00:00Z",
-        "applicableBase": "bills-no-taxes",
-        "computationBaseReferencePeriod": "CURRENT_CHARGE_PERIOD",
-        "computationBase": "bills-no-taxes",
-        "currency": "EUR",
-        "prices": [
-          {
-            "name": "Price Tier 1",
-            "applicableBaseRange": {
-              "min": 0,
-              "max": 100000
-            },
-            "amount": 0
-          },
-          {
-            "name": "Price Range 2",
-            "applicableBaseRange": {
-              "min": 100001,
-              "max": 250000
-            },
-            "percent": 4
-          },
-          {
-            "name": "Price Range 3",
-            "applicableBaseRange": {
-              "min": 250001,
-              "max": 750000
-            },
-            "percent": 3.5
-          },
-          {
-            "name": "Price Range 4",
-            "applicableBaseRange": {
-              "min": 750001,
-              "max": 1000000
-            },
-            "percent": 3
-          },
-          {
-            "name": "Price Range 5",
-            "applicableBaseRange": {
-              "min": 1000001
-            },
-            "percent": 2.5
-          }
-        ]
-      }
-    ]
+      ]
+    }
   }
-}
