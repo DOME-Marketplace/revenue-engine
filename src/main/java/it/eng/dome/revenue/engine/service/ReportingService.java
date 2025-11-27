@@ -78,7 +78,6 @@ public class ReportingService implements InitializingBean {
 	        List<Report> federatedProviders = new ArrayList<>();
 	        double totalCloud = 0.0;
 	        double totalFederated = 0.0;
-	        double totalOverall = 0.0;
 	
 	        LocalDate today = LocalDate.now();
 	        LocalDate periodStart = today.withDayOfYear(1);
@@ -150,7 +149,7 @@ public class ReportingService implements InitializingBean {
 	            ));
 	        }
 	
-	        totalOverall = totalCloud + totalFederated;
+	        Double totalOverall = totalCloud + totalFederated;
 	        result.add(new Report(
 	                "Overall Total Revenue (" + periodStart + " - " + periodEnd + "):",
 	                EUR_CURRENCY + format(totalOverall)
