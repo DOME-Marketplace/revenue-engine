@@ -21,7 +21,6 @@ public class RevenueItemResolver {
     private RevenueItem item;
     private Map<String, Double> replacements;
     private Map<String, String> calculatorContext;
-    private PlanItem planItem;
     private Subscription subscription;
     private TimePeriod period;
 
@@ -44,7 +43,6 @@ public class RevenueItemResolver {
     }
 
     public RevenueItemResolver setPlanItem(PlanItem planItem) {
-        this.planItem = planItem;
         return this;
     }
 

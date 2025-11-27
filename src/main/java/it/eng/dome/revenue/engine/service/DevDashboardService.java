@@ -254,22 +254,24 @@ public class DevDashboardService {
             return this.nodes==null || this.nodes.isEmpty();
         }
 
-        public Node getOrCreateNodeWithPath(String... path) {
-            if(path.length>0) {
-                Node n = this.getChildrenWithLabel(path[0]);
-                if(n==null) {
-                    n = new Node(path[0].trim());
-                    this.addNode(n);
-                }
-                if(path.length>1)
-                    return n.getOrCreateNodeWithPath(Arrays.copyOfRange(path, 1, path.length));
-                else
-                    return n.getOrCreateNodeWithPath(new String[] {});
-            }
-            else {
-                return this;
-            }
-        }
+		public Node getOrCreateNodeWithPath(String... path) {
+		    if (path.length > 0) {
+		        Node n = this.getChildrenWithLabel(path[0]);
+		        if (n == null) {
+		            n = new Node(path[0].trim());
+		            this.addNode(n);
+		        }
+		        if (path.length > 1) {
+		            return n.getOrCreateNodeWithPath(Arrays.copyOfRange(path, 1, path.length));
+		        } else {
+		            return n.getOrCreateNodeWithPath();
+		        }
+		    } else {
+		        return this;
+		    }
+		}
+
+
 
         public void add(InvoiceItem item) {
             Node n = this.getOrCreateNodeWithPath(item.description.split("/"));
