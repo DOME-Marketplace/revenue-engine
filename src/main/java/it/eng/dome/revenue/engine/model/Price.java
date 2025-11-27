@@ -37,7 +37,7 @@ public class Price extends PlanItem {
 
 	/* Return the inherited type, if any. Otherwise the local value. */
 	public PriceType getType() {
-		PriceType inheritedType = null;
+		PriceType inheritedType;
 		if(this.getParentPrice() != null) {
 			inheritedType = this.getParentPrice().getType();
 			if(inheritedType != null)
@@ -74,7 +74,7 @@ public class Price extends PlanItem {
 
 	/* Return the inherited length, if any. Otherwise the local value. */
 	public Integer getRecurringChargePeriodLength() {
-		Integer inheritedLength = null;
+		Integer inheritedLength;
 		if(this.getParentPrice() != null) {
 			inheritedLength = this.getParentPrice().getRecurringChargePeriodLength();
 			if(inheritedLength != null)
@@ -89,7 +89,7 @@ public class Price extends PlanItem {
 
 	/* Return the inherited period type, if any. Otherwise the local value. */
 	public TemporalUnit getRecurringChargePeriodType() {
-		TemporalUnit inheritedPeriod = null;
+		TemporalUnit inheritedPeriod;
 		if(this.getParentPrice() != null) {
 			inheritedPeriod = this.getParentPrice().getRecurringChargePeriodType();
 			if(inheritedPeriod != null)

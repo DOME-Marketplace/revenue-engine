@@ -209,6 +209,7 @@
 
                 <table class="box">
                     <tr><td>Period Coverage</td><td name="periodCoverage" use_template="period" style="text-align:right"></td></tr>
+
                     <tr><td>Charge Date</td><td name="date" style="text-align:right"></td></tr>
                 </table>
                 <table class="box">
@@ -216,6 +217,7 @@
                     <tbody name="appliedTax" use_template="taxItem"></tbody>
                     <tr style="border:1px solid gray"><td>Tax-included amount</td><td name="taxIncludedAmount" use_template="money" style="text-align:right"></td></tr>
                 </table>
+
                 <hr/>
                 <button onclick="fetchAndShowInvoice(this.parentNode, this.parentNode.object.bill.id);">Invoice</button>
                 <button onclick="fetchAndShowRawInvoice(this.parentNode, this.parentNode.object.bill.id);">containing raw invoice</button>
@@ -238,6 +240,7 @@
             <div name="price_template">        
                 <u>This plan has a very complex price</u>
             </div>
+
 
             <span name="period_template" style="white-space:nowrap">
                 <span name="startDateTime"></span> to <span name="endDateTime"></span>

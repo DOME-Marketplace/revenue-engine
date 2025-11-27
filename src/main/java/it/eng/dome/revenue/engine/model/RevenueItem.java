@@ -119,7 +119,7 @@ public class RevenueItem {
 	}
 
     public boolean isLeaf() {
-        return this.getItems()==null || this.getItems().size()==0;
+        return this.getItems()==null || this.getItems().isEmpty();
     }
 
     public Set<OffsetDateTime> extractChargeTimes() {

@@ -47,6 +47,9 @@ import it.eng.dome.tmforum.tmf678.v4.model.TimePeriod;
 public class ReportingService implements InitializingBean {
 
     protected final Logger logger = LoggerFactory.getLogger(ReportingService.class);
+    
+    //FIXME: Currency should be dynamic
+    private final static String EUR_CURRENCY = "EUR";
 
     @Autowired
     private CachedSubscriptionService subscriptionService;
@@ -64,110 +67,104 @@ public class ReportingService implements InitializingBean {
 
     public void afterPropertiesSet() {}
 
-    public List<Report> totalSubscriptionRevenueSection() {
-        try {
-            List<Subscription> subscriptions = subscriptionService.getAllSubscriptions();
-            if (subscriptions == null || subscriptions.isEmpty()) {
-                return List.of(new Report("Total Subscription Revenue", "No active subscriptions found"));
-            }
+	public List<Report> totalSubscriptionRevenueSection() {
+	    try {
+	        List<Subscription> subscriptions = subscriptionService.getAllSubscriptions();
+	        if (subscriptions == null || subscriptions.isEmpty()) {
+	            return List.of(new Report("Total Subscription Revenue", "No active subscriptions found"));
+	        }
+	
+	        List<Report> cloudProviders = new ArrayList<>();
+	        List<Report> federatedProviders = new ArrayList<>();
+	        double totalCloud = 0.0;
+	        double totalFederated = 0.0;
+	
+	        LocalDate today = LocalDate.now();
+	        LocalDate periodStart = today.withDayOfYear(1);
+	        LocalDate periodEnd = today.withDayOfMonth(today.lengthOfMonth());
+	
+	        for (Subscription sub : subscriptions) {
+	            try {
+	                List<RevenueItem> items = statementsService.getItemsForSubscription(sub.getId());
+	                if (items == null || items.isEmpty()) continue;
+	
+	                double yearlyTotal = items.stream()
+	                        .filter(ri -> {
+	                            LocalDate chargeDate = ri.getChargeTime().toLocalDate();
+	                            return !chargeDate.isBefore(periodStart) && !chargeDate.isAfter(periodEnd);
+	                        })
+	                        .mapToDouble(RevenueItem::getOverallValue)
+	                        .sum();
+	
+	                Product product = tmfDataRetriever.getProduct(sub.getId(), null);
+	                String buyerId = product.getRelatedParty().stream()
+	                        .filter(rp -> Role.BUYER.getValue().equalsIgnoreCase(rp.getRole()))
+	                        .map(rp -> rp.getId())
+	                        .findFirst().orElse("Unknown Subscriber");
+	                String name = tmfDataRetriever.getOrganization(buyerId).getTradingName();
+	
+	                if (isFederated(product)) {
+	                    federatedProviders.add(new Report(name, EUR_CURRENCY + format(yearlyTotal)));
+	                    totalFederated += yearlyTotal;
+	                } else {
+	                    cloudProviders.add(new Report(name, EUR_CURRENCY + format(yearlyTotal)));
+	                    totalCloud += yearlyTotal;
+	                }
+	
+	            } catch (Exception e) {
+	                logger.warn("Skipping subscription {} due to error: {}", sub.getId(), e.getMessage());
+	            }
+	        }
+	
+	        cloudProviders.sort((r1, r2) -> Double.compare(parseCurrency(r2.getText()), parseCurrency(r1.getText())));
+	        federatedProviders.sort((r1, r2) -> Double.compare(parseCurrency(r2.getText()), parseCurrency(r1.getText())));
+	
+	        List<Report> result = new ArrayList<>();
+	
+	        if (!cloudProviders.isEmpty()) {
+	            result.add(new Report(
+	                    "Total Cloud Service Providers (" + periodStart + " - " + periodEnd + "): " 
+	                    + EUR_CURRENCY + format(totalCloud),
+	                    cloudProviders
+	            ));
+	
+	            List<Report> topCloud = cloudProviders.stream().limit(2).collect(Collectors.toList());
+	            result.add(new Report(
+	                    "Top Cloud Service Providers (" + periodStart + " - " + periodEnd + "): ",
+	                    topCloud
+	            ));
+	        }
+	
+	        if (!federatedProviders.isEmpty()) {
+	            result.add(new Report(
+	                    "Total Federated Marketplaces (" + periodStart + " - " + periodEnd + "): " 
+	                    + EUR_CURRENCY + format(totalFederated),
+	                    federatedProviders
+	            ));
+	
+	            List<Report> topFederated = federatedProviders.stream().limit(2).collect(Collectors.toList());
+	            result.add(new Report(
+	                    "Top Federated Marketplaces (" + periodStart + " - " + periodEnd + "): ",
+	                    topFederated
+	            ));
+	        }
+	
+	        Double totalOverall = totalCloud + totalFederated;
+	        result.add(new Report(
+	                "Overall Total Revenue (" + periodStart + " - " + periodEnd + "):",
+	                EUR_CURRENCY + format(totalOverall)
+	        ));
+	
+	        return result;
+	    } catch (BadTmfDataException | ExternalServiceException e) {
+	        logger.error("totalSubscriptionRevenueSection failed", e);
+	        return List.of(new Report("Total Subscription Revenue", "No data available: " + e.getMessage()));
+	    } catch (Exception e) {
+	        logger.error("Unexpected error in totalSubscriptionRevenueSection", e);
+	        return List.of(new Report("Total Subscription Revenue", "Error retrieving total subscription revenue"));
+	    }
+	}
 
-            List<Report> cloudProviders = new ArrayList<>();
-            List<Report> federatedProviders = new ArrayList<>();
-            double totalCloud = 0.0;
-            double totalFederated = 0.0;
-            double totalOverall = 0.0;
-            String currency = "";
-
-            LocalDate today = LocalDate.now();
-            LocalDate periodStart = today.withDayOfYear(1);
-            LocalDate periodEnd = today.withDayOfMonth(today.lengthOfMonth());
-
-            for (Subscription sub : subscriptions) {
-                try {
-                    List<RevenueItem> items = statementsService.getItemsForSubscription(sub.getId());
-                    if (items == null || items.isEmpty()) continue;
-
-                    double yearlyTotal = items.stream()
-                            .filter(ri -> {
-                                LocalDate chargeDate = ri.getChargeTime().toLocalDate();
-                                return !chargeDate.isBefore(periodStart) && !chargeDate.isAfter(periodEnd);
-                            })
-                            .mapToDouble(RevenueItem::getOverallValue)
-                            .sum();
-
-                    if (currency.isEmpty() && !items.isEmpty() && items.get(0).getCurrency() != null) {
-                        currency = items.get(0).getCurrency() + " ";
-                    }
-
-                    Product product = tmfDataRetriever.getProduct(sub.getId(), null);
-                    String buyerId = product.getRelatedParty().stream()
-                            .filter(rp -> Role.BUYER.getValue().equalsIgnoreCase(rp.getRole()))
-                            .map(rp -> rp.getId())
-                            .findFirst().orElse("Unknown Subscriber");
-                    String name = tmfDataRetriever.getOrganization(buyerId).getTradingName();
-
-                    if (isFederated(product)) {
-                        federatedProviders.add(new Report(name, currency + format(yearlyTotal)));
-                        totalFederated += yearlyTotal;
-                    } else {
-                        cloudProviders.add(new Report(name, currency + format(yearlyTotal)));
-                        totalCloud += yearlyTotal;
-                    }
-
-                } catch (Exception e) {
-                    logger.warn("Skipping subscription {} due to error: {}", sub.getId(), e.getMessage());
-                }
-            }
-
-            cloudProviders.sort((r1, r2) -> Double.compare(parseCurrency(r2.getText()), parseCurrency(r1.getText())));
-            federatedProviders.sort((r1, r2) -> Double.compare(parseCurrency(r2.getText()), parseCurrency(r1.getText())));
-
-            List<Report> result = new ArrayList<>();
-
-            if (!cloudProviders.isEmpty()) {
-                result.add(new Report(
-                        "Total Cloud Service Providers (" + periodStart + " - " + periodEnd + "): " 
-                        + currency + format(totalCloud),
-                        cloudProviders
-                ));
-                
-
-                List<Report> topCloud = cloudProviders.stream().limit(2).collect(Collectors.toList());
-                result.add(new Report(
-                        "Top Cloud Service Providers (" + periodStart + " - " + periodEnd + "): ",
-                        topCloud
-                ));
-            }
-
-            if (!federatedProviders.isEmpty()) {
-                result.add(new Report(
-                        "Total Federated Marketplaces (" + periodStart + " - " + periodEnd + "): " 
-                        + currency + format(totalFederated),
-                        federatedProviders
-                ));
-
-                List<Report> topFederated = federatedProviders.stream().limit(2).collect(Collectors.toList());
-                result.add(new Report(
-                        "Top Federated Marketplaces (" + periodStart + " - " + periodEnd + "): ",
-                        topFederated
-                ));
-            }
-            
-            totalOverall = totalCloud + totalFederated;
-            result.add(new Report(
-                    "Overall Total Revenue (" + periodStart + " - " + periodEnd + "):",
-                    currency + format(totalOverall)
-            ));
-
-            return result;
-        } catch (BadTmfDataException | ExternalServiceException e) {
-            logger.error("totalSubscriptionRevenueSection failed", e);
-            return List.of(new Report("Total Subscription Revenue", "No data available: " + e.getMessage()));
-        } catch (Exception e) {
-            logger.error("Unexpected error in totalSubscriptionRevenueSection", e);
-            return List.of(new Report("Total Subscription Revenue", "Error retrieving total subscription revenue"));
-        }
-    }
 
     public List<Report> buildTopAndTotalBoxes(Report totalRevenueReport) {
         try {
@@ -422,8 +419,7 @@ public class ReportingService implements InitializingBean {
                         ? ri.getChargeTime().toLocalDate().toString()
                         : "Unknown Date";
                 String amount = String.format("%.2f %s",
-                        ri.getOverallValue(),
-                        ri.getCurrency() != null ? ri.getCurrency() : "");
+                        ri.getOverallValue(), EUR_CURRENCY);
 
 
                 List<Report> details = new ArrayList<>();
@@ -462,14 +458,12 @@ public class ReportingService implements InitializingBean {
 
 	        double yearlyTotal = 0.0;
 	        double monthlyTotal = 0.0;
-	        String currency = "";
 	        String currentTier = "N/A";
 
 	        for (RevenueItem ri : items) {
 	            LocalDate chargeDate = ri.getChargeTime().toLocalDate();
 
-	            if (currency.isEmpty() && ri.getCurrency() != null)
-	                currency = ri.getCurrency() + " ";
+
 
 	            yearlyTotal += ri.getOverallValue();
 
@@ -490,9 +484,9 @@ public class ReportingService implements InitializingBean {
 
 	        List<Report> reportItems = new ArrayList<>();
 	        reportItems.add(new Report("Current Monthly Revenue (" + periodStart + " - " + periodEnd + ")", 
-	                currency + format(monthlyTotal)));
+	                EUR_CURRENCY + format(monthlyTotal)));
 	        reportItems.add(new Report("Current Tier", currentTier));
-	        reportItems.add(new Report("Yearly Total", currency + format(yearlyTotal)));
+	        reportItems.add(new Report("Yearly Total", EUR_CURRENCY + format(yearlyTotal)));
 
 	        return new Report("Revenue Volume Monitoring", reportItems);
 

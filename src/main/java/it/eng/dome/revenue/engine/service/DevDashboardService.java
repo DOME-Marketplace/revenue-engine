@@ -99,8 +99,8 @@ public class DevDashboardService {
         Map<String, Object> invoice = new HashMap<>();
 
         // retrieve the customer bill and associated acbrs
-        CustomerBill cb = null;
-        List<AppliedCustomerBillingRate> acbrs = null;
+        CustomerBill cb;
+        List<AppliedCustomerBillingRate> acbrs;
         if(customerBillId.startsWith("urn:ngsi-ld:revenuebill")) {
             cb = this.billService.getCustomerBillByRevenueBillId(customerBillId);
             acbrs = this.billService.getACBRsByRevenueBillId(customerBillId);
@@ -254,22 +254,24 @@ public class DevDashboardService {
             return this.nodes==null || this.nodes.isEmpty();
         }
 
-        public Node getOrCreateNodeWithPath(String[] path) {
-            if(path.length>0) {
-                Node n = this.getChildrenWithLabel(path[0]);
-                if(n==null) {
-                    n = new Node(path[0].trim());
-                    this.addNode(n);
-                }
-                if(path.length>1)
-                    return n.getOrCreateNodeWithPath(Arrays.copyOfRange(path, 1, path.length));
-                else
-                    return n.getOrCreateNodeWithPath(new String[] {});
-            }
-            else {
-                return this;
-            }
-        }
+		public Node getOrCreateNodeWithPath(String... path) {
+		    if (path.length > 0) {
+		        Node n = this.getChildrenWithLabel(path[0]);
+		        if (n == null) {
+		            n = new Node(path[0].trim());
+		            this.addNode(n);
+		        }
+		        if (path.length > 1) {
+		            return n.getOrCreateNodeWithPath(Arrays.copyOfRange(path, 1, path.length));
+		        } else {
+		            return n.getOrCreateNodeWithPath();
+		        }
+		    } else {
+		        return this;
+		    }
+		}
+
+
 
         public void add(InvoiceItem item) {
             Node n = this.getOrCreateNodeWithPath(item.description.split("/"));
@@ -277,7 +279,8 @@ public class DevDashboardService {
             if(n.content==null)
                 n.content = new InvoiceItem();
         }
-
+        
+        @Override
         public String toString() {
             return this.label.toString();
         }
