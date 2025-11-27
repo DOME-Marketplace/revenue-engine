@@ -76,7 +76,7 @@ public class ReportingService implements InitializingBean {
             double totalCloud = 0.0;
             double totalFederated = 0.0;
             double totalOverall = 0.0;
-            String currency = "";
+            String currency = String.valueOf("");
 
             LocalDate today = LocalDate.now();
             LocalDate periodStart = today.withDayOfYear(1);

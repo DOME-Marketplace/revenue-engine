@@ -99,8 +99,8 @@ public class DevDashboardService {
         Map<String, Object> invoice = new HashMap<>();
 
         // retrieve the customer bill and associated acbrs
-        CustomerBill cb = null;
-        List<AppliedCustomerBillingRate> acbrs = null;
+        CustomerBill cb;
+        List<AppliedCustomerBillingRate> acbrs;
         if(customerBillId.startsWith("urn:ngsi-ld:revenuebill")) {
             cb = this.billService.getCustomerBillByRevenueBillId(customerBillId);
             acbrs = this.billService.getACBRsByRevenueBillId(customerBillId);
@@ -254,7 +254,7 @@ public class DevDashboardService {
             return this.nodes==null || this.nodes.isEmpty();
         }
 
-        public Node getOrCreateNodeWithPath(String[] path) {
+        public Node getOrCreateNodeWithPath(String... path) {
             if(path.length>0) {
                 Node n = this.getChildrenWithLabel(path[0]);
                 if(n==null) {
@@ -277,7 +277,8 @@ public class DevDashboardService {
             if(n.content==null)
                 n.content = new InvoiceItem();
         }
-
+        
+        @Override
         public String toString() {
             return this.label.toString();
         }

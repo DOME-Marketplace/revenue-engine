@@ -184,9 +184,7 @@ public class BillsService {
         BillingResponseDTO billingResponse = this.buildAndApplyTaxesForRevenueBill(rb);
 
         CustomerBill cb = billingResponse.getCustomerBill();
-        List<AppliedCustomerBillingRate> acbrs = billingResponse.getAcbr();
-
-		Subscription sub = subscriptionService.getSubscriptionByProductId(rb.getSubscriptionId());
+        Subscription sub = subscriptionService.getSubscriptionByProductId(rb.getSubscriptionId());
 
 		try {
 			cb.setBillingAccount(TmfConverter.convertBillingAccountRefTo678(tmfDataRetriever.retrieveBillingAccountByProductId(rb.getSubscriptionId())));
