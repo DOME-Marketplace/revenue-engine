@@ -2,8 +2,7 @@
  
 **Release Notes** of the *Revenue Sharing Service*
 
-### <code>1.2.7</code> :calendar: XX/11/2025
-
+### <code>1.2.7</code> :calendar: 27/11/2025
 **New Features**
 - Subscription plan descriptor (json)
   - Parsing of boolean expressions within some property values
