@@ -58,12 +58,6 @@ tmforumapi:
   #tmf666_account_management_path: tmf-api/accountManagement/v4
   tmf678_billing_path: tmf-api/customerBillManagement/v4
 
-# Dome Operator configuration
-dome:
-  operator:
-    id: ${DOME_OPERATOR_ID:urn:ngsi-ld:organization:95fdc12e-6889-4f08-8ff8-296b10e8e781} 
-    #id: ${DOME_OPERATOR_ID:urn:ngsi-ld:organization:a195013a-a0e4-493a-810a-b040e10da58f}
-
 caching:
   tmf:
     enabled: true

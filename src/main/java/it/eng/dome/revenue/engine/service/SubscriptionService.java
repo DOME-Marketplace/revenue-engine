@@ -1,5 +1,15 @@
 package it.eng.dome.revenue.engine.service;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.stream.Collectors;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.InitializingBean;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
 import it.eng.dome.revenue.engine.exception.BadTmfDataException;
 import it.eng.dome.revenue.engine.exception.ExternalServiceException;
 import it.eng.dome.revenue.engine.mapper.RevenueProductMapper;
@@ -8,25 +18,11 @@ import it.eng.dome.revenue.engine.model.Subscription;
 import it.eng.dome.revenue.engine.service.cached.TmfCachedDataRetriever;
 import it.eng.dome.revenue.engine.utils.RelatedPartyUtils;
 import it.eng.dome.tmforum.tmf637.v4.model.Product;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.InitializingBean;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.stereotype.Service;
-
-import java.util.ArrayList;
-import java.util.List;
-import java.util.stream.Collectors;
 
 @Service
 public class SubscriptionService implements InitializingBean {
 
     private final Logger logger = LoggerFactory.getLogger(SubscriptionService.class);
-
-    /** Dome Operator ID - now parametric via Spring property */
-    @Value("${dome.operator.id}")
-    private String DOME_OPERATOR_ID;
 
     @Autowired
     private TmfCachedDataRetriever tmfDataRetriever;
