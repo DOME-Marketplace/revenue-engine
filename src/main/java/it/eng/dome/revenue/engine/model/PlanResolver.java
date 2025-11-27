@@ -27,10 +27,12 @@ public class PlanResolver {
 
     private PlanItem resolveDirectProperties(PlanItem item) {
         if (item != null) {
-            String resolvedIgnore = resolveString(item.getIgnore());
-            String resolvedName = resolveString(item.getName());
+            String resolvedIgnore = resolveString(item.getIgnore(), item);
+            String resolvedName = resolveString(item.getName(), item);
+            String resolvedPercent = resolveString(item.getPercentAsString(), item);
             item.setIgnore(resolvedIgnore);
             item.setName(resolvedName);
+            item.setPercent(resolvedPercent);
         }
         return item;
     }
@@ -51,7 +53,7 @@ public class PlanResolver {
     private Discount resolveDiscount(Discount discount) {
         if (discount != null) {
             resolveDirectProperties(discount);
-            discount.setIgnore(resolveString(discount.getIgnore()));
+            discount.setIgnore(resolveString(discount.getIgnore(), discount));
             if (discount.getDiscounts() != null) {
                 for (Discount d : discount.getDiscounts()) {
                     resolveDiscount(d);
@@ -61,12 +63,13 @@ public class PlanResolver {
         return discount;
     }
 
-    private String resolveString(String input) {
+    private String resolveString(String input, PlanItem item) {
         if (input == null || input.isEmpty()) {
             return input;
         }
 
         String resolvedText = input;
+
         final Pattern pattern = Pattern.compile("!?\\$\\{([a-zA-Z\\.]+)\\}");
         Matcher matcher = pattern.matcher(input);
 
@@ -77,7 +80,7 @@ public class PlanResolver {
 
         // resolve each token
         for (String key : resolvedProperties.keySet()) {
-            String resolvedValue = resolveToken(key);
+            String resolvedValue = resolveToken(key, item);
             if (resolvedValue != null) {
                 resolvedProperties.put(key, resolvedValue);
             } else {
@@ -90,14 +93,16 @@ public class PlanResolver {
 
         // replace tokens
         for (Map.Entry<String, String> entry : resolvedProperties.entrySet()) {
-            String value = entry.getValue() != null ? entry.getValue() : "<<ERROR.UNRESOLVED>>";
+            // if not resolved, leave unresolved (could be resolved afterwards, in the revenueItem)
+            String value = entry.getValue() != null ? entry.getValue() : "${" + entry.getKey() + "}";
             resolvedText = resolvedText.replace("${" + entry.getKey() + "}", value);
         }
 
         return resolvedText;
     }
 
-    private String resolveToken(String token) {
+    private String resolveToken(String token, PlanItem item) {
+
         // subscription characteristics
         Pattern p1 = Pattern.compile("subscription.characteristics.([a-zA-Z]+)");
         Matcher m = p1.matcher(token);
@@ -131,13 +136,32 @@ public class PlanResolver {
             }
         }
         
-//        Pattern p4 = Pattern.compile("product.productCharacteristic.([a-zA-Z]+)");
-//        Matcher mProduct = p4.matcher(token);
-//        if (mProduct.matches() && subscription != null) {
-//            return subscription.getCharacteristics(mProduct.group(1));
-//        }
-
-
+        Pattern p4 = Pattern.compile("seller\\.([a-zA-Z]+)");
+        m = p4.matcher(token);
+        if (m.matches() && subscription != null && subscription.getRelatedParties() != null) {
+            switch (m.group(1).toLowerCase()) {
+                case "tradingname": 
+                    return subscription.getRelatedParties().stream()
+                        .filter(rp -> "SellerOperator".equalsIgnoreCase(rp.getRole()))
+                        .map(rp -> rp.getName()) 
+                        .findFirst()
+                        .orElse("");
+                default:
+                    break; // TODO: add more seller properties if needed
+            }
+        }
+        
+        // properties of the plan item itself
+        Pattern p5 = Pattern.compile("([a-zA-Z]+)");
+        m = p5.matcher(token);
+        if (m.matches()) {
+            switch (m.group(1).toLowerCase()) {
+                case "unitamount":
+                    return item.getUnitAmount().toString();
+                default:
+                    break; // TODO: add more plan properties if needed
+            }
+        }
 
         return null;
     }

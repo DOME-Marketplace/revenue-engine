@@ -9,7 +9,6 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 
 import it.eng.dome.tmforum.tmf678.v4.model.TimePeriod;
 import jakarta.validation.Valid;
-import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.PositiveOrZero;
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
@@ -41,7 +40,7 @@ public abstract class PlanItem {
 	private String forEachMetric;
 
 	/**
-	 * The following property provide information about the due amount, either as absolute value or in perc.
+	 * The following property provide information about the due amount.
 	 */
     @JsonProperty("amount")
     @PositiveOrZero
@@ -73,16 +72,15 @@ public abstract class PlanItem {
 	 * The following properties are used to check if the computation is applicable. If not, the item
 	 * is skipped from computation (and not included in the report? To be confirmed).
 	 */
-    @JsonProperty("applicableBase")
-    private String applicableBase;
+    @JsonProperty("activatingMetric")
+    private String activatingMetric;
 
-    @JsonProperty("applicableBaseRange")
+    @JsonProperty("activatingMetricValueRange")
     @Valid
-    private Range applicableBaseRange;
+    private Range activatingMetricValueRange;
 
-	@JsonProperty("applicableBaseReferencePeriod")
-	@Deprecated 
-    private ReferencePeriod applicableBaseReferencePeriod;
+	@JsonProperty("activatingMetricReferencePeriod")
+    private ReferencePeriod activatingMetricReferencePeriod;
 
 
 //	@JsonProperty("applicableFrom")
@@ -90,18 +88,27 @@ public abstract class PlanItem {
 //	private OffsetDateTime applicableFrom;
 	
 	/**
-	 * These properties drive the computation, in particular when the price/discount is expressed as a percentage.
+	 * These properties drive the computation, in particular when the price/discount is expressed as a percentage or amount per unit
 	 */
-	@JsonProperty("computationBase")
-	private String computationBase;
+	@JsonProperty("computationMetric")
+	private String computationMetric;
 	
-	@JsonProperty("computationBaseReferencePeriod")
-    private ReferencePeriod computationBaseReferencePeriod;
-
+	@JsonProperty("computationMetricReferencePeriod")
+    private ReferencePeriod computationMetricReferencePeriod;
+	
 	@JsonProperty("percent")
-    @PositiveOrZero
-    @Max(100)
-    private Double percent;
+	private String percentRaw;
+
+//	@JsonProperty("percent")
+//    @PositiveOrZero
+//    @Max(100)
+//    private Double percent;
+	
+//	@JsonProperty("percent")
+//	private String percentAsString;
+
+    @JsonProperty("unitAmount")
+    private Double unitAmount;
 
 	/**
 	 * this is to force the resulting amount in the given range
@@ -165,15 +172,24 @@ public abstract class PlanItem {
 		this.ignore = ignore;
 	}
 
-	public String getApplicableBase() {
-		if(this.getParentItem()!=null && this.getParentItem().getApplicableBase()!=null)
-			return this.getParentItem().getApplicableBase();
+	// priority on local setting
+	public String getActivatingMetric() {
+		if(this.activatingMetric!=null)
+			return this.activatingMetric;
+		else if(this.hasParentItem())
+			return this.getParentItem().getActivatingMetric();
 		else
-			return this.applicableBase;
+			return null;
+		/*
+		if(this.getParentItem()!=null && this.getParentItem().getActivatingMetric()!=null)
+			return this.getParentItem().getActivatingMetric();
+		else
+			return this.activatingMetric;
+		 */
 	}
 
-	public void setApplicableBase(String applicableBase) {
-		this.applicableBase = applicableBase;
+	public void setActivatingMetric(String activatingMetric) {
+		this.activatingMetric = activatingMetric;
 	}
 
 	public String getName() {
@@ -209,41 +225,45 @@ public abstract class PlanItem {
 	}
 
 	/**
-	 * Propagated. Can be overridden.
 	 * @return
 	 */
-    public String getComputationBase() {
-		if(this.computationBase!=null)
-			return this.computationBase;
-		else if(this.getParentItem()!=null)
-			return this.getParentItem().getComputationBase();
+    public String getComputationMetric() {
+		if(this.computationMetric!=null)
+			return this.computationMetric;
+		else if(this.hasParentItem())
+			return this.getParentItem().getComputationMetric();
 		return null;
 	}
 
-	public void setComputationBase(String computationBase) {
-		this.computationBase = computationBase;
+	public void setComputationMetric(String computationMetric) {
+		this.computationMetric = computationMetric;
 	}
 
-    public Range getApplicableBaseRange() {
+    public Range getActivatingMetricValueRange() {
+		if(this.activatingMetricValueRange!=null)
+			return this.activatingMetricValueRange;
+		else if(this.hasParentItem())
+			return this.getParentItem().getActivatingMetricValueRange();
+		else 
+			return null;
 		/*
-		if(this.applicableBaseRange!=null)
-			return this.applicableBaseRange;
-		else if(this.getParentItem()!=null)
-			return this.getParentItem().getApplicableBaseRange();
-		return null;
-		*/
-		if(this.getParentItem()!=null && this.getParentItem().getApplicableBaseRange()!=null)
-			return this.getParentItem().getApplicableBaseRange();
+		if(this.getParentItem()!=null && this.getParentItem().getActivatingMetricValueRange()!=null)
+			return this.getParentItem().getActivatingMetricValueRange();
 		else
-			return this.applicableBaseRange;
+			return this.activatingMetricValueRange;
+		*/
 	}
 
-	public void setApplicableBaseRange(Range applicableBaseRange) {
-		this.applicableBaseRange = applicableBaseRange;
+	public void setActivatingMetricValueRange(Range activatingMetricValueRange) {
+		this.activatingMetricValueRange = activatingMetricValueRange;
 	}
 
+	/**
+	 * Inherited. Can't be overridden.
+	 * @return
+	 */
 	public String getCurrency() {
-		if(this.getParentItem()!=null && this.getParentItem().getCurrency()!=null)
+		if(this.hasParentItem() && this.getParentItem().getCurrency()!=null)
 			return this.getParentItem().getCurrency();
 		else
 			return this.currency;
@@ -257,43 +277,85 @@ public abstract class PlanItem {
 		this.parentItem = parentItem;
 	}
 
+	public Boolean hasParentItem() {
+		return this.parentItem!=null;
+	}
+
 	@JsonIgnore
 	public PlanItem getParentItem() {
 		return this.parentItem;
 	}
-	
+
+	public String getPercentAsString() {
+		return percentRaw;
+	}
+
+	public void setPercent(String s) {
+	    this.percentRaw = s;
+	}
+
+	public void setPercent(Double d) {
+	    this.percentRaw = (d == null ? null : d.toString());
+	}
+
+
 	public Double getPercent() {
-		return percent;
+	    String s = getPercentAsString();
+	    if (s == null) return null;
+
+	    try {
+	        return Double.parseDouble(s);
+	    } catch (NumberFormatException e) {
+
+	        return null;
+	    }
+	}
+
+	public Double getUnitAmount() {
+		return unitAmount;
 	}
 
 	public PriceType getType() {
 		return null;
 	}
 
-	public void setPercent(Double percent) {
-		this.percent = percent;
-	}
 
-	public ReferencePeriod getApplicableBaseReferencePeriod() {
-		if(this.getParentItem()!=null && this.getParentItem().getApplicableBaseReferencePeriod()!=null)
-			return this.getParentItem().getApplicableBaseReferencePeriod();
-		else
-			return this.applicableBaseReferencePeriod;
-	}
-
-	public void setApplicableBaseReferencePeriod(ReferencePeriod applicableBaseReferencePeriod) {
-		this.applicableBaseReferencePeriod = applicableBaseReferencePeriod;
+	public void setUnitAmount(Double unitAmount) {
+		this.unitAmount = unitAmount;
 	}
 
 	/**
-	 * Propagated. Can be overridden.
+	 * Priority on local value
 	 * @return
 	 */
-	public ReferencePeriod getComputationBaseReferencePeriod() {
-		if(this.computationBaseReferencePeriod!=null)
-			return this.computationBaseReferencePeriod;
-		else if(this.getParentItem()!=null)
-			return this.getParentItem().getComputationBaseReferencePeriod();
+	public ReferencePeriod getActivatingMetricReferencePeriod() {
+		if(this.activatingMetricReferencePeriod!=null)
+			return this.activatingMetricReferencePeriod;
+		else if(this.hasParentItem()) 
+			return this.getParentItem().getActivatingMetricReferencePeriod();
+		else
+			return null;
+		/*
+		if(this.getParentItem()!=null && this.getParentItem().getActivatingMetricReferencePeriod()!=null)
+			return this.getParentItem().getActivatingMetricReferencePeriod();
+		else
+			return this.activatingMetricReferencePeriod;
+		*/
+	}
+
+	public void setActivatingMetricReferencePeriod(ReferencePeriod activatingMetricReferencePeriod) {
+		this.activatingMetricReferencePeriod = activatingMetricReferencePeriod;
+	}
+
+	/**
+	 * Priority on local value.
+	 * @return
+	 */
+	public ReferencePeriod getComputationMeticReferencePeriod() {
+		if(this.computationMetricReferencePeriod!=null)
+			return this.computationMetricReferencePeriod;
+		else if(this.hasParentItem())
+			return this.getParentItem().getComputationMeticReferencePeriod();
 		return null;
 		/*
 		if(this.getParentItem()!=null && this.getParentItem().getComputationBaseReferencePeriod()!=null)
@@ -303,14 +365,14 @@ public abstract class PlanItem {
 		*/
 	}
 
-	public void setComputationBaseReferencePeriod(ReferencePeriod computationBaseReferencePeriod) {
-		this.computationBaseReferencePeriod = computationBaseReferencePeriod;
+	public void setComputationMetricReferencePeriod(ReferencePeriod computationMetricReferencePeriod) {
+		this.computationMetricReferencePeriod = computationMetricReferencePeriod;
 	}
 
 	/**
 	 * @deprecated getValidBetween().getStartDateTime()
 	 */
-	public OffsetDateTime getApplicableFrom() {
+	public OffsetDateTime getValidFrom() {
 		TimePeriod validBetween = this.getValidBetween();
 		if(validBetween!=null)
 			return validBetween.getStartDateTime();
@@ -327,9 +389,17 @@ public abstract class PlanItem {
 	 * @return
 	 */
 	public TimePeriod getValidBetween() {
+		if(this.validBetween!=null)
+			return this.validBetween;
+		else if(this.hasParentItem())
+			return this.getParentItem().getValidBetween();
+		else 
+			return null;
+		/*
 		if(this.getParentItem()!=null && this.getParentItem().getValidBetween()!=null)
 			return this.getParentItem().getValidBetween();
 		return this.validBetween;
+		*/
 	}
 
 	/*
@@ -350,11 +420,19 @@ public abstract class PlanItem {
 	 * @return
 	 */
 	public ReferencePeriod getIgnorePeriod() {
+		if(this.ignorePeriod!=null)
+			return this.ignorePeriod;
+		else if(this.hasParentItem())
+			return this.getParentItem().getIgnorePeriod();
+		else 
+			return null;
+		/*
 		if(this.getParentItem()!=null && this.getParentItem().getIgnorePeriod()!=null)
 			return this.getParentItem().getIgnorePeriod();
 		else {
 			return this.ignorePeriod;
 		}
+ 		*/			
 	}
 
 	/**
@@ -362,11 +440,19 @@ public abstract class PlanItem {
 	 * @return
 	 */
 	public ReferencePeriod getValidPeriod() {
+		if(this.validPeriod!=null)
+			return this.validPeriod;
+		else if(this.hasParentItem())
+			return this.getParentItem().getValidPeriod();
+		else 
+			return null;
+		/*
 		if(this.getParentItem()!=null && this.getParentItem().getValidPeriod()!=null)
 			return this.getParentItem().getValidPeriod();
 		else {
 			return this.validPeriod;
 		}
+ 		*/			
 	}
 
 	public void setIgnorePeriod(ReferencePeriod ignorePeriod) {
@@ -375,9 +461,10 @@ public abstract class PlanItem {
 
 	@JsonIgnore
 	public boolean isConditional() {
-		if(this.getApplicableBase()!=null || this.getApplicableBaseRange()!=null || this.getApplicableBaseReferencePeriod()!=null || this.getApplicableFrom()!=null)
+		if(this.getActivatingMetric()!=null || this.getActivatingMetricValueRange()!=null || this.getActivatingMetricReferencePeriod()!=null || this.getValidFrom()!=null)
 			return true;
-		if(this.getPercent()!=null)
+		// Q: what was the rationale behind the following check?
+		if(this.getPercent()!=null || this.getUnitAmount()!=null)
 			return true;
 		return false;
 	}

@@ -1,7 +1,7 @@
 {
   "id": "urn:ngsi-ld:plan:55761it5-3d4q-2321-p009-44bro198re0q",
-  "name": "DOME Advanced Subscription plan for 2025",
-  "description": "DOME Advanced Subscription plan for 2025",
+  "name": "DOME Subscription plan for 2025",
+  "description": "DOME Subscription plan for 2025",
   "validFor": {
     "startDateTime": "2025-01-01T00:00:00Z",
     "endDateTime": "2025-12-31T23:59:59Z"
@@ -18,165 +18,245 @@
   "subscriptionDurationPeriodType": "MONTH",
   "agreements": [],
   "price": {
-    "name": "Price components for Advanced Subscription plan 2025",
+    "name": "Price components for \"${subscription.name}\" activated on ${subscription.startDate}",
     "isBundle": true,
     "currency": "EUR",
     "bundleOp": "CUMULATIVE",
     "prices": [
       {
-        "name": "Pre-paid Initial Fee",
+        "name": "(CSP) Initial fee (charged after three months trial)",
+        "ignore": "'${subscription.characteristics.marketplaceSubscription}'=='true'",
         "type": "RECURRING_PREPAID",
         "recurringChargePeriodLength": 1,
-        "recurringChargePeriodType": "YEAR",
-        "amount": 8000,
-        "currency": "EUR",
-        "ignore": "${subscription.characteristics.marketplaceSubscription}",
+        "recurringChargePeriodType": "MONTH",
+        "validPeriod": "CHARGE_PERIOD_4",
+        "amount": 5000,
         "discount": {
-          "name": "Discount based on previous year's sales",
+          "name": "Discount for publishing offering(s) during the trial period",
           "isBundle": true,
           "bundleOp": "ALTERNATIVE_HIGHER",
-          "applicableBaseReferencePeriod": "PREVIOUS_SUBSCRIPTION_PERIOD",
-          "applicableBase": "bills-no-taxes",
+          "activatingMetric": "published-product-offerings",
+          "activatingMetricReferencePeriod": "FIRST_12_CHARGE_PERIODS",
           "discounts": [
             {
-              "name": "No discunt for previous-period transactions under 100k",
-              "applicableBaseRange": {
-                "min": 0,
-                "max": 100000
-              },
-              "computationBase": "parent-price",
-              "percent": 0
+              "name": "No discount. You published ${activatingMetricValue} offerings",
+              "activatingMetricValueRange": {"min": 0, "max": 0},
+              "amount": 0
             },
             {
-              "name": "15% discount for previous-period transactions between 100k and 250k",
-              "applicableBaseRange": {
-                "min": 100001,
-                "max": 250000
-              },
-              "computationBase": "parent-price",
-              "percent": 15
+              "name": "Discount for publishing 1 offering. You published ${activatingMetricValue}",
+              "isBundle": true,
+              "bundleOp": "CUMULATIVE",
+              "activatingMetricValueRange": {"min": 1, "max": 1},
+              "discounts": [
+                {
+                  "name": "-40%",
+                  "percent": 40,
+                  "computationMetric": "parent-price"
+                },
+                {
+                  "name": "Further discount for publishing at least 1 offering which can be directly procured. You published ${activatingMetricValue}",
+                  "activatingMetric": "published-selfservice-product-offerings",
+                  "activatingMetricValueRange": {"min": 1},
+                  "amount": 500
+                }
+              ]
             },
             {
-              "name": "30% discount for previous-period transactions between 250k and 750k",
-              "applicableBaseRange": {
-                "min": 250001,
-                "max": 750000
-              },
-              "computationBase": "parent-price",
-              "percent": 30
+              "name": "Discount for publishing 2-3 offering. You published ${activatingMetricValue}",
+              "isBundle": true,
+              "bundleOp": "CUMULATIVE",
+              "activatingMetricValueRange": {"min": 2, "max": 3},
+              "discounts": [
+                {
+                  "name": "-50%",
+                  "percent": 50,
+                  "computationMetric": "parent-price"
+                },
+                {
+                  "name": "Further discount for publishing at least 1 offering which can be directly procured. You published ${activatingMetricValue}",
+                  "activatingMetric": "published-selfservice-product-offerings",
+                  "activatingMetricValueRange": {"min": 1},
+                  "amount": 500
+                }
+              ]
             },
             {
-              "name": "50% discount for previous-period transctions between 750k and 1M",
-              "applicableBaseRange": {
-                "min": 750001,
-                "max": 1000000
-              },
-              "computationBase": "parent-price",
-              "percent": 50
+              "name": "Discount for publishing 4-5 offering. You published ${activatingMetricValue}",
+              "isBundle": true,
+              "bundleOp": "CUMULATIVE",
+              "activatingMetricValueRange": {"min": 4, "max": 5},
+              "discounts": [
+                {
+                  "name": "-60%",
+                  "percent": 60,
+                  "computationMetric": "parent-price"
+                },
+                {
+                  "name": "Further discount for publishing at least 2 offering which can be directly procured. You published ${activatingMetricValue}",
+                  "activatingMetric": "published-selfservice-product-offerings",
+                  "activatingMetricValueRange": {"min": 2},
+                  "amount": 500
+                }
+              ]
             },
             {
-              "name": "80% discount for previous-period transctions over 1M",
-              "applicableBaseRange": {
-                "min": 1000001
-              },
-              "computationBase": "parent-price",
-              "percent": 80
-            }
+              "name": "Discount for publishing 6+ offerings. You published ${activatingMetricValue}",
+              "isBundle": true,
+              "bundleOp": "CUMULATIVE",
+              "activatingMetricValueRange": {"min": 6},
+              "discounts": [
+                {
+                  "name": "-70%",
+                  "percent": 70,
+                  "computationMetric": "parent-price"
+                },
+                {
+                  "name": "Further discount for publishing at least 3 offering which can be directly procured. You published ${activatingMetricValue}",
+                  "activatingMetric": "published-selfservice-product-offerings",
+                  "activatingMetricValueRange": {"min": 3},
+                  "amount": 500
+                }
+              ]
+            }  
           ]
         }
       },
       {
-        "name": "Revenue sharing based on transactions",
+        "name": "(CSP) Revenue sharing based on transactions (€${computationMetricValue}) between ${chargePeriod.startDate} and ${chargePeriod.endDate} (post-paid)",
+        "activatingMetric": "bills-no-taxes",
+        "activatingMetricReferencePeriod": "LAST_12_CHARGE_PERIODS",
+        "computationMetricReferencePeriod": "CURRENT_CHARGE_PERIOD",
+        "computationMetric": "bills-no-taxes",
+        "currency": "EUR",
+        "isBundle": true,
+        "bundleOp": "CUMULATIVE",
+        "recurringChargePeriodType": "MONTH",
+        "recurringChargePeriodLength": 1,
+        "collapse": false,
+        "skipIfZero": false,
+        "type": "RECURRING_POSTPAID",
+        "ignore": "'${subscription.characteristics.marketplaceSubscription}'=='true'",
+        "discount" : {
+            "name":"100% discount on revenue sharing during the FIRST THREE charge periods",
+            "validPeriod": "FIRST_3_CHARGE_PERIODS",
+            "percent": 100,
+            "computationMetric": "parent-price"
+        },
+        "prices": [
+          {
+            "name": "No revenue sharing on transactions below 100.000€",
+            "amount": 0
+          },
+          {
+            "name": "3% revenue sharing on transactions between 100.000€ and 250.000€",
+            "computationMetric": "bills-no-taxes",
+            "percent": 3,
+            "discount": {
+              "comment": "this is the 'min' of the tier x tier percentage",
+              "amount": 3000
+            },
+            "resultingAmountRange": {
+              "comment": "min is always zero. Max is the tier width x tier percentage (i.e. the max revenue for the tier window)",
+              "min": 0,
+              "max": 4500
+            },
+            "collapse": true,
+            "skipIfZero": true
+          },
+          {
+            "name": "2.5% revenue sharing on transactions between 250.000€ and 750.000€",
+            "percent": 2.5,
+            "discount": {
+              "name": "removing the lower part",
+              "comment": "this is the 'min' of the tier x tier percentage",
+              "amount": 6250
+            },
+            "resultingAmountRange": {
+              "comment": "min is always zero. Max is the tier width x tier percentage (i.e. the max revenue for the tier window)",
+              "min": 0,
+              "max": 12500
+            },
+            "collapse": true,
+            "skipIfZero": true
+          },
+          {
+            "name": "2% revenue sharing on transactions between 750.000€ and 1.000.000€",
+            "percent": 2,
+            "discount": {
+              "name": "removing the lower part",
+              "comment": "this is the 'min' of the tier x tier percentage",
+              "amount": 15000
+            },
+            "resultingAmountRange": {
+              "comment": "min is always zero. Max is the tier width x tier percentage (i.e. the max revenue for the tier window)",
+              "min": 0,
+              "max": 5000
+            },
+            "collapse": true,
+            "skipIfZero": true
+          },
+          {
+            "name": "1.5% revenue sharing on transactions above 1.000.000€",
+            "percent": 1.5,
+            "discount": {
+              "name": "removing the lower part",
+              "comment": "this is the 'min' of the tier x tier percentage",
+              "amount": 15000
+            },
+            "resultingAmountRange": {
+              "comment": "min is always zero. Max is the tier width x tier percentage (i.e. the max revenue for the tier window)",
+              "min": 0
+            },
+            "collapse": true,
+            "skipIfZero": true
+          }
+        ]
+      },
+
+      {
+        "name": "(FM) Revenue sharing based on transactions of sub-sellers (ver. 1: look at transactions of subsellers) (post-paid)",
         "recurringChargePeriodType": "MONTH",
         "recurringChargePeriodLength": 1,
         "type": "RECURRING_POSTPAID",
-        "ignore": false,
+        "ignore": "'${subscription.characteristics.marketplaceSubscription}'!='true'",
         "isBundle": true,
         "collapse": false,
         "bundleOp": "FOREACH",
         "skipIfZero": false,
-        "forEachMetric": "activeMarketplaceIncludedMarketplace",
+        "forEachMetric": "activeSellersBehindMarketplace",
         "prices": [
           {
-            "name": "Revenue on transactions in the current period for ${seller.tradingName}",
-            "applicableBase": "bills-no-taxes",
-            "applicableBaseReferencePeriod": "LAST_9_CHARGE_PERIODS",
-            "computationBaseReferencePeriod": "CURRENT_CHARGE_PERIOD",
-            "computationBase": "bills-no-taxes",
+            "name": "Share of 1% on €${computationMetricValue} of transactions of ${sellerBehindMarketplace.name} between ${chargePeriod.startDate} and ${chargePeriod.endDate}",
+            "computationMetricReferencePeriod": "CURRENT_CHARGE_PERIOD",
+            "computationMetric": "bills-no-taxes",
+            "percent": 1,
             "currency": "EUR",
             "ignore": false,
-            "isBundle": true,
-            "bundleOp": "CUMULATIVE",
-            "prices": [
-              {
-                "name": "tier 0: no revenue sharing for transactions below 100K",
-                "amount": 0,
-                "skipIfZero": false
-              },
-              {
-                "name": "tier 1: 4% revenue sharing in the range 100-200K",
-                "computationBase": "bills-no-taxes",
-                "percent": 4,
-                "discount": {
-                  "comment": "this is the 'min' of the tier x tier percentage",
-                  "amount": 4000
-                },
-                "resultingAmountRange": {
-                  "comment": "min is always zero. Max is the tier width x tier percentage (i.e. the max revenue for the tier window)",
-                  "min": 0,
-                  "max": 4000
-                },
-                "collapse": true,
-                "skipIfZero": true
-              },
-              {
-                "name": "tier 2: 3% revenue sharing in the range 200-500k",
-                "percent": 3,
-                "discount": {
-                  "name": "removing the lower part",
-                  "comment": "this is the 'min' of the tier x tier percentage",
-                  "amount": 6000
-                },
-                "resultingAmountRange": {
-                  "comment": "min is always zero. Max is the tier width x tier percentage (i.e. the max revenue for the tier window)",
-                  "min": 0,
-                  "max": 9000
-                },
-                "collapse": true,
-                "skipIfZero": true
-              },
-              {
-                "name": "tier 3: 2% revenue sharing in the range 500-800k",
-                "percent": 2,
-                "discount": {
-                  "name": "removing the lower part",
-                  "comment": "this is the 'min' of the tier x tier percentage",
-                  "amount": 10000
-                },
-                "resultingAmountRange": {
-                  "comment": "min is always zero. Max is the tier width x tier percentage (i.e. the max revenue for the tier window)",
-                  "min": 0,
-                  "max": 6000
-                },
-                "collapse": true,
-                "skipIfZero": true
-              },
-              {
-                "name": "tier 4: 1% revenue sharing for transactions above 800k",
-                "percent": 1,
-                "discount": {
-                  "name": "removing the lower part",
-                  "comment": "this is the 'min' of the tier x tier percentage",
-                  "amount": 8000
-                },
-                "resultingAmountRange": {
-                  "comment": "min is always zero. Max is the tier width x tier percentage (i.e. the max revenue for the tier window)",
-                  "min": 0
-                },
-                "collapse": true,
-                "skipIfZero": true
-              }
-            ]
+            "skipIfZero": true
+          }
+        ]
+      },      
+      {
+        "name": "(FM) Revenue sharing based on transactions of sub-sellers (ver. 2: look at revenue bills issued by FM) (post-paid)",
+        "recurringChargePeriodType": "MONTH",
+        "recurringChargePeriodLength": 1,
+        "type": "RECURRING_POSTPAID",
+        "ignore": "'${subscription.characteristics.marketplaceSubscription}'!='true'",
+        "isBundle": true,
+        "collapse": false,
+        "bundleOp": "FOREACH",
+        "skipIfZero": false,
+        "forEachMetric": "billedSellersBehindMarketplace",
+        "prices": [
+          {
+            "name": "Share of ${subscription.characteristics.revenuePercentage}% on €${computationMetricValue} of fees received from ${sellerBehindMarketplace.name} between ${chargePeriod.startDate} and ${chargePeriod.endDate}",
+            "computationMetricReferencePeriod": "CURRENT_CHARGE_PERIOD",
+            "computationMetric": "bills-no-taxes",
+            "percent": "${subscription.characteristics.revenuePercentage}",
+            "currency": "EUR",
+            "ignore": false,
+            "skipIfZero": true
           }
         ]
       }

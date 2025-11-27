@@ -21,7 +21,7 @@ public class Subscription {
     private String href;
 	
     private String name;
-    
+        
     @JsonProperty("plan")
     private Plan plan;
     
@@ -163,6 +163,7 @@ public class Subscription {
         SubscriptionTimeHelper timeHelper = new SubscriptionTimeHelper(this);
         return timeHelper.getChargePeriodTimes();
     }
+
 
     // TODO: create an new class BillCycle for this, instead of TimePeriod
     // the BillCycle should also contain the billdate and the payment due date

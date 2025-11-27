@@ -7,17 +7,18 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class Report {
 
-    private String label;			// key
-    private String text;            // value
+    private String label;			  // key
+    private String text;             // value
     private String link;            // optional
-    private List<Report> items;  // recursive
-    
-    
+    private List<Report> items;    // recursive
+    private Boolean noActiveSubscription; // true only for the Subscription report when the user has no active subscription
+
     public Report() {}
 
     public Report(String label) {
 		this.label = label;
 	}
+
     public Report(String label, String text) {
         this.label = label;
         this.text = text;
@@ -40,6 +41,12 @@ public class Report {
     public Report(String string, List<Report> items) {
     	this.label = string;
 		this.items = items;
+    }
+
+    public Report(String label, String text, Boolean noActiveSubscription) {
+        this.label = label;
+        this.text = text;
+        this.noActiveSubscription = noActiveSubscription;
     }
 
 	public String getLabel() {
@@ -72,6 +79,14 @@ public class Report {
 
     public void setItems(List<Report> items) {
         this.items = items;
+    }
+
+    public Boolean isNoActiveSubscription () {
+        return noActiveSubscription;
+    }
+
+    public void setNoActiveSubscription (Boolean noActiveSubscription) {
+        this.noActiveSubscription = noActiveSubscription;
     }
 }
 

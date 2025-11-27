@@ -36,8 +36,11 @@ public class StatementsService implements InitializingBean {
 
     public StatementsService() {}
 
-    /*
+    /**
      * Returns a list of RevenueItems for the subscription
+     * 
+     * @param subscriptionId The ID of the subscription for which to retrieve revenue items.
+     * @return A list of RevenueItem objects representing the revenue items for the subscription.
      */
     public List<RevenueItem> getItemsForSubscription(String subscriptionId) throws BadTmfDataException, BadRevenuePlanException, ExternalServiceException {
         List<RevenueStatement> statements = this.getStatementsForSubscription(subscriptionId);

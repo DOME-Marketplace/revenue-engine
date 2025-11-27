@@ -1,5 +1,6 @@
 package it.eng.dome.revenue.engine.service.cached;
 
+import java.time.Duration;
 import java.util.List;
 
 import org.ehcache.Cache;
@@ -42,14 +43,18 @@ public class CachedReportingService extends ReportingService {
     }
 
     @SuppressWarnings("unchecked")
-	private void initCaches() {
-		logger.debug("Set cache duration for 'reporting-service' to: {}", cacheDuration.get("reporting-service"));
-		reportCache = cacheService.getOrCreateCache(
-				"reportCache", 
-				String.class, 
-				(Class<List<Report>>)(Class<?>)List.class, 
-				cacheDuration.get("reporting-service"));
+    private void initCaches() {
+        // Reporting-service cache
+        Duration reportDuration = cacheDuration.getRevenue().get("list-reporting");
+        logger.debug("Set cache duration for 'reportCache' to: {}", reportDuration);
+        reportCache = cacheService.getOrCreateCache(
+                "reportCache",
+                String.class,
+                (Class<List<Report>>)(Class<?>)List.class,
+                reportDuration
+        );
     }
+
 
     @Override
     public List<Report> getDashboardReport(String partyId) throws BadTmfDataException, BadRevenuePlanException, ExternalServiceException  {

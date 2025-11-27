@@ -1,28 +1,9 @@
 package it.eng.dome.revenue.engine.service;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.net.URL;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.InitializingBean;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.stereotype.Service;
-
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
-
 import it.eng.dome.revenue.engine.exception.BadRevenuePlanException;
 import it.eng.dome.revenue.engine.exception.BadTmfDataException;
 import it.eng.dome.revenue.engine.exception.ExternalServiceException;
@@ -36,15 +17,40 @@ import it.eng.dome.revenue.engine.utils.IdUtils;
 import it.eng.dome.tmforum.tmf620.v4.model.ProductOffering;
 import it.eng.dome.tmforum.tmf620.v4.model.ProductOfferingPrice;
 import it.eng.dome.tmforum.tmf620.v4.model.ProductOfferingPriceRefOrValue;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.InitializingBean;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Service;
 
-/**
- * Service responsible for loading and caching revenue engine plans defined as external JSON files.
- * Plans are retrieved from a GitHub repository and cached in memory using a shared CacheService.
- */
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.URL;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
 @Service
+/**
+ * Service responsible for retrieving, loading, and caching revenue engine plans.
+ * Plans are fetched from GitHub or local resources and validated before use.
+ * Provides methods to:
+ * <ul>
+ *   <li>Fetch all plans</li>
+ *   <li>Find plans by ProductOffering or Plan ID</li>
+ *   <li>Resolve plans for subscriptions</li>
+ *   <li>Validate plan integrity</li>
+ * </ul>
+ * Supports local development overrides to load plans from the file system.
+ */
 public class PlanService implements InitializingBean {
 
-    /** Dome Operator ID - now parametric via Spring property */
     @Value("${dome.operator.id}")
     private String DOME_OPERATOR_ID;
 
@@ -58,10 +64,8 @@ public class PlanService implements InitializingBean {
 
     private final ObjectMapper mapper;
 
-    public void afterPropertiesSet() throws Exception {}
-
     /**
-     * Constructs the PlanService and initializes the plan cache and file list.
+     * Initializes the PlanService and configures the JSON ObjectMapper.
      */
     public PlanService() {
         this.mapper = new ObjectMapper()
@@ -70,25 +74,46 @@ public class PlanService implements InitializingBean {
                 .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
     }
 
-    // retrieve all plans by offerings
+    @Override
+    public void afterPropertiesSet() throws Exception {}
+
+    /**
+     * Retrieves all plans from ProductOfferings associated with the operator.
+     *
+     * @return list of all {@link Plan} objects
+     * @throws BadTmfDataException if TMF data retrieval fails
+     * @throws BadRevenuePlanException if plan data is invalid
+     * @throws ExternalServiceException if an external service call fails
+     */
     public List<Plan> getAllPlans() throws BadTmfDataException, BadRevenuePlanException, ExternalServiceException {
         logger.info("Fetching all plans...");
 
-        List<ProductOffering> pos = tmfDataRetriever.getAllSubscriptionProductOfferings();
-        if (pos == null) 
-			return Collections.emptyList();
-
         List<Plan> plans = new ArrayList<>();
-        for (ProductOffering po : pos) {
-            plans.addAll(findPlans(po.getId()));
-        }
+
+        tmfDataRetriever.fetchProductOfferings(null, Map.of("category.name", "DOME OPERATOR Plan"), 50,
+            po -> {
+                try {
+                    plans.addAll(findPlans(po.getId()));
+                } catch (BadTmfDataException | ExternalServiceException e) {
+                    logger.warn("Skipping ProductOffering {} due to exception: {}", po.getId(), e.getMessage());
+                } catch (BadRevenuePlanException e) {
+                    logger.warn("Skipping ProductOffering {} due to bad plan data: {}", po.getId(), e.getMessage());
+                }
+            }
+        );
 
         logger.info("Total plans fetched: {}", plans.size());
         return plans;
     }
 
-    /*
-     * Retrieves a plan by its ID.
+    /**
+     * Retrieves a plan by its unique plan ID.
+     *
+     * @param planId the ID of the plan
+     * @return the corresponding {@link Plan}
+     * @throws BadTmfDataException if TMF data retrieval fails
+     * @throws BadRevenuePlanException if plan data is invalid
+     * @throws ExternalServiceException if an external service call fails
      */
     public Plan getPlanById(String planId) throws BadTmfDataException, BadRevenuePlanException, ExternalServiceException {
         String[] parts = IdUtils.unpack(planId, "plan");
@@ -97,21 +122,38 @@ public class PlanService implements InitializingBean {
         return this.findPlan(offeringId, offeringPriceId);
     }
 
+    /**
+     * Resolves a plan for a subscription, applying subscription-specific details.
+     *
+     * @param planId the ID of the plan
+     * @param sub the subscription to resolve the plan for
+     * @return the resolved {@link Plan}, or null if not found
+     * @throws BadTmfDataException if TMF data retrieval fails
+     * @throws BadRevenuePlanException if plan data is invalid
+     * @throws ExternalServiceException if an external service call fails
+     */
     public Plan getResolvedPlanById(String planId, Subscription sub) throws BadTmfDataException, BadRevenuePlanException, ExternalServiceException {
         PlanResolver planResolver = new PlanResolver(sub);
         Plan plan = this.getPlanById(planId);
         return plan != null ? planResolver.resolve(plan) : null;
     }
 
-    /*
-     * Retrieves a plan by its offering ID and offering price ID.
+    /**
+     * Finds a plan by its ProductOffering ID and ProductOfferingPrice ID.
+     *
+     * @param offeringId the ProductOffering ID
+     * @param offeringPriceId the ProductOfferingPrice ID
+     * @return the corresponding {@link Plan}
+     * @throws BadTmfDataException if TMF data retrieval fails
+     * @throws BadRevenuePlanException if plan data is invalid
+     * @throws ExternalServiceException if an external service call fails
      */
     public Plan findPlan(String offeringId, String offeringPriceId) throws BadTmfDataException, BadRevenuePlanException, ExternalServiceException {
         if (offeringId == null || offeringId.isEmpty()) {
             throw new BadTmfDataException("ProductOffering", offeringId, "Offering ID cannot be null or empty");
         }
 
-        ProductOffering po = tmfDataRetriever.getProductOfferingById(offeringId, null);
+        ProductOffering po = tmfDataRetriever.getProductOffering(offeringId, null);
         if (po == null) {
             throw new BadTmfDataException("ProductOffering", offeringId, "ProductOffering not found");
         }
@@ -129,8 +171,14 @@ public class PlanService implements InitializingBean {
         }
     }
 
-    /*
+    /**
      * Fetches the ProductOfferingPrice by its ID from the given ProductOffering.
+     *
+     * @param po the ProductOffering
+     * @param offeringPriceId the ProductOfferingPrice ID
+     * @return the corresponding {@link ProductOfferingPrice}
+     * @throws BadTmfDataException if the price cannot be found
+     * @throws ExternalServiceException if external retrieval fails
      */
     private ProductOfferingPrice fetchProductOfferingPriceById(ProductOffering po, String offeringPriceId) throws BadTmfDataException, ExternalServiceException {
         if (po.getProductOfferingPrice() == null || po.getProductOfferingPrice().isEmpty()) {
@@ -149,15 +197,21 @@ public class PlanService implements InitializingBean {
         throw new BadTmfDataException("ProductOfferingPrice", offeringPriceId, "Price not found in ProductOffering");
     }
 
-    /*
+    /**
      * Retrieves all plans associated with the given offering ID.
+     *
+     * @param offeringId the ProductOffering ID
+     * @return list of {@link Plan} objects
+     * @throws BadTmfDataException if TMF data retrieval fails
+     * @throws BadRevenuePlanException if plan data is invalid
+     * @throws ExternalServiceException if external service call fails
      */
     public List<Plan> findPlans(String offeringId) throws BadTmfDataException, BadRevenuePlanException, ExternalServiceException {
         if (offeringId == null || offeringId.isEmpty()) {
             throw new BadTmfDataException("ProductOffering", offeringId, "Offering ID cannot be null or empty");
         }
 
-        ProductOffering po = tmfDataRetriever.getProductOfferingById(offeringId, null);
+        ProductOffering po = tmfDataRetriever.getProductOffering(offeringId, null);
         if (po == null) {
             throw new BadTmfDataException("ProductOffering", offeringId, "ProductOffering not found");
         }
@@ -185,6 +239,13 @@ public class PlanService implements InitializingBean {
         return plans;
     }
 
+    /**
+     * Extracts a GitHub raw link from the ProductOfferingPrice description.
+     *
+     * @param description the ProductOfferingPrice description
+     * @return the extracted URL
+     * @throws BadRevenuePlanException if no valid link is found
+     */
     private String extractLinkFromDescription(String description) throws BadRevenuePlanException {
         if (description == null || description.isEmpty()) {
             throw new BadRevenuePlanException(new Plan(), "Description is null or empty");
@@ -196,22 +257,39 @@ public class PlanService implements InitializingBean {
         throw new BadRevenuePlanException(new Plan(), "No link found in description");
     }
 
+    /**
+     * Loads a plan from a URL or local file based on configuration.
+     *
+     * @param link the URL to the plan
+     * @return the loaded {@link Plan}
+     * @throws IOException if reading fails
+     * @throws BadRevenuePlanException if plan is invalid
+     * @throws ExternalServiceException if an external service call fails
+     */
     private Plan loadPlanFromLink(String link) throws IOException, BadRevenuePlanException, ExternalServiceException {
 
-            try {
-                URL planUrl = new URL(link);
-                try (InputStream is = planUrl.openStream()) {
-                    Plan plan = mapper.readValue(is, Plan.class);
-                    if (plan == null) throw new BadRevenuePlanException(new Plan(), "Plan not found at URL: " + link);
-                    logger.debug("Loaded plan '{}' with ID '{}'", link, plan.getId());
-                    return plan;
-                }
-            } catch (IOException e) {
-                throw new ExternalServiceException("Failed to retrieve plan from external URL: " + link, e);
+        if(DEV_USE_LOCAL_PLANS) {
+            String[] parts = link.split("/");
+            String planFileName = parts[parts.length-1];
+            return this.loadPlanFromFile("./src/main/resources/data/plans/"+planFileName);
+        } else {
+            URL planUrl = new URL(link);
+            try (InputStream is = planUrl.openStream()) {
+                Plan plan = mapper.readValue(is, Plan.class);
+                logger.debug("Loaded plan '{}' with ID '{}'", link, plan.getId());
+                return plan;
             }
-        
+        }
     }
 
+    /**
+     * Loads a plan from a local file path.
+     *
+     * @param path the file path
+     * @return the loaded {@link Plan}
+     * @throws IOException if reading fails
+     * @throws BadRevenuePlanException if plan is invalid
+     */
     protected Plan loadPlanFromFile(String path) throws IOException, BadRevenuePlanException {
         File file = new File(path);
         try (InputStream is = new FileInputStream(file)) {
@@ -223,22 +301,43 @@ public class PlanService implements InitializingBean {
         }
     }
 
+    /**
+     * Updates plan metadata based on ProductOffering and ProductOfferingPrice.
+     *
+     * @param plan the plan to update
+     * @param po the ProductOffering
+     * @param pop the ProductOfferingPrice
+     * @throws BadRevenuePlanException if plan cannot be updated
+     */
     private void overwritingPlanByProductOffering(Plan plan, ProductOffering po, ProductOfferingPrice pop) throws BadRevenuePlanException {
         plan.setId(plan.generateId(po.getId(), pop.getId()));
         plan.setLifecycleStatus(po.getLifecycleStatus());
+        plan.setName(po.getName() + " - " + pop.getName());
         plan.setDescription(po.getDescription());
     }
 
     /**
-     * Validates the plan corresponding to the offering ID.
+     * Validates the plan corresponding to the given plan ID.
      *
-     * @return a PlanValidationReport with validation results
+     * @param planId the plan ID
+     * @return {@link PlanValidationReport} containing validation results
+     * @throws BadRevenuePlanException if plan data is invalid
+     * @throws BadTmfDataException if TMF data retrieval fails
+     * @throws ExternalServiceException if an external service call fails
      */
     public PlanValidationReport validatePlan(String planId) throws BadRevenuePlanException, BadTmfDataException, ExternalServiceException {
         Plan plan = getPlanById(planId);
         return new PlanValidator().validate(plan);
     }
 
+    /**
+     * Validates a plan object (used for testing purposes).
+     *
+     * @param plan the plan to validate
+     * @return {@link PlanValidationReport} containing validation results
+     * @throws IOException if reading the plan fails
+     * @throws BadRevenuePlanException if plan data is invalid
+     */
     //TODO: to be removed when not needed anymore
     public PlanValidationReport validatePlanTest(Plan plan) throws IOException, BadRevenuePlanException {
         return new PlanValidator().validate(plan);

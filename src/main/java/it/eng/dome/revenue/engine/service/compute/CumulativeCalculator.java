@@ -4,6 +4,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import it.eng.dome.revenue.engine.exception.BadTmfDataException;
+import it.eng.dome.revenue.engine.exception.ExternalServiceException;
 import it.eng.dome.revenue.engine.model.Discount;
 import it.eng.dome.revenue.engine.model.PlanItem;
 import it.eng.dome.revenue.engine.model.Price;
@@ -17,7 +19,7 @@ public class CumulativeCalculator extends AbstractCalculator {
         super(subscription, item);
     }
 
-    public RevenueItem doCompute(TimePeriod timePeriod, Map<String, Double> computeContext) {
+    public RevenueItem doCompute(TimePeriod timePeriod, Map<String, Double> computeContext) throws BadTmfDataException, ExternalServiceException {
 
 		List<PlanItem> bundleItems = this.item.getBundleItems();
 
@@ -25,7 +27,13 @@ public class CumulativeCalculator extends AbstractCalculator {
 		if(this.item.getType()!=null)
 			cumulativeRevenueItem.setType(this.item.getType().toString());
 
-		// first process prices
+		// compute the computationbase, so that the context contains it
+        String sellerId = this.getSubscription().getSubscriberId();
+        if(this.getCalculatorContext()!=null && this.getCalculatorContext().get("sellerId")!=null)
+            sellerId = this.getCalculatorContext().get("sellerId");
+		this.getComputationBase(sellerId, timePeriod, computeContext);
+
+		// first process child prices
 		for (PlanItem price : bundleItems) {
 			if(!(price instanceof Price))
 				continue;
@@ -36,6 +44,7 @@ public class CumulativeCalculator extends AbstractCalculator {
 			}
 		}
 
+		// then process the item itself (either a cumulative price...
 		if(this.item instanceof Price) {
 			Price price = (Price)this.item;
 			if(price.getDiscount()!=null) {
@@ -49,6 +58,7 @@ public class CumulativeCalculator extends AbstractCalculator {
 			}
 		}
 		
+		// ... or a cumulative discount.
 	    if (this.item instanceof Discount) {
 	        for (PlanItem subItem : this.item.getBundleItems()) {
                 Calculator childCalc = CalculatorFactory.getCalculatorFor(this.getSubscription(), subItem, this);
@@ -58,11 +68,14 @@ public class CumulativeCalculator extends AbstractCalculator {
 	        }
 	    }
 
-		if (cumulativeRevenueItem.getItems().isEmpty()) {
-			return null;
-		} else {
-			return cumulativeRevenueItem;
-		}
+		// if (cumulativeRevenueItem.getItems().isEmpty()) {
+		// 	return null;
+		// } else {
+		// 	return cumulativeRevenueItem;
+		// }
+
+		return cumulativeRevenueItem;
+
 	}
 
 }
