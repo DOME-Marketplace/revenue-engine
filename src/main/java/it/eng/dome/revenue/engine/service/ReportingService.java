@@ -48,6 +48,7 @@ public class ReportingService implements InitializingBean {
 
     protected final Logger logger = LoggerFactory.getLogger(ReportingService.class);
     
+    //FIXME: Currency should be dynamic
     private final static String EUR_CURRENCY = "EUR";
 
     @Autowired
@@ -419,8 +420,7 @@ public class ReportingService implements InitializingBean {
                         ? ri.getChargeTime().toLocalDate().toString()
                         : "Unknown Date";
                 String amount = String.format("%.2f %s",
-                        ri.getOverallValue(),
-                        ri.getCurrency() != null ? ri.getCurrency() : "");
+                        ri.getOverallValue(), EUR_CURRENCY);
 
 
                 List<Report> details = new ArrayList<>();
@@ -459,14 +459,12 @@ public class ReportingService implements InitializingBean {
 
 	        double yearlyTotal = 0.0;
 	        double monthlyTotal = 0.0;
-	        String currency = "";
 	        String currentTier = "N/A";
 
 	        for (RevenueItem ri : items) {
 	            LocalDate chargeDate = ri.getChargeTime().toLocalDate();
 
-	            if (currency.isEmpty() && ri.getCurrency() != null)
-	                currency = ri.getCurrency() + " ";
+
 
 	            yearlyTotal += ri.getOverallValue();
 
@@ -487,9 +485,9 @@ public class ReportingService implements InitializingBean {
 
 	        List<Report> reportItems = new ArrayList<>();
 	        reportItems.add(new Report("Current Monthly Revenue (" + periodStart + " - " + periodEnd + ")", 
-	                currency + format(monthlyTotal)));
+	                EUR_CURRENCY + format(monthlyTotal)));
 	        reportItems.add(new Report("Current Tier", currentTier));
-	        reportItems.add(new Report("Yearly Total", currency + format(yearlyTotal)));
+	        reportItems.add(new Report("Yearly Total", EUR_CURRENCY + format(yearlyTotal)));
 
 	        return new Report("Revenue Volume Monitoring", reportItems);
 
