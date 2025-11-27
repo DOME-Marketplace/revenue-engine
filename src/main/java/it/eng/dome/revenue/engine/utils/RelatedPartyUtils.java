@@ -68,13 +68,9 @@ public class RelatedPartyUtils {
     }
 
     public static Boolean offeringHasPartyWithRole(ProductOffering productOffering, String partyId, Role partyRole) {
-        // TODO: uncomment the following when the ProductOffering will have relatedParties
-        /*
-        List<RP> parties = productOffering.getRelatedParties().stream()
+        List<RP> parties = productOffering.getRelatedParty().stream()
                 .map(party -> new RP(party.getId(), party.getRole())).toList();
         return RelatedPartyUtils.hasRPWithRole(parties, partyId, partyRole);
-        */
-        return true;
     }
 
     public static List<Product> retainProductsWithParty(List<Product> products, String partyId, Role partyRole) {
