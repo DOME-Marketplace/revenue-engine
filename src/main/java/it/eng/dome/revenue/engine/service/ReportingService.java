@@ -47,6 +47,8 @@ import it.eng.dome.tmforum.tmf678.v4.model.TimePeriod;
 public class ReportingService implements InitializingBean {
 
     protected final Logger logger = LoggerFactory.getLogger(ReportingService.class);
+    
+    private final static String EUR_CURRENCY = "EUR";
 
     @Autowired
     private CachedSubscriptionService subscriptionService;
@@ -76,7 +78,6 @@ public class ReportingService implements InitializingBean {
 	        double totalCloud = 0.0;
 	        double totalFederated = 0.0;
 	        double totalOverall = 0.0;
-	        String currency = "EUR ";
 	
 	        LocalDate today = LocalDate.now();
 	        LocalDate periodStart = today.withDayOfYear(1);
@@ -103,10 +104,10 @@ public class ReportingService implements InitializingBean {
 	                String name = tmfDataRetriever.getOrganization(buyerId).getTradingName();
 	
 	                if (isFederated(product)) {
-	                    federatedProviders.add(new Report(name, currency + format(yearlyTotal)));
+	                    federatedProviders.add(new Report(name, EUR_CURRENCY + format(yearlyTotal)));
 	                    totalFederated += yearlyTotal;
 	                } else {
-	                    cloudProviders.add(new Report(name, currency + format(yearlyTotal)));
+	                    cloudProviders.add(new Report(name, EUR_CURRENCY + format(yearlyTotal)));
 	                    totalCloud += yearlyTotal;
 	                }
 	
@@ -123,7 +124,7 @@ public class ReportingService implements InitializingBean {
 	        if (!cloudProviders.isEmpty()) {
 	            result.add(new Report(
 	                    "Total Cloud Service Providers (" + periodStart + " - " + periodEnd + "): " 
-	                    + currency + format(totalCloud),
+	                    + EUR_CURRENCY + format(totalCloud),
 	                    cloudProviders
 	            ));
 	
@@ -137,7 +138,7 @@ public class ReportingService implements InitializingBean {
 	        if (!federatedProviders.isEmpty()) {
 	            result.add(new Report(
 	                    "Total Federated Marketplaces (" + periodStart + " - " + periodEnd + "): " 
-	                    + currency + format(totalFederated),
+	                    + EUR_CURRENCY + format(totalFederated),
 	                    federatedProviders
 	            ));
 	
@@ -151,7 +152,7 @@ public class ReportingService implements InitializingBean {
 	        totalOverall = totalCloud + totalFederated;
 	        result.add(new Report(
 	                "Overall Total Revenue (" + periodStart + " - " + periodEnd + "):",
-	                currency + format(totalOverall)
+	                EUR_CURRENCY + format(totalOverall)
 	        ));
 	
 	        return result;
