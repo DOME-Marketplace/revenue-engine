@@ -100,10 +100,9 @@ public class HealthService extends AbstractHealthService {
         }
 
 		// 3: check self info
-		for(Check c: getChecksOnSelf()) {
-			health.addCheck(c);
-			health.elevateStatus(c.getStatus());
-		}
+		Check selfInfo = getChecksOnSelf(SERVICE_NAME);
+		health.addCheck(selfInfo);
+		health.elevateStatus(selfInfo.getStatus());
 
 		// 4: if self is ok, but overall status is FAIL, change it to WARN (not a local problem)
 		boolean selfIsOk = health.getChecks("self", null).stream().allMatch(c -> c.getStatus() == HealthStatus.PASS);		
@@ -119,28 +118,6 @@ public class HealthService extends AbstractHealthService {
 		return health;
     }
 
-    /**
-     * Performs health checks on the service itself.
-     *
-     * @return list of {@link Check} representing self health checks
-     */
-    private List<Check> getChecksOnSelf() {
-	    List<Check> out = new ArrayList<>();
-
-	    // Check getInfo API
-	    Info info = getInfo();
-
-	    HealthStatus infoStatus = (info != null) ? HealthStatus.PASS : HealthStatus.FAIL;
-	    
-		String infoOutput = (info != null)
-	            ? SERVICE_NAME + " (ver. " + info.getVersion() + ")"
-	            : SERVICE_NAME + " getInfo returned unexpected response";
-	    
-	    Check infoCheck = createCheck("self", "getInfo", "api", infoStatus, infoOutput);
-	    out.add(infoCheck);
-
-	    return out;
-	}
 
     /**
      * Performs health checks on the invoicing service.
