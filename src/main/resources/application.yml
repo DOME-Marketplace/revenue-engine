@@ -5,7 +5,6 @@ server:
   servlet:
     context-path:  ${BILLING_PREFIX:/}
 
-
 # Logging Configuration
 logging:
   level:

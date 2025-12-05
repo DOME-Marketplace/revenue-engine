@@ -1,12 +1,12 @@
 # Revenue Engine
 
-**Version:** 1.2.6  
+**Version:** 1.2.8  
 **Description:** Swagger REST APIs for the revenue-engine software  
 
 
 ## REST API Endpoints
 
-### plans-controller
+### Revenue Engine Plan Controller
 | Verb | Path | Task |
 |------|------|------|
 | POST | `/revenue/plans/validate` | validatePlan |
@@ -15,7 +15,7 @@
 | GET | `/revenue/plans/{planId}/validate` | validatePlan_1 |
 | GET | `/revenue/plans/{planId}/subscriptions` | getSubscriptionsByPlanId |
 
-### subscriptions-controller
+### Revenue Engine Subscriptions Controller
 | Verb | Path | Task |
 |------|------|------|
 | GET | `/revenue/subscriptions` | getAllSubscriptions |
@@ -24,7 +24,7 @@
 | GET | `/revenue/subscriptions/{subscriptionId}/statements/itemsonly` | statementItems |
 | GET | `/revenue/subscriptions/{subscriptionId}/bills` | getBillPeriods |
 
-### persistence-controller
+### Revenue Engine Persistence Controller
 | Verb | Path | Task |
 |------|------|------|
 | GET | `/revenue/persistence/persist` | peristEverything |
@@ -32,13 +32,13 @@
 | GET | `/revenue/persistence/persist/revenuebill/{revenueBillId}` | persistRevenueBill |
 | GET | `/revenue/persistence/persist/provider/{providerId}` | persistForProvider |
 
-### Revenue Engine Controller
+### Revenue Engine Info Controller
 | Verb | Path | Task |
 |------|------|------|
-| GET | `/revenue/info` | getInfp |
+| GET | `/revenue/info` | getInfo |
 | GET | `/revenue/health` | getHealth |
 
-### dev-organization-controller
+### Revenue Engine Develop Controller
 | Verb | Path | Task |
 |------|------|------|
 | GET | `/revenue/dev/organizations` | listOrganizations |
@@ -47,22 +47,23 @@
 | GET | `/revenue/dev/organizations/{organizationId}/soldProducts` | listSoldProducts |
 | GET | `/revenue/dev/organizations/{organizationId}/purchasedProducts` | listPurchasedProducts |
 | GET | `/revenue/dev/organizations/{organizationId}/customerbills` | listOrganizationTransactions |
+| GET | `/revenue/dev/invoices/{customerBillId}` | getInvoice |
 | GET | `/revenue/dev/customerbills/{customerBillId}` | getCustomerBill |
 | GET | `/revenue/dev/customerbills/{customerBillId}/acbr` | getACBRs |
 
-### reporting-controller
+### Revenue Engine Dashboard Controller
 | Verb | Path | Task |
 |------|------|------|
 | GET | `/revenue/dashboard/{relatedPartyId}` | getDashboard |
 
-### bills-controller
+### Revenue Engine Bills Controller
 | Verb | Path | Task |
 |------|------|------|
 | GET | `/revenue/bills/{revenueBillId}/cb` | getCustomerBillByRevenueBillId |
 | GET | `/revenue/bills/{revenueBillId}/acbr` | getACBRsByRevenueBillId |
 | GET | `/revenue/bills/{billId}` | getBillPeriods_1 |
 
-### preview-and-billing-controller
+### Revenue Engine Purchasing Controller
 | Verb | Path | Task |
 |------|------|------|
 | GET | `/revenue/billing/instantBill` | instantBill |
