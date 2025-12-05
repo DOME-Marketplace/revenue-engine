@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import io.swagger.v3.oas.annotations.tags.Tag;
 import it.eng.dome.brokerage.billing.dto.BillingRequestDTO;
 //import it.eng.dome.brokerage.billing.dto.BillingPreviewRequestDTO;
 
@@ -31,6 +32,7 @@ import it.eng.dome.tmforum.tmf637.v4.model.Product;
 
 @RestController
 @RequestMapping("/revenue/billing/")
+@Tag(name = "Revenue Engine Purchasing Controller", description = "APIs to manage purchasing (subscription) process and for regular billing")
 public class PreviewAndBillingController {
 
 	protected final Logger logger = LoggerFactory.getLogger(PreviewAndBillingController.class);

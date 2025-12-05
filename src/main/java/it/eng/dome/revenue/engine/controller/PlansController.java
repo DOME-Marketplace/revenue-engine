@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import io.swagger.v3.oas.annotations.tags.Tag;
 import it.eng.dome.revenue.engine.exception.BadRevenuePlanException;
 import it.eng.dome.revenue.engine.model.Plan;
 import it.eng.dome.revenue.engine.model.Subscription;
@@ -25,6 +26,7 @@ import it.eng.dome.revenue.engine.service.validation.PlanValidationReport;
 
 @RestController
 @RequestMapping("/revenue/plans")
+@Tag(name = "Revenue Engine Plan Controller", description = "APIs to manage plans of the revenue-engine")
 public class PlansController {
 	
 	private static final Logger logger = LoggerFactory.getLogger(PlansController.class);
