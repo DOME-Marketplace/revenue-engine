@@ -587,6 +587,8 @@ public class TmfDataRetriever {
      * @param consumer
      * @throws ExternalServiceException
      */
+    // FIXME: rename this method and javadoc...
+    // The metod actually only looks at products that are 'subscriptions'; and not at all products.
     public void fetchActiveProducts(int batchSize, Consumer<Product> consumer )
             throws ExternalServiceException {
         try {
@@ -716,6 +718,24 @@ public class TmfDataRetriever {
         } catch (Exception e) {
             logger.error("Failed to retrieve product offering price {}", popId, e);
             throw new ExternalServiceException("Failed to retrieve product offering price with ID: " + popId, e);
+        }
+    }
+
+    public List<ProductOfferingPrice> findProductOfferingPrice(Map<String, String> filter)
+            throws BadTmfDataException, ExternalServiceException {
+        try {
+            return this.productCatalogManagementApis.listProductOfferingPrices(null, 0, 100, filter);
+        } catch (Exception e) {
+            throw new ExternalServiceException("Failed to find product offering prices with filter " + filter, e);
+        }
+    }
+
+    public List<Organization> findOrganization(Map<String, String> filter)
+            throws BadTmfDataException, ExternalServiceException {
+        try {
+            return this.apiPartyApis.listOrganizations(null, 0, 100, filter);
+        } catch (Exception e) {
+            throw new ExternalServiceException("Failed to find organizations with filter " + filter, e);
         }
     }
 
