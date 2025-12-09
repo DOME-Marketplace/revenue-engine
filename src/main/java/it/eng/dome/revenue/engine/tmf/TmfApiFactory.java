@@ -61,7 +61,6 @@ public final class TmfApiFactory implements InitializingBean {
 	private it.eng.dome.tmforum.tmf632.v4.ApiClient apiClientTmf632;
 	private it.eng.dome.tmforum.tmf637.v4.ApiClient apiClientTmf637;
 	private it.eng.dome.tmforum.tmf651.v4.ApiClient apiClientTmf651;
-//	private it.eng.dome.tmforum.tmf666.v4.ApiClient apiClientTmf666;
 	private it.eng.dome.tmforum.tmf678.v4.ApiClient apiClientTmf678;
 	
 	public it.eng.dome.tmforum.tmf620.v4.ApiClient getTMF620ProductCatalogManagementApiClient() {	
@@ -144,22 +143,6 @@ public final class TmfApiFactory implements InitializingBean {
 		return apiClientTmf651;
 	}
 	
-//	public it.eng.dome.tmforum.tmf666.v4.ApiClient getTMF666AccountManagementApiClient() {	
-//		if (apiClientTmf666 == null) {
-//			apiClientTmf666  = it.eng.dome.tmforum.tmf666.v4.Configuration.getDefaultApiClient();
-//			
-//			String basePath = tmfEndpoint;
-//			if (!tmfEnvoy) { // no envoy specific path
-//				basePath += TMF_ENDPOINT_CONCAT_PATH + "account-management" + "." + tmfNamespace + "." + tmfPostfix + ":" + tmfPort;
-//			}
-//			
-//			apiClientTmf666.setBasePath(basePath + "/" + tmf666AccountManagementPath);
-//			log.debug("Invoke Agreement API at endpoint: " + apiClientTmf666.getBasePath());
-//		}
-//		
-//		return apiClientTmf666;
-//	}
-	
 	public it.eng.dome.tmforum.tmf678.v4.ApiClient getTMF678CustomerBillApiClient() {
 		if (apiClientTmf678 == null) { 
 			apiClientTmf678 = it.eng.dome.tmforum.tmf678.v4.Configuration.getDefaultApiClient();
@@ -194,7 +177,6 @@ public final class TmfApiFactory implements InitializingBean {
 		Assert.state(!StringUtils.isBlank(tmf632PartyManagementPath), "Revenue Engine not properly configured. tmf632_party_management_path property has no value.");
 		Assert.state(!StringUtils.isBlank(tmf637ProductInventoryPath), "Revenue Engine not properly configured. tmf637_inventory_path property has no value.");
 		Assert.state(!StringUtils.isBlank(tmf651AgreementManagementPath), "Revenue Engine not properly configured. tmf651_agreement_management_path property has no value.");
-//		Assert.state(!StringUtils.isBlank(tmf666AccountManagementPath), "Revenue Engine not properly configured. tmf666_account_management_path property has no value.");
 		Assert.state(!StringUtils.isBlank(tmf678CustomerBillPath), "Revenue Engine not properly configured. tmf678_billing_path property has no value.");
 			
 		if (tmfEndpoint.endsWith("/")) {
@@ -220,10 +202,6 @@ public final class TmfApiFactory implements InitializingBean {
 		if (tmf651AgreementManagementPath.startsWith("/")) {
 			tmf651AgreementManagementPath = UrlPathUtils.removeInitialSlash(tmf651AgreementManagementPath);
 		}
-		
-//		if (tmf666AccountManagementPath.startsWith("/")) {
-//			tmf666AccountManagementPath = UrlPathUtils.removeInitialSlash(tmf666AccountManagementPath);
-//		}
 		
 		if (tmf678CustomerBillPath.startsWith("/")) {
 			tmf678CustomerBillPath = UrlPathUtils.removeInitialSlash(tmf678CustomerBillPath);
