@@ -80,7 +80,7 @@ public class SubscriptionTimeHelper {
                 // roll until we find that day
                 OffsetDateTime next = time;
                 DayOfWeek targetDoW = DayOfWeek.valueOf(matcher.group(1));
-                while(targetDoW!=null && !targetDoW.equals(next.getDayOfWeek()))
+                while(targetDoW!=null && targetDoW != next.getDayOfWeek())
                     next = next.plusDays(1);
                 return next;
             }
