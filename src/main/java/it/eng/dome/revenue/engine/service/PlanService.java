@@ -85,26 +85,46 @@ public class PlanService implements InitializingBean {
      * @throws BadRevenuePlanException if plan data is invalid
      * @throws ExternalServiceException if an external service call fails
      */
+//    public List<Plan> getAllPlans() throws BadTmfDataException, BadRevenuePlanException, ExternalServiceException {
+//        logger.info("Fetching all plans...");
+//
+//        List<Plan> plans = new ArrayList<>();
+//
+//        tmfDataRetriever.fetchProductOfferings(null, Map.of("category.name", "DOME OPERATOR Plan"), 50,
+//            po -> {
+//                try {
+//                    plans.addAll(findPlans(po.getId()));
+//                } catch (BadTmfDataException | ExternalServiceException e) {
+//                    logger.warn("Skipping ProductOffering {} due to exception: {}", po.getId(), e.getMessage());
+//                } catch (BadRevenuePlanException e) {
+//                    logger.warn("Skipping ProductOffering {} due to bad plan data: {}", po.getId(), e.getMessage());
+//                }
+//            }
+//        );
+//
+//        logger.info("Total plans fetched: {}", plans.size());
+//        return plans;
+//    }
     public List<Plan> getAllPlans() throws BadTmfDataException, BadRevenuePlanException, ExternalServiceException {
         logger.info("Fetching all plans...");
 
         List<Plan> plans = new ArrayList<>();
 
-        tmfDataRetriever.fetchProductOfferings(null, Map.of("category.name", "DOME OPERATOR Plan"), 50,
-            po -> {
-                try {
-                    plans.addAll(findPlans(po.getId()));
-                } catch (BadTmfDataException | ExternalServiceException e) {
-                    logger.warn("Skipping ProductOffering {} due to exception: {}", po.getId(), e.getMessage());
-                } catch (BadRevenuePlanException e) {
-                    logger.warn("Skipping ProductOffering {} due to bad plan data: {}", po.getId(), e.getMessage());
-                }
-            }
-        );
+        // Hardcoded Product Offering ID
+        String productOfferingId = "urn:ngsi-ld:product-offering:7f271a7c-1dad-448e-bc32-88e5ef0cd403";
+
+        try {
+            plans.addAll(findPlans(productOfferingId));
+        } catch (BadTmfDataException | ExternalServiceException e) {
+            logger.warn("Skipping ProductOffering {} due to exception: {}", productOfferingId, e.getMessage());
+        } catch (BadRevenuePlanException e) {
+            logger.warn("Skipping ProductOffering {} due to bad plan data: {}", productOfferingId, e.getMessage());
+        }
 
         logger.info("Total plans fetched: {}", plans.size());
         return plans;
     }
+
 
     /**
      * Retrieves a plan by its unique plan ID.

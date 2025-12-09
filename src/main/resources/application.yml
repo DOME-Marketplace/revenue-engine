@@ -9,7 +9,7 @@ server:
 # Logging Configuration
 logging:
   level:
-    it.eng.dome: ${LOG_LEVEL:DEBUG}
+    it.eng.dome: ${LOG_LEVEL:INFO}
     org.apache.coyote.http11: ERROR
   pattern:
     console: "%d{yyyy-MM-dd HH:mm:ss} [%-5level] %logger{36} - %msg%n" 
@@ -41,7 +41,7 @@ billing:
 
 tmforumapi:
   #tmf_endpoint: ${TMF_ENDPOINT:https://dome-dev.eng.it}
-  tmf_endpoint: ${TMF_ENDPOINT:https://tmf.dome-marketplace-sbx.org}
+  tmf_endpoint: ${TMF_ENDPOINT:https://tmf.dome-marketplace-dev2.org}
 
   tmf_envoy:  ${TMF_ENVOY:true}
   # valid only if envoy false
@@ -87,7 +87,7 @@ caching:
     duration: 1m
 
 persistence:
-  monthsBack: ${MONTHS_BACK:12}
+  monthsBack: ${MONTHS_BACK:14}
   scheduler:
     enabled: false
     cron: "0 0 */1 * * *"

@@ -587,32 +587,56 @@ public class TmfDataRetriever {
      * @param consumer
      * @throws ExternalServiceException
      */
-    public void fetchActiveProducts(int batchSize, Consumer<Product> consumer )
+//    public void fetchActiveProducts(int batchSize, Consumer<Product> consumer )
+//            throws ExternalServiceException {
+//        try {
+//            // Batch on ProductOffering category "DOME OPERATOR Plan"
+//            this.fetchProductOfferings(null, Map.of("category.name", "DOME OPERATOR Plan"), batchSize, po -> {
+//                try {
+//                    Map<String, String> filter = Map.of("productOffering.id", po.getId());
+//
+//                    // Batch of Products filtered by ProductOffering.id
+//                    this.fetchProducts(null, filter, batchSize, product -> {
+//                        try {
+//                            // only active products
+//                            // FIXME: but be careful with last invoices... sub might not be active
+//                            // TODO: CHECK IF EXIST IN TMF A STATUS THAT IS RECENTLY TERMINATED
+//                            if (product.getStatus() != null && "active".equalsIgnoreCase(product.getStatus().getValue())) {
+//                                consumer.accept(product);
+//                            }
+//                        } catch (Exception e) {
+//                            logger.warn("Failed to process product {}: {}", product.getId(), e.getMessage(), e);
+//                        }
+//                    });
+//
+//                } catch (Exception e) {
+//                    logger.warn("Failed to process ProductOffering {}: {}", po.getId(), e.getMessage(), e);
+//                }
+//            });
+//        } catch (Exception e) {
+//            logger.error("Failed to fetch subscription products", e);
+//            throw new ExternalServiceException("Failed to fetch subscription products", e);
+//        }
+//    }
+    public void fetchActiveProducts(int batchSize, Consumer<Product> consumer)
             throws ExternalServiceException {
         try {
-            // Batch on ProductOffering category "DOME OPERATOR Plan"
-            this.fetchProductOfferings(null, Map.of("category.name", "DOME OPERATOR Plan"), batchSize, po -> {
+            // Hardcoded Product Offering ID
+            String productOfferingId = "urn:ngsi-ld:product-offering:7f271a7c-1dad-448e-bc32-88e5ef0cd403";
+            Map<String, String> filter = Map.of("productOffering.id", productOfferingId);
+
+            // Fetch products for the hardcoded Product Offering
+            this.fetchProducts(null, filter, batchSize, product -> {
                 try {
-                    Map<String, String> filter = Map.of("productOffering.id", po.getId());
-
-                    // Batch of Products filtered by ProductOffering.id
-                    this.fetchProducts(null, filter, batchSize, product -> {
-                        try {
-                            // only active products
-                            // FIXME: but be careful with last invoices... sub might not be active
-                            // TODO: CHECK IF EXIST IN TMF A STATUS THAT IS RECENTLY TERMINATED
-                            if (product.getStatus() != null && "active".equalsIgnoreCase(product.getStatus().getValue())) {
-                                consumer.accept(product);
-                            }
-                        } catch (Exception e) {
-                            logger.warn("Failed to process product {}: {}", product.getId(), e.getMessage(), e);
-                        }
-                    });
-
+                    // Only active products
+                    if (product.getStatus() != null && "active".equalsIgnoreCase(product.getStatus().getValue())) {
+                        consumer.accept(product);
+                    }
                 } catch (Exception e) {
-                    logger.warn("Failed to process ProductOffering {}: {}", po.getId(), e.getMessage(), e);
+                    logger.warn("Failed to process product {}: {}", product.getId(), e.getMessage(), e);
                 }
             });
+
         } catch (Exception e) {
             logger.error("Failed to fetch subscription products", e);
             throw new ExternalServiceException("Failed to fetch subscription products", e);

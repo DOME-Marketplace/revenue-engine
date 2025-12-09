@@ -2,26 +2,14 @@
 
     <property name="LOG_ROOT" value="logs/"/>
 
-    <appender name="LOG_ROOT" class="ch.qos.logback.core.rolling.RollingFileAppender">
-        <file>${LOG_ROOT}/tmf-problems.log</file>
+    <!-- Appender file dedicato TmfPersistenceService -->
+    <appender name="PERSISTENCE_FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>${LOG_ROOT}/persistence.log</file>
         <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
-            <fileNamePattern>logs/archived/tmf-problems.%d{yyyy-MM-dd}.%i.log.gz</fileNamePattern>
+            <fileNamePattern>logs/archived/persistence.%d{yyyy-MM-dd}.%i.log.gz</fileNamePattern>
             <maxFileSize>10MB</maxFileSize>
             <totalSizeCap>1GB</totalSizeCap>
-            <maxHistory>60</maxHistory>
-        </rollingPolicy>
-        <encoder>
-            <pattern>%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger - %msg%n</pattern>
-        </encoder>
-    </appender>
-
-    <appender name="PLAN_PROBLEMS_ROLLING" class="ch.qos.logback.core.rolling.RollingFileAppender">
-        <file>${LOG_ROOT}/plan-problems.log</file>
-        <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
-            <fileNamePattern>logs/archived/plan.%d{yyyy-MM-dd}.%i.log.gz</fileNamePattern>
-            <maxFileSize>10MB</maxFileSize>
-            <totalSizeCap>1GB</totalSizeCap>
-            <maxHistory>60</maxHistory>
+            <maxHistory>30</maxHistory>
         </rollingPolicy>
         <encoder>
             <pattern>%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger - %msg%n</pattern>
@@ -30,28 +18,18 @@
 
     <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
         <layout class="ch.qos.logback.classic.PatternLayout">
-            <Pattern>
-                %d{yyyy-MM-dd HH:mm:ss} [%-5level] %logger{36} - %msg%n
-            </Pattern>
+            <Pattern>%d{yyyy-MM-dd HH:mm:ss} [%-5level] %logger{36} - %msg%n</Pattern>
         </layout>
     </appender>
 
-    <logger name="it.eng" level="debug" additivity="false">
+    <!-- Logger dedicato solo alla tua classe -->
+    <logger name="it.eng.dome.revenue.engine.service.TmfPersistenceService" level="INFO" additivity="false">
+        <appender-ref ref="PERSISTENCE_FILE"/>
         <appender-ref ref="CONSOLE"/>
     </logger>
 
-    <logger name="tmf-problems" level="debug" additivity="false">
-        <appender-ref ref="TMF_PROBLEMS_ROLLING"/>
-        <appender-ref ref="CONSOLE"/>
-    </logger>
-
-    <logger name="plan-problems" level="debug" additivity="false">
-        <appender-ref ref="PLAN_PROBLEMS_ROLLING"/>
-        <appender-ref ref="CONSOLE"/>
-    </logger>
-
-    <root level="error">
-        <appender-ref ref="FILE-ROLLING"/>
+    <!-- Tutto il resto a ERROR -->
+    <root level="ERROR">
         <appender-ref ref="CONSOLE"/>
     </root>
 

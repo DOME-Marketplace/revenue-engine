@@ -1,5 +1,6 @@
 package it.eng.dome.revenue.engine.controller;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import org.slf4j.Logger;
@@ -46,6 +47,36 @@ public class BillsController {
         }
     } 
     
+    @GetMapping("{subID}/cbs")
+    public ResponseEntity<List<CustomerBill>> getCustomerBillsByOrganizationId(@PathVariable String subID) {
+        try {
+            List<RevenueBill> revenueBills = billsService.getSubscriptionBills(subID);
+
+            if (revenueBills == null || revenueBills.isEmpty()) {
+                logger.info("No RevenueBills found for subscriptionId: {}", subID);
+                return ResponseEntity.notFound().build();
+            }
+
+            List<CustomerBill> result = new ArrayList<>();
+            for (RevenueBill rb : revenueBills) {
+                logger.info("Found RevenueBill for subscriptionId {}: {}", subID, rb.getId());
+                CustomerBill cb = getCustomerBillByRevenueBillId(rb.getId()).getBody();
+                result.add(cb);
+            }
+
+            if (result.isEmpty()) {
+                logger.info("No CustomerBills generated for subscriptionId: {}", subID);
+                return ResponseEntity.notFound().build();
+            }
+
+            return ResponseEntity.ok(result);
+
+        } catch (Exception e) {
+            logger.error("Failed to generate CustomerBills for subscriptionId {}: {}", subID, e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+
     @GetMapping("{revenueBillId}/cb")
     public ResponseEntity<CustomerBill> getCustomerBillByRevenueBillId(@PathVariable String revenueBillId) {
         try {

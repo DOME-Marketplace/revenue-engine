@@ -1,6 +1,7 @@
 package it.eng.dome.revenue.engine.invoicing;
 
 import java.util.List;
+import java.util.UUID;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -22,7 +23,6 @@ import it.eng.dome.revenue.engine.exception.ExternalServiceException;
 import it.eng.dome.tmforum.tmf678.v4.model.AppliedCustomerBillingRate;
 import it.eng.dome.tmforum.tmf678.v4.model.CustomerBill;
 
-
 @Service
 public class InvoicingService {
 
@@ -31,7 +31,6 @@ public class InvoicingService {
     @Value("${billing.invoicing_service}")
     public String invoicingServiceEndpoint;
 
-    // a json mapper for outgoing calls
     private ObjectMapper outMapper;
 
     public InvoicingService() {
@@ -40,22 +39,32 @@ public class InvoicingService {
 
     private void initOutMapper() {
         this.outMapper = new ObjectMapper();
-        // jsr310 time module
         this.outMapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
         this.outMapper.registerModule(new JavaTimeModule());
-        // enum mapper for TMF637
         this.outMapper.registerModule(new TMF637EnumModule());
-        // enum mapper for TMF678
         this.outMapper.registerModule(new TMF678EnumModule());
     }
+
+    /**
+     * Ensures every AppliedCustomerBillingRate has a non-null, non-empty ID.
+     */
+    private void ensureAcbrIds(List<AppliedCustomerBillingRate> acbrs) {
+        for (AppliedCustomerBillingRate acbr : acbrs) {
+            if (acbr.getId() == null || acbr.getId().isEmpty()) {
+                acbr.setId(UUID.randomUUID().toString());
+            }
+        }
+    }
+
     /**
      * Applies taxes to a list of ACBRs for a given product.
      * The invoicing service returns a JSON object containing a field "appliedCustomerBillingRate" 
      * which is a list of enriched ACBRs.
-     * @throws Exception 
      */
     public Invoice applyTaxes(CustomerBill customerBill, List<AppliedCustomerBillingRate> acbrs) throws ExternalServiceException {
         try {
+            ensureAcbrIds(acbrs);
+
             Invoice tempInvoice = new Invoice(customerBill, acbrs);
             ObjectMapper mapper = this.outMapper;
             String outJson = mapper.writeValueAsString(List.of(tempInvoice));
@@ -88,7 +97,6 @@ public class InvoicingService {
             throw new ExternalServiceException("Unexpected response from Invoicing Service", e);
         }
     }
-
 
     /**
      * Calls the invoicing service endpoint for getting info.

@@ -76,30 +76,39 @@ public class TmfConverter {
 		return out;
 	}
 	
-	public static List<it.eng.dome.tmforum.tmf678.v4.model.RelatedParty> convertRpTo678(List<it.eng.dome.tmforum.tmf637.v4.model.RelatedParty> list637) {
-		
-	    if (list637 == null) {
-	        return null;
-	    }
-	
+	public static List<it.eng.dome.tmforum.tmf678.v4.model.RelatedParty> convertRpTo678(
+	        List<it.eng.dome.tmforum.tmf637.v4.model.RelatedParty> list637) {
+
 	    List<it.eng.dome.tmforum.tmf678.v4.model.RelatedParty> list678 = new ArrayList<>();
-	
+	    if (list637 == null || list637.isEmpty()) {
+	        return list678; // ritorna lista vuota invece di null
+	    }
+
 	    for (it.eng.dome.tmforum.tmf637.v4.model.RelatedParty rp637 : list637) {
+	        if (rp637 == null) continue; // skip null
 	        it.eng.dome.tmforum.tmf678.v4.model.RelatedParty rp678 = new it.eng.dome.tmforum.tmf678.v4.model.RelatedParty();
-	
+
 	        rp678.setId(rp637.getId());
-	        try {
-				rp678.setHref(new URI(rp637.getHref()));
-			} catch (URISyntaxException e) {
-				logger.warn("Invalid URI for RelatedParty href={} -> {}", rp637.getHref(), e.getMessage());
-			}
+	        // Href difensivo
+	        String href = rp637.getHref();
+	        if (href != null && !href.isBlank()) {
+	            try {
+	                rp678.setHref(new URI(href));
+	            } catch (URISyntaxException e) {
+	                logger.warn("Invalid URI for RelatedParty href={} -> {}", href, e.getMessage());
+	            }
+	        } else {
+	            rp678.setHref(null); // fallback sicuro
+	        }
+
 	        rp678.setName(rp637.getName());
 	        rp678.setRole(rp637.getRole());
-	        rp678.setAtReferredType(rp637.getAtReferredType()); // ??
-	
+	        rp678.setAtReferredType(rp637.getAtReferredType());
+
 	        list678.add(rp678);
 	    }
-	
+
 	    return list678;
 	}
+
 }
