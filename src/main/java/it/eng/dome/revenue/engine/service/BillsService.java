@@ -1,27 +1,12 @@
 package it.eng.dome.revenue.engine.service;
 
-import java.time.OffsetDateTime;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Set;
-import java.util.TreeSet;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
-
-import it.eng.dome.brokerage.model.Invoice;
+import it.eng.dome.brokerage.billing.dto.BillingResponseDTO;
 import it.eng.dome.revenue.engine.exception.BadRevenuePlanException;
 import it.eng.dome.revenue.engine.exception.BadTmfDataException;
 import it.eng.dome.revenue.engine.exception.ExternalServiceException;
 import it.eng.dome.revenue.engine.invoicing.InvoicingService;
 import it.eng.dome.revenue.engine.mapper.RevenueBillingMapper;
-import it.eng.dome.revenue.engine.model.Plan;
-import it.eng.dome.revenue.engine.model.RevenueBill;
-import it.eng.dome.revenue.engine.model.RevenueItem;
-import it.eng.dome.revenue.engine.model.Subscription;
-import it.eng.dome.revenue.engine.model.SubscriptionTimeHelper;
+import it.eng.dome.revenue.engine.model.*;
 import it.eng.dome.revenue.engine.model.comparator.RevenueBillComparator;
 import it.eng.dome.revenue.engine.service.cached.CachedPlanService;
 import it.eng.dome.revenue.engine.service.cached.CachedStatementsService;
@@ -30,11 +15,17 @@ import it.eng.dome.revenue.engine.service.cached.TmfCachedDataRetriever;
 import it.eng.dome.revenue.engine.utils.IdUtils;
 import it.eng.dome.revenue.engine.utils.TmfConverter;
 import it.eng.dome.tmforum.tmf637.v4.model.BillingAccountRef;
-import it.eng.dome.tmforum.tmf678.v4.model.AppliedCustomerBillingRate;
-import it.eng.dome.tmforum.tmf678.v4.model.BillRef;
-import it.eng.dome.tmforum.tmf678.v4.model.CustomerBill;
-import it.eng.dome.tmforum.tmf678.v4.model.RelatedParty;
-import it.eng.dome.tmforum.tmf678.v4.model.TimePeriod;
+import it.eng.dome.tmforum.tmf678.v4.model.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+import java.time.OffsetDateTime;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Set;
+import java.util.TreeSet;
 
 @Service
 public class BillsService {
@@ -190,7 +181,7 @@ public class BillsService {
             throw new IllegalArgumentException("RevenueBill period or endDateTime is missing");
         }
 
-        Invoice billingResponse = this.buildAndApplyTaxesForRevenueBill(rb);
+        BillingResponseDTO billingResponse = this.buildAndApplyTaxesForRevenueBill(rb);
 
         CustomerBill cb = billingResponse.getCustomerBill();
         Subscription sub = subscriptionService.getSubscriptionByProductId(rb.getSubscriptionId());
@@ -250,15 +241,15 @@ public class BillsService {
             throw new IllegalArgumentException("Missing related party information in RevenueBill");
         }
 
-        Invoice billingResponse = this.buildAndApplyTaxesForRevenueBill(rb);
-        return billingResponse.getAcbrs();
+        BillingResponseDTO billingResponse = this.buildAndApplyTaxesForRevenueBill(rb);
+        return billingResponse.getAcbr();
     }
 
     /**
      * Centralized method that builds CustomerBill and ACBRs from a RevenueBill
      * and applies taxes in one clean step.
      */
-    public Invoice buildAndApplyTaxesForRevenueBill(RevenueBill rb) throws Exception {
+    public BillingResponseDTO buildAndApplyTaxesForRevenueBill(RevenueBill rb) throws Exception {
         if (rb == null) throw new IllegalArgumentException("RevenueBill cannot be null");
 
         Subscription subscription = subscriptionService.getSubscriptionByProductId(rb.getSubscriptionId());
@@ -279,7 +270,7 @@ public class BillsService {
         acbrList = setCustomerBillRef(acbrList, rb);
 
         // Apply taxes through invoicing service
-        Invoice response = this.applyTaxes(cb, acbrList);
+        BillingResponseDTO response = this.applyTaxes(cb, acbrList);
         if (response == null) {
             throw new IllegalStateException("applyTaxes returned null response");
         }
@@ -292,7 +283,7 @@ public class BillsService {
  	 * @param acbrs is a list of ACBR
  	 * @return a list of ACBR with AppliedBillingTaxRate attribute for each object.
  	*/
-    private Invoice applyTaxes(CustomerBill customerBill, List<AppliedCustomerBillingRate> acbrs) throws Exception {
+    private BillingResponseDTO applyTaxes(CustomerBill customerBill, List<AppliedCustomerBillingRate> acbrs) throws Exception {
         if (customerBill == null) {
             logger.info("no customer bill received, no taxes to apply");
             return null;
