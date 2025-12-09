@@ -509,6 +509,9 @@ public class TmfPersistenceService {
         if (acbr.getTaxExcludedAmount() != null && acbr.getTaxExcludedAmount().getValue() != null)
             map.put("taxExcludedAmount.value", acbr.getTaxExcludedAmount().getValue().toString());
         
+        if (acbr.getTaxIncludedAmount() != null && acbr.getTaxIncludedAmount().getValue() != null)
+			map.put("taxIncludedAmount.value", acbr.getTaxIncludedAmount().getValue().toString());
+        
         return map;
     }
 
