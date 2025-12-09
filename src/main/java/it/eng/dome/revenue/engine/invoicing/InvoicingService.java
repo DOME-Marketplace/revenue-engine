@@ -27,8 +27,6 @@ import it.eng.dome.tmforum.tmf637.v4.model.Product;
 import it.eng.dome.tmforum.tmf678.v4.model.AppliedCustomerBillingRate;
 import it.eng.dome.tmforum.tmf678.v4.model.CustomerBill;
 
-<<<<<<< HEAD
-=======
 @JsonInclude(JsonInclude.Include.NON_NULL)
 class LocalApplyTaxesRequestDTO {
 
@@ -66,7 +64,6 @@ class LocalApplyTaxesRequestDTO {
 	}
 }
 
->>>>>>> parent of fd40fb4 (aligned to invoicing service and cleanup)
 @Service
 public class InvoicingService {
 
@@ -89,16 +86,6 @@ public class InvoicingService {
         this.outMapper.registerModule(new TMF678EnumModule());
     }
 
-    /**
-     * Ensures every AppliedCustomerBillingRate has a non-null, non-empty ID.
-     */
-    private void ensureAcbrIds(List<AppliedCustomerBillingRate> acbrs) {
-        for (AppliedCustomerBillingRate acbr : acbrs) {
-            if (acbr.getId() == null || acbr.getId().isEmpty()) {
-                acbr.setId(UUID.randomUUID().toString());
-            }
-        }
-    }
 
     /**
      * Applies taxes to a list of ACBRs for a given product.
@@ -111,15 +98,8 @@ public class InvoicingService {
         dto.setAppliedCustomerBillingRate(acbrs);
 
         try {
-<<<<<<< HEAD
-            ensureAcbrIds(acbrs);
 
-            Invoice tempInvoice = new Invoice(customerBill, acbrs);
-            ObjectMapper mapper = this.outMapper;
-            String outJson = mapper.writeValueAsString(List.of(tempInvoice));
-=======
             String outJson = this.outMapper.writeValueAsString(dto);
->>>>>>> parent of fd40fb4 (aligned to invoicing service and cleanup)
             logger.debug("Sending payload to invoicing service: {}", outJson);
 
             RestClient client = RestClient.create();
