@@ -2,13 +2,14 @@ package it.eng.dome.revenue.engine.service;
 
 import java.net.URI;
 import java.time.OffsetDateTime;
-import java.time.ZoneOffset;
 import java.time.temporal.ChronoUnit;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.stream.Collectors;
 
-import it.eng.dome.revenue.engine.exception.ExternalServiceException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -19,6 +20,7 @@ import it.eng.dome.brokerage.api.APIPartyApis;
 import it.eng.dome.brokerage.api.AppliedCustomerBillRateApis;
 import it.eng.dome.brokerage.api.CustomerBillApis;
 import it.eng.dome.brokerage.api.fetch.FetchUtils;
+import it.eng.dome.revenue.engine.exception.ExternalServiceException;
 import it.eng.dome.revenue.engine.model.RevenueBill;
 import it.eng.dome.revenue.engine.model.Role;
 import it.eng.dome.revenue.engine.model.Subscription;
@@ -123,67 +125,100 @@ public class TmfPersistenceService {
 
     /**
      * Persist all revenue bills for a subscription; where needed and applicable.
+     * Applies date filtering based on:
+     * 1. Not persisting bills with billDate in the future
+     * 2. Limiting persistence to bills within the configured monthsBack period
+     * 
      * @param subscriptionId the subscription id
      */
     public List<CustomerBill> persistSubscriptionRevenueBills(String subscriptionId) throws Exception {
         logger.info("=== START persistSubscriptionRevenueBills for subscription {} ===", subscriptionId);
+        logger.info("Using monthsBack configuration: {} months", monthsBack);
 
         List<CustomerBill> createdCustomerBills = new ArrayList<>();
         
         try {
+            // Get current date and calculate cutoff date
+            OffsetDateTime now = OffsetDateTime.now();
+            OffsetDateTime cutoffDate = now.minusMonths(monthsBack);
+            logger.info("Date filtering - Now: {}, Cutoff date ({} months back): {}", 
+                now.truncatedTo(ChronoUnit.SECONDS), monthsBack, cutoffDate.truncatedTo(ChronoUnit.SECONDS));
+
             // Get all bills for subscription
             List<RevenueBill> allBills = billService.getSubscriptionBills(subscriptionId);
             logger.info("Found {} total bills for subscription", allBills.size());
             
-            // Debug: log each bill's ID and period
+            // Filter bills based on date criteria
+            List<RevenueBill> billsToProcess = new ArrayList<>();
+            int futureBills = 0;
+            int tooOldBills = 0;
+            
             for (int idx = 0; idx < allBills.size(); idx++) {
-                Object bill = allBills.get(idx);
+                RevenueBill bill = allBills.get(idx);
                 try {
-                    String billId = (String) bill.getClass().getMethod("getId").invoke(bill);
                     Object period = bill.getClass().getMethod("getPeriod").invoke(bill);
-                    logger.info("  [{}] Bill ID: {}", (idx + 1), billId);
                     if (period != null) {
                         OffsetDateTime startDt = (OffsetDateTime) period.getClass().getMethod("getStartDateTime").invoke(period);
                         OffsetDateTime endDt = (OffsetDateTime) period.getClass().getMethod("getEndDateTime").invoke(period);
-                        logger.info("       Period: {} - {}", startDt, endDt);
+                        
+                        // Check if billDate is in the future (using endDateTime as billDate proxy)
+                        if (endDt != null && endDt.isAfter(now)) {
+                            logger.info("[{}] SKIPPED - Future bill: {} - {} (End date is in the future)", 
+                                (idx + 1), startDt, endDt);
+                            futureBills++;
+                            continue;
+                        }
+                        
+                        // Check if bill is too old based on monthsBack configuration
+                        if (endDt != null && endDt.isBefore(cutoffDate)) {
+                            logger.info("  [{}] SKIPPED - Too old: {} - {} (Older than {} months)", 
+                                (idx + 1), startDt, endDt, monthsBack);
+                            tooOldBills++;
+                            continue;
+                        }
+                        
+                        // Bill passes both date filters
+                        billsToProcess.add(bill);
+                        logger.info("[{}] TO PROCESS: {} - {}", (idx + 1), startDt, endDt);
                     }
                 } catch (Exception e) {
                     logger.warn("Could not read bill info: {}", e.getMessage());
                 }
             }
-
-            // Process each bill
-            for (int i = 0; i < allBills.size(); i++) {
-                Object sb = allBills.get(i);
-                String billId = null;
+            
+            logger.info("\n=== FILTERING SUMMARY ===");
+            logger.info("Total bills found: {}", allBills.size());
+            logger.info("Bills to process: {}", billsToProcess.size());
+            logger.info("Future bills skipped: {}", futureBills);
+            logger.info("Too old bills skipped (older than {} months): {}", monthsBack, tooOldBills);
+            
+            // Process each filtered bill
+            for (int i = 0; i < billsToProcess.size(); i++) {
+                RevenueBill bill = billsToProcess.get(i);
+                String billId = bill.getId();
+                
+                logger.info("\n>>> Processing bill {}/{}: {}", (i + 1), billsToProcess.size(), billId);
                 
                 try {
-                    billId = (String) sb.getClass().getMethod("getId").invoke(sb);
-                    logger.info("\n>>> Processing bill {}/{}: {}", (i + 1), allBills.size(), billId);
-                    
-                    try {
-                        CustomerBill persisted = persistRevenueBill(billId);
-                        if (persisted != null) {
-                            createdCustomerBills.add(persisted);
-                            logger.info("✅ [{}] Successfully persisted CB: {}", (i + 1), persisted.getId());
-                        } else {
-                            logger.warn("⚠️  [{}] CB not persisted (null returned)", (i + 1));
-                        }
-                    } catch (Exception e) {
-                        logger.error("❌ [{}] EXCEPTION in persistRevenueBill: {}", (i + 1), e.getMessage());
-                        logger.error("   Full stack trace: ", e);
-                        throw e;
+                    CustomerBill persisted = persistRevenueBill(billId);
+                    if (persisted != null) {
+                        createdCustomerBills.add(persisted);
+                        logger.info("[{}] Successfully persisted CB: {}", (i + 1), persisted.getId());
+                    } else {
+                        logger.warn("[{}] CB not persisted (null returned)", (i + 1));
                     }
                 } catch (Exception e) {
-                    logger.error("❌ [{}] FATAL Error processing bill {}: {}", (i + 1), billId, e.getMessage());
-                    // Continue processing other bills even if one fails
+                    logger.error("[{}] EXCEPTION in persistRevenueBill: {}", (i + 1), e.getMessage());
+                    logger.error("Full stack trace: ", e);
+                    throw e;
                 }
             }
             
-            logger.info("\n=== SUMMARY ===");
-            logger.info("Total bills: {}", allBills.size());
+            logger.info("\n=== FINAL SUMMARY ===");
+            logger.info("Total bills found: {}", allBills.size());
+            logger.info("Filtered for processing: {}", billsToProcess.size());
             logger.info("Successfully persisted: {}", createdCustomerBills.size());
-            logger.info("Failed/Skipped: {}", allBills.size() - createdCustomerBills.size());
+            logger.info("Failed/Skipped during processing: {}", billsToProcess.size() - createdCustomerBills.size());
         } catch (Exception e) {
             logger.error("Error in persistSubscriptionRevenueBills: {}", e.getMessage(), e);
             throw e;
@@ -204,10 +239,19 @@ public class TmfPersistenceService {
             // Get the local CustomerBill from RevenueBill
             CustomerBill localCb = billService.getCustomerBillByRevenueBillId(revenueBillId);
             if (localCb == null) {
-                logger.warn("  ⚠️  getCustomerBillByRevenueBillId returned null!");
+                logger.warn("getCustomerBillByRevenueBillId returned null!");
                 return null;
             }
-            logger.debug("  Created local CB from RevenueBill, billDate: {}", localCb.getBillDate());
+            logger.debug("Created local CB from RevenueBill, billDate: {}", localCb.getBillDate());
+
+            // Apply additional date check on billDate
+            OffsetDateTime now = OffsetDateTime.now();
+            if (localCb.getBillDate() != null && localCb.getBillDate().isAfter(now)) {
+                logger.info("SKIPPING - BillDate {} is in the future (now: {})", 
+                    localCb.getBillDate().truncatedTo(ChronoUnit.SECONDS), 
+                    now.truncatedTo(ChronoUnit.SECONDS));
+                return null;
+            }
 
             // Persist the CustomerBill
             CustomerBill persistedCB = persistCustomerBill(localCb, revenueBillId);
@@ -235,12 +279,12 @@ public class TmfPersistenceService {
                     }
                 }
             } else {
-                logger.warn("  ⚠️  CB not persisted (already exists in TMF or error), skipping ACBRs");
+                logger.warn("CB not persisted (already exists in TMF or error), skipping ACBRs");
             }
             
             return persistedCB;
         } catch (Exception e) {
-            logger.error("  ❌ ERROR in persistRevenueBill: {}", e.getMessage(), e);
+            logger.error("ERROR in persistRevenueBill: {}", e.getMessage(), e);
             throw e;
         }
     }
@@ -256,6 +300,14 @@ public class TmfPersistenceService {
         
         if (cb == null) {
             logger.warn("CustomerBill is null for RevenueBill {}, skipping", revenueBillId);
+            return null;
+        }
+
+        // Additional billDate check for safety
+        OffsetDateTime now = OffsetDateTime.now();
+        if (cb.getBillDate() != null && cb.getBillDate().isAfter(now)) {
+            logger.info("SKIPPING in persistCustomerBill - BillDate {} is in the future", 
+                cb.getBillDate().truncatedTo(ChronoUnit.SECONDS));
             return null;
         }
 
@@ -334,7 +386,7 @@ public class TmfPersistenceService {
                 if (stop.get()) return; // short-circuit if already found
 
                 try {
-                    logger.debug("    Checking candidate CB: {}", candidate.getId());
+                    logger.debug("Checking candidate CB: {}", candidate.getId());
                     
                     // Compare billing periods (truncate to seconds for precision consistency)
                     OffsetDateTime cbStart = cb.getBillingPeriod() != null
@@ -361,17 +413,17 @@ public class TmfPersistenceService {
                     String candProductId = candAcbrs.isEmpty() || candAcbrs.get(0).getProduct() == null
                             ? null
                             : candAcbrs.get(0).getProduct().getId();
-                    logger.debug("      candProductId: {} vs localProductId: {}", candProductId, localProductId);
+                    logger.debug("candProductId: {} vs localProductId: {}", candProductId, localProductId);
 
                     // Compare related parties
                     boolean relatedPartyMatch = relatedPartyMatch(cb.getRelatedParty(), candidate.getRelatedParty());
-                    logger.debug("      relatedPartyMatch: {}", relatedPartyMatch);
+                    logger.debug("relatedPartyMatch: {}", relatedPartyMatch);
 
                     // If all conditions match, store & stop
                     if (periodMatch && Objects.equals(localProductId, candProductId) && relatedPartyMatch) {
                         found[0] = candidate;
                         stop.set(true);
-                        logger.debug("      ✅ MATCH FOUND: {}", candidate.getId());
+                        logger.debug("MATCH FOUND: {}", candidate.getId());
                     }
 
                 } catch (Exception e) {
