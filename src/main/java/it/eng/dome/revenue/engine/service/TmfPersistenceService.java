@@ -43,7 +43,7 @@ public class TmfPersistenceService {
 
     private final Logger logger = LoggerFactory.getLogger(TmfPersistenceService.class);
     
-    private static final String SCHEMA_LOCATION = "https://raw.githubusercontent.com/DOME-Marketplace/dome-odrl-profile/refs/heads/add-related-party-ref/schemas/simplified/RelatedPartyRef.schema.json";
+    private static final String SCHEMA_LOCATION = "https://raw.githubusercontent.com/DOME-Marketplace/tmf-api/refs/heads/main/DOME/TrackedShareableEntity.schema.json";
 
     @Autowired 
     private BillsService billService;
@@ -344,6 +344,7 @@ public class TmfPersistenceService {
             AppliedCustomerBillingRate acbrToPersist = watermark(acbr);
             AppliedCustomerBillingRateCreate acbrc = AppliedCustomerBillingRateCreate.fromJson(acbrToPersist.toJson());
             acbrc.setAtSchemaLocation(new URI(SCHEMA_LOCATION));
+            acbrc.setRelatedParty(acbr.getRelatedParty());
             String createdId = appliedCustomerBillRateApis.createAppliedCustomerBillingRate(acbrc);
             logger.info("PERSISTENCE: created ACBR with id {}", createdId);
         } else {

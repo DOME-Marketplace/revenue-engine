@@ -419,11 +419,78 @@ public class BillsService {
             return acbrs;
         }
 
+        // Create RelatedParty objects with proper names
+        List<RelatedParty> relatedPartiesWithNames = createRelatedPartiesWithNames(relatedParties);
+
         for (AppliedCustomerBillingRate acbr : acbrs) {
-            acbr.setRelatedParty(relatedParties);
+            acbr.setRelatedParty(relatedPartiesWithNames);
         }
 
         return acbrs;
+    }
+
+    /**
+     * Create RelatedParty objects with proper names based on organization IDs and roles.
+     *
+     * @param originalParties Original RelatedParty objects (may not have names)
+     * @return List of RelatedParty objects with proper names
+     */
+    private List<RelatedParty> createRelatedPartiesWithNames(List<RelatedParty> originalParties) {
+        List<RelatedParty> partiesWithNames = new ArrayList<>();
+        
+        for (RelatedParty party : originalParties) {
+            if (party == null) continue;
+            
+            RelatedParty partyWithName = new RelatedParty();
+            partyWithName.setId(party.getId());
+            partyWithName.setHref(party.getHref());
+            partyWithName.setRole(party.getRole());
+            partyWithName.setAtReferredType(party.getAtReferredType());
+            partyWithName.setAtType(party.getAtType());
+            partyWithName.setAtSchemaLocation(party.getAtSchemaLocation());
+            partyWithName.setAtBaseType(party.getAtBaseType());
+            
+            // Set the name based on organization ID and role
+            String name = determinePartyName(party.getId(), party.getRole());
+            partyWithName.setName(name);
+            
+            partiesWithNames.add(partyWithName);
+        }
+        
+        return partiesWithNames;
+    }
+
+    /**
+     * Determine party name based on ID and role.
+     * Based on your JSON, we know:
+     * - "urn:ngsi-ld:organization:9d0a10c1-b39e-4720-ace7-24a2ca69be16" = "DEKRA Testing and Certification, S.A.U." (Buyer)
+     * - "urn:ngsi-ld:organization:abf26e03-7ec3-4c11-a94a-75a193522448" = "DOME Foundation" (Seller)
+     */
+    private String determinePartyName(String partyId, String role) {
+        if (partyId == null) return "Unknown Party";
+        
+
+        // Fallback: extract organization ID and use with role
+        String orgId = extractOrganizationId(partyId);
+        if (role != null) {
+            return role + " - " + orgId;
+        }
+        return "Organization " + orgId;
+    }
+
+    /**
+     * Extract organization ID from party ID.
+     */
+    private String extractOrganizationId(String partyId) {
+        if (partyId == null) return "unknown";
+        
+        if (partyId.contains("organization:")) {
+            return partyId.substring(partyId.indexOf("organization:") + "organization:".length());
+        } else if (partyId.contains(":")) {
+            String[] parts = partyId.split(":");
+            return parts[parts.length - 1];
+        }
+        return partyId;
     }
 
     /**
