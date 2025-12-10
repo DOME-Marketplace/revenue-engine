@@ -331,58 +331,56 @@ public class BillsService {
      */
     private List<TaxItem> consolidateTaxItems(List<TaxItem> taxItems) {
         if (taxItems == null || taxItems.isEmpty()) {
-            return taxItems;
+            return new ArrayList<>();
         }
-        
-        // Group tax items by category and rate
+
         Map<String, Map<Float, TaxItem>> taxMap = new HashMap<>();
-        
+
         for (TaxItem item : taxItems) {
             String category = item.getTaxCategory();
             Float rate = item.getTaxRate();
-            
-            // Skip null items
+
             if (category == null || rate == null) {
                 continue;
             }
-            
+
             taxMap.putIfAbsent(category, new HashMap<>());
-            
+
             if (taxMap.get(category).containsKey(rate)) {
-                // If exists, sum the amounts
                 TaxItem existingItem = taxMap.get(category).get(rate);
                 Money existingAmount = existingItem.getTaxAmount();
                 Money newAmount = item.getTaxAmount();
-                
-                // Sum amounts (ensure currencies are the same)
-                if (existingAmount != null && newAmount != null && 
+
+                if (existingAmount != null && newAmount != null &&
                     existingAmount.getUnit() != null && newAmount.getUnit() != null &&
                     existingAmount.getUnit().equals(newAmount.getUnit())) {
+
                     Float existingValue = existingAmount.getValue() != null ? existingAmount.getValue() : 0.0f;
                     Float newValue = newAmount.getValue() != null ? newAmount.getValue() : 0.0f;
                     existingAmount.setValue(existingValue + newValue);
                 }
             } else {
-                // Otherwise, add the new item
                 taxMap.get(category).put(rate, item);
             }
         }
-        
-        // Extract all grouped items
+
         List<TaxItem> consolidatedItems = new ArrayList<>();
         for (Map<Float, TaxItem> rateMap : taxMap.values()) {
             consolidatedItems.addAll(rateMap.values());
         }
-        
-        // Filter out items with zero amount (optional)
-        consolidatedItems.removeIf(item -> 
-            item.getTaxAmount() != null && 
-            item.getTaxAmount().getValue() != null && 
-            Math.abs(item.getTaxAmount().getValue()) < 0.001f // Threshold for negligible amounts
-        );
-        
+
+        for (TaxItem item : consolidatedItems) {
+            if (item.getTaxAmount() == null) {
+                Money zeroAmount = new Money();
+                zeroAmount.setUnit(item.getTaxAmount().getUnit());
+                zeroAmount.setValue(0.0f);
+                item.setTaxAmount(zeroAmount);
+            }
+        }
+
         return consolidatedItems;
     }
+
 
 
     /** 
