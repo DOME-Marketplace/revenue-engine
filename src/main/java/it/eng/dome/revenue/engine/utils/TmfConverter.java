@@ -8,6 +8,9 @@ import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import it.eng.dome.tmforum.tmf620.v4.model.ProductOffering;
+import it.eng.dome.tmforum.tmf637.v4.model.ProductOfferingRef;
+
 public class TmfConverter {
 	
     private static final Logger logger = LoggerFactory.getLogger(TmfConverter.class);
@@ -45,6 +48,30 @@ public class TmfConverter {
 
         return list637;
     }
+
+	public static List<it.eng.dome.tmforum.tmf637.v4.model.RelatedParty> rp620to637(
+            List<it.eng.dome.tmforum.tmf620.v4.model.RelatedParty> list620) {
+
+        if (list620 == null) {
+            return null;
+        }
+
+        List<it.eng.dome.tmforum.tmf637.v4.model.RelatedParty> list637 = new ArrayList<>();
+
+        for (it.eng.dome.tmforum.tmf620.v4.model.RelatedParty rp620 : list620) {
+            it.eng.dome.tmforum.tmf637.v4.model.RelatedParty rp637 = new it.eng.dome.tmforum.tmf637.v4.model.RelatedParty();
+
+            rp637.setId(rp620.getId());
+            rp637.setHref(rp620.getId());
+            rp637.setName(rp620.getName());
+            rp637.setRole(rp620.getRole());
+            rp637.setAtReferredType(rp620.getAtReferredType());
+
+            list637.add(rp637);
+        }
+
+        return list637;
+    }	
  
 	public static it.eng.dome.tmforum.tmf637.v4.model.BillingAccountRef convertBillingAccountRefTo637(
 			it.eng.dome.tmforum.tmf678.v4.model.BillingAccountRef billingAccountRef678) {
@@ -102,4 +129,14 @@ public class TmfConverter {
 	
 	    return list678;
 	}
+
+	public static ProductOfferingRef getProductOfferingRef(ProductOffering offering) {
+		ProductOfferingRef ref = new ProductOfferingRef();
+		ref.setId(offering.getId());
+		ref.setHref(offering.getHref());
+		ref.setName(offering.getName());
+		ref.setAtReferredType("ProductOffering");
+		return ref;
+	}
+
 }

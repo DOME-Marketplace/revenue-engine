@@ -2,11 +2,14 @@
  
 **Release Notes** of the *Revenue Sharing Service*
 
-
-### <code>1.2.8</code> :calendar: 05/12/2025
+### <code>1.2.8</code> :calendar: 10/12/2025
 **Improvements**
 - Replace **RestTemplate** for **RestClient**.
-
+**Enhancements**
+- Alignment with new API of the invoicing service 2.0.3
+**Bug fixes**
+- General bug fixing
+- General cleanup
 
 ### <code>1.2.7</code> :calendar: 27/11/2025
 **New Features**
