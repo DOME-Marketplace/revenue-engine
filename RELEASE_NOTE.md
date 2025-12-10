@@ -2,7 +2,11 @@
  
 **Release Notes** of the *Revenue Sharing Service*
 
-### ### <code>1.2.8</code> :calendar: 10/12/2025
+### <code>1.2.9</code> :calendar: 10/12/2025
+**Bug fixes**
+- Fixed null taxItem in `BillsService` class.
+
+### <code>1.2.8</code> :calendar: 10/12/2025
 **Enhancements**
 - Alignment with new API of the invoicing service 2.0.3
 **Bug fixes**
