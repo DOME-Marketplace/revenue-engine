@@ -2,6 +2,10 @@
  
 **Release Notes** of the *Revenue Sharing Service*
 
+### <code>1.2.9</code> :calendar: 10/12/2025
+**Bug fixes**
+- Fixed null taxItem in `BillsService` class.
+
 ### <code>1.2.8</code> :calendar: 10/12/2025
 **Improvements**
 - Replace **RestTemplate** for **RestClient**.
