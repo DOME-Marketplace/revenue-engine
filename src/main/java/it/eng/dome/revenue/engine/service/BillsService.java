@@ -36,7 +36,6 @@ import it.eng.dome.tmforum.tmf678.v4.model.AppliedCustomerBillingRate;
 import it.eng.dome.tmforum.tmf678.v4.model.BillRef;
 import it.eng.dome.tmforum.tmf678.v4.model.CustomerBill;
 import it.eng.dome.tmforum.tmf678.v4.model.Money;
-import it.eng.dome.tmforum.tmf678.v4.model.RelatedParty;
 import it.eng.dome.tmforum.tmf678.v4.model.TaxItem;
 import it.eng.dome.tmforum.tmf678.v4.model.TimePeriod;
 
@@ -298,7 +297,6 @@ public class BillsService {
         List<AppliedCustomerBillingRate> acbrList = mapper.generateACBRs();
 
         // Set references
-        acbrList = setRelatedParties(acbrList, rb);
         acbrList = setBillingAccountRef(acbrList, subscription.getId());
         acbrList = setCustomerBillRef(acbrList, rb);
 
@@ -403,95 +401,7 @@ public class BillsService {
             return this.invoicingService.applyTaxes(customerBill, acbrs);
         }
     }
-
-    /**
-     * Set Related Parties reference for each object in a List of Applied Customer Billing Rate.
-     *
-     * @param acbrs List of ACBRs to set related parties for
-     * @param rb RevenueBill used to get related parties
-     * @return List of ACBRs with RelatedParty attribute set for each object
-     */
-    private List<AppliedCustomerBillingRate> setRelatedParties(List<AppliedCustomerBillingRate> acbrs, RevenueBill rb) {
-        List<RelatedParty> relatedParties = rb.getRelatedParties();
-
-        if (relatedParties == null || relatedParties.isEmpty()) {
-            logger.warn("No relatedParties found for RevenueBill {}", rb.getId());
-            return acbrs;
-        }
-
-        // Create RelatedParty objects with proper names
-        List<RelatedParty> relatedPartiesWithNames = createRelatedPartiesWithNames(relatedParties);
-
-        for (AppliedCustomerBillingRate acbr : acbrs) {
-            acbr.setRelatedParty(relatedPartiesWithNames);
-        }
-
-        return acbrs;
-    }
-
-    /**
-     * Create RelatedParty objects with proper names based on organization IDs and roles.
-     *
-     * @param originalParties Original RelatedParty objects (may not have names)
-     * @return List of RelatedParty objects with proper names
-     */
-    private List<RelatedParty> createRelatedPartiesWithNames(List<RelatedParty> originalParties) {
-        List<RelatedParty> partiesWithNames = new ArrayList<>();
-        
-        for (RelatedParty party : originalParties) {
-            if (party == null) continue;
-            
-            RelatedParty partyWithName = new RelatedParty();
-            partyWithName.setId(party.getId());
-            partyWithName.setHref(party.getHref());
-            partyWithName.setRole(party.getRole());
-            partyWithName.setAtReferredType(party.getAtReferredType());
-            partyWithName.setAtType(party.getAtType());
-            partyWithName.setAtSchemaLocation(party.getAtSchemaLocation());
-            partyWithName.setAtBaseType(party.getAtBaseType());
-            
-            // Set the name based on organization ID and role
-            String name = determinePartyName(party.getId(), party.getRole());
-            partyWithName.setName(name);
-            
-            partiesWithNames.add(partyWithName);
-        }
-        
-        return partiesWithNames;
-    }
-
-    /**
-     * Determine party name based on ID and role.
-     * Based on your JSON, we know:
-     * - "urn:ngsi-ld:organization:9d0a10c1-b39e-4720-ace7-24a2ca69be16" = "DEKRA Testing and Certification, S.A.U." (Buyer)
-     * - "urn:ngsi-ld:organization:abf26e03-7ec3-4c11-a94a-75a193522448" = "DOME Foundation" (Seller)
-     */
-    private String determinePartyName(String partyId, String role) {
-        if (partyId == null) return "Unknown Party";
-        
-
-        // Fallback: extract organization ID and use with role
-        String orgId = extractOrganizationId(partyId);
-        if (role != null) {
-            return role + " - " + orgId;
-        }
-        return "Organization " + orgId;
-    }
-
-    /**
-     * Extract organization ID from party ID.
-     */
-    private String extractOrganizationId(String partyId) {
-        if (partyId == null) return "unknown";
-        
-        if (partyId.contains("organization:")) {
-            return partyId.substring(partyId.indexOf("organization:") + "organization:".length());
-        } else if (partyId.contains(":")) {
-            String[] parts = partyId.split(":");
-            return parts[parts.length - 1];
-        }
-        return partyId;
-    }
+    
 
     /**
      * Set Customer Bill Reference for each object in a List of Applied Customer Billing Rate.
