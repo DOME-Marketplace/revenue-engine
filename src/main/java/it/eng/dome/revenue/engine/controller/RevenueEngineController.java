@@ -16,7 +16,7 @@ import it.eng.dome.revenue.engine.service.cached.CachedHealthService;
 
 @RestController
 @RequestMapping("/revenue")
-@Tag(name = "Revenue Engine Controller", description = "APIs to manage the revenue-engine")
+@Tag(name = "Revenue Engine Info Controller", description = "APIs to manage info and health of the revenue-engine")
 public class RevenueEngineController {
 
 	private final Logger logger = LoggerFactory.getLogger(RevenueEngineController.class);

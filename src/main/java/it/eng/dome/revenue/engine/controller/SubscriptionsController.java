@@ -17,11 +17,14 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import io.swagger.v3.oas.annotations.tags.Tag;
+
 import java.util.ArrayList;
 import java.util.List;
 
 @RestController
 @RequestMapping("revenue/subscriptions")
+@Tag(name = "Revenue Engine Subscriptions Controller", description = "APIs to manage subscriptions of the revenue-engine")
 public class SubscriptionsController {
 
 	protected final Logger logger = LoggerFactory.getLogger(SubscriptionsController.class);

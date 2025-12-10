@@ -10,6 +10,9 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+
+import io.swagger.v3.oas.annotations.tags.Tag;
+
 import org.springframework.web.bind.annotation.PathVariable;
 
 import it.eng.dome.revenue.engine.service.TmfPersistenceService;
@@ -18,6 +21,7 @@ import it.eng.dome.tmforum.tmf678.v4.model.CustomerBill;
 @RestController
 //@RequiredArgsConstructor
 @RequestMapping("/revenue/persistence")
+@Tag(name = "Revenue Engine Persistence Controller", description = "APIs to manage persistence of the revenue-engine")
 public class PersistenceController {
     
 	protected final Logger logger = LoggerFactory.getLogger(PersistenceController.class);

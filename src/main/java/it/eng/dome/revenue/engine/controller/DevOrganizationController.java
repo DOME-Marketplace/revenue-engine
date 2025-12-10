@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import io.swagger.v3.oas.annotations.tags.Tag;
 import it.eng.dome.revenue.engine.service.DevDashboardService;
 import it.eng.dome.revenue.engine.service.TmfDataRetriever;
 import it.eng.dome.tmforum.tmf632.v4.model.Organization;
@@ -23,6 +24,7 @@ import it.eng.dome.tmforum.tmf678.v4.model.CustomerBill;
 
 @RestController
 @RequestMapping("/revenue/dev")
+@Tag(name = "Revenue Engine Develop Controller", description = "APIs to manage development of the revenue-engine")
 public class DevOrganizationController {
     
 	protected final Logger logger = LoggerFactory.getLogger(DevOrganizationController.class);

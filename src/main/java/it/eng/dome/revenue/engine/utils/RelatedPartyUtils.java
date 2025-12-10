@@ -61,6 +61,30 @@ public class RelatedPartyUtils {
         return null;
     }
 
+    public static String partyIdWithRole(ProductOffering offering, Role partyRole) {
+        List<it.eng.dome.tmforum.tmf620.v4.model.RelatedParty> relatedParties = offering.getRelatedParty();
+        if (relatedParties != null) {
+            for (it.eng.dome.tmforum.tmf620.v4.model.RelatedParty rp : relatedParties) {
+                if (partyRole.getValue().equalsIgnoreCase(rp.getRole())) {
+                    return rp.getId();
+                }
+            }
+        }
+        return null;
+    }
+
+    public static String partyIdWithRole(Product product, Role partyRole) {
+        List<it.eng.dome.tmforum.tmf637.v4.model.RelatedParty> relatedParties = product.getRelatedParty();
+        if (relatedParties != null) {
+            for (it.eng.dome.tmforum.tmf637.v4.model.RelatedParty rp : relatedParties) {
+                if (partyRole.getValue().equalsIgnoreCase(rp.getRole())) {
+                    return rp.getId();
+                }
+            }
+        }
+        return null;
+    }
+
     public static Boolean subscriptionHasPartyWithRole(Subscription subscription, String partyId, Role partyRole) {
         List<RP> parties = subscription.getRelatedParties().stream()
                 .map(party -> new RP(party.getId(), party.getRole())).toList();

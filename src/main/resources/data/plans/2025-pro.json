@@ -12,7 +12,7 @@
     "billingPeriodType": "MONTH",
     "billingPeriodEnd": "LAST_DAY_OF_CALENDAR_MONTH",
     "billingDateShift": "5",
-    "paymentDueDateOffset": "45"
+    "paymentDueDateOffset": "30"
   },
   "subscriptionDurationLength": 12,
   "subscriptionDurationPeriodType": "MONTH",

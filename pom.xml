@@ -14,9 +14,7 @@
 
 	<groupId>it.eng.dome.revenue</groupId>
 	<artifactId>engine</artifactId>
-
-	<version>1.2.7</version>
-	
+	<version>1.2.8</version>
 	<name>Revenue Engine</name>
 	<description>Revenue Engine for DOME project</description>
 
@@ -83,13 +81,7 @@
 			<groupId>it.eng.dome.tmforum-sdk</groupId>
 			<artifactId>tmf651-v4</artifactId>
 			<version>[2.1.0, 2.2.0)</version>
-		</dependency>
-		<!--  TMF666 Account Management  -->
-		<dependency>
-			<groupId>it.eng.dome.tmforum-sdk</groupId>
-			<artifactId>tmf666-v4</artifactId>
-			<version>[2.1.0, 2.2.0)</version>
-		</dependency>		
+		</dependency>	
 		<!-- TMF678 Customer Bill -->
 		<dependency>
 			<groupId>it.eng.dome.tmforum-sdk</groupId>
