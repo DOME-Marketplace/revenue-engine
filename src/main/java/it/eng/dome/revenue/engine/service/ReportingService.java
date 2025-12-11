@@ -5,13 +5,10 @@ import java.time.OffsetDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 
@@ -39,6 +36,7 @@ import it.eng.dome.revenue.engine.utils.RelatedPartyUtils;
 import it.eng.dome.tmforum.tmf632.v4.model.Organization;
 import it.eng.dome.tmforum.tmf637.v4.model.Characteristic;
 import it.eng.dome.tmforum.tmf637.v4.model.Product;
+import it.eng.dome.tmforum.tmf678.v4.model.CustomerBill;
 import it.eng.dome.tmforum.tmf678.v4.model.TimePeriod;
 
 
@@ -336,21 +334,14 @@ public class ReportingService implements InitializingBean {
             String planName = plan.getName() != null ? plan.getName() : "Unknown Plan";
             SubscriptionTimeHelper th = new SubscriptionTimeHelper(subscription);
 
-            String startDate = th.getSubscriptionPeriodAt(OffsetDateTime.now()).getStartDateTime().toString();
-            String renewalDate = th.getSubscriptionPeriodAt(OffsetDateTime.now()).getEndDateTime().toString();
+            String startDate = th.getSubscriptionPeriodAt(OffsetDateTime.now()).getStartDateTime().toLocalDate().toString();
+            String renewalDate = th.getSubscriptionPeriodAt(OffsetDateTime.now()).getEndDateTime().toLocalDate().toString();
 
-            String agreementsText = Optional.ofNullable(plan.getAgreements())
-                    .orElse(Collections.emptyList())
-                    .stream()
-                    .filter(Objects::nonNull)
-                    .map(String::trim)
-                    .collect(Collectors.joining(". "));
 
             return new Report("My Subscription Plan", Arrays.asList(
                     new Report("Plan Name", planName),
                     new Report("Start Date", startDate),
-                    new Report("Renewal Date", renewalDate),
-                    new Report("Agreements and Discounts", agreementsText)
+                    new Report("Renewal Date", renewalDate)
             ));
         } catch (BadTmfDataException | BadRevenuePlanException | ExternalServiceException e) {
             logger.error("getSubscriptionSection failed", e);
@@ -361,74 +352,42 @@ public class ReportingService implements InitializingBean {
         }
     }
 
-//    public Report getBillingHistorySection(String relatedPartyId) {
-//        try {
-//            Map<String, String> filter = new HashMap<>();
-//            filter.put("relatedParty.id", relatedPartyId);
-//            List<CustomerBill> allBills = tmfDataRetriever.getAllCustomerBills(null, filter, 100);
-//
-//            List<CustomerBill> buyerBills = allBills.stream()
-//                    .filter(bill -> RelatedPartyUtils.customerBillHasPartyWithRole(bill, relatedPartyId, Role.BUYER))
-//                    .sorted(new CustomerBillComparator())
-//                    .collect(Collectors.toList());
-//
-//            List<Report> invoiceReports = new ArrayList<>();
-//            for (CustomerBill cb : buyerBills) {
-//                List<Report> details = new ArrayList<>();
-//                if (cb.getRemainingAmount() != null) {
-//                    double remaining = cb.getRemainingAmount().getValue();
-//                    if (remaining > 0.0) details.add(new Report("Status", "Unpaid"));
-//                    else if (remaining == 0.0) details.add(new Report("Status", "Paid"));
-//                    else details.add(new Report("Status", "Unknown"));
-//                } else if (cb.getTaxIncludedAmount() != null && cb.getAmountDue() != null &&
-//                        cb.getTaxIncludedAmount().getValue() - cb.getAmountDue().getValue() > 0.0) {
-//                    details.add(new Report("Status", "Partially Paid"));
-//                }
-//                if (cb.getTaxIncludedAmount() != null) {
-//                    Float amount = cb.getTaxIncludedAmount().getValue();
-//                    String unit = cb.getTaxIncludedAmount().getUnit() != null ? cb.getTaxIncludedAmount().getUnit() : "";
-//                    details.add(new Report("Amount", String.format("%.2f %s", amount, unit)));
-//                }
-//                String periodText = cb.getBillDate() != null ? cb.getBillDate().toLocalDate().toString() : "Unknown Date";
-//                invoiceReports.add(new Report("Invoice - " + periodText, details));
-//            }
-//
-//            if (invoiceReports.isEmpty()) return new Report("Billing History", "No billing data available");
-//            return new Report("Billing History", invoiceReports);
-//        } catch (Exception e) {
-//            return new Report("Billing History", "No billing data available");
-//        }
-//    }
-
-    // FIXME: Note: For now, it's preferable to display the statements directly rather than using the method above
     public Report getBillingHistorySection(String relatedPartyId) {
+    	
+    	TimePeriod period = new TimePeriod();
         try {
-            Subscription subscription = subscriptionService.getActiveSubscriptionByRelatedPartyId(relatedPartyId);
-            if (subscription == null)
-                return new Report("Billing History", "No active subscription found");
+            List<CustomerBill> allBills = tmfDataRetriever.retrieveCustomerBills(
+                    relatedPartyId,
+                    Role.BUYER,
+                    period
+            );
 
-            List<RevenueItem> statements = statementsService.getItemsForSubscription(subscription.getId());
-            if (statements == null || statements.isEmpty())
+            if (allBills == null || allBills.isEmpty()) {
                 return new Report("Billing History", "No billing data available");
+            }
 
-            statements.sort(Comparator.comparing(ri -> ri.getChargeTime()));
+            allBills.sort(Comparator.comparing(CustomerBill::getBillDate).reversed());
 
             List<Report> invoices = new ArrayList<>();
-            for (RevenueItem ri : statements) {
-                String date = ri.getChargeTime() != null
-                        ? ri.getChargeTime().toLocalDate().toString()
-                        : "Unknown Date";
-                String amount = String.format("%.2f %s",
-                        ri.getOverallValue(), EUR_CURRENCY);
-
-
+            for (CustomerBill cb : allBills) {
+                String date = cb.getBillDate() != null ? cb.getBillDate().toLocalDate().toString() : "Unknown Date";
                 List<Report> details = new ArrayList<>();
 
-                details.add(new Report("Amount", amount));
-                if( ri.getOverallValue()==0.0)
-                	details.add(new Report("Status", "Paid"));
-            	else
-            		details.add(new Report("Status", "Unpaid"));
+                if (cb.getTaxIncludedAmount() != null) {
+                    Float amount = cb.getTaxIncludedAmount().getValue();
+                    String unit = cb.getTaxIncludedAmount().getUnit() != null ? cb.getTaxIncludedAmount().getUnit() : "";
+                    details.add(new Report("Amount", String.format("%.2f %s", amount, unit)));
+                }
+
+                if (cb.getRemainingAmount() != null) {
+                    double remaining = cb.getRemainingAmount().getValue();
+                    if (remaining > 0.0) details.add(new Report("Status", "Unpaid"));
+                    else if (remaining == 0.0) details.add(new Report("Status", "Paid"));
+                    else details.add(new Report("Status", "Unknown"));
+                } else if (cb.getTaxIncludedAmount() != null && cb.getAmountDue() != null &&
+                           cb.getTaxIncludedAmount().getValue() - cb.getAmountDue().getValue() > 0.0) {
+                    details.add(new Report("Status", "Partially Paid"));
+                }
 
                 invoices.add(new Report("Invoice - " + date, details));
             }
@@ -440,6 +399,43 @@ public class ReportingService implements InitializingBean {
             return new Report("Billing History", "Error retrieving billing history");
         }
     }
+
+
+    // FIXME: Note: For now, it's preferable to display the statements directly rather than using the method above
+	/*
+	 * public Report getBillingHistorySection(String relatedPartyId) { try {
+	 * Subscription subscription =
+	 * subscriptionService.getActiveSubscriptionByRelatedPartyId(relatedPartyId); if
+	 * (subscription == null) return new Report("Billing History",
+	 * "No active subscription found");
+	 * 
+	 * List<RevenueItem> statements =
+	 * statementsService.getItemsForSubscription(subscription.getId()); if
+	 * (statements == null || statements.isEmpty()) return new
+	 * Report("Billing History", "No billing data available");
+	 * 
+	 * statements.sort(Comparator.comparing(ri -> ri.getChargeTime()));
+	 * 
+	 * List<Report> invoices = new ArrayList<>(); for (RevenueItem ri : statements)
+	 * { String date = ri.getChargeTime() != null ?
+	 * ri.getChargeTime().toLocalDate().toString() : "Unknown Date"; String amount =
+	 * String.format("%.2f %s", ri.getOverallValue(), EUR_CURRENCY);
+	 * 
+	 * 
+	 * List<Report> details = new ArrayList<>();
+	 * 
+	 * details.add(new Report("Amount", amount)); if( ri.getOverallValue()==0.0)
+	 * details.add(new Report("Status", "Paid")); else details.add(new
+	 * Report("Status", "Unpaid"));
+	 * 
+	 * invoices.add(new Report("Invoice - " + date, details)); }
+	 * 
+	 * return new Report("Billing History", invoices);
+	 * 
+	 * } catch (Exception e) {
+	 * logger.error("Error building billing history section", e); return new
+	 * Report("Billing History", "Error retrieving billing history"); } }
+	 */
     
 	public Report getRevenueSection(String relatedPartyId) {
 	    try {
@@ -458,7 +454,7 @@ public class ReportingService implements InitializingBean {
 
 	        double yearlyTotal = 0.0;
 	        double monthlyTotal = 0.0;
-	        String currentTier = "N/A";
+	        String currentTier = "No applicable tier";
 
 	        for (RevenueItem ri : items) {
 	            LocalDate chargeDate = ri.getChargeTime().toLocalDate();
@@ -484,9 +480,9 @@ public class ReportingService implements InitializingBean {
 
 	        List<Report> reportItems = new ArrayList<>();
 	        reportItems.add(new Report("Current Monthly Revenue (" + periodStart + " - " + periodEnd + ")", 
-	                EUR_CURRENCY + format(monthlyTotal)));
+	                EUR_CURRENCY + " " + format(monthlyTotal)));
 	        reportItems.add(new Report("Current Tier", currentTier));
-	        reportItems.add(new Report("Yearly Total", EUR_CURRENCY + format(yearlyTotal)));
+	        reportItems.add(new Report("Yearly Total", EUR_CURRENCY + " " + format(yearlyTotal)));
 
 	        return new Report("Revenue Volume Monitoring", reportItems);
 
@@ -530,8 +526,8 @@ public class ReportingService implements InitializingBean {
     }
 
     private String extractRevenueSharePercentage(RevenueItem item) {
-        if (item == null) return "N/A";
-        String found = "N/A";
+        if (item == null) return "No applicable tier";
+        String found = "No applicable tier";
 
         if (item.getName() != null && item.getName().matches(".*\\d+%.*")) {
             java.util.regex.Matcher m = java.util.regex.Pattern.compile("(\\d+)%").matcher(item.getName());
@@ -541,7 +537,7 @@ public class ReportingService implements InitializingBean {
         if (item.getItems() != null && !item.getItems().isEmpty()) {
             for (RevenueItem sub : item.getItems()) {
                 String subPct = extractRevenueSharePercentage(sub);
-                if (!"N/A".equals(subPct)) found = subPct;
+                if (!"No applicable tier".equals(subPct)) found = subPct;
             }
         }
 

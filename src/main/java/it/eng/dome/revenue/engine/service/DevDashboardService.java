@@ -51,7 +51,7 @@ public class DevDashboardService {
         tp.setStartDateTime(OffsetDateTime.now().minusYears(1));
 
         // sort transactions by billDate
-        List<CustomerBill> bills = tmfDataRetriever.retrieveCustomerBills(sellerId, null, tp);
+        List<CustomerBill> bills = tmfDataRetriever.retrieveCustomerBills(sellerId, Role.SELLER, tp);
         bills.sort(new CustomerBillComparator());
 
         return bills;
