@@ -172,7 +172,7 @@ public class TmfCachedDataRetriever extends TmfDataRetriever {
         );
     }
 
-    protected List<CustomerBill> retrieveCustomerBills(String participantId, Role participantRole, TimePeriod timePeriod) throws ExternalServiceException {
+    public List<CustomerBill> retrieveCustomerBills(String participantId, Role participantRole, TimePeriod timePeriod) throws ExternalServiceException {
         String key = "all-bills-";
         if(participantId!=null)
 			key  += participantId;
