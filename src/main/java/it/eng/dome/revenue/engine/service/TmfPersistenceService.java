@@ -318,6 +318,8 @@ public class TmfPersistenceService {
             // Not in TMF → persist it
             logger.debug("CB not found in TMF, proceeding with persistence");
             CustomerBill cbToPersist = watermark(cb);
+            // TODO: decide how to do billNo
+            //cbToPersist.setBillNo(null);
             String id = customerBillApis.createCustomerBill(CustomerBillCreate.fromJson(cbToPersist.toJson()));
             logger.info("PERSISTENCE: created CB with id {}", id);
             return tmfDataRetriever.getCustomerBill(id);
