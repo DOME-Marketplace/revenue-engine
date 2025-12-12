@@ -1,6 +1,13 @@
 # Release Notes
  
 **Release Notes** of the *Revenue Sharing Service*
+### <code>1.3.0</code> :calendar: 12/12/2025
+**Enhancements**
+- Enhanced computation in `ReportingService` class.
+**Bug fixes**
+- General bug fixing
+- General cleanup
+
 ### <code>1.2.10</code> :calendar: 11/12/2025
 **Enhancements**
 - Retrieved CustomerBills from TMF in `ReportingService` class.
