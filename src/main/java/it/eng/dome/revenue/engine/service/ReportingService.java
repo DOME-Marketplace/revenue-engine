@@ -362,6 +362,11 @@ public class ReportingService implements InitializingBean {
                     period
             );
 
+            // FIXME: Temporary filter to include only bills created by the revenue engine, how to avoid this?
+            allBills = allBills.parallelStream()
+                    .filter(cb -> cb.getCategory() != null && "created by the revenue engine".equalsIgnoreCase(cb.getCategory()))
+                    .collect(Collectors.toList());
+
             if (allBills == null || allBills.isEmpty()) {
                 return new Report("Billing History", "No billing data available");
             }
@@ -379,17 +384,14 @@ public class ReportingService implements InitializingBean {
                     details.add(new Report("Amount", String.format("%.2f %s", amount, unit)));
                 }
 
-                if (cb.getRemainingAmount() != null) {
-                    double remaining = cb.getRemainingAmount().getValue();
-                    if (remaining > 0.0) details.add(new Report("Status", "Unpaid"));
-                    else if (remaining == 0.0) details.add(new Report("Status", "Paid"));
-                    else details.add(new Report("Status", "Unknown"));
-                } else if (cb.getTaxIncludedAmount() != null && cb.getAmountDue() != null &&
-                           cb.getTaxIncludedAmount().getValue() - cb.getAmountDue().getValue() > 0.0) {
-                    details.add(new Report("Status", "Partially Paid"));
+                if (cb.getState() != null) {
+                    details.add(new Report("Status", cb.getState().getValue()));
+                } else {
+                    details.add(new Report("Status", "Not Available"));
                 }
 
                 invoices.add(new Report("Invoice - " + date, details));
+
             }
 
             return new Report("Billing History", invoices);
@@ -436,64 +438,115 @@ public class ReportingService implements InitializingBean {
 	 * logger.error("Error building billing history section", e); return new
 	 * Report("Billing History", "Error retrieving billing history"); } }
 	 */
+
+	
+    public Report getRevenueSection(String relatedPartyId) {
+        try {
+            LocalDate today = LocalDate.now().plusMonths(1);
+
+            LocalDate periodStart = today.minusMonths(1).withDayOfMonth(1);
+
+            List<CustomerBill> bills = tmfDataRetriever.retrieveCustomerBills(
+                    relatedPartyId,
+                    Role.BUYER,
+                    new TimePeriod()
+            );
+                      
+            // FIXME: Temporary filter to include only bills created by the revenue engine, how to avoid this?
+            bills = bills.parallelStream()
+                    .filter(cb -> cb.getCategory() != null && "created by the revenue engine".equalsIgnoreCase(cb.getCategory()))
+                    .collect(Collectors.toList());
+            
+            if (bills == null || bills.isEmpty())
+                return new Report("Revenue Summary", "No billing data available");
+
+            double yearlyTotal = bills.parallelStream()
+                    .filter(cb -> cb.getBillDate() != null &&
+                                  !cb.getBillDate().toLocalDate().isBefore(periodStart.withDayOfYear(1)) &&
+                                  !cb.getBillDate().toLocalDate().isAfter(today))
+                    .mapToDouble(cb -> cb.getTaxIncludedAmount().getValue())
+                    .sum();
+
+            double monthlyTotal = bills.parallelStream()
+                    .filter(cb -> cb.getBillDate() != null &&
+                                  !cb.getBillDate().toLocalDate().isBefore(periodStart) &&
+                                  !cb.getBillDate().toLocalDate().isAfter(today))
+                    .mapToDouble(cb -> cb.getTaxIncludedAmount().getValue())
+                    .sum();
+
+            List<Report> details = List.of(
+                    new Report("Current Monthly Revenue (" + periodStart + " - " + today + ")",
+                            "EUR " + format(monthlyTotal)),
+                    new Report("Yearly Total", "EUR " + format(yearlyTotal)),
+                    new Report("Current Tier", getPercentageSection(relatedPartyId))
+            );
+
+            return new Report("Revenue Summary", details);
+
+        } catch (Exception e) {
+            logger.error("Error building revenue section", e);
+            return new Report("Revenue Summary", "Error retrieving revenue data");
+        }
+    }
     
-	public Report getRevenueSection(String relatedPartyId) {
+	private String getPercentageSection(String relatedPartyId) {
 	    try {
 	        Subscription subscription = subscriptionService.getActiveSubscriptionByRelatedPartyId(relatedPartyId);
 	        if (subscription == null || subscription.getId() == null || subscription.getId().isEmpty())
-	            return new Report("Revenue Volume Monitoring", List.of(new Report("Error", "Invalid subscription ID")));
-
+	            return "Error retrieving subscription";
+	
 	        List<RevenueItem> items = statementsService.getItemsForSubscription(subscription.getId());
 	        if (items == null || items.isEmpty())
-	            return new Report("Revenue Volume Monitoring", "No revenue data available");
-
-	        LocalDate today = LocalDate.now();
-
-	        LocalDate periodStart = today.minusMonths(1);
-	        LocalDate periodEnd = today.plusMonths(0).withDayOfMonth(today.plusMonths(0).lengthOfMonth());
-
-	        double yearlyTotal = 0.0;
-	        double monthlyTotal = 0.0;
+	            return "No applicable tier";
+	
 	        String currentTier = "No applicable tier";
-
+	
 	        for (RevenueItem ri : items) {
-	            LocalDate chargeDate = ri.getChargeTime().toLocalDate();
-
-
-
-	            yearlyTotal += ri.getOverallValue();
-
-	            if (!chargeDate.isBefore(periodStart) && !chargeDate.isAfter(periodEnd)) {
-	                monthlyTotal += ri.getOverallValue();
-
-	                RevenueItem tierItem = ri.getItems().stream()
-	                        .flatMap(i -> i.getItems().stream())
-	                        .filter(i -> i.getOverallValue() > 0)
-	                        .reduce((first, second) -> second) 
-	                        .orElse(null);
-
-
-	                if (tierItem != null)
-	                    currentTier = extractRevenueSharePercentage(tierItem);
-	            }
+	            RevenueItem tierItem = findLastTierWithPercentage(ri);
+	            if (tierItem != null)
+	                currentTier = extractRevenueSharePercentage(tierItem);
 	        }
-
-	        List<Report> reportItems = new ArrayList<>();
-	        reportItems.add(new Report("Current Monthly Revenue (" + periodStart + " - " + periodEnd + ")", 
-	                EUR_CURRENCY + " " + format(monthlyTotal)));
-	        reportItems.add(new Report("Current Tier", currentTier));
-	        reportItems.add(new Report("Yearly Total", EUR_CURRENCY + " " + format(yearlyTotal)));
-
-	        return new Report("Revenue Volume Monitoring", reportItems);
-
+	
+	        return currentTier;
+	
 	    } catch (BadTmfDataException | BadRevenuePlanException | ExternalServiceException e) {
-	        logger.error("getRevenueSection failed", e);
-	        return new Report("Revenue Volume Monitoring", "No data available: " + e.getMessage());
+	        logger.error("getPercentageSection failed", e);
+	        return "Error retrieving tier";
 	    } catch (Exception e) {
-	        logger.error("Unexpected error in getRevenueSection", e);
-	        return new Report("Revenue Volume Monitoring", "Error retrieving revenue information");
+	        logger.error("Unexpected error in getPercentageSection", e);
+	        return "Error retrieving tier";
 	    }
 	}
+	
+	private RevenueItem findLastTierWithPercentage(RevenueItem item) {
+	    if (item == null) return null;
+	
+	    RevenueItem found = null;
+	
+	    if (item.getOverallValue() > 0 && item.getName() != null && item.getName().matches(".*\\d+(\\.\\d+)?%.*")) {
+	        found = item;
+	    }
+	
+	    if (item.getItems() != null && !item.getItems().isEmpty()) {
+	        for (RevenueItem sub : item.getItems()) {
+	            RevenueItem subFound = findLastTierWithPercentage(sub);
+	            if (subFound != null) found = subFound;
+	        }
+	    }
+	
+	    return found;
+	}
+	
+	private String extractRevenueSharePercentage(RevenueItem item) {
+	    if (item == null || item.getName() == null) return "No applicable tier";
+	
+	    java.util.regex.Matcher m = java.util.regex.Pattern.compile("(\\d+(\\.\\d+)?)%").matcher(item.getName());
+	    if (m.find()) return m.group(1) + "%";
+	
+	    return "No applicable tier";
+	}
+
+
 
     private boolean isFederated(Product p) {
         if (p.getProductCharacteristic() == null) return false;
@@ -525,22 +578,4 @@ public class ReportingService implements InitializingBean {
         try { return Double.parseDouble(cleaned); } catch (NumberFormatException e) { return 0.0; }
     }
 
-    private String extractRevenueSharePercentage(RevenueItem item) {
-        if (item == null) return "No applicable tier";
-        String found = "No applicable tier";
-
-        if (item.getName() != null && item.getName().matches(".*\\d+%.*")) {
-            java.util.regex.Matcher m = java.util.regex.Pattern.compile("(\\d+)%").matcher(item.getName());
-            while (m.find()) found = m.group(1) + "%";
-        }
-
-        if (item.getItems() != null && !item.getItems().isEmpty()) {
-            for (RevenueItem sub : item.getItems()) {
-                String subPct = extractRevenueSharePercentage(sub);
-                if (!"No applicable tier".equals(subPct)) found = subPct;
-            }
-        }
-
-        return found;
-    }
 }
