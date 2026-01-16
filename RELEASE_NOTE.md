@@ -1,6 +1,10 @@
 # Release Notes
  
 **Release Notes** of the *Revenue Sharing Service*
+### <code>1.3.1</code> :calendar: 16/01/2026
+**Improvements**
+- Added sequential billNo in `TmfPersistenceService` class.
+
 ### <code>1.3.0</code> :calendar: 12/12/2025
 **Enhancements**
 - Enhanced computation in `ReportingService` class.
