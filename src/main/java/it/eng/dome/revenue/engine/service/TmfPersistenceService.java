@@ -60,6 +60,9 @@ public class TmfPersistenceService {
     private APIPartyApis apiPartyApis;
     private CustomerBillApis customerBillApis;
     private AppliedCustomerBillRateApis appliedCustomerBillRateApis;
+    
+    private String nextBillNo;
+
 
     public TmfPersistenceService(APIPartyApis apiPartyApis, CustomerBillApis customerBillApis,
                                 AppliedCustomerBillRateApis appliedCustomerBillRateApis) {
@@ -84,7 +87,7 @@ public class TmfPersistenceService {
                     logger.info("Processing organization: {}", org.getId());
                     List<CustomerBill> orgBills = persistProviderRevenueBills(org.getId());
                     createdCustomerBills.addAll(orgBills);
-                    logger.info("  → Created {} CBs for org {}", orgBills.size(), org.getId());
+                    logger.info("Created {} CBs for org {}", orgBills.size(), org.getId());
                 } catch (Exception e) {
                     logger.error("Error processing organization {}: {}", org.getId(), e.getMessage(), e);
                 }
@@ -109,10 +112,10 @@ public class TmfPersistenceService {
         
         for (Subscription sub : buyerSubscriptions) {
             try {
-                logger.info("  Processing subscription: {}", sub.getId());
+                logger.info("Processing subscription: {}", sub.getId());
                 List<CustomerBill> subBills = this.persistSubscriptionRevenueBills(sub.getId());
                 createdCustomerBills.addAll(subBills);
-                logger.info("    → Created {} CBs for subscription {}", subBills.size(), sub.getId());
+                logger.info("Created {} CBs for subscription {}", subBills.size(), sub.getId());
             } catch (Exception e) {
                 logger.error("Error processing subscription {}: {}", sub.getId(), e.getMessage(), e);
             }
@@ -134,6 +137,12 @@ public class TmfPersistenceService {
     public List<CustomerBill> persistSubscriptionRevenueBills(String subscriptionId) throws Exception {
         logger.info("=== START persistSubscriptionRevenueBills for subscription {} ===", subscriptionId);
         logger.info("Using monthsBack configuration: {} months", monthsBack);
+        
+        if (nextBillNo == null) {
+            nextBillNo = computeNextBillNoFromTMF();
+            logger.info("Initialized billNo sequence starting from {}", nextBillNo);
+        }
+
 
         List<CustomerBill> createdCustomerBills = new ArrayList<>();
         
@@ -273,7 +282,7 @@ public class TmfPersistenceService {
                         acbr.setIsBilled(true);
                         
                         persistAppliedCustomerBillingRate(acbr);
-                        logger.debug("    ✅ ACBR persisted");
+                        logger.debug("ACBR persisted");
                     } catch (Exception e) {
                         logger.error("Error persisting ACBR: {}", e.getMessage(), e);
                     }
@@ -315,16 +324,16 @@ public class TmfPersistenceService {
         CustomerBill existingCustomerBill = isCbAlreadyInTMF(cb, revenueBillId);
         
         if (existingCustomerBill == null) {
-            // Not in TMF → persist it
             logger.debug("CB not found in TMF, proceeding with persistence");
             CustomerBill cbToPersist = watermark(cb);
-            // TODO: decide how to do billNo
-            //cbToPersist.setBillNo(null);
+            
+            cbToPersist.setBillNo(nextBillNo);
+            nextBillNo = incrementBillNo(nextBillNo);
+
             String id = customerBillApis.createCustomerBill(CustomerBillCreate.fromJson(cbToPersist.toJson()));
             logger.info("PERSISTENCE: created CB with id {}", id);
             return tmfDataRetriever.getCustomerBill(id);
         } else {
-            // Already in TMF → don't persist
             logger.info("Local CB {} is already on TMF with id {}", cb.getId(), existingCustomerBill.getId());
             return null;
         }
@@ -590,4 +599,39 @@ public class TmfPersistenceService {
         }
         return null;
     }
+    
+    /*
+     * Compute the next available bill number from TMF by scanning existing bills.
+     */
+    private String computeNextBillNoFromTMF() throws Exception {
+        int year = OffsetDateTime.now().getYear();
+        String prefix = "INV-" + year + "-";
+        final int[] max = {0};
+
+        Map<String, String> filter = new HashMap<>();
+        filter.put("category", "Created by the Revenue Engine");
+
+        tmfDataRetriever.fetchCustomerBills(null, filter, 50, cb -> {
+            String billNo = cb.getBillNo();
+            if (billNo != null && billNo.startsWith(prefix)) {
+                int n = Integer.parseInt(billNo.substring(prefix.length()));
+                if (n > max[0]) max[0] = n;
+            }
+        });
+
+
+        return String.format("INV-%d-%04d", year, max[0] + 1);
+    }
+
+    /**
+	 * Increment the bill number sequence.
+	 * @param billNo the current bill number
+	 * @return the incremented bill number
+	 */
+    private String incrementBillNo(String billNo) {
+        String[] parts = billNo.split("-");
+        int seq = Integer.parseInt(parts[2]) + 1;
+        return String.format("%s-%s-%04d", parts[0], parts[1], seq);
+    }
+
 }
