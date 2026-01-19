@@ -1,6 +1,14 @@
 # Release Notes
  
 **Release Notes** of the *Revenue Sharing Service*
+
+### <code>1.4.0</code> :calendar: 19/01/2026
+**New Features**
+- Subscription plan descriptor (json)
+  - Support for further custom time periods (‘CHARGE_PERIODS_X_TO_Y’)
+**Bug fixes**
+- Fixed bug in AbstractCalculator when evaluating preconditions for 'ignorePeriod' and 'validPeriod'
+
 ### <code>1.3.1</code> :calendar: 16/01/2026
 **Improvements**
 - Added sequential billNo in `TmfPersistenceService` class.
