@@ -5,6 +5,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
+import java.time.temporal.ChronoUnit;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.TreeSet;
@@ -442,5 +443,19 @@ public class SubscriptionTimeHelper {
 
     }
     */
+
+    /**
+     * Computes the number of the time period in the sequence starting from the subscription start.
+     * @param timePeriod
+     * @return
+     */
+    public long getTimePeriodNumber(TimePeriod timePeriod) {
+        // compute the length of the timePeriod
+        long tpLength = ChronoUnit.DAYS.between(timePeriod.getEndDateTime(), timePeriod.getStartDateTime());
+        // compute the duration from start of subscription up to the end of the given period
+        long overallLength = ChronoUnit.DAYS.between(timePeriod.getEndDateTime(), this.subscription.getStartDate());
+        // return the duration/length
+        return Math.round(1.0*overallLength/tpLength);
+    }
 
 }

@@ -6,6 +6,7 @@
 **New Features**
 - Subscription plan descriptor (json)
   - Support for further custom time periods (‘CHARGE_PERIODS_X_TO_Y’)
+  - new property `${chargePeriod.nr}` can be used in price/discount names and resolved at runtime.
 **Bug fixes**
 - Fixed bug in AbstractCalculator when evaluating preconditions for 'ignorePeriod' and 'validPeriod'
 
