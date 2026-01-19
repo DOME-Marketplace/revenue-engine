@@ -257,12 +257,21 @@ public abstract class AbstractCalculator implements Calculator {
 		    TimePeriod ignorePeriod = sth.getCustomPeriod(null, (Price)this.item, this.item.getIgnorePeriod().getValue());
 			if(ignorePeriod!=null) {
 				logger.debug("For this price/discount, ignoring the period {} - {}", ignorePeriod.getStartDateTime(), ignorePeriod.getEndDateTime());
-				if(timePeriod.getStartDateTime().isBefore(ignorePeriod.getEndDateTime())) {
-					logger.debug("Ignoring the price/discount entirely as it starts within the ignorePeriod");
+				if(!timePeriod.getStartDateTime().isBefore(ignorePeriod.getEndDateTime())) {
+					logger.debug("The price/discount {} starts after the ignorePeriod {}", this.item.getName(), this.item.getIgnorePeriod().getValue());
+				}
+				else if(!timePeriod.getEndDateTime().isAfter(ignorePeriod.getStartDateTime())) {
+					logger.debug("The price/discount {} ends before the ignorePeriod {}", this.item.getName(), this.item.getIgnorePeriod().getValue());
+				}
+				else {
+					logger.debug("The price/discount {} overlaps the 'ignorePeriod' {}", this.item.getName(), this.item.getIgnorePeriod().getValue());
 					return false;
 				}
 			}
-			logger.debug("The price/discount starts outside the ignorePeriod {}", this.item.getIgnorePeriod());
+			else {
+				logger.error("The price/discount {} specifies an invalid 'ignorePeriod' {}", this.item.getName(), this.item.getIgnorePeriod().getValue());
+				return false;
+			}
 		}
 
 		// now also check the 'validPeriod' property. Resolve it and check if the period is affected.
@@ -273,16 +282,22 @@ public abstract class AbstractCalculator implements Calculator {
 				logger.debug("For this price/discount, only considering the period {} - {}", validPeriod.getStartDateTime(), validPeriod.getEndDateTime());
 //				if(validPeriod.getEndDateTime().isBefore(timePeriod.getStartDateTime())) {
 				if(!timePeriod.getStartDateTime().isBefore(validPeriod.getEndDateTime())) {
-					logger.debug("Ignoring the price/discount entirely as it ends before the period");
+					logger.debug("Ignoring the price/discount entirely as it ends after the validPeriod");
 					return false;
 				}
 //				if(validPeriod.getStartDateTime().isAfter(timePeriod.getEndDateTime())) {
-				if(!validPeriod.getStartDateTime().isBefore(timePeriod.getEndDateTime())) {
-					logger.debug("Ignoring the price/discount entirely as it starts after the period");
+				else if(!validPeriod.getStartDateTime().isBefore(timePeriod.getEndDateTime())) {
+					logger.debug("Ignoring the price/discount entirely as it starts after the validPeriod");
 					return false;
 				}
+				else {
+					logger.debug("The price/discount {} is compatible with the validPeriod {}", this.item.getName(), this.item.getValidPeriod().getValue());
+				}
 			}
-			logger.debug("The price/discount {} is compatible with the validPeriod {}", this.item.getName(), this.item.getValidPeriod());
+			else {
+				logger.error("The price/discount {} specifies an invalid 'validPeriod' {}", this.item.getName(), this.item.getValidPeriod().getValue());
+				return false;
+			}
 		}
 
         return true;

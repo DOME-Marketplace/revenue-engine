@@ -196,6 +196,7 @@ public class SubscriptionTimeHelper {
         final Pattern p1 = Pattern.compile("^\\s*(FIRST|LAST|PREVIOUS)_(\\d+)_CHARGE_PERIODS?\\s*$", Pattern.CASE_INSENSITIVE);
         final Pattern p2 = Pattern.compile("^\\s*BETWEEN\\s+(\\d{4}-\\d{2}-\\d{2})\\s+AND\\s+(\\d{4}-\\d{2}-\\d{2})\\s*$", Pattern.CASE_INSENSITIVE);
         final Pattern p3 = Pattern.compile("^\\s*CHARGE_PERIOD_(\\d+)\\s*$", Pattern.CASE_INSENSITIVE);
+        final Pattern p4 = Pattern.compile("^\\s*CHARGE_PERIODS_(\\d+)_TO_(\\d+)\\s*$", Pattern.CASE_INSENSITIVE);
 
         if(keyword != null && !keyword.isEmpty()) {
             if("CURRENT_CHARGE_PERIOD".equals(keyword)) {
@@ -208,6 +209,7 @@ public class SubscriptionTimeHelper {
 				return this.getPreviousSubscriptionPeriod(time);
             }
             else if(p2.matcher(keyword).matches()) {
+                // BETWEEN YYYY-MM-DD AND YYYY-MM-DD 
                 var matcher = p2.matcher(keyword);
                 if(matcher.matches()) {
                     LocalDateTime start = LocalDate.parse(matcher.group(1)).atStartOfDay();
@@ -219,12 +221,32 @@ public class SubscriptionTimeHelper {
                 }
             }
             else if(p3.matcher(keyword).matches()) {
+                // CHARGE_PERIOD_X
                 var matcher = p3.matcher(keyword);
                 if(matcher.matches()) {
                     Integer howManyPeriods = Integer.parseInt(matcher.group(1))-1;
                     OffsetDateTime start = this.rollChargePeriod(this.subscription.getStartDate(), price, howManyPeriods);
                     OffsetDateTime end = this.rollChargePeriod(start, price, 1);//.minusSeconds(1);
                     if(start != null && end != null) {
+                        TimePeriod tp = new TimePeriod();
+                        tp.setStartDateTime(start);
+                        tp.setEndDateTime(end);
+                        return tp;
+                    }
+                }
+            }
+            else if(p4.matcher(keyword).matches()) {
+                // CHARGE_PERIODS_X_TO_Y
+                var matcher = p4.matcher(keyword);
+                if(matcher.matches()) {
+                    // -1 below so that the first period (nr 1 in the json, is actually M0 here)
+                    Integer startPeriod = Integer.parseInt(matcher.group(1))-1;
+                    Integer endPeriod = Integer.parseInt(matcher.group(2))-1;
+                    OffsetDateTime start = this.rollChargePeriod(this.subscription.getStartDate(), price, startPeriod);
+                    // end is the start of the following period (excluded)
+                    OffsetDateTime end = this.rollChargePeriod(this.subscription.getStartDate(), price, endPeriod+1);
+                    if(start != null && end != null) {
+                        logger.info("****** PF {} {}", startPeriod, endPeriod);
                         TimePeriod tp = new TimePeriod();
                         tp.setStartDateTime(start);
                         tp.setEndDateTime(end);
