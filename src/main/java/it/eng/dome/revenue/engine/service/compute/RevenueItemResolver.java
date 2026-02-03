@@ -12,6 +12,7 @@ import org.slf4j.LoggerFactory;
 import it.eng.dome.revenue.engine.model.PlanItem;
 import it.eng.dome.revenue.engine.model.RevenueItem;
 import it.eng.dome.revenue.engine.model.Subscription;
+import it.eng.dome.revenue.engine.model.SubscriptionTimeHelper;
 import it.eng.dome.tmforum.tmf678.v4.model.TimePeriod;
 
 public class RevenueItemResolver {
@@ -121,6 +122,8 @@ public class RevenueItemResolver {
                         return odt.toString().substring(0, 10);
                 }
                 break;
+            case "chargePeriod.nr":
+                return new SubscriptionTimeHelper(this.subscription).getTimePeriodNumber(this.period)+"";
             case "seller.tradingname": 
                 return this.subscription.getRelatedParties().stream()
                     .filter(rp -> "Seller".equalsIgnoreCase(rp.getRole()))

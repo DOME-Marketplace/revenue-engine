@@ -402,49 +402,19 @@ public class ReportingService implements InitializingBean {
         }
     }
 
-
-    // FIXME: Note: For now, it's preferable to display the statements directly rather than using the method above
-	/*
-	 * public Report getBillingHistorySection(String relatedPartyId) { try {
-	 * Subscription subscription =
-	 * subscriptionService.getActiveSubscriptionByRelatedPartyId(relatedPartyId); if
-	 * (subscription == null) return new Report("Billing History",
-	 * "No active subscription found");
-	 * 
-	 * List<RevenueItem> statements =
-	 * statementsService.getItemsForSubscription(subscription.getId()); if
-	 * (statements == null || statements.isEmpty()) return new
-	 * Report("Billing History", "No billing data available");
-	 * 
-	 * statements.sort(Comparator.comparing(ri -> ri.getChargeTime()));
-	 * 
-	 * List<Report> invoices = new ArrayList<>(); for (RevenueItem ri : statements)
-	 * { String date = ri.getChargeTime() != null ?
-	 * ri.getChargeTime().toLocalDate().toString() : "Unknown Date"; String amount =
-	 * String.format("%.2f %s", ri.getOverallValue(), EUR_CURRENCY);
-	 * 
-	 * 
-	 * List<Report> details = new ArrayList<>();
-	 * 
-	 * details.add(new Report("Amount", amount)); if( ri.getOverallValue()==0.0)
-	 * details.add(new Report("Status", "Paid")); else details.add(new
-	 * Report("Status", "Unpaid"));
-	 * 
-	 * invoices.add(new Report("Invoice - " + date, details)); }
-	 * 
-	 * return new Report("Billing History", invoices);
-	 * 
-	 * } catch (Exception e) {
-	 * logger.error("Error building billing history section", e); return new
-	 * Report("Billing History", "Error retrieving billing history"); } }
-	 */
-
-	
     public Report getRevenueSection(String relatedPartyId) {
         try {
-            LocalDate today = LocalDate.now().plusMonths(1);
+            LocalDate today = LocalDate.now();
+            
+            // Current period: from one month ago to today
+            LocalDate currentPeriodStart = today.minusMonths(1);
+            LocalDate currentPeriodEnd = today;
 
-            LocalDate periodStart = today.minusMonths(1).withDayOfMonth(1);
+            // Get subscription to determine the yearly period
+            Subscription subscription = subscriptionService.getActiveSubscriptionByRelatedPartyId(relatedPartyId);
+            
+            // Calculate subscription year start (anniversary-based)
+            LocalDate subscriptionYearStart = calculateSubscriptionYearStart(subscription, today);
 
             List<CustomerBill> bills = tmfDataRetriever.retrieveCustomerBills(
                     relatedPartyId,
@@ -452,33 +422,43 @@ public class ReportingService implements InitializingBean {
                     new TimePeriod()
             );
                       
-            // FIXME: Temporary filter to include only bills created by the revenue engine, how to avoid this?
+            // Filter only bills created by the revenue engine
             bills = bills.parallelStream()
-                    .filter(cb -> cb.getCategory() != null && "created by the revenue engine".equalsIgnoreCase(cb.getCategory()))
+                    .filter(cb -> cb.getCategory() != null && 
+                            cb.getCategory().toLowerCase().contains("created by the revenue engine"))
                     .collect(Collectors.toList());
             
-            if (bills == null || bills.isEmpty())
+            if (bills == null || bills.isEmpty()) {
                 return new Report("Revenue Summary", "No billing data available");
+            }
 
+            // Calculate yearly total (from subscription year start to today)
             double yearlyTotal = bills.parallelStream()
                     .filter(cb -> cb.getBillDate() != null &&
-                                  !cb.getBillDate().toLocalDate().isBefore(periodStart.withDayOfYear(1)) &&
+                                  !cb.getBillDate().toLocalDate().isBefore(subscriptionYearStart) &&
                                   !cb.getBillDate().toLocalDate().isAfter(today))
+                    .filter(cb -> cb.getTaxIncludedAmount() != null && cb.getTaxIncludedAmount().getValue() != null)
                     .mapToDouble(cb -> cb.getTaxIncludedAmount().getValue())
                     .sum();
 
-            double monthlyTotal = bills.parallelStream()
+            // Calculate current period revenue (from one month ago to today)
+            double currentPeriodRevenue = bills.parallelStream()
                     .filter(cb -> cb.getBillDate() != null &&
-                                  !cb.getBillDate().toLocalDate().isBefore(periodStart) &&
-                                  !cb.getBillDate().toLocalDate().isAfter(today))
+                                  !cb.getBillDate().toLocalDate().isBefore(currentPeriodStart) &&
+                                  !cb.getBillDate().toLocalDate().isAfter(currentPeriodEnd))
+                    .filter(cb -> cb.getTaxIncludedAmount() != null && cb.getTaxIncludedAmount().getValue() != null)
                     .mapToDouble(cb -> cb.getTaxIncludedAmount().getValue())
                     .sum();
+
+            // Get current tier from statements
+            String currentTier = getCurrentTierFromStatements(relatedPartyId, currentPeriodStart, currentPeriodEnd);
 
             List<Report> details = List.of(
-                    new Report("Current Monthly Revenue (" + periodStart + " - " + today + ")",
-                            "EUR " + format(monthlyTotal)),
-                    new Report("Yearly Total", "EUR " + format(yearlyTotal)),
-                    new Report("Current Tier", getPercentageSection(relatedPartyId))
+                    new Report("Current Period Revenue (" + currentPeriodStart + " - " + currentPeriodEnd + ")",
+                            "EUR " + format(currentPeriodRevenue)),
+                    new Report("Yearly Total (" + subscriptionYearStart + " - " + today + ")", 
+                            "EUR " + format(yearlyTotal)),
+                    new Report("Current Tier", currentTier)
             );
 
             return new Report("Revenue Summary", details);
@@ -488,64 +468,137 @@ public class ReportingService implements InitializingBean {
             return new Report("Revenue Summary", "Error retrieving revenue data");
         }
     }
-    
-	private String getPercentageSection(String relatedPartyId) {
-	    try {
-	        Subscription subscription = subscriptionService.getActiveSubscriptionByRelatedPartyId(relatedPartyId);
-	        if (subscription == null || subscription.getId() == null || subscription.getId().isEmpty())
-	            return "Error retrieving subscription";
-	
-	        List<RevenueItem> items = statementsService.getItemsForSubscription(subscription.getId());
-	        if (items == null || items.isEmpty())
-	            return "No applicable tier";
-	
-	        String currentTier = "No applicable tier";
-	
-	        for (RevenueItem ri : items) {
-	            RevenueItem tierItem = findLastTierWithPercentage(ri);
-	            if (tierItem != null)
-	                currentTier = extractRevenueSharePercentage(tierItem);
-	        }
-	
-	        return currentTier;
-	
-	    } catch (BadTmfDataException | BadRevenuePlanException | ExternalServiceException e) {
-	        logger.error("getPercentageSection failed", e);
-	        return "Error retrieving tier";
-	    } catch (Exception e) {
-	        logger.error("Unexpected error in getPercentageSection", e);
-	        return "Error retrieving tier";
+
+    /**
+     * Get current tier from statements based on the period range.
+     * Looks for statements whose period overlaps with the given range.
+     */
+    private String getCurrentTierFromStatements(String relatedPartyId, LocalDate periodStart, LocalDate periodEnd) {
+        try {
+            Subscription subscription = subscriptionService.getActiveSubscriptionByRelatedPartyId(relatedPartyId);
+            if (subscription == null || subscription.getId() == null) {
+                return "No applicable tier";
+            }
+
+            List<RevenueItem> items = statementsService.getItemsForSubscription(subscription.getId());
+            if (items == null || items.isEmpty()) {
+                return "No applicable tier";
+            }
+
+            // Find statements that overlap with the current period
+            for (RevenueItem ri : items) {
+                if (ri.getPeriod() == null) continue;
+                
+                OffsetDateTime stmtStart = ri.getPeriod().getStartDateTime();
+                OffsetDateTime stmtEnd = ri.getPeriod().getEndDateTime();
+                
+                if (stmtStart == null || stmtEnd == null) continue;
+                
+                LocalDate stmtStartDate = stmtStart.toLocalDate();
+                LocalDate stmtEndDate = stmtEnd.toLocalDate();
+                
+                // Check if statement period overlaps with current period
+                boolean overlaps = !stmtEndDate.isBefore(periodStart) && !stmtStartDate.isAfter(periodEnd);
+                
+                if (overlaps) {
+                    // Found overlapping period - check if it has revenue > 0
+                    if (ri.getOverallValue() <= 0) {
+                        continue; // Check next statement
+                    }
+                    return extractCurrentTier(ri);
+                }
+            }
+
+            return "No applicable tier";
+
+        } catch (Exception e) {
+            logger.error("Error getting current tier from statements", e);
+            return "No applicable tier";
+        }
+    }
+
+	/**
+	 * Calculate the start of the current subscription year.
+	 * The subscription year is based on the subscription anniversary date, not the calendar year.
+	 * 
+	 * Example: If subscription started on 2025-02-11 and today is 2026-02-03,
+	 * the current subscription year started on 2025-02-11.
+	 * 
+	 * @param subscription the subscription
+	 * @param today current date
+	 * @return the start date of the current subscription year
+	 */
+	private LocalDate calculateSubscriptionYearStart(Subscription subscription, LocalDate today) {
+	    if (subscription == null || subscription.getStartDate() == null) {
+	        // Fallback to calendar year if no subscription
+	        return today.withDayOfYear(1);
 	    }
-	}
-	
-	private RevenueItem findLastTierWithPercentage(RevenueItem item) {
-	    if (item == null) return null;
-	
-	    RevenueItem found = null;
-	
-	    if (item.getOverallValue() > 0 && item.getName() != null && item.getName().matches(".*\\d+(\\.\\d+)?%.*")) {
-	        found = item;
+	    
+	    LocalDate subscriptionStart = subscription.getStartDate().toLocalDate();
+	    
+	    // Find the most recent anniversary date that is not in the future
+	    LocalDate anniversaryThisYear = subscriptionStart.withYear(today.getYear());
+	    
+	    if (anniversaryThisYear.isAfter(today)) {
+	        // Anniversary hasn't occurred this year yet, use last year's anniversary
+	        return anniversaryThisYear.minusYears(1);
+	    } else {
+	        // Anniversary has occurred this year or is today
+	        return anniversaryThisYear;
 	    }
-	
-	    if (item.getItems() != null && !item.getItems().isEmpty()) {
-	        for (RevenueItem sub : item.getItems()) {
-	            RevenueItem subFound = findLastTierWithPercentage(sub);
-	            if (subFound != null) found = subFound;
-	        }
-	    }
-	
-	    return found;
-	}
-	
-	private String extractRevenueSharePercentage(RevenueItem item) {
-	    if (item == null || item.getName() == null) return "No applicable tier";
-	
-	    java.util.regex.Matcher m = java.util.regex.Pattern.compile("(\\d+(\\.\\d+)?)%").matcher(item.getName());
-	    if (m.find()) return m.group(1) + "%";
-	
-	    return "No applicable tier";
 	}
 
+    /**
+     * Extract the current tier from a RevenueItem.
+     * Looks for items with percentage in name and positive value.
+     * If overall value is 0, returns "No applicable tier".
+     */
+    private String extractCurrentTier(RevenueItem item) {
+        if (item == null) return "No applicable tier";
+        
+        // If overall value is 0 or negative, no tier applies
+        if (item.getOverallValue() <= 0) {
+            return "No applicable tier";
+        }
+        
+        // Find the highest tier (last one with value > 0 in the hierarchy)
+        String tier = findHighestApplicableTier(item);
+        
+        return tier != null ? tier : "No applicable tier";
+    }
+
+    /**
+     * Recursively find the highest applicable tier percentage from the item tree.
+     * Returns the percentage from items that have positive values and contain percentage in name.
+     */
+    private String findHighestApplicableTier(RevenueItem item) {
+        if (item == null) return null;
+        
+        String foundTier = null;
+        
+        // Check nested items first (they contain the actual tier breakdown)
+        if (item.getItems() != null && !item.getItems().isEmpty()) {
+            for (RevenueItem sub : item.getItems()) {
+                String subTier = findHighestApplicableTier(sub);
+                if (subTier != null) {
+                    foundTier = subTier; // Keep the last (highest) tier found
+                }
+            }
+        }
+        
+        // Check this item if it has a percentage and positive value
+        // Looking for patterns like "3% revenue sharing" or "2.5% revenue sharing"
+        if (item.getOverallValue() > 0 && item.getName() != null) {
+            java.util.regex.Matcher m = java.util.regex.Pattern
+                    .compile("(\\d+(?:\\.\\d+)?)%\\s*revenue\\s*sharing", java.util.regex.Pattern.CASE_INSENSITIVE)
+                    .matcher(item.getName());
+            if (m.find()) {
+                foundTier = m.group(1) + "%";
+            }
+        }
+        
+        return foundTier;
+    }
 
 
     private boolean isFederated(Product p) {
