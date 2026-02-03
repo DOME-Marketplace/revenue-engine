@@ -1,6 +1,6 @@
 # Revenue Engine
 
-**Version:** 1.2.8  
+**Version:** 1.5.0  
 **Description:** Swagger REST APIs for the revenue-engine software  
 
 
