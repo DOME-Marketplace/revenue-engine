@@ -2,6 +2,18 @@
  
 **Release Notes** of the *Revenue Sharing Service*
 
+### <code>1.5.0</code> :calendar: 03/02/2026
+**New Features**
+- Revenue section now uses rolling 1-month window for current period calculation
+- Current period spans from today minus 1 month to today (e.g., 2026-01-03 - 2026-02-03)
+- Current tier displays the highest tier applied in statements overlapping the current period
+- Yearly total unchanged - remains subscription anniversary-based
+**Bug fixes**
+- Filter statements by period overlap instead of exact date match
+- Fix current tier extraction to handle multiple overlapping statements
+**Configuration**
+- Scheduler frequency changed from hourly to monthly (6th of each month at 02:00)
+
 ### <code>1.4.0</code> :calendar: 19/01/2026
 **New Features**
 - Subscription plan descriptor (json)
