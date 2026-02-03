@@ -27,7 +27,7 @@ public class Price extends PlanItem {
     private Integer recurringChargePeriodLength;
     
     @JsonProperty("recurringChargePeriodType")
-    private RecurringPeriod recurringChargePeriodType; // "DAY", "MONTH", "YEAR", ecc.
+    private TemporalUnit recurringChargePeriodType; // "DAY", "MONTH", "YEAR", ecc.
     
     @JsonProperty("discount")
     @Valid
@@ -37,15 +37,13 @@ public class Price extends PlanItem {
 
 	/* Return the inherited type, if any. Otherwise the local value. */
 	public PriceType getType() {
-		PriceType inheritedType = null;
+		PriceType inheritedType;
 		if(this.getParentPrice() != null) {
 			inheritedType = this.getParentPrice().getType();
+			if(inheritedType != null)
+				return inheritedType;
 		}
-		if(inheritedType != null) {
-			return inheritedType;
-		} else {
-			return this.type;
-		}
+		return this.type;
 	}
 
 
@@ -79,13 +77,10 @@ public class Price extends PlanItem {
 		Integer inheritedLength;
 		if(this.getParentPrice() != null) {
 			inheritedLength = this.getParentPrice().getRecurringChargePeriodLength();
-		} else {
-			inheritedLength = null;
+			if(inheritedLength != null)
+				return inheritedLength;
 		}
-		if(inheritedLength != null) {
-			return inheritedLength;
-		} else {}
-			return this.recurringChargePeriodLength;
+		return this.recurringChargePeriodLength;
 	}
 
 	public void setRecurringChargePeriodLength(Integer recurringChargePeriodLength) {
@@ -93,20 +88,17 @@ public class Price extends PlanItem {
 	}
 
 	/* Return the inherited period type, if any. Otherwise the local value. */
-	public RecurringPeriod getRecurringChargePeriodType() {
-		RecurringPeriod inheritedPeriod;
+	public TemporalUnit getRecurringChargePeriodType() {
+		TemporalUnit inheritedPeriod;
 		if(this.getParentPrice() != null) {
 			inheritedPeriod = this.getParentPrice().getRecurringChargePeriodType();
-		} else {
-			inheritedPeriod = null;
+			if(inheritedPeriod != null)
+				return inheritedPeriod;
 		}
-		if(inheritedPeriod != null) {
-			return inheritedPeriod;
-		} else {}
-			return this.recurringChargePeriodType;
+		return this.recurringChargePeriodType;
 	}
 
-	public void setRecurringChargePeriodType(RecurringPeriod recurringChargePeriodType) {
+	public void setRecurringChargePeriodType(TemporalUnit recurringChargePeriodType) {
 		this.recurringChargePeriodType = recurringChargePeriodType;
 	}
 
@@ -165,8 +157,8 @@ public class Price extends PlanItem {
 				+ ", prices=" + prices + ", amount=" + this.getAmount() + ", currency=" + getCurrency() + ", percent=" + getPercent()
 				+ ", recurringChargePeriodLength=" + recurringChargePeriodLength
 				+ ", recurringChargePeriodType=" + recurringChargePeriodType + ", discount=" + discount
-				+ ", computationBase=" + getComputationBase() + ", ABreferencePeriod=" + getApplicableBaseReferencePeriod()
-				+ ", CBreferencePeriod=" + getComputationBaseReferencePeriod()
-				+ ", applicableBaseRange=" + getApplicableBaseRange() + "]";
+				+ ", computationBase=" + getComputationMetric() + ", activtingMetricReferencePeriod=" + getActivatingMetricReferencePeriod()
+				+ ", computationMetricReferencePeriod=" + getComputationMeticReferencePeriod()
+				+ ", activtingMetricValueRange=" + getActivatingMetricValueRange() + "]";
 	}
 }

@@ -6,6 +6,8 @@ import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import it.eng.dome.revenue.engine.exception.BadTmfDataException;
+import it.eng.dome.revenue.engine.exception.ExternalServiceException;
 import it.eng.dome.revenue.engine.model.Price;
 import it.eng.dome.revenue.engine.model.RevenueItem;
 import it.eng.dome.revenue.engine.model.Subscription;
@@ -20,7 +22,7 @@ public class AtomicPriceCalculator extends AbstractCalculator {
         super(sub, price);
     }
 
-	public RevenueItem doCompute(TimePeriod timePeriod, Map<String, Double> computeContext) {
+	public RevenueItem doCompute(TimePeriod timePeriod, Map<String, Double> computeContext) throws ExternalServiceException, BadTmfDataException {
 	    logger.debug("Computing price item: {}", this.item.getName());
 		
 		// first compute the atomic price
@@ -50,17 +52,15 @@ public class AtomicPriceCalculator extends AbstractCalculator {
 
 	/**
 	 * Computes discount items for a price
-	 * @param price the Price object containing discount information
 	 * @param timePeriod the TimePeriod for computation
 	 * @return List of RevenueItems representing discounts
 	 */
-	private RevenueItem computeDiscountRevenueItem(TimePeriod timePeriod, Map<String, Double> computationContext) {
+	private RevenueItem computeDiscountRevenueItem(TimePeriod timePeriod, Map<String, Double> computationContext) throws BadTmfDataException, ExternalServiceException {
 		Calculator dc = CalculatorFactory.getCalculatorFor(this.getSubscription(), ((Price)this.item).getDiscount(), this);
-		RevenueItem discountItem = dc.compute(timePeriod, computationContext);
-		return discountItem;
+        return dc.compute(timePeriod, computationContext); //discountItem
 	}
 
-    private RevenueItem computeAtomicPrice(TimePeriod timePeriod) {
+    private RevenueItem computeAtomicPrice(TimePeriod timePeriod) throws ExternalServiceException, BadTmfDataException {
 
 		logger.debug("Computing atomic price for '{}' for time period {}", this.item.getName(), timePeriod);
 
@@ -85,33 +85,16 @@ public class AtomicPriceCalculator extends AbstractCalculator {
 		return outItem;
 	}
 
-
-	private Double computePriceValue(String sellerId, TimePeriod tp) {
-		try {
-			if (this.item.getPercent() != null) {
-				TimePeriod computationPeriod = this.getComputationTimePeriod(tp.getEndDateTime().minusSeconds(1));
-				if (computationPeriod == null) {
-					logger.debug("Could not compute custom period for reference: {}", this.item.getComputationBaseReferencePeriod());
-					return null;
-				}
-				logger.debug("Using custom period for {}: {} - {}, based on reference: {}", this.item.getComputationBaseReferencePeriod(), computationPeriod.getStartDateTime(), computationPeriod.getEndDateTime());
-				Double computationBase = this.metricsRetriever.computeValueForKey(this.item.getComputationBase(), sellerId, computationPeriod);
-				if(computationBase==null) {
-					logger.debug("Computation value is null");
-					return null;
-				}
-				logger.info("Computation base {} for metric '{}' in period {} - {} for seller {}",
-					computationBase, this.item.getComputationBase(), computationPeriod.getStartDateTime(), computationPeriod.getEndDateTime(), sellerId);				
-				return computationBase * (this.item.getPercent() / 100);
-			} 
-			else {
-				return this.item.getAmount();
-			}
-		} catch (Exception e) {
-			logger.error("Error computing value for base '{}': {}", this.item.getComputationBase(), e.getMessage(), e);
-			return null;
+	private Double computePriceValue(String sellerId, TimePeriod tp) throws ExternalServiceException, BadTmfDataException {
+		if (this.item.getPercent() != null) {
+			return this.getComputationBase(sellerId, tp, null) * (this.item.getPercent() / 100);
 		}
-
+		else if (this.item.getUnitAmount() != null) {
+			return this.getComputationBase(sellerId, tp, null) * this.item.getUnitAmount();
+		}
+		else {
+			return this.item.getAmount();
+		}
 	}
 
 }

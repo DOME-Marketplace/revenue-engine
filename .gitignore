@@ -23,3 +23,10 @@ tmp/
 /.factorypath
 /logs
 src/test/java/it/eng/dome/revenue/testcase/TestCaseBuilder.java
+
+
+##############################
+## IntelliJ
+##############################
+.idea/
+src/main/java/it/eng/dome/revenue/engine/scheduler/SubscriptionsSynchronizer.java

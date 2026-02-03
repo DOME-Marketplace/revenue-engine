@@ -8,6 +8,7 @@ import java.util.TreeSet;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import it.eng.dome.tmforum.tmf678.v4.model.TimePeriod;
 
 @JsonInclude(JsonInclude.Include.NON_EMPTY)
 public class RevenueItem {
@@ -20,8 +21,8 @@ public class RevenueItem {
     private String type;
 
     private OffsetDateTime chargeTime;
+    private TimePeriod period;
 
-    
     private List<RevenueItem> items;
 
     public RevenueItem() {
@@ -117,6 +118,10 @@ public class RevenueItem {
 		return "RevenueItem [name=" + name + ", value=" + value + ", currency=" + currency + ", items=" + items + "]";
 	}
 
+    public boolean isLeaf() {
+        return this.getItems()==null || this.getItems().isEmpty();
+    }
+
     public Set<OffsetDateTime> extractChargeTimes() {
         Set<OffsetDateTime> out = new TreeSet<>();
         if(this.getChargeTime()!=null) {
@@ -136,6 +141,7 @@ public class RevenueItem {
     public RevenueItem getFilteredClone(OffsetDateTime chargeTime) {
         RevenueItem clone = new RevenueItem(this.name, this.value, this.currency);
         clone.setChargeTime(chargeTime);
+        clone.setPeriod(this.period);
         clone.setEstimated(this.estimated);
         clone.setType(this.type);
         if (this.items != null) {
@@ -176,4 +182,11 @@ public class RevenueItem {
         this.type = type;
     }
 
+    public TimePeriod getPeriod () {
+        return period;
+    }
+
+    public void setPeriod (TimePeriod period) {
+        this.period = period;
+    }
 }

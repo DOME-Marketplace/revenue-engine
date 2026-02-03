@@ -5,7 +5,6 @@ server:
   servlet:
     context-path:  ${BILLING_PREFIX:/}
 
-
 # Logging Configuration
 logging:
   level:
@@ -35,23 +34,13 @@ management:
     probes:
       enabled: true
 
-cache:
-  duration: 
-    health-service: 1m
-    plan-service: 1h
-    reporting-service: 1h
-    statement-service: 1h
-    subscription-service: 1h
-    tmforum-service: 1h
-    tmforum-list-service: 30m
-
 # Billing Service
 billing:
   invoicing_service: ${INVOICING_SERVICE:http://localhost:8380}
 
 tmforumapi:
   #tmf_endpoint: ${TMF_ENDPOINT:https://dome-dev.eng.it}
-  tmf_endpoint: ${TMF_ENDPOINT:https://tmf.dome-marketplace-sbx.org}
+  tmf_endpoint: ${TMF_ENDPOINT:https://tmf.dome-marketplace-dev2.org}
 
   tmf_envoy:  ${TMF_ENVOY:true}
   # valid only if envoy false
@@ -65,28 +54,39 @@ tmforumapi:
   tmf632_party_management_path: tmf-api/party/v4
   tmf637_inventory_path: tmf-api/productInventory/v4
   tmf651_agreement_management_path: tmf-api/agreementManagement/v4
-  #tmf666_account_management_path: tmf-api/accountManagement/v4
   tmf678_billing_path: tmf-api/customerBillManagement/v4
-
-# Dome Operator configuration
-dome:
-  operator:
-    id: ${DOME_OPERATOR_ID:urn:ngsi-ld:organization:95fdc12e-6889-4f08-8ff8-296b10e8e781} 
-    #id: ${DOME_OPERATOR_ID:urn:ngsi-ld:organization:a195013a-a0e4-493a-810a-b040e10da58f}
 
 caching:
   tmf:
     enabled: true
+    duration:
+      billingAccount: 30m
+      customerBill: 30m
+      organization: 1h
+      product: 30m
+      productOffering: 30m
+      productOfferingPrice: 30m
+      appliedCustomerBillingRate: 1h
+      list-appliedCustomerBillingRate: 1h
+      list-customerBill: 1h
+      list-product: 1h
+      list-productOffering: 1h
   revenue:
     enabled: false
+    duration:
+      plan: 30m
+      list-plan: 1h
+      subscription: 30m
+      list-subscription: 1h
+      list-reporting: 1h
+      list-statement: 1h
   health:
     enabled: true
+    duration: 1m
 
 persistence:
   monthsBack: ${MONTHS_BACK:12}
-
-scheduler:
-  persist-revenue-bills:
+  scheduler:
     enabled: false
     cron: "0 0 */1 * * *"
 

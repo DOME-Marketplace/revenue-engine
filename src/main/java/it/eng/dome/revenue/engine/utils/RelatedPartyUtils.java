@@ -5,8 +5,10 @@ import java.util.List;
 
 import it.eng.dome.revenue.engine.model.Role;
 import it.eng.dome.revenue.engine.model.Subscription;
+import it.eng.dome.tmforum.tmf620.v4.model.ProductOffering;
 import it.eng.dome.tmforum.tmf637.v4.model.Product;
 import it.eng.dome.tmforum.tmf678.v4.model.CustomerBill;
+import it.eng.dome.tmforum.tmf678.v4.model.RelatedParty;
 
 class RP {
 
@@ -47,8 +49,50 @@ public class RelatedPartyUtils {
         return RelatedPartyUtils.hasRPWithRole(parties, partyId, partyRole);
     }
 
+    public static String partyIdWithRole(CustomerBill bill, Role partyRole) {
+        List<RelatedParty> relatedParties = bill.getRelatedParty();
+        if (relatedParties != null) {
+            for (RelatedParty rp : relatedParties) {
+                if (partyRole.getValue().equalsIgnoreCase(rp.getRole())) {
+                    return rp.getId();
+                }
+            }
+        }
+        return null;
+    }
+
+    public static String partyIdWithRole(ProductOffering offering, Role partyRole) {
+        List<it.eng.dome.tmforum.tmf620.v4.model.RelatedParty> relatedParties = offering.getRelatedParty();
+        if (relatedParties != null) {
+            for (it.eng.dome.tmforum.tmf620.v4.model.RelatedParty rp : relatedParties) {
+                if (partyRole.getValue().equalsIgnoreCase(rp.getRole())) {
+                    return rp.getId();
+                }
+            }
+        }
+        return null;
+    }
+
+    public static String partyIdWithRole(Product product, Role partyRole) {
+        List<it.eng.dome.tmforum.tmf637.v4.model.RelatedParty> relatedParties = product.getRelatedParty();
+        if (relatedParties != null) {
+            for (it.eng.dome.tmforum.tmf637.v4.model.RelatedParty rp : relatedParties) {
+                if (partyRole.getValue().equalsIgnoreCase(rp.getRole())) {
+                    return rp.getId();
+                }
+            }
+        }
+        return null;
+    }
+
     public static Boolean subscriptionHasPartyWithRole(Subscription subscription, String partyId, Role partyRole) {
         List<RP> parties = subscription.getRelatedParties().stream()
+                .map(party -> new RP(party.getId(), party.getRole())).toList();
+        return RelatedPartyUtils.hasRPWithRole(parties, partyId, partyRole);
+    }
+
+    public static Boolean offeringHasPartyWithRole(ProductOffering productOffering, String partyId, Role partyRole) {
+        List<RP> parties = productOffering.getRelatedParty().stream()
                 .map(party -> new RP(party.getId(), party.getRole())).toList();
         return RelatedPartyUtils.hasRPWithRole(parties, partyId, partyRole);
     }
@@ -71,12 +115,28 @@ public class RelatedPartyUtils {
     }
 
     public static List<Subscription> retainSubscriptionsWithParty(List<Subscription> subscriptions, String partyId,
-            Role partyRole) {
+            Role partyRole, boolean onlyActiveSub) {
         List<Subscription> retainedSubscriptions = new ArrayList<>();
-        for (Subscription s : subscriptions)
-            if (RelatedPartyUtils.subscriptionHasPartyWithRole(s, partyId, partyRole))
-                retainedSubscriptions.add((s));
+        for (Subscription s : subscriptions) {
+            // skip if subscription does NOT have that party/role
+            if (!RelatedPartyUtils.subscriptionHasPartyWithRole(s, partyId, partyRole)) {
+                continue;
+            }
+            // skip if onlyActive required and subscription is not Active
+            if (onlyActiveSub && !"active".equalsIgnoreCase(s.getStatus())) {
+                continue;
+            }
+            retainedSubscriptions.add(s);
+        }
         return retainedSubscriptions;
+    }
+
+    public static List<ProductOffering> retainProductOfferingsWithParty(List<ProductOffering> offerings, String partyId, Role partyRole) {
+        List<ProductOffering> retainedOfferings = new ArrayList<>();
+        for (ProductOffering o : offerings)
+            if (RelatedPartyUtils.offeringHasPartyWithRole(o, partyId, partyRole))
+                retainedOfferings.add((o));
+        return retainedOfferings;
     }
 
 }

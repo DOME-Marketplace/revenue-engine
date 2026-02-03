@@ -9,6 +9,7 @@ import java.util.regex.Pattern;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.ApplicationListener;
@@ -16,11 +17,11 @@ import org.springframework.context.event.EventListener;
 import org.springframework.core.env.ConfigurableEnvironment;
 import org.springframework.core.env.EnumerablePropertySource;
 import org.springframework.core.env.PropertySource;
+import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
-import org.springframework.web.client.RestTemplate;
+import org.springframework.web.client.RestClient;
 
-import it.eng.dome.revenue.engine.model.InfoRevenue;
-
+import it.eng.dome.brokerage.observability.info.Info;
 
 @Component
 public class StartupListener implements ApplicationListener<ApplicationReadyEvent> {
@@ -31,17 +32,15 @@ public class StartupListener implements ApplicationListener<ApplicationReadyEven
     private static final Pattern PLACEHOLDER = Pattern.compile("\\$\\{([^:}]+)(?::([^}]*))?}");
 
 	private final String INFO_PATH = "/revenue/info";
-	private final RestTemplate restTemplate;
 
+	@Autowired
+	private RestClient restClient;
+	
 	@Value("${server.port}")
 	private int serverPort;
 
 	@Value("${server.servlet.context-path}")
 	private String contextPath;
-
-	public StartupListener(RestTemplate restTemplate) {
-		this.restTemplate = restTemplate;
-	}
 
 	@EventListener(ApplicationReadyEvent.class)
 	public void onApplicationReady() {
@@ -51,7 +50,12 @@ public class StartupListener implements ApplicationListener<ApplicationReadyEven
 
 		logger.info("Listener GET call to {}", url);
 		try {
-			InfoRevenue response = restTemplate.getForObject(url, InfoRevenue.class);
+			Info response = restClient.get()
+			        .uri(url)
+			        .accept(MediaType.APPLICATION_JSON)
+			        .retrieve()
+			        .body(Info.class);
+			
 			logger.info("Started the {} version: {} ", response.getName(), response.getVersion());
 
 		} catch (Exception e) {

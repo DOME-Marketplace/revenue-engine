@@ -2,6 +2,7 @@ package it.eng.dome.revenue.engine.controller;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -13,6 +14,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import io.swagger.v3.oas.annotations.tags.Tag;
 import it.eng.dome.revenue.engine.service.DevDashboardService;
 import it.eng.dome.revenue.engine.service.TmfDataRetriever;
 import it.eng.dome.tmforum.tmf632.v4.model.Organization;
@@ -22,6 +24,7 @@ import it.eng.dome.tmforum.tmf678.v4.model.CustomerBill;
 
 @RestController
 @RequestMapping("/revenue/dev")
+@Tag(name = "Revenue Engine Develop Controller", description = "APIs to manage development of the revenue-engine")
 public class DevOrganizationController {
     
 	protected final Logger logger = LoggerFactory.getLogger(DevOrganizationController.class);
@@ -53,7 +56,7 @@ public class DevOrganizationController {
             List<CustomerBill> bills = dashboardService.listOrganizationTransactions(organizationId);
             return ResponseEntity.ok(bills);
         } catch (Exception e) {
-            logger.error("Error retrieving organizations {} {}", e.getMessage(), e);
+            logger.error("Error retrieving customer bills {} {}", e.getMessage(), e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }    
@@ -61,10 +64,10 @@ public class DevOrganizationController {
     @GetMapping("organizations/{organizationId}/purchasedProducts")
     public ResponseEntity<List<Product>> listPurchasedProducts(@PathVariable String organizationId) {
         try {
-            List<Product> products = this.dashboardService.getPurchasedproducts(organizationId);
+            List<Product> products = this.dashboardService.getPurchasedProducts(organizationId);
             return ResponseEntity.ok(products);
         } catch (Exception e) {
-            logger.error("Error retrieving organizations {} {}", e.getMessage(), e);
+            logger.error("Error retrieving purchased products {} {}", e.getMessage(), e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }    
@@ -75,7 +78,7 @@ public class DevOrganizationController {
             List<Product> products = this.dashboardService.getSoldProducts(organizationId);
             return ResponseEntity.ok(products);
         } catch (Exception e) {
-            logger.error("Error retrieving organizations {} {}", e.getMessage(), e);
+            logger.error("Error retrieving sold products {} {}", e.getMessage(), e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }    
@@ -86,7 +89,7 @@ public class DevOrganizationController {
             CustomerBill bill = dashboardService.getCustomerBill(customerBillId);
             return ResponseEntity.ok(bill);
         } catch (Exception e) {
-            logger.error("Error retrieving organizations {} {}", e.getMessage(), e);
+            logger.error("Error retrieving customer bill {} {}", e.getMessage(), e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }    
@@ -97,14 +100,24 @@ public class DevOrganizationController {
             List<AppliedCustomerBillingRate> acbrs = dashboardService.getAppliedCustomerBillingRates(customerBillId);
             return ResponseEntity.ok(acbrs);
         } catch (Exception e) {
-            logger.error("Error retrieving organizations {} {}", e.getMessage(), e);
+            logger.error("Error retrieving ACBRs {} {}", e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }    
+
+    @GetMapping("invoices/{customerBillId}")
+    public ResponseEntity<Map<String, Object>> getInvoice(@PathVariable String customerBillId) {
+        try {
+            Map<String, Object> invoice = dashboardService.getInvoice(customerBillId);
+            return ResponseEntity.ok(invoice);
+        } catch (Exception e) {
+            logger.error("Error while generating the invoice {} {}", e.getMessage(), e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }    
 
     @GetMapping("organizations/{referrerOrganizationId}/referrals")
     public ResponseEntity<List<Organization>> listReferralsProviders(@PathVariable String referrerOrganizationId) {
-//        logger.info("Request received: list referrals for referrerOrganizationId {}", referrerOrganizationId);
         try {
             List<Organization> referrals = tmfDataRetriever.listReferralsProviders(referrerOrganizationId);
 
@@ -122,8 +135,6 @@ public class DevOrganizationController {
 
     @GetMapping("organizations/{referralOrganizationId}/referrer")
     public ResponseEntity<Organization> getReferrerProvider(@PathVariable String referralOrganizationId) {
-//        logger.info("Request received: get referrer for referralOrganizationId {}", referralOrganizationId);
-
         try {
             Organization referrer = tmfDataRetriever.getReferrerProvider(referralOrganizationId);
 

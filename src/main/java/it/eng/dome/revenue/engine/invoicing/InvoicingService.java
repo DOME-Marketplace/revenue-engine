@@ -1,6 +1,5 @@
 package it.eng.dome.revenue.engine.invoicing;
 
-import java.util.Arrays;
 import java.util.List;
 
 import org.slf4j.Logger;
@@ -11,42 +10,18 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
 
-import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 
+import it.eng.dome.brokerage.model.Invoice;
 import it.eng.dome.brokerage.observability.info.Info;
 import it.eng.dome.brokerage.utils.enumappers.TMF637EnumModule;
-import it.eng.dome.tmforum.tmf637.v4.model.Product;
+import it.eng.dome.brokerage.utils.enumappers.TMF678EnumModule;
+import it.eng.dome.revenue.engine.exception.ExternalServiceException;
 import it.eng.dome.tmforum.tmf678.v4.model.AppliedCustomerBillingRate;
+import it.eng.dome.tmforum.tmf678.v4.model.CustomerBill;
 
-@JsonInclude(JsonInclude.Include.NON_NULL)
-class LocalApplyTaxesRequestDTO {
-	
-	@JsonProperty("product")
-	private Product product;
-   
-	@JsonProperty("appliedCustomerBillingRate")
-	private List<AppliedCustomerBillingRate> appliedCustomerBillingRate;
-
-	public Product getProduct() {
-		return product;
-	}
-
-	public void setProduct(Product product) {
-		this.product = product;
-	}
-
-	public List<AppliedCustomerBillingRate> getAppliedCustomerBillingRate() {
-		return appliedCustomerBillingRate;
-	}
-
-	public void setAppliedCustomerBillingRate(List<AppliedCustomerBillingRate> appliedCustomerBillingRate) {
-		this.appliedCustomerBillingRate = appliedCustomerBillingRate;
-	}
-}
 
 @Service
 public class InvoicingService {
@@ -70,38 +45,47 @@ public class InvoicingService {
         this.outMapper.registerModule(new JavaTimeModule());
         // enum mapper for TMF637
         this.outMapper.registerModule(new TMF637EnumModule());
+        // enum mapper for TMF678
+        this.outMapper.registerModule(new TMF678EnumModule());
     }
-
     /**
      * Applies taxes to a list of ACBRs for a given product.
      * The invoicing service returns a JSON object containing a field "appliedCustomerBillingRate" 
      * which is a list of enriched ACBRs.
+     * @throws Exception 
      */
-    public List<AppliedCustomerBillingRate> applyTaxees(Product product, List<AppliedCustomerBillingRate> acbrs) throws Exception {
-
-        // Prepare DTO
-        LocalApplyTaxesRequestDTO dto = new LocalApplyTaxesRequestDTO();
-        dto.setProduct(product);
-        dto.setAppliedCustomerBillingRate(acbrs);
-
+    public Invoice applyTaxes(CustomerBill customerBill, List<AppliedCustomerBillingRate> acbrs) throws ExternalServiceException {
         try {
+            Invoice tempInvoice = new Invoice(customerBill, acbrs);
+            ObjectMapper mapper = this.outMapper;
+            String outJson = mapper.writeValueAsString(List.of(tempInvoice));
+            logger.debug("Sending payload to invoicing service: {}", outJson);
 
-            String outJson = this.outMapper.writeValueAsString(dto);
+            RestClient client = RestClient.create();
+            ResponseEntity<String> response = client.post()
+                    .uri(invoicingServiceEndpoint + "/invoicing/applyTaxes")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .body(outJson)
+                    .accept(MediaType.APPLICATION_JSON)
+                    .retrieve()
+                    .toEntity(String.class);
 
-            RestClient defaultClient = RestClient.create();
-            ResponseEntity<AppliedCustomerBillingRate[]> response = defaultClient.post()
-                .uri(invoicingServiceEndpoint + "/invoicing/applyTaxes")
-                .contentType(MediaType.APPLICATION_JSON)
-                .body(outJson)
-                .accept(MediaType.APPLICATION_JSON)
-                .retrieve()
-                .toEntity(AppliedCustomerBillingRate[].class);
+            String bodyString = response.getBody();
+            logger.debug("Raw invoicing response: {}", bodyString);
 
-            return Arrays.asList(response.getBody());
+            List<Invoice> invoicesResult = mapper.readValue(bodyString,
+                    mapper.getTypeFactory().constructCollectionType(List.class, Invoice.class));
+
+            if (invoicesResult.isEmpty()) {
+                throw new ExternalServiceException("Invoicing service returned empty result");
+            }
+
+            logger.info("Taxes successfully applied by invoicing service.");
+            return invoicesResult.get(0);
+
         } catch (Exception e) {
-            logger.error("Failed to parse JSON response from invoicing service: {}", e.getMessage());
-            throw(e);
-//            return acbrs;
+            logger.error("Error calling invoicing service: {}", e.getMessage());
+            throw new ExternalServiceException("Unexpected response from Invoicing Service", e);
         }
     }
 
@@ -109,19 +93,20 @@ public class InvoicingService {
     /**
      * Calls the invoicing service endpoint for getting info.
      */
-    public Info getInfo() throws Exception {
+    public Info getInfo() {
         try {
-            RestClient defaultClient = RestClient.create();
-            ResponseEntity<Info> response = defaultClient.get()
-                .uri(invoicingServiceEndpoint + "/invoicing/info")
-                .accept(MediaType.APPLICATION_JSON)
-                .retrieve()
-                .toEntity(Info.class);
+            RestClient client = RestClient.create();
+            ResponseEntity<Info> response = client.get()
+                    .uri(invoicingServiceEndpoint + "/invoicing/info")
+                    .accept(MediaType.APPLICATION_JSON)
+                    .retrieve()
+                    .toEntity(Info.class);
+
             return response.getBody();
+
         } catch (Exception e) {
             logger.error("Exception calling invoicing service: ", e);
             throw(e);
         }
-    }    
-
+    }
 }

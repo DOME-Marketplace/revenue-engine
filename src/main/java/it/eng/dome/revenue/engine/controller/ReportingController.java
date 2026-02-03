@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import io.swagger.v3.oas.annotations.tags.Tag;
 import it.eng.dome.revenue.engine.exception.BadRevenuePlanException;
 import it.eng.dome.revenue.engine.exception.BadTmfDataException;
 import it.eng.dome.revenue.engine.exception.ExternalServiceException;
@@ -20,6 +21,7 @@ import it.eng.dome.revenue.engine.service.cached.CachedReportingService;
 
 @RestController
 @RequestMapping("/revenue/dashboard")
+@Tag(name = "Revenue Engine Dashboard Controller", description = "APIs to manage dashboard of the revenue-engine")
 public class ReportingController {
 	
 	protected final Logger logger = LoggerFactory.getLogger(ReportingController.class);
@@ -34,14 +36,8 @@ public class ReportingController {
  */
     @GetMapping("/{relatedPartyId}")
     public ResponseEntity<List<Report>> getDashboard(@PathVariable String relatedPartyId) {
-//        logger.info("Request received: reporting for dashboard, Organization ID = {}", relatedPartyId);
         try {
             List<Report> reports = reportingService.getDashboardReport(relatedPartyId);
-
-            if (reports == null || reports.isEmpty()) {
-                logger.warn("No reports found for Organization with ID {}", relatedPartyId);
-                return ResponseEntity.noContent().build();
-            }
 
             return ResponseEntity.ok(reports);
         } catch (BadTmfDataException | BadRevenuePlanException | ExternalServiceException e) {

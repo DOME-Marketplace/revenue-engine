@@ -22,7 +22,7 @@ jobs:
         with:
           java-version: "17"
           distribution: "temurin"
-          cache: maven
+          # cache: maven
       
       - name: Set up Maven settings
         run: |

@@ -5,8 +5,9 @@
     <head>
         <title>Revenue Sharing Dev Dashboards</title>
         <link rel="stylesheet" type="text/css" href="css/revenue.css">
+        <link rel="icon" type="image/png" href="media/dome_logo.png">
         <script type="text/javascript" src="js/revenue.js"></script>
-
+        
     </head>
     
     <body onload="getLanes()">
@@ -15,6 +16,97 @@
 
         <!-- TEMPLATES -->
         <div id="templates" style="display:none">
+
+            <table name="seller_info_template" class="box">
+                <tr><td><h4>From (seller)</h4></td></tr>
+                <tr><td><span name="name" class="oneline"></span></td></tr>
+                <tr><td><i name="dome_id" class="oneline"></i></td></tr>
+            </table>
+
+            <table name="buyer_info_template" class="box">
+                <tr><td><h4>To (buyer)</h4></td></tr>
+                <tr><td><span name="name" class="oneline"></span></td></tr>
+                <tr><td><i name="dome_id" class="oneline"></i></td></tr>
+            </table>
+
+            <table name="invoice_details_template" class="box">
+                <tr><td><h4>Bill</h4></td></tr>
+                <tr><td>Order&nbsp;ref.</td><td name="orderRef" style="text-align:right">n/a</td></tr>
+                <tr><td>Product&nbsp;ref.</td><td name="productRef" style="text-align:right"></td></tr>
+                <tr><td colspan="2"><hr></td></tr>
+                <tr><td>Bill no.</td><td name="billNo" style="text-align:right">n/a</td></tr>
+                <tr><td>Bill period</td><td name="billPeriod" use_template="period" style="text-align:right"></td></tr>
+                <tr><td>Bill date</td><td name="billDate" style="text-align:right"></td></tr>
+                <tr><td>Next&nbsp;bill&nbsp;date</td><td name="nextBillDate" style="text-align:right"></td></tr>
+            </table>
+
+            <table name="invoice_payment_details_template" class="box">
+                <tr><td><h4>Payment</h4></td></tr>
+                <tr><td>Terms</td><td name="paymentTerms" style="text-align:right"></td></tr>
+                <tr style="font-weight:bold"><td>Due date</td><td name="paymentDueDate" style="text-align:right"></td></tr>
+            </table>
+
+            <table name="invoice_amount_summary_template" class="box">
+                <tr><td><h4>Totals</h4></td></tr>
+                <tr><td>Net amount</td><td name="taxExcludedAmount" use_template="money" style="text-align:right"></td></tr>
+                <tr><td>Taxes</td><td name="totalTaxAmount" use_template="money" style="text-align:right"></td></tr>
+                <tr style="font-weight:bold"><td>Total due amount</td><td name="taxIncludedAmount" use_template="money" style="text-align:right"></td></tr>
+            </table>
+
+            <div name="invoice_summary_template" class="invoice tmfbox">
+                <h3>Invoice (generated from CB and ACBRs; not on TMF)</h3>
+                <table style="width:100%">
+                    <tr>
+                        <td style="vertical-align:bottom">
+                            <div name="sellerInfo" use_template="seller_info"></div>
+                            <div name="buyerInfo" use_template="buyer_info"></div>
+                        </td>
+                        <td style="vertical-align:bottom">
+                            <div name="billDetails" use_template="invoice_details"></div>
+                        </td>
+                    </tr>
+                </table>
+
+                <table style="width:100%">
+                    <tr>
+                        <td>
+                            <table name="invoiceItems" use_template="invoice_items" class="box"></table>
+                        </td>
+                    </tr>
+                </table>
+
+                <table style="width:100%">
+                    <tr>
+                        <td style="vertical-align:bottom">
+                            <div name="paymentDetails" use_template="invoice_payment_details"></div>
+                        </td>
+                        <td style="vertical-align:bottom">
+                            <div name="summary" use_template="invoice_amount_summary"></div>
+                        </td>
+                    </tr>
+                </table>
+
+            </div>
+
+            <table>
+                <tbody name="invoice_items_template">
+                    <tr style="font-weight:bold">
+                        <td>Description</td>
+                        <td style="text-align:right; white-space:nowrap">Net amount</td>
+                        <td style="text-align:right; white-space:nowrap">Tax %</td>
+                        <td style="text-align:right; white-space:nowrap">Tax amount</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <table>
+                <tr name="invoice_items_item_template" style="font-size:0.8em">
+                    <td class="invoiceitem" style="text-align:left; white-space:unset; width:70%"><span name="description"></span></td>
+                    <td class="invoiceitem" style="width:10%"><span name="netAmount" use_template="money"></span></td>
+                    <td class="invoiceitem" style="width:10%"><span name="vatPercent"></span></td>
+                    <td class="invoiceitem" style="width:10%"><span name="vat" use_template="money"></span></td>
+                </tr>
+            </table>
 
             <div name="plan_summary_template" class="plan tmfbox">
                 <b name="name"></b> - <i><span name="description"></span></i><br>
@@ -49,6 +141,9 @@
                 <div>
                 Subscribed on: <b name="startDate"></b>
                 </div>
+                <div>
+                Percentage: <span name="revenuePercentage"> </span>
+                </div>
                 <hr/>
                 <button onclick="fetchAndShowStatements(this.parentNode);">statements</button>
                 <button onclick="fetchAndShowBills(this.parentNode);">bills</button>
@@ -77,21 +172,33 @@
                 <hr/>
                 <button onclick="fetchAndShowCustomerBill(this.parentNode);">CB</button>
                 <button onclick="fetchAndShowACBRs(this.parentNode);">ACBRs</button>
-                <button onclick="fetchAndShowRaw(this.parentNode);">raw</button>
+                <button onclick="fetchAndShowRaw(this.parentNode);">raw CB</button>
+                <button onclick="fetchAndShowInvoice(this.parentNode);">Invoice</button>
+                <button onclick="fetchAndShowRawInvoice(this.parentNode);">raw invoice</button>
             </div>
 
             <div name="cb_summary_template" class="cb tmfbox">
                 <h3>Customer Bill</h3>
                 <i name="id" style="font-size:8pt"></i>
                 <div name="period"></div>
-                <div>Bill date: <b name="billDate"></b></div>
-                <div>Payment due date: <b name="paymentDueDate"></b></div>
-                <div>Next bill date: <b name="nextBillDate"></b></div>
-                <div name="amountDue"></div>
-                <div name="remainingAmount"></div>
-                <div name="taxItem"></div>
+                <table class="box">
+                    <tr><td>Bill no</td><td name="billNumber" style="text-align:right">n/a</td></tr>
+                    <tr><td>Bill period</td><td name="billingPeriod" use_template="period" style="text-align:right"></td></tr>
+                    <tr><td>Bill date</td><td name="billDate" style="text-align:right"></td></tr>
+                    <tr><td>Next bill date</td><td name="nextBillDate" style="text-align:right"></td></tr>
+                </table>
+                <table class="box">
+                    <tr><td>Amount due</td><td name="amountDue" use_template="money" style="text-align:right"></td></tr>
+                    <tbody name="taxItem"></tbody>
+                    <tr><td>Remaining amount</td><td name="remainingAmount" use_template="money" style="text-align:right"></td></tr>
+                    <tr><td>Payment due date</td><td name="paymentDueDate" style="text-align:right"></td></tr>
+                </table>
+                <div name="taxItemx"></div>
                 <hr/>
                 <button onclick="fetchAndShowACBRs(this.parentNode);">ACBRs</button>
+                <button onclick="fetchAndShowRawACBRs(this.parentNode);">raw ACBRs</button>
+                <button onclick="fetchAndShowInvoice(this.parentNode);">Invoice</button>
+                <button onclick="fetchAndShowRawInvoice(this.parentNode);">raw invoice</button>
                 <button onclick="fetchAndShowRaw(this.parentNode);">raw</button>
             </div>
 
@@ -99,44 +206,45 @@
                 <h3>Applied Customer Billing Rate</h3>
                 <i name="id" style="font-size:8pt"></i><br/>
                 <b name="name"></b><br/>
-                <div name="periodCoverage" use_template="period"></div>
-                <div name="appliedTax" use_template="taxItem"></div>
-                With taxes:
-                <div name="taxExcludedAmount" use_template="amountDue"></div>
-                Without taxes:
-                <div name="taxIncludedAmount" use_template="amountDue"></div>
+
+                <table class="box">
+                    <tr><td>Period Coverage</td><td name="periodCoverage" use_template="period" style="text-align:right"></td></tr>
+
+                    <tr><td>Charge Date</td><td name="date" style="text-align:right"></td></tr>
+                </table>
+                <table class="box">
+                    <tr><td>Tax-excluded amount</td><td name="taxExcludedAmount" use_template="money" style="text-align:right"></td></tr>
+                    <tbody name="appliedTax" use_template="taxItem"></tbody>
+                    <tr style="border:1px solid gray"><td>Tax-included amount</td><td name="taxIncludedAmount" use_template="money" style="text-align:right"></td></tr>
+                </table>
+
+                <hr/>
+                <button onclick="fetchAndShowInvoice(this.parentNode, this.parentNode.object.bill.id);">Invoice</button>
+                <button onclick="fetchAndShowRawInvoice(this.parentNode, this.parentNode.object.bill.id);">containing raw invoice</button>
             </div>            
 
-            <div name="taxItem_item_template">
-                Catetory: <span name="taxCategory"></span>
-                <div name="taxAmount"></div>
-            </div>            
+            <table>
+                <tbody name="taxItem_template" skip="true">        
+                </tbody>
+            </table>
 
-            <div name="taxItem_template">        
-                <b>Taxes</b>
-                <ol name="content"></ol>
-            </div>
+            <table>
+                <tr name="taxItem_item_template">
+                    <td>Tax item (<span name="taxCategory"></span>)</td>
+                    <td style="text-align:right"><span name="taxAmount" use_template="money"></span></td>
+                </tr>
+            </table>
 
-            <div name="amountDue_template">        
-                Total amount: <b name="value"></b> €
-            </div>
-
-            <div name="remainingAmount_template">
-                Remaining amount: <b name="value"></b> €
-            </div>
-
-            <div name="taxAmount_template">        
-                Tax amount: <b name="value"></b> €
-            </div>
+            <span name="money_template"><span name="value"></span> <span name="unit"></span></span>
 
             <div name="price_template">        
                 <u>This plan has a very complex price</u>
             </div>
 
-            <div name="period_template" style="font-size:0.8em; padding:0">
-                <span>From <span name="startDateTime"></span></span>
-                <span>To <span name="endDateTime"></span></span>
-            </div>
+
+            <span name="period_template" style="white-space:nowrap">
+                <span name="startDateTime"></span> to <span name="endDateTime"></span>
+            </span>
 
             <div name="validFor_template">        
                 Can be subscribed between
@@ -202,6 +310,8 @@
             <div name="organization_template" class="organization tmfbox">
                 <b name="tradingName"></b><br/>
                 <i name="id" style="font-size:8pt"></i><br/>
+                <p name="organizationIdentification"></p>
+                <p>Characteristic(s): <ul name="partyCharacteristic"></ul></p>
                 <hr/>
                 <button onclick="fetchAndShowTransactions(this.parentNode);">transactions (as seller)</button>
                 <button onclick="fetchAndShowPurchasedProducts(this.parentNode);">products (as buyer)</button>
@@ -209,6 +319,13 @@
                 <button onclick="fetchAndShowDashboard(this.parentNode);">dashboard</button>
                 <button onclick="fetchAndShowRaw(this.parentNode);" disabled>raw</button>
             </div>
+
+            <li name="partyCharacteristic_item_template">
+                <i name="name"></i>: <span name="value"></span>
+            </li>
+            <span name="organizationIdentification_item_template">
+                <b name="identificationId"></b> issued by <span name="issuingAuthority"></span>
+            </span>
 
             <div name="product_template" class="product tmfbox">
                 <b name="name"></b><br/>

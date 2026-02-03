@@ -1,6 +1,84 @@
 # Release Notes
  
-**Release Notes** of the *Revenue Engine* software:
+**Release Notes** of the *Revenue Sharing Service*
+
+### <code>1.5.0</code> :calendar: 03/02/2026
+**New Features**
+- Revenue section now uses rolling 1-month window for current period calculation
+- Current period spans from today minus 1 month to today (e.g., 2026-01-03 - 2026-02-03)
+- Current tier displays the highest tier applied in statements overlapping the current period
+- Yearly total unchanged - remains subscription anniversary-based
+**Bug fixes**
+- Filter statements by period overlap instead of exact date match
+- Fix current tier extraction to handle multiple overlapping statements
+**Configuration**
+- Scheduler frequency changed from hourly to monthly (6th of each month at 02:00)
+
+### <code>1.4.0</code> :calendar: 19/01/2026
+**New Features**
+- Subscription plan descriptor (json)
+  - Support for further custom time periods (‘CHARGE_PERIODS_X_TO_Y’)
+  - new property `${chargePeriod.nr}` can be used in price/discount names and resolved at runtime.
+**Bug fixes**
+- Fixed bug in AbstractCalculator when evaluating preconditions for 'ignorePeriod' and 'validPeriod'
+
+### <code>1.3.1</code> :calendar: 16/01/2026
+**Improvements**
+- Added sequential billNo in `TmfPersistenceService` class.
+
+### <code>1.3.0</code> :calendar: 12/12/2025
+**Enhancements**
+- Enhanced computation in `ReportingService` class.
+**Bug fixes**
+- General bug fixing
+- General cleanup
+
+### <code>1.2.10</code> :calendar: 11/12/2025
+**Enhancements**
+- Retrieved CustomerBills from TMF in `ReportingService` class.
+
+### <code>1.2.9</code> :calendar: 10/12/2025
+**Bug fixes**
+- Fixed null taxItem in `BillsService` class.
+
+### <code>1.2.8</code> :calendar: 10/12/2025
+**Improvements**
+- Replace **RestTemplate** for **RestClient**.
+**Enhancements**
+- Alignment with new API of the invoicing service 2.0.3
+**Bug fixes**
+- General bug fixing
+- General cleanup
+
+### <code>1.2.7</code> :calendar: 27/11/2025
+**New Features**
+- Subscription plan descriptor (json)
+  - Parsing of boolean expressions within some property values
+  - Property resolution in ‘percent’
+  - Support for further metrics (‘billedSellersBehindMarketplace’, ‘published-product-offerings’ and ‘published-selfservice-product-offerings’)
+  - Support for further custom time periods (‘BETWEEN_date_AND_date’, ‘CHARGE_PERIOD_X’)
+  - Support for ‘unitAmount’ when expressing prices/discounts
+  - Renaming of ‘applicable*’ and ‘computation*’ properties
+  - Aligning the plan.json to the latest version of DOME subscription plans
+- Revenue Sharing dashboard
+  - Distinct sections for CSPs and Federated Marketplaces
+  - Showing meaningful messages for CSPs without subscription
+- Healthcheck endpoint
+  - Now checking all TMF APIs individually
+  - Added response times for external APIs
+- Development dashboard
+  - New combined viewer for Invoices
+  - Raw viewer for ACBRs and CBs
+  - Misc UI enhancements
+
+**Enhancements**
+- Alignment with new API of the `invoicing service 2.0.0`.
+- Increased caching for **TMF entities**.
+- `JavaDoc` improved.
+- General refactoring and cleanup.
+
+**Bug fixes**
+- General bug fixing.
 
 
 ### <code>1.2.6</code> :calendar: 24/10/2025

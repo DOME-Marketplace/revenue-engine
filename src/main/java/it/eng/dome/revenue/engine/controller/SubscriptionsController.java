@@ -17,11 +17,14 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import io.swagger.v3.oas.annotations.tags.Tag;
+
 import java.util.ArrayList;
 import java.util.List;
 
 @RestController
 @RequestMapping("revenue/subscriptions")
+@Tag(name = "Revenue Engine Subscriptions Controller", description = "APIs to manage subscriptions of the revenue-engine")
 public class SubscriptionsController {
 
 	protected final Logger logger = LoggerFactory.getLogger(SubscriptionsController.class);
@@ -40,7 +43,6 @@ public class SubscriptionsController {
 
 	@GetMapping("")
 	public ResponseEntity<List<Subscription>> getAllSubscriptions() {
-//	    logger.info("Request received: get all subscriptions");
 	    try {
 	        List<Subscription> subscriptions = subscriptionService.getAllSubscriptions();
 
@@ -58,7 +60,6 @@ public class SubscriptionsController {
 
 	@GetMapping("/{subscriptionId}")
 	public ResponseEntity<Subscription> getSubscription(@PathVariable String subscriptionId) {
-//	    logger.info("Request received: get subscription with ID {}", subscriptionId);
 	    try {
 	        Subscription subscription = subscriptionService.getSubscriptionByProductId(subscriptionId);
 
@@ -76,7 +77,6 @@ public class SubscriptionsController {
 
 	@GetMapping("{subscriptionId}/statements")
 	public ResponseEntity<List<RevenueStatement>> statementCalculator(@PathVariable String subscriptionId) {
-//	    logger.info("Request received: get statements for subscription {}", subscriptionId);
 	    try {
 	        List<RevenueStatement> statements = statementsService.getStatementsForSubscription(subscriptionId);
 
@@ -94,8 +94,7 @@ public class SubscriptionsController {
 
 	@GetMapping("{subscriptionId}/statements/itemsonly")
 	public ResponseEntity<List<RevenueItem>> statementItems(@PathVariable String subscriptionId) {
-//	    logger.info("Request received: get revenue items only for subscription {}", subscriptionId);
-	    try {
+		try {
 	        List<RevenueItem> items = statementsService.getItemsForSubscription(subscriptionId);
 
 	        if (items == null || items.isEmpty()) {
@@ -112,7 +111,6 @@ public class SubscriptionsController {
 
 	@GetMapping("{subscriptionId}/bills")
 	public ResponseEntity<List<RevenueBill>> getBillPeriods(@PathVariable String subscriptionId) {
-//	    logger.info("Request received: get bills for subscription {}", subscriptionId);
 	    try {
 	        List<RevenueBill> bills = billsService.getSubscriptionBills(subscriptionId);
 
