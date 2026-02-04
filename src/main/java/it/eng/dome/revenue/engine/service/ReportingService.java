@@ -78,27 +78,36 @@ public class ReportingService implements InitializingBean {
 	        double totalFederated = 0.0;
 	
 	        LocalDate today = LocalDate.now();
-	        LocalDate periodStart = today.withDayOfYear(1);
-	        LocalDate periodEnd = today.withDayOfMonth(today.lengthOfMonth());
+	        LocalDate periodStart = today.minusYears(1);
+	        LocalDate periodEnd = today;
 	
 	        for (Subscription sub : subscriptions) {
 	            try {
-	                List<RevenueItem> items = statementsService.getItemsForSubscription(sub.getId());
-	                if (items == null || items.isEmpty()) continue;
-	
-	                double yearlyTotal = items.stream()
-	                        .filter(ri -> {
-	                            LocalDate chargeDate = ri.getChargeTime().toLocalDate();
-	                            return !chargeDate.isBefore(periodStart) && !chargeDate.isAfter(periodEnd);
-	                        })
-	                        .mapToDouble(RevenueItem::getOverallValue)
-	                        .sum();
-	
 	                Product product = tmfDataRetriever.getProduct(sub.getId(), null);
 	                String buyerId = product.getRelatedParty().stream()
 	                        .filter(rp -> Role.BUYER.getValue().equalsIgnoreCase(rp.getRole()))
 	                        .map(rp -> rp.getId())
 	                        .findFirst().orElse("Unknown Subscriber");
+	                
+	                List<CustomerBill> bills = tmfDataRetriever.retrieveCustomerBills(
+	                        buyerId,
+	                        Role.BUYER,
+	                        new TimePeriod()
+	                );
+	
+	                bills = bills.stream()
+	                        .filter(cb -> cb.getCategory() != null && 
+	                                cb.getCategory().toLowerCase().contains("created by the revenue engine"))
+	                        .filter(cb -> cb.getBillDate() != null &&
+	                                !cb.getBillDate().toLocalDate().isBefore(periodStart) &&
+	                                !cb.getBillDate().toLocalDate().isAfter(periodEnd))
+	                        .collect(Collectors.toList());
+	
+	                double yearlyTotal = bills.stream()
+	                        .filter(cb -> cb.getTaxIncludedAmount() != null && cb.getTaxIncludedAmount().getValue() != null)
+	                        .mapToDouble(cb -> cb.getTaxIncludedAmount().getValue())
+	                        .sum();
+	
 	                String name = tmfDataRetriever.getOrganization(buyerId).getTradingName();
 	
 	                if (isFederated(product)) {
@@ -627,8 +636,13 @@ public class ReportingService implements InitializingBean {
 
     private double parseCurrency(String text) {
         if (text == null) return 0.0;
-        String cleaned = text.replaceAll("[^0-9,\\.]", "").replace(",", ".");
-        try { return Double.parseDouble(cleaned); } catch (NumberFormatException e) { return 0.0; }
+        String cleaned = text.replaceAll("[^0-9,\\.]", "");
+        cleaned = cleaned.replace(".", "").replace(",", ".");
+        try { 
+            return Double.parseDouble(cleaned); 
+        } catch (NumberFormatException e) { 
+            return 0.0; 
+        }
     }
 
 }
