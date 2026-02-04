@@ -320,9 +320,26 @@ public class TmfPersistenceService {
             // Not in TMF → persist it
             logger.debug("ACBR not found in TMF, proceeding with persistence");
             AppliedCustomerBillingRate acbrToPersist = watermark(acbr);
+            
+            // DEBUG: Log RelatedParty
+            if (acbrToPersist.getRelatedParty() != null) {
+                logger.debug("=== RelatedParty DEBUG ===");
+                for (int i = 0; i < acbrToPersist.getRelatedParty().size(); i++) {
+                    RelatedParty rp = acbrToPersist.getRelatedParty().get(i);
+                    logger.debug("[{}] id={}, name={}, role={}, @referredType={}", 
+                        i,
+                        rp != null ? rp.getId() : "NULL",
+                        rp != null ? rp.getName() : "NULL",
+                        rp != null ? rp.getRole() : "NULL",
+                        rp != null ? rp.getAtReferredType() : "NULL");
+                }
+                logger.debug("==========================");
+            }
+            
             AppliedCustomerBillingRateCreate acbrc = AppliedCustomerBillingRateCreate.fromJson(acbrToPersist.toJson());
             acbrc.setAtSchemaLocation(new URI(SCHEMA_LOCATION));
             acbrc.setRelatedParty(acbr.getRelatedParty());
+            
             String createdId = appliedCustomerBillRateApis.createAppliedCustomerBillingRate(acbrc);
             logger.info("PERSISTENCE: created ACBR with id {}", createdId);
         } else {
