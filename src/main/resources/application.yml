@@ -87,8 +87,8 @@ caching:
 persistence:
   monthsBack: ${MONTHS_BACK:12}
   scheduler:
-    enabled: false
-    cron: "0 0 */1 * * *"
+    enabled: ${SCHEDULER_ENABLED:false}
+    cron: ${SCHEDULER_CRON:0 0 2 6 * *}
 
 spring:
   web:
