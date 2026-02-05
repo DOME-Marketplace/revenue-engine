@@ -1,6 +1,10 @@
 # Release Notes
  
 **Release Notes** of the *Revenue Sharing Service*
+### <code>1.6.0</code> :calendar: XX/02/2026 (WIP)
+**Improvements**
+* Add a new env var (`TMF_READ_TIMEOUT`) to set read timeout time for any requests in TMForum APIs.
+
 ### <code>1.5.1</code> :calendar: 05/02/2026
 **Bug fixes**
 - Retrieve the CustomerBill from TMF to populate the Dome Operator dashboard
