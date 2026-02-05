@@ -1,6 +1,9 @@
 # Release Notes
  
 **Release Notes** of the *Revenue Sharing Service*
+### <code>1.5.1</code> :calendar: 05/02/2026
+**Bug fixes**
+- Retrieve the CustomerBill from TMF to populate the Dome Operator dashboard
 
 ### <code>1.5.0</code> :calendar: 03/02/2026
 **New Features**
