@@ -118,6 +118,10 @@ public class TmfPersistenceService {
         logger.info("=== START persistProviderRevenueBills for provider {} ===", providerId);
         List<CustomerBill> createdCustomerBills = new ArrayList<>();
         
+        if(this.subscriptionService.getAllSubscriptions() == null) {
+			logger.warn("No subscriptions found for provider {}, skipping", providerId);
+			return createdCustomerBills;
+		}
         List<Subscription> buyerSubscriptions = RelatedPartyUtils.retainSubscriptionsWithParty(
                 this.subscriptionService.getAllSubscriptions(), providerId, Role.BUYER, true);
         

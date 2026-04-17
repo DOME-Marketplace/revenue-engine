@@ -79,6 +79,11 @@ public class SubscriptionService implements InitializingBean {
                 Subscription sub = RevenueProductMapper.toSubscription(product);
                 subscriptions.add(sub);
         });
+        
+        if(subscriptions.isEmpty()) {
+			logger.info("No active subscriptions found for category DOME OPERATOR Plan");
+			return null;
+        }
 
         logger.info("Total active subscriptions retrieved: {}", subscriptions.size());
         return subscriptions;
@@ -97,6 +102,10 @@ public class SubscriptionService implements InitializingBean {
             return null;
 
         // FIXME: now assuming that a party can have only one active subscription
+        if (this.getAllSubscriptions() == null) {
+			logger.debug("No active subscriptions available to check for related party id: {}", id);
+			return null;
+		}
         for (Subscription sub : this.getAllSubscriptions()) {
             String status = sub.getStatus();
             logger.debug("Checking subscription {} with status {}", sub.getId(), sub.getStatus());

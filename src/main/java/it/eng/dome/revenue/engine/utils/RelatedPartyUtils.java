@@ -117,6 +117,9 @@ public class RelatedPartyUtils {
     public static List<Subscription> retainSubscriptionsWithParty(List<Subscription> subscriptions, String partyId,
             Role partyRole, boolean onlyActiveSub) {
         List<Subscription> retainedSubscriptions = new ArrayList<>();
+        if(subscriptions == null) {
+			return null;
+		}
         for (Subscription s : subscriptions) {
             // skip if subscription does NOT have that party/role
             if (!RelatedPartyUtils.subscriptionHasPartyWithRole(s, partyId, partyRole)) {
