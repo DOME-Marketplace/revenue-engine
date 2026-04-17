@@ -34,6 +34,9 @@ public final class TmfApiFactory implements InitializingBean {
     
     @Value("${tmforumapi.tmf_port}")
     public String tmfPort;
+        
+    @Value("${tmforumapi.read_timeout}")
+    public int readTimeout;
     
     @Value( "${tmforumapi.tmf620_product_catalog_management_path}" )
 	private String tmf620ProductCatalogManagementPath;
@@ -66,6 +69,7 @@ public final class TmfApiFactory implements InitializingBean {
 	public it.eng.dome.tmforum.tmf620.v4.ApiClient getTMF620ProductCatalogManagementApiClient() {	
 		if (apiClientTmf620 == null) {
 			apiClientTmf620  = it.eng.dome.tmforum.tmf620.v4.Configuration.getDefaultApiClient();
+			apiClientTmf620.setReadTimeout(readTimeout * 1000);
 			
 			String basePath = tmfEndpoint;
 			if (!tmfEnvoy) { // no envoy specific path
@@ -82,6 +86,7 @@ public final class TmfApiFactory implements InitializingBean {
 	public it.eng.dome.tmforum.tmf629.v4.ApiClient getTMF629CustomerManagementApiClient() {	
 		if (apiClientTmf629 == null) {
 			apiClientTmf629  = it.eng.dome.tmforum.tmf629.v4.Configuration.getDefaultApiClient();
+			apiClientTmf629.setReadTimeout(readTimeout * 1000);
 			
 			String basePath = tmfEndpoint;
 			if (!tmfEnvoy) { // no envoy specific path
@@ -98,6 +103,7 @@ public final class TmfApiFactory implements InitializingBean {
 	public it.eng.dome.tmforum.tmf632.v4.ApiClient getTMF632PartyManagementApiClient() {	
 		if (apiClientTmf632 == null) {
 			apiClientTmf632  = it.eng.dome.tmforum.tmf632.v4.Configuration.getDefaultApiClient();
+			apiClientTmf632.setReadTimeout(readTimeout * 1000);
 			
 			String basePath = tmfEndpoint;
 			if (!tmfEnvoy) { // no envoy specific path
@@ -114,6 +120,7 @@ public final class TmfApiFactory implements InitializingBean {
 	public it.eng.dome.tmforum.tmf637.v4.ApiClient getTMF637ProductInventoryApiClient() {	
 		if (apiClientTmf637 == null) {
 			apiClientTmf637  = it.eng.dome.tmforum.tmf637.v4.Configuration.getDefaultApiClient();
+			apiClientTmf637.setReadTimeout(readTimeout * 1000);
 			
 			String basePath = tmfEndpoint;
 			if (!tmfEnvoy) { // no envoy specific path
@@ -130,6 +137,7 @@ public final class TmfApiFactory implements InitializingBean {
 	public it.eng.dome.tmforum.tmf651.v4.ApiClient getTMF651AgreementManagementApiClient() {	
 		if (apiClientTmf651 == null) {
 			apiClientTmf651  = it.eng.dome.tmforum.tmf651.v4.Configuration.getDefaultApiClient();
+			apiClientTmf651.setReadTimeout(readTimeout * 1000);
 			
 			String basePath = tmfEndpoint;
 			if (!tmfEnvoy) { // no envoy specific path
@@ -146,6 +154,7 @@ public final class TmfApiFactory implements InitializingBean {
 	public it.eng.dome.tmforum.tmf678.v4.ApiClient getTMF678CustomerBillApiClient() {
 		if (apiClientTmf678 == null) { 
 			apiClientTmf678 = it.eng.dome.tmforum.tmf678.v4.Configuration.getDefaultApiClient();
+			apiClientTmf678.setReadTimeout(readTimeout * 1000);
 			
 			String basePath = tmfEndpoint;
 			if (!tmfEnvoy) { // no envoy specific path

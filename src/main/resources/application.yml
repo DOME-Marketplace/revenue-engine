@@ -56,6 +56,9 @@ tmforumapi:
   tmf651_agreement_management_path: tmf-api/agreementManagement/v4
   tmf678_billing_path: tmf-api/customerBillManagement/v4
 
+  # read_timeout in seconds
+  read_timeout: ${TMF_READ_TIMEOUT:60}
+
 caching:
   tmf:
     enabled: true
